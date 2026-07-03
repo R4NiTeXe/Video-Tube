@@ -1,0 +1,507 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { api, getApiErrorMessage } from "@/src/services/api";
+import { useAuthStore } from "@/src/store/useAuthStore";
+import { useThemeStore } from "@/src/store/useThemeStore";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import PageNavDropdown from "@/src/components/PageNavDropdown";
+
+function PasswordInput({ value, onChange, placeholder, minLength = 6 }: { value: string; onChange: (v: string) => void; placeholder?: string; minLength?: number }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div style={{ position: "relative" }}>
+      <input
+        type={show ? "text" : "password"}
+        className="input-field"
+        style={{ width: "100%", boxSizing: "border-box", paddingRight: "2.5rem" }}
+        required
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        minLength={minLength}
+      />
+      <button
+        type="button"
+        onClick={() => setShow(!show)}
+        style={{ position: "absolute", right: "0.6rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: "0.2rem", display: "flex" }}
+      >
+        {show ? (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        ) : (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        )}
+      </button>
+    </div>
+  );
+}
+
+function PasswordStrength({ password }: { password: string }) {
+  let score = 0;
+  if (password.length >= 6) score++;
+  if (password.length >= 10) score++;
+  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+
+  const labels = ["Very Weak", "Weak", "Fair", "Strong", "Very Strong"];
+  const colors = ["#dc2626", "#f97316", "#eab308", "#22c55e", "#16a34a"];
+  const level = Math.min(score, 4);
+
+  if (!password) return null;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
+      <div style={{ display: "flex", gap: "3px" }}>
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} style={{ flex: 1, height: 3, borderRadius: 99, backgroundColor: i <= level ? colors[level] : "var(--bg-elevated)", transition: "background-color 0.2s" }} />
+        ))}
+      </div>
+      <span style={{ fontSize: "0.72rem", color: colors[level], fontWeight: 500 }}>{labels[level]}</span>
+    </div>
+  );
+}
+
+const LANGUAGES = ["English", "Spanish", "French", "Hindi", "Japanese", "Korean", "Portuguese", "German", "Chinese", "Arabic"];
+
+export default function SettingsPage() {
+  const router = useRouter();
+  const { user, isAuthenticated, isLoading: authLoading, logout } = useAuthStore();
+  const { theme, toggleTheme } = useThemeStore();
+
+  // Password
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [changePasswordOtp, setChangePasswordOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+
+  // Notifications
+  const [notifComments, setNotifComments] = useState(true);
+  const [notifSubscribers, setNotifSubscribers] = useState(true);
+  const [notifUpdates, setNotifUpdates] = useState(false);
+
+  // Privacy
+  const [privateSubs, setPrivateSubs] = useState(false);
+  const [showSubsList, setShowSubsList] = useState(true);
+
+  // Language
+  const [language, setLanguage] = useState("English");
+
+  // Content defaults
+  const [defaultVisibility, setDefaultVisibility] = useState("public");
+  const [defaultCategory, setDefaultCategory] = useState("General");
+
+  // Delete
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const [deleteStep, setDeleteStep] = useState<1 | 2>(1);
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) router.push("/login");
+  }, [isAuthenticated, authLoading, router]);
+
+  if (authLoading || !isAuthenticated || !user) {
+    return (
+      <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center" }}>
+        <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.5, repeat: Infinity }}
+          style={{ color: "var(--text-muted)", fontWeight: 500 }}>Loading...</motion.div>
+      </div>
+    );
+  }
+
+  const handleSendChangePasswordOtp = async () => {
+    setPasswordError(""); setPasswordSuccess("");
+    if (!oldPassword) { setPasswordError("Please enter your current password first."); return; }
+    setOtpSending(true);
+    try {
+      await api.post("/users/send-change-password-otp", { oldPassword });
+      setOtpSent(true);
+      setPasswordSuccess("OTP sent to your email.");
+    } catch (err: unknown) {
+      setPasswordError(getApiErrorMessage(err, "Failed to send OTP."));
+    } finally {
+      setOtpSending(false);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError(""); setPasswordSuccess("");
+    if (newPassword !== confirmPassword) { setPasswordError("New passwords do not match."); return; }
+    if (newPassword.length < 6) { setPasswordError("New password must be at least 6 characters."); return; }
+    if (!changePasswordOtp || changePasswordOtp.length !== 6) { setPasswordError("Please enter the 6-digit OTP."); return; }
+    setPasswordSaving(true);
+    try {
+      await api.post("/users/verify-change-password", { oldPassword, newPassword, otp: changePasswordOtp });
+      setPasswordSuccess("Password changed successfully!");
+      setOldPassword(""); setNewPassword(""); setConfirmPassword(""); setChangePasswordOtp("");
+      setOtpSent(false); setOtpVerified(false);
+    } catch (err: unknown) { setPasswordError(getApiErrorMessage(err, "Failed to change password.")); }
+    finally { setPasswordSaving(false); }
+  };
+
+  const handleDeleteStep1 = () => {
+    setDeleteError("");
+    if (!deletePassword) { setDeleteError("Please enter your password."); return; }
+    setDeleteStep(2);
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteError("");
+    if (deleteConfirm !== "DELETE") return;
+    setDeleting(true);
+    try {
+      await api.delete("/users");
+      logout();
+      router.push("/login");
+    } catch (err: unknown) {
+      setDeleteError(getApiErrorMessage(err, "Failed to delete account."));
+      setDeleting(false);
+    }
+  };
+
+  const SectionHeader = ({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) => (
+    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
+      <div style={{ width: 40, height: 40, borderRadius: "var(--radius-md)", backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-light)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)", flexShrink: 0 }}>
+        {icon}
+      </div>
+      <div>
+        <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)" }}>{title}</h2>
+        <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.1rem" }}>{description}</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <main style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
+      <header className="glass" style={{ position: "sticky", top: 0, zIndex: 50, padding: "0.75rem 2rem", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "none", borderLeft: "none", borderRight: "none", borderRadius: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <PageNavDropdown />
+          <span style={{ color: "var(--border-light)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
+          <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Settings</span>
+        </div>
+      </header>
+
+      <div style={{ width: "100%", padding: "2rem" }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ display: "block" }}>
+          <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "1.5rem" }}>Settings</h1>
+
+          <style dangerouslySetInnerHTML={{__html: `
+            .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+            .settings-grid .card-full { grid-column: 1 / -1; }
+            @media (max-width: 768px) { .settings-grid { grid-template-columns: 1fr; } }
+          `}} />
+
+          <div className="settings-grid">
+
+          {/* 1. Change Password */}
+          <div className="form-card" style={{ padding: "1.5rem" }}>
+            <SectionHeader
+              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
+              title="Change Password"
+              description="Keep your account secure with a strong password"
+            />
+            {passwordError && <div style={{ padding: "0.7rem 1rem", backgroundColor: "var(--accent-warm-light)", color: "var(--accent-warm)", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem", border: "1px solid rgba(244,63,94,0.15)" }}>{passwordError}</div>}
+            {passwordSuccess && <div style={{ padding: "0.7rem 1rem", backgroundColor: "var(--accent-light)", color: "var(--accent)", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem", border: "1px solid var(--border-focus)" }}>{passwordSuccess}</div>}
+            <form onSubmit={handleChangePassword} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Current Password</label>
+                <PasswordInput value={oldPassword} onChange={setOldPassword} placeholder="Enter current password" />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>New Password</label>
+                <PasswordInput value={newPassword} onChange={setNewPassword} placeholder="Enter new password" />
+                <PasswordStrength password={newPassword} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Confirm New Password</label>
+                <PasswordInput value={confirmPassword} onChange={setConfirmPassword} placeholder="Re-enter new password" />
+                {confirmPassword && newPassword !== confirmPassword && <span style={{ fontSize: "0.72rem", color: "var(--accent-warm)" }}>Passwords do not match</span>}
+              </div>
+
+              {/* OTP Section */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Verification OTP</label>
+                {!otpSent ? (
+                  <button
+                    type="button"
+                    onClick={handleSendChangePasswordOtp}
+                    disabled={otpSending || !oldPassword}
+                    style={{
+                      padding: "0.65rem 1rem",
+                      borderRadius: "var(--radius-md)",
+                      fontSize: "0.85rem",
+                      fontWeight: 600,
+                      backgroundColor: "var(--bg-secondary)",
+                      color: "var(--accent)",
+                      border: "1px solid var(--accent)",
+                      cursor: oldPassword && !otpSending ? "pointer" : "not-allowed",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    {otpSending ? "Sending OTP..." : "Send OTP to verify password change"}
+                  </button>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="000000"
+                      maxLength={6}
+                      pattern="[0-9]{6}"
+                      inputMode="numeric"
+                      value={changePasswordOtp}
+                      onChange={(e) => setChangePasswordOtp(e.target.value.replace(/\D/g, ""))}
+                      style={{ letterSpacing: "0.4em", textAlign: "center", fontSize: "1rem", fontWeight: 600 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSendChangePasswordOtp}
+                      disabled={otpSending}
+                      style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.78rem", cursor: "pointer", textDecoration: "underline", textAlign: "left", padding: 0 }}
+                    >
+                      {otpSending ? "Sending..." : "Resend OTP"}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={passwordSaving || !otpSent || changePasswordOtp.length !== 6}
+                  style={{
+                    padding: "0.65rem 1.5rem",
+                    borderRadius: "var(--radius-md)",
+                    fontSize: "0.9rem",
+                    opacity: passwordSaving || !otpSent || changePasswordOtp.length !== 6 ? 0.6 : 1,
+                    cursor: passwordSaving || !otpSent || changePasswordOtp.length !== 6 ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {passwordSaving ? "Changing..." : "Change Password"}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* 2. Appearance */}
+          <div className="form-card" style={{ padding: "1.5rem" }}>
+            <SectionHeader
+              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>}
+              title="Appearance"
+              description="Customize how VideoTube looks on your device"
+            />
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.5rem 0" }}>
+              <div>
+                <p style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-primary)" }}>Dark Mode</p>
+                <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Currently using {theme} mode</p>
+              </div>
+              <button onClick={toggleTheme}
+                style={{ width: 52, height: 28, borderRadius: 99, backgroundColor: theme === "dark" ? "var(--accent)" : "var(--bg-elevated)", border: `2px solid ${theme === "dark" ? "var(--accent)" : "var(--border-light)"}`, cursor: "pointer", position: "relative", transition: "all 0.3s", flexShrink: 0 }}>
+                <motion.div animate={{ x: theme === "dark" ? 24 : 2 }} transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  style={{ width: 20, height: 20, borderRadius: "50%", backgroundColor: "#fff", position: "absolute", top: 2, boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+              </button>
+            </div>
+          </div>
+
+          {/* 3. Notifications */}
+          <div className="form-card" style={{ padding: "1.5rem" }}>
+            <SectionHeader
+              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>}
+              title="Notifications"
+              description="Choose what updates you receive via email"
+            />
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              {[
+                { label: "Comments on my videos", desc: "Get notified when someone comments", checked: notifComments, onChange: setNotifComments },
+                { label: "New subscribers", desc: "Get notified when someone subscribes", checked: notifSubscribers, onChange: setNotifSubscribers },
+                { label: "Product updates", desc: "Hear about new features and improvements", checked: notifUpdates, onChange: setNotifUpdates },
+              ].map((item) => (
+                <label key={item.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.6rem 0", cursor: "pointer", borderBottom: "1px solid var(--border-light)" }}>
+                  <div>
+                    <p style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--text-primary)" }}>{item.label}</p>
+                    <p style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>{item.desc}</p>
+                  </div>
+                  <div style={{ position: "relative" }}>
+                    <input type="checkbox" checked={item.checked} onChange={(e) => item.onChange(e.target.checked)} style={{ display: "none" }} />
+                    <div onClick={() => item.onChange(!item.checked)}
+                      style={{ width: 40, height: 22, borderRadius: 99, backgroundColor: item.checked ? "var(--accent)" : "var(--bg-elevated)", border: `2px solid ${item.checked ? "var(--accent)" : "var(--border-light)"}`, cursor: "pointer", position: "relative", transition: "all 0.2s" }}>
+                      <motion.div animate={{ x: item.checked ? 18 : 2 }} transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                        style={{ width: 14, height: 14, borderRadius: "50%", backgroundColor: "#fff", position: "absolute", top: 3, boxShadow: "0 1px 2px rgba(0,0,0,0.15)" }} />
+                    </div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* 4. Privacy */}
+          <div className="form-card" style={{ padding: "1.5rem" }}>
+            <SectionHeader
+              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
+              title="Privacy"
+              description="Control who can see your activity and subscriptions"
+            />
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              {[
+                { label: "Keep subscriptions private", desc: "Others won't see which channels you subscribe to", checked: privateSubs, onChange: setPrivateSubs },
+                { label: "Show subscriptions list on channel", desc: "Display your subscriptions on your channel page", checked: showSubsList, onChange: setShowSubsList },
+              ].map((item) => (
+                <label key={item.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.6rem 0", cursor: "pointer", borderBottom: "1px solid var(--border-light)" }}>
+                  <div>
+                    <p style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--text-primary)" }}>{item.label}</p>
+                    <p style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>{item.desc}</p>
+                  </div>
+                  <div style={{ position: "relative" }}>
+                    <input type="checkbox" checked={item.checked} onChange={(e) => item.onChange(e.target.checked)} style={{ display: "none" }} />
+                    <div onClick={() => item.onChange(!item.checked)}
+                      style={{ width: 40, height: 22, borderRadius: 99, backgroundColor: item.checked ? "var(--accent)" : "var(--bg-elevated)", border: `2px solid ${item.checked ? "var(--accent)" : "var(--border-light)"}`, cursor: "pointer", position: "relative", transition: "all 0.2s" }}>
+                      <motion.div animate={{ x: item.checked ? 18 : 2 }} transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                        style={{ width: 14, height: 14, borderRadius: "50%", backgroundColor: "#fff", position: "absolute", top: 3, boxShadow: "0 1px 2px rgba(0,0,0,0.15)" }} />
+                    </div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* 5. Language */}
+          <div className="form-card" style={{ padding: "1.5rem" }}>
+            <SectionHeader
+              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>}
+              title="Language"
+              description="Select your preferred language for the interface"
+            />
+            <select value={language} onChange={(e) => setLanguage(e.target.value)}
+              className="input-field" style={{ width: "100%", boxSizing: "border-box", cursor: "pointer" }}>
+              {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
+            </select>
+          </div>
+
+          {/* 6. Content Defaults */}
+          <div className="form-card" style={{ padding: "1.5rem" }}>
+            <SectionHeader
+              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" /></svg>}
+              title="Content Defaults"
+              description="Set default options for new uploads"
+            />
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Default Upload Visibility</label>
+                <select value={defaultVisibility} onChange={(e) => setDefaultVisibility(e.target.value)}
+                  className="input-field" style={{ width: "100%", boxSizing: "border-box", cursor: "pointer" }}>
+                  <option value="public">Public</option>
+                  <option value="private">Private</option>
+                </select>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Default Category</label>
+                <select value={defaultCategory} onChange={(e) => setDefaultCategory(e.target.value)}
+                  className="input-field" style={{ width: "100%", boxSizing: "border-box", cursor: "pointer" }}>
+                  {["General", "Gaming", "Music", "Education", "Entertainment", "Sports", "News", "Technology", "Science", "Travel", "Food", "Fashion", "Art", "Podcasts"].map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* 7. Session Management */}
+          <div className="form-card" style={{ padding: "1.5rem" }}>
+            <SectionHeader
+              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>}
+              title="Active Sessions"
+              description="Manage devices where you're logged in"
+            />
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              {[
+                { device: "Chrome on Windows", location: "Current session", time: "Active now", current: true },
+                { device: "Safari on iPhone", location: "Mumbai, India", time: "2 hours ago", current: false },
+                { device: "Firefox on Linux", location: "Delhi, India", time: "1 day ago", current: false },
+              ].map((session) => (
+                <div key={session.device} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.7rem 0", borderBottom: "1px solid var(--border-light)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                    <div style={{ width: 36, height: 36, borderRadius: "var(--radius-sm)", backgroundColor: session.current ? "var(--accent-light)" : "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", color: session.current ? "var(--accent)" : "var(--text-muted)" }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>{session.device}</p>
+                      <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{session.location} &middot; {session.time}</p>
+                    </div>
+                  </div>
+                  {session.current ? (
+                    <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--accent)", padding: "0.25rem 0.6rem", backgroundColor: "var(--accent-light)", borderRadius: "2rem" }}>This device</span>
+                  ) : (
+                    <button style={{ fontSize: "0.78rem", fontWeight: 500, color: "var(--accent-warm)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                      Log out
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 8. Delete Account */}
+          <div className="form-card card-full" style={{ padding: "1.5rem", border: "1px solid rgba(244,63,94,0.25)" }}>
+            <SectionHeader
+              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-warm)" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>}
+              title="Delete Account"
+              description="Permanently delete your account and all data"
+            />
+            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1rem", lineHeight: 1.5 }}>
+              This action is <strong style={{ color: "var(--accent-warm)" }}>permanent and irreversible</strong>. All your data, videos, subscribers, and settings will be permanently deleted.
+            </p>
+
+            {deleteError && <div style={{ padding: "0.7rem 1rem", backgroundColor: "var(--accent-warm-light)", color: "var(--accent-warm)", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem", border: "1px solid rgba(244,63,94,0.15)" }}>{deleteError}</div>}
+
+            {deleteStep === 1 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--accent-warm)" }}>Enter your password to continue</label>
+                  <PasswordInput value={deletePassword} onChange={setDeletePassword} placeholder="Enter your password" />
+                </div>
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <button onClick={handleDeleteStep1} disabled={!deletePassword}
+                    style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-light)", cursor: deletePassword ? "pointer" : "not-allowed" }}>
+                    Continue
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <div style={{ padding: "0.7rem 1rem", backgroundColor: "#fef2f2", borderRadius: "var(--radius-md)", border: "1px solid rgba(244,63,94,0.2)" }}>
+                  <p style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--accent-warm)" }}>Step 2: Type DELETE to confirm</p>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  <input type="text" className="input-field" value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} placeholder='Type "DELETE" to confirm'
+                    style={{ borderColor: deleteConfirm === "DELETE" ? "var(--accent-warm)" : undefined }} />
+                </div>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
+                  <button onClick={() => { setDeleteStep(1); setDeleteConfirm(""); }} style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-light)", cursor: "pointer" }}>
+                    Back
+                  </button>
+                  <button onClick={handleDeleteAccount} disabled={deleteConfirm !== "DELETE" || deleting}
+                    style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: deleteConfirm === "DELETE" ? "var(--accent-warm)" : "var(--bg-elevated)", color: deleteConfirm === "DELETE" ? "#fff" : "var(--text-muted)", border: `1px solid ${deleteConfirm === "DELETE" ? "var(--accent-warm)" : "var(--border-light)"}`, cursor: deleteConfirm === "DELETE" && !deleting ? "pointer" : "not-allowed", opacity: deleting ? 0.7 : 1, transition: "all 0.2s" }}>
+                    {deleting ? "Deleting..." : "Delete Account Permanently"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          </div>{/* end settings-grid */}
+        </motion.div>
+      </div>
+    </main>
+  );
+}
