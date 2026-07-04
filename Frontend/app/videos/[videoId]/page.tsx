@@ -785,6 +785,9 @@ export default function VideoPlayerPage() {
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [bellActive, setBellActive] = useState(false);
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
+  const [videoQuality, setVideoQuality] = useState("auto");
   const controlsTimeout = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -835,25 +838,19 @@ export default function VideoPlayerPage() {
 
   const captions: Caption[] = captionsRes?.data || [];
 
-  // Sync liked state from video data
-  useEffect(() => {
-    if (videoRes?.data) {
-      setLiked(!!videoRes.data.isLiked);
-    }
-  }, [videoRes?.data]);
-
   // Toggle like mutation
   const likeMutation = useMutation({
     mutationFn: async () => {
       await api.post(`/likes/toggle/v/${videoId}`);
     },
     onMutate: async () => {
-      const wasLiked = liked;
-      setLiked((prev) => !prev);
+      const cached = queryClient.getQueryData<{ data: { isLiked: boolean; likesCount: number } }>(["video", videoId]);
+      const wasLiked = cached?.data?.isLiked ?? liked;
+      setLiked(!wasLiked);
       if (wasLiked) setDisliked(false);
       queryClient.setQueryData(["video", videoId], (old: Record<string, unknown> | undefined) => {
         if (!old?.data) return old;
-        return { ...old, data: { ...old.data, likesCount: old.data.likesCount + (wasLiked ? -1 : 1) } };
+        return { ...old, data: { ...old.data, isLiked: !wasLiked, likesCount: old.data.likesCount + (wasLiked ? -1 : 1) } };
       });
     },
     onError: () => {
@@ -868,7 +865,8 @@ export default function VideoPlayerPage() {
       await api.post(`/subscriptions/c/${video.owner._id}`);
     },
     onMutate: async () => {
-      const wasSubscribed = video?.isSubscribed;
+      const cached = queryClient.getQueryData<{ data: { isSubscribed: boolean; owner: { subscribersCount: number } } }>(["video", videoId]);
+      const wasSubscribed = cached?.data?.isSubscribed ?? video?.isSubscribed;
       queryClient.setQueryData(["video", videoId], (old: Record<string, unknown> | undefined) => {
         if (!old?.data) return old;
         return {
@@ -877,8 +875,8 @@ export default function VideoPlayerPage() {
             ...old.data,
             isSubscribed: !wasSubscribed,
             owner: {
-              ...old.data.owner,
-              subscribersCount: (old.data.owner?.subscribersCount || 0) + (wasSubscribed ? -1 : 1),
+              ...(old.data as Record<string, unknown>).owner as Record<string, unknown>,
+              subscribersCount: (((old.data as Record<string, unknown>).owner as Record<string, unknown>)?.subscribersCount as number || 0) + (wasSubscribed ? -1 : 1),
             },
           },
         };
@@ -1141,6 +1139,37 @@ export default function VideoPlayerPage() {
                     </button>
                   )}
 
+                  {/* Quality Selector */}
+                  <div style={{ position: "relative" }}>
+                    <button onClick={() => setShowQualityMenu(!showQualityMenu)}
+                      style={{ background: "none", border: "none", color: "rgba(255,255,255,0.8)", cursor: "pointer", padding: "0.25rem 0.4rem", fontSize: "0.65rem", fontWeight: 700, borderRadius: 4, display: "flex", alignItems: "center", gap: "0.2rem" }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                      {videoQuality !== "auto" && <span>{videoQuality}</span>}
+                    </button>
+                    {showQualityMenu && (
+                      <>
+                        <div style={{ position: "fixed", inset: 0, zIndex: 9 }} onClick={() => setShowQualityMenu(false)} />
+                        <div style={{
+                          position: "absolute", bottom: "calc(100% + 8px)", right: 0, width: 160, zIndex: 10,
+                          backgroundColor: "rgba(20,20,20,0.95)", border: "1px solid rgba(255,255,255,0.1)",
+                          borderRadius: "var(--radius-md)", padding: "0.35rem", backdropFilter: "blur(12px)",
+                        }}>
+                          <p style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.5)", padding: "0.3rem 0.6rem", fontWeight: 600 }}>Quality</p>
+                          {["auto", "1080p", "720p", "480p", "360p"].map((q) => (
+                            <button key={q} onClick={() => { setVideoQuality(q); setShowQualityMenu(false); }}
+                              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", textAlign: "left", padding: "0.4rem 0.6rem", borderRadius: "var(--radius-sm)", fontSize: "0.8rem", color: videoQuality === q ? "#fff" : "rgba(255,255,255,0.7)", background: videoQuality === q ? "rgba(255,255,255,0.1)" : "none", border: "none", cursor: "pointer", fontWeight: videoQuality === q ? 600 : 400, transition: "background 0.1s" }}
+                              onMouseEnter={(e) => { if (videoQuality !== q) e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.05)"; }}
+                              onMouseLeave={(e) => { if (videoQuality !== q) e.currentTarget.style.backgroundColor = "none"; }}
+                            >
+                              <span>{q === "auto" ? "Auto" : q}</span>
+                              {videoQuality === q && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
                   {/* Theater Mode */}
                   <button onClick={() => setTheaterMode(!theaterMode)}
                     style={{ background: "none", border: "none", color: "rgba(255,255,255,0.8)", cursor: "pointer", padding: "0.25rem", display: "flex", alignItems: "center" }}>
@@ -1220,22 +1249,51 @@ export default function VideoPlayerPage() {
                     {video.isSubscribed ? "Subscribed" : "Subscribe"}
                   </motion.button>
                   {video.isSubscribed && (
-                    <motion.button
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      title="Notifications"
-                      style={{
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        width: 34, height: 34, borderRadius: "50%",
-                        background: "var(--bg-elevated)", border: "1px solid var(--border-light)",
-                        cursor: "pointer", color: "var(--text-secondary)",
-                        transition: "all 0.2s",
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.backgroundColor = "var(--accent-light)"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.borderColor = "var(--border-light)"; e.currentTarget.style.backgroundColor = "var(--bg-elevated)"; }}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                    </motion.button>
+                    <div style={{ position: "relative" }}>
+                      <motion.button
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        onClick={() => setBellActive(!bellActive)}
+                        title="Notifications"
+                        style={{
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          width: 34, height: 34, borderRadius: "50%",
+                          background: bellActive ? "var(--accent-light)" : "var(--bg-elevated)",
+                          border: `1px solid ${bellActive ? "var(--accent)" : "var(--border-light)"}`,
+                          cursor: "pointer",
+                          color: bellActive ? "var(--accent)" : "var(--text-secondary)",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill={bellActive ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                      </motion.button>
+                      {bellActive && (
+                        <>
+                          <div style={{ position: "fixed", inset: 0, zIndex: 9 }} onClick={() => setBellActive(false)} />
+                          <div style={{
+                            position: "absolute", top: "calc(100% + 6px)", right: 0, width: 200, zIndex: 10,
+                            backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)",
+                            borderRadius: "var(--radius-md)", boxShadow: "0 8px 24px rgba(0,0,0,0.15)", padding: "0.35rem",
+                          }}>
+                            <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", padding: "0.4rem 0.6rem", fontWeight: 600 }}>Notification settings</p>
+                            {[
+                              { label: "All", desc: "All notifications", value: "all" },
+                              { label: "Personalized", desc: "Recommended for you", value: "personalized" },
+                              { label: "None", desc: "Turn off notifications", value: "none" },
+                            ].map((opt) => (
+                              <button key={opt.value} onClick={() => { setBellActive(false); }}
+                                style={{ display: "block", width: "100%", textAlign: "left", padding: "0.5rem 0.6rem", borderRadius: "var(--radius-sm)", fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)", background: "none", border: "none", cursor: "pointer", transition: "background 0.1s" }}
+                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-elevated)")}
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                              >
+                                {opt.label}
+                                <span style={{ display: "block", fontSize: "0.7rem", fontWeight: 400, color: "var(--text-muted)", marginTop: "0.1rem" }}>{opt.desc}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
