@@ -50,7 +50,7 @@ const ShortsIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/><path d="M9 8l3-3 3 3"/></svg>
 );
 const LiveIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/><line x1="2" y1="2" x2="22" y2="22" opacity="0.5"/></svg>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"/></svg>
 );
 const BellIcon = ({ count }: { count?: number }) => (
   <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -448,32 +448,11 @@ export default function Home() {
             <HomeIcon active={activeSidebar === "home"} />
           </button>
           <button 
-            className={`sidebar-btn ${activeSidebar === "shorts" ? "active" : ""}`} 
-            title="Shorts"
-            onClick={() => router.push("/shorts")}
-          >
-            <ShortsIcon />
-          </button>
-          <button 
-            className={`sidebar-btn ${activeSidebar === "live" ? "active" : ""}`} 
-            title="Live"
-            onClick={() => router.push("/live")}
-          >
-            <LiveIcon />
-          </button>
-          <button 
             className={`sidebar-btn ${activeSidebar === "trending" ? "active" : ""}`} 
             title="Trending"
             onClick={() => handleSidebarClick("trending")}
           >
             <TrendingIcon />
-          </button>
-          <button 
-            className={`sidebar-btn ${activeSidebar === "library" ? "active" : ""}`} 
-            title="Library"
-            onClick={() => handleSidebarClick("library")}
-          >
-            <LibraryIcon />
           </button>
           <button 
             className={`sidebar-btn ${activeSidebar === "fire" ? "active" : ""}`} 
@@ -483,11 +462,47 @@ export default function Home() {
             <FireIcon />
           </button>
           <button 
-            className={`sidebar-btn ${activeSidebar === "community" ? "active" : ""}`} 
+            className="sidebar-btn" 
+            title="Shorts"
+            onClick={() => router.push("/shorts")}
+          >
+            <ShortsIcon />
+          </button>
+          <button 
+            className="sidebar-btn" 
+            title="Subscriptions"
+            onClick={() => handleSidebarClick("library")}
+          >
+            <LibraryIcon />
+          </button>
+          <div style={{ width: "100%", height: 1, background: "var(--border-light)", margin: "0.25rem 0" }} />
+          <button 
+            className="sidebar-btn" 
+            title="Live Streams"
+            onClick={() => router.push("/live")}
+          >
+            <LiveIcon />
+          </button>
+          <button 
+            className="sidebar-btn" 
+            title="Stream Dashboard"
+            onClick={() => router.push("/live/dashboard")}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          </button>
+          <button 
+            className="sidebar-btn" 
             title="Community"
             onClick={() => router.push("/community")}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </button>
+          <button 
+            className="sidebar-btn" 
+            title="Donations"
+            onClick={() => router.push("/donations")}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </button>
           <div style={{ width: "100%", height: 1, background: "var(--border-light)", margin: "0.25rem 0" }} />
           <button 

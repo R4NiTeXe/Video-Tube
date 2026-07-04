@@ -118,6 +118,15 @@ const formatFullDate = (date: string): string =>
     day: "numeric",
   });
 
+const formatTime = (sec: number): string => {
+  if (!sec || !isFinite(sec)) return "0:00";
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = Math.floor(sec % 60).toString().padStart(2, "0");
+  if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${s}`;
+  return `${m}:${s}`;
+};
+
 // ── SVG Icons ──
 const PlayLogo = ({ size = 22 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
@@ -769,6 +778,14 @@ export default function VideoPlayerPage() {
   const [showCaptions, setShowCaptions] = useState(false);
   const [selectedCaptionIdx, setSelectedCaptionIdx] = useState(-1);
   const [uploadingCaption, setUploadingCaption] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const controlsTimeout = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // Redirect if not authenticated
@@ -830,9 +847,16 @@ export default function VideoPlayerPage() {
     mutationFn: async () => {
       await api.post(`/likes/toggle/v/${videoId}`);
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      const wasLiked = liked;
       setLiked((prev) => !prev);
-      if (liked) setDisliked(false);
+      if (wasLiked) setDisliked(false);
+      queryClient.setQueryData(["video", videoId], (old: Record<string, unknown> | undefined) => {
+        if (!old?.data) return old;
+        return { ...old, data: { ...old.data, likesCount: old.data.likesCount + (wasLiked ? -1 : 1) } };
+      });
+    },
+    onError: () => {
       queryClient.invalidateQueries({ queryKey: ["video", videoId] });
     },
   });
@@ -843,7 +867,24 @@ export default function VideoPlayerPage() {
       if (!video?.owner?._id) return;
       await api.post(`/subscriptions/c/${video.owner._id}`);
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      const wasSubscribed = video?.isSubscribed;
+      queryClient.setQueryData(["video", videoId], (old: Record<string, unknown> | undefined) => {
+        if (!old?.data) return old;
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            isSubscribed: !wasSubscribed,
+            owner: {
+              ...old.data.owner,
+              subscribersCount: (old.data.owner?.subscribersCount || 0) + (wasSubscribed ? -1 : 1),
+            },
+          },
+        };
+      });
+    },
+    onError: () => {
       queryClient.invalidateQueries({ queryKey: ["video", videoId] });
     },
   });
@@ -994,6 +1035,9 @@ export default function VideoPlayerPage() {
           {/* Video Player */}
           <motion.div
             layout
+            className="video-player-container"
+            onMouseMove={() => { setShowControls(true); if (controlsTimeout.current) clearTimeout(controlsTimeout.current); controlsTimeout.current = setTimeout(() => { if (isPlaying) setShowControls(false); }, 3000); }}
+            onMouseLeave={() => { if (isPlaying) setShowControls(false); }}
             style={{
               width: "100%",
               backgroundColor: "#000",
@@ -1001,13 +1045,19 @@ export default function VideoPlayerPage() {
               overflow: "hidden",
               position: "relative",
               border: "1px solid var(--border-light)",
+              cursor: showControls ? "default" : "none",
             }}
           >
             <video
               ref={videoRef}
               src={video.videoFile}
-              controls
               autoPlay
+              onClick={() => { if (!videoRef.current) return; videoRef.current.paused ? videoRef.current.play() : videoRef.current.pause(); }}
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+              onTimeUpdate={() => { if (!videoRef.current) return; setCurrentTime(videoRef.current.currentTime); setDuration(videoRef.current.duration || 0); setProgress(videoRef.current.duration ? (videoRef.current.currentTime / videoRef.current.duration) * 100 : 0); }}
+              onLoadedMetadata={() => { if (videoRef.current) setDuration(videoRef.current.duration); }}
+              onEnded={() => setIsPlaying(false)}
               style={{ width: "100%", maxHeight: theaterMode ? "85vh" : "70vh", outline: "none", display: "block" }}
             >
               {captions.map((cap, idx) => (
@@ -1021,51 +1071,90 @@ export default function VideoPlayerPage() {
                 />
               ))}
             </video>
-            {/* CC Button */}
-            {captions.length > 0 && (
-              <button
-                onClick={() => {
-                  if (!videoRef.current) return;
-                  const tracks = videoRef.current.textTracks;
-                  if (selectedCaptionIdx >= 0) {
-                    for (let i = 0; i < tracks.length; i++) tracks[i].mode = "hidden";
-                    setSelectedCaptionIdx(-1);
-                  } else {
-                    if (tracks.length > 0) {
-                      tracks[0].mode = "showing";
-                      setSelectedCaptionIdx(0);
-                    }
-                  }
-                }}
-                style={{
-                  position: "absolute", bottom: "0.75rem", right: "0.75rem",
-                  width: 36, height: 36, borderRadius: "50%",
-                  backgroundColor: selectedCaptionIdx >= 0 ? "var(--accent)" : "rgba(0,0,0,0.6)",
-                  backdropFilter: "blur(8px)",
-                  border: "none", color: "#fff", cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "0.7rem", fontWeight: 800,
-                }}
-                title={selectedCaptionIdx >= 0 ? "Hide captions" : "Show captions"}
-              >
-                CC
-              </button>
-            )}
-            {/* Theater Mode Toggle */}
-            <button
-              onClick={() => setTheaterMode(!theaterMode)}
+
+            {/* Custom Controls Overlay */}
+            <div
               style={{
-                position: "absolute", top: "0.75rem", right: "0.75rem",
-                width: 36, height: 36, borderRadius: "50%",
-                backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)",
-                border: "none", color: "#fff", cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                transition: "background-color 0.2s",
+                position: "absolute", bottom: 0, left: 0, right: 0,
+                background: "linear-gradient(transparent, rgba(0,0,0,0.85))",
+                padding: "2.5rem 1rem 0.75rem",
+                opacity: showControls ? 1 : 0,
+                transition: "opacity 0.25s",
+                pointerEvents: showControls ? "auto" : "none",
               }}
-              title={theaterMode ? "Exit theater mode" : "Enter theater mode"}
             >
-              {theaterMode ? <MinimizeIcon /> : <MaximizeIcon />}
-            </button>
+              {/* Progress Bar */}
+              <div
+                onClick={(e) => { if (!videoRef.current) return; const rect = e.currentTarget.getBoundingClientRect(); const pct = (e.clientX - rect.left) / rect.width; videoRef.current.currentTime = pct * duration; }}
+                style={{ width: "100%", height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.2)", cursor: "pointer", marginBottom: "0.6rem", position: "relative" }}
+                onMouseEnter={(e) => { e.currentTarget.style.height = "6px"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.height = "4px"; }}
+              >
+                <div style={{ width: `${progress}%`, height: "100%", borderRadius: 2, backgroundColor: "var(--accent)", position: "relative" }}>
+                  <div style={{ position: "absolute", right: -5, top: "50%", transform: "translateY(-50%)", width: 12, height: 12, borderRadius: "50%", backgroundColor: "var(--accent)", boxShadow: "0 0 4px rgba(0,0,0,0.3)" }} />
+                </div>
+              </div>
+
+              {/* Controls Row */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  {/* Play/Pause */}
+                  <button onClick={() => { if (!videoRef.current) return; videoRef.current.paused ? videoRef.current.play() : videoRef.current.pause(); }}
+                    style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", padding: "0.25rem", display: "flex", alignItems: "center" }}>
+                    {isPlaying ? (
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                    ) : (
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+                    )}
+                  </button>
+
+                  {/* Volume */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                    <button onClick={() => { if (!videoRef.current) return; videoRef.current.muted = !videoRef.current.muted; setIsMuted(!isMuted); }}
+                      style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", padding: "0.25rem", display: "flex", alignItems: "center" }}>
+                      {isMuted || volume === 0 ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+                      ) : volume < 0.5 ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                      )}
+                    </button>
+                    <input type="range" min="0" max="1" step="0.05" value={isMuted ? 0 : volume}
+                      onChange={(e) => { const v = parseFloat(e.target.value); if (videoRef.current) { videoRef.current.volume = v; videoRef.current.muted = v === 0; } setVolume(v); setIsMuted(v === 0); }}
+                      style={{ width: 60, height: 3, accentColor: "var(--accent)", cursor: "pointer" }}
+                    />
+                  </div>
+
+                  {/* Time */}
+                  <span style={{ color: "rgba(255,255,255,0.8)", fontSize: "0.78rem", fontWeight: 500, fontFamily: "monospace" }}>
+                    {formatTime(currentTime)} / {formatTime(duration)}
+                  </span>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                  {/* CC Button */}
+                  {captions.length > 0 && (
+                    <button onClick={() => { if (!videoRef.current) return; const tracks = videoRef.current.textTracks; if (selectedCaptionIdx >= 0) { for (let i = 0; i < tracks.length; i++) tracks[i].mode = "hidden"; setSelectedCaptionIdx(-1); } else { if (tracks.length > 0) { tracks[0].mode = "showing"; setSelectedCaptionIdx(0); } } }}
+                      style={{ background: "none", border: "none", color: selectedCaptionIdx >= 0 ? "var(--accent)" : "rgba(255,255,255,0.8)", cursor: "pointer", padding: "0.25rem 0.4rem", fontSize: "0.7rem", fontWeight: 800, borderRadius: 4, backgroundColor: selectedCaptionIdx >= 0 ? "rgba(255,255,255,0.15)" : "transparent" }}>
+                      CC
+                    </button>
+                  )}
+
+                  {/* Theater Mode */}
+                  <button onClick={() => setTheaterMode(!theaterMode)}
+                    style={{ background: "none", border: "none", color: "rgba(255,255,255,0.8)", cursor: "pointer", padding: "0.25rem", display: "flex", alignItems: "center" }}>
+                    {theaterMode ? <MinimizeIcon /> : <MaximizeIcon />}
+                  </button>
+
+                  {/* Fullscreen */}
+                  <button onClick={() => { const el = videoRef.current?.parentElement?.parentElement; if (!el) return; document.fullscreenElement ? document.exitFullscreen() : el.requestFullscreen(); }}
+                    style={{ background: "none", border: "none", color: "rgba(255,255,255,0.8)", cursor: "pointer", padding: "0.25rem", display: "flex", alignItems: "center" }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
           </motion.div>
 
           {/* Video Title */}
@@ -1115,27 +1204,38 @@ export default function VideoPlayerPage() {
                     whileTap={{ scale: 0.95 }}
                     onClick={() => subscribeMutation.mutate()}
                     disabled={subscribeMutation.isPending}
-                    className={video.isSubscribed ? "btn-ghost" : "btn-primary"}
                     style={{
                       borderRadius: 99,
                       padding: "0.5rem 1.25rem",
                       fontSize: "0.85rem",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      border: "none",
                       ...(video.isSubscribed
-                        ? { backgroundColor: "var(--bg-elevated)", color: "var(--text-secondary)" }
-                        : {}),
+                        ? { backgroundColor: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-light)" }
+                        : { backgroundColor: "var(--accent)", color: "#fff" }),
                     }}
                   >
                     {video.isSubscribed ? "Subscribed" : "Subscribe"}
                   </motion.button>
                   {video.isSubscribed && (
-                    <button
-                      title="Notification preferences"
-                      style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: "50%", background: "var(--bg-elevated)", border: "1px solid var(--border-light)", cursor: "pointer", color: "var(--text-muted)", transition: "all 0.2s" }}
-                      onMouseEnter={(e) => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.borderColor = "var(--accent)"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.borderColor = "var(--border-light)"; }}
+                    <motion.button
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      title="Notifications"
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        width: 34, height: 34, borderRadius: "50%",
+                        background: "var(--bg-elevated)", border: "1px solid var(--border-light)",
+                        cursor: "pointer", color: "var(--text-secondary)",
+                        transition: "all 0.2s",
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.backgroundColor = "var(--accent-light)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.borderColor = "var(--border-light)"; e.currentTarget.style.backgroundColor = "var(--bg-elevated)"; }}
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                    </button>
+                    </motion.button>
                   )}
                 </div>
               )}
@@ -1143,41 +1243,40 @@ export default function VideoPlayerPage() {
 
             {/* Right: Action Buttons */}
             <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
-              {/* Like */}
-              <motion.button
-                whileTap={{ scale: 0.92 }}
-                onClick={() => likeMutation.mutate()}
-                disabled={likeMutation.isPending}
-                style={{
-                  display: "flex", alignItems: "center", gap: "0.4rem",
-                  padding: "0.5rem 1rem", borderRadius: 99,
-                  backgroundColor: liked ? "var(--accent-light)" : "var(--bg-elevated)",
-                  border: `1.5px solid ${liked ? "var(--accent)" : "var(--border-light)"}`,
-                  color: liked ? "var(--accent)" : "var(--text-secondary)",
-                  fontWeight: 600, fontSize: "0.85rem",
-                  cursor: "pointer", transition: "all 0.2s",
-                }}
-              >
-                <ThumbsUpIcon filled={liked} />
-                {formatViews(video.likesCount)}
-              </motion.button>
-
-              {/* Dislike */}
-              <motion.button
-                whileTap={{ scale: 0.92 }}
-                onClick={() => { setDisliked(!disliked); if (!disliked) setLiked(false); }}
-                style={{
-                  display: "flex", alignItems: "center", gap: "0.4rem",
-                  padding: "0.5rem 1rem", borderRadius: 99,
-                  backgroundColor: disliked ? "var(--bg-elevated)" : "var(--bg-elevated)",
-                  border: `1.5px solid ${disliked ? "var(--text-muted)" : "var(--border-light)"}`,
-                  color: disliked ? "var(--text-primary)" : "var(--text-secondary)",
-                  fontWeight: 600, fontSize: "0.85rem",
-                  cursor: "pointer", transition: "all 0.2s",
-                }}
-              >
-                <ThumbsDownIcon filled={disliked} />
-              </motion.button>
+              {/* Like/Dislike Group */}
+              <div style={{ display: "flex", alignItems: "center", borderRadius: 99, overflow: "hidden", border: "1px solid var(--border-light)", backgroundColor: "var(--bg-elevated)" }}>
+                <motion.button
+                  whileTap={{ scale: 0.92 }}
+                  onClick={() => likeMutation.mutate()}
+                  disabled={likeMutation.isPending}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "0.4rem",
+                    padding: "0.5rem 0.85rem",
+                    backgroundColor: liked ? "var(--accent-light)" : "transparent",
+                    color: liked ? "var(--accent)" : "var(--text-secondary)",
+                    fontWeight: 600, fontSize: "0.85rem",
+                    cursor: "pointer", transition: "all 0.15s",
+                    border: "none", borderRight: "1px solid var(--border-light)",
+                  }}
+                >
+                  <ThumbsUpIcon filled={liked} />
+                  {formatViews(video.likesCount)}
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.92 }}
+                  onClick={() => { setDisliked(!disliked); if (!disliked) setLiked(false); }}
+                  style={{
+                    display: "flex", alignItems: "center",
+                    padding: "0.5rem 0.85rem",
+                    backgroundColor: "transparent",
+                    color: disliked ? "var(--text-primary)" : "var(--text-secondary)",
+                    cursor: "pointer", transition: "all 0.15s",
+                    border: "none",
+                  }}
+                >
+                  <ThumbsDownIcon filled={disliked} />
+                </motion.button>
+              </div>
 
               {/* Share */}
               <motion.button
