@@ -558,6 +558,9 @@ export default function ForgotPasswordPage() {
                     placeholder="Confirm password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
+                    onPaste={(e) => e.preventDefault()}
+                    onCopy={(e) => e.preventDefault()}
+                    onCut={(e) => e.preventDefault()}
                     onFocus={() => setActiveField("none")}
                     onBlur={() => setActiveField("none")}
                     style={{ ...inputFieldStyle }}

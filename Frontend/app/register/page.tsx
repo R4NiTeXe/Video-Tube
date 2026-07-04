@@ -660,11 +660,9 @@ export default function RegisterPage() {
                           className={confirmBorderClass}
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
-                          onPaste={(e) => {
-                            e.preventDefault();
-                            const pasted = e.clipboardData.getData("text");
-                            setConfirmPassword(pasted);
-                          }}
+                          onPaste={(e) => e.preventDefault()}
+                          onCopy={(e) => e.preventDefault()}
+                          onCut={(e) => e.preventDefault()}
                           onFocus={() => setActiveField("confirmPassword")} onBlur={() => setActiveField("none")}
                           style={{ padding: "0.7rem 0.85rem", fontSize: "0.88rem", paddingRight: "3rem" }} />
                         <button type="button" onClick={() => setShowConfirmPassword((p) => !p)} onMouseDown={(e) => e.preventDefault()}

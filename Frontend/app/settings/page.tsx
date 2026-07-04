@@ -9,7 +9,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import PageNavDropdown from "@/src/components/PageNavDropdown";
 
-function PasswordInput({ value, onChange, placeholder, minLength = 6 }: { value: string; onChange: (v: string) => void; placeholder?: string; minLength?: number }) {
+function PasswordInput({ value, onChange, placeholder, minLength = 6, blockPaste = false }: { value: string; onChange: (v: string) => void; placeholder?: string; minLength?: number; blockPaste?: boolean }) {
   const [show, setShow] = useState(false);
   return (
     <div style={{ position: "relative" }}>
@@ -20,6 +20,9 @@ function PasswordInput({ value, onChange, placeholder, minLength = 6 }: { value:
         required
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onPaste={blockPaste ? (e) => e.preventDefault() : undefined}
+        onCopy={blockPaste ? (e) => e.preventDefault() : undefined}
+        onCut={blockPaste ? (e) => e.preventDefault() : undefined}
         placeholder={placeholder}
         minLength={minLength}
       />
@@ -286,7 +289,7 @@ export default function SettingsPage() {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                   <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Confirm New Password</label>
-                  <PasswordInput value={confirmPassword} onChange={setConfirmPassword} placeholder="Confirm password" />
+                  <PasswordInput value={confirmPassword} onChange={setConfirmPassword} placeholder="Confirm password" blockPaste />
                   {confirmPassword && newPassword !== confirmPassword && <span style={{ fontSize: "0.72rem", color: "var(--accent-warm)" }}>Passwords do not match</span>}
                 </div>
 
@@ -383,7 +386,7 @@ export default function SettingsPage() {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                   <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Confirm New Password</label>
-                  <PasswordInput value={confirmPassword} onChange={setConfirmPassword} placeholder="Confirm password" />
+                  <PasswordInput value={confirmPassword} onChange={setConfirmPassword} placeholder="Confirm password" blockPaste />
                   {confirmPassword && newPassword !== confirmPassword && <span style={{ fontSize: "0.72rem", color: "var(--accent-warm)" }}>Passwords do not match</span>}
                 </div>
 
