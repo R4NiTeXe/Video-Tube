@@ -36,11 +36,21 @@ import {
   verifyAndChangePassword,
   socialLogin,
   linkSocialAccount,
-  sendMobileRegistrationOTP,
-  verifyMobileRegistrationOTP,
-  registerUserWithMobile,
-  loginUserWithMobile,
-  sendMobileLoginOTP,
+  sendDeleteAccountOTP,
+  verifyAndDeleteAccount,
+  sendForgotPasswordChangeOTP,
+  verifyAndResetPasswordViaOTP,
+  // New unified auth flows
+  sendRegistrationOTP,
+  verifyRegistrationOTP,
+  registerUnified,
+  sendLoginOTP,
+  verifyLoginOTP,
+  sendForgotPasswordOTP,
+  verifyForgotPasswordOTP,
+  resetPasswordWithResetToken,
+  skipAndLogin,
+  // Keep old exports for backward compatibility
   sendEmailRegistrationOTP,
   verifyEmailRegistrationOTP,
   registerWithEmailOTP,
@@ -75,17 +85,41 @@ router.route("/verify-reset-otp").post(authLimiter, verifyResetOTP);
 router.route("/reset-password-otp").post(authLimiter, resetPasswordWithOTP);
 router.route("/social-login").post(authLimiter, socialLogin);
 
-// Mobile OTP routes
-router.route("/mobile/send-registration-otp").post(authLimiter, sendMobileRegistrationOTP);
-router.route("/mobile/verify-registration-otp").post(authLimiter, verifyMobileRegistrationOTP);
-router.route("/mobile/register").post(authLimiter, registerUserWithMobile);
-router.route("/mobile/send-login-otp").post(authLimiter, sendMobileLoginOTP);
-router.route("/mobile/login").post(authLimiter, loginUserWithMobile);
-
-// Email registration OTP routes
+// Email registration OTP routes (backward compatibility)
 router.route("/email/send-registration-otp").post(authLimiter, sendEmailRegistrationOTP);
 router.route("/email/verify-registration-otp").post(authLimiter, verifyEmailRegistrationOTP);
 router.route("/email/register").post(authLimiter, registerWithEmailOTP);
+
+// ── Unified Registration Flow ──
+// Step 1: Send OTPs to both email and mobile
+router.route("/send-registration-otp").post(authLimiter, sendRegistrationOTP);
+// Step 2: Verify OTP for a specific channel (email or mobile)
+router.route("/verify-registration-otp").post(authLimiter, verifyRegistrationOTP);
+// Step 3: Complete registration (requires at least ONE verified)
+router.route("/register-unified").post(
+  authLimiter,
+  upload.fields([
+    { name: "avatar", maxCount: 1 },
+    { name: "coverImage", maxCount: 1 },
+  ]),
+  registerUnified
+);
+
+// ── OTP Login (Passwordless) ──
+// Step 1: Send login OTP (email or mobile)
+router.route("/send-login-otp").post(authLimiter, sendLoginOTP);
+// Step 2: Verify login OTP and get tokens
+router.route("/verify-login-otp").post(authLimiter, verifyLoginOTP);
+
+// ── Forgot Password with Channel Selection ──
+// Step 1: Send forgot password OTP (user chooses email or WhatsApp)
+router.route("/send-forgot-otp").post(authLimiter, sendForgotPasswordOTP);
+// Step 2: Verify forgot password OTP
+router.route("/verify-forgot-otp").post(authLimiter, verifyForgotPasswordOTP);
+// Step 3a: Reset password with reset token
+router.route("/reset-password-token").post(authLimiter, resetPasswordWithResetToken);
+// Step 3b: Skip password reset and just login
+router.route("/skip-and-login").post(authLimiter, skipAndLogin);
 
 // secured routes
 router.route("/logout").post(verifyJWT, logoutUser);
@@ -120,6 +154,10 @@ router.route("/export-data").get(verifyJWT, exportUserData);
 router.route("/send-change-password-otp").post(verifyJWT, sendChangePasswordOTP);
 router.route("/verify-change-password").post(verifyJWT, verifyAndChangePassword);
 router.route("/link-social").post(verifyJWT, linkSocialAccount);
+router.route("/send-delete-account-otp").post(verifyJWT, sendDeleteAccountOTP);
+router.route("/verify-and-delete-account").post(verifyJWT, verifyAndDeleteAccount);
+router.route("/send-forgot-password-change-otp").post(verifyJWT, sendForgotPasswordChangeOTP);
+router.route("/verify-and-reset-password-via-otp").post(verifyJWT, verifyAndResetPasswordViaOTP);
 router.route("/").delete(verifyJWT, deleteCurrentUser);
 
 export default router;
