@@ -83,6 +83,11 @@ export default function SettingsPage() {
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpSending, setOtpSending] = useState(false);
   const [otpVerifying, setOtpVerifying] = useState(false);
+  const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
+  const [forgotOtpSent, setForgotOtpSent] = useState(false);
+  const [forgotOtpSending, setForgotOtpSending] = useState(false);
+  const [changePasswordChannel, setChangePasswordChannel] = useState<"email" | "whatsapp">("email");
+  const [forgotChannel, setForgotChannel] = useState<"email" | "whatsapp">("email");
 
   // Notifications
   const [notifComments, setNotifComments] = useState(true);
@@ -105,7 +110,11 @@ export default function SettingsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
-  const [deleteStep, setDeleteStep] = useState<1 | 2>(1);
+  const [deleteStep, setDeleteStep] = useState<1 | 2 | 3>(1);
+  const [deleteOtp, setDeleteOtp] = useState("");
+  const [deleteOtpSent, setDeleteOtpSent] = useState(false);
+  const [deleteOtpSending, setDeleteOtpSending] = useState(false);
+  const [deleteChannel, setDeleteChannel] = useState<"email" | "whatsapp">("email");
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
@@ -120,14 +129,15 @@ export default function SettingsPage() {
     );
   }
 
+  // ── Change Password (with password) ──
   const handleSendChangePasswordOtp = async () => {
     setPasswordError(""); setPasswordSuccess("");
     if (!oldPassword) { setPasswordError("Please enter your current password first."); return; }
     setOtpSending(true);
     try {
-      await api.post("/users/send-change-password-otp", { oldPassword });
+      await api.post("/users/send-change-password-otp", { oldPassword, channel: changePasswordChannel });
       setOtpSent(true);
-      setPasswordSuccess("OTP sent to your email.");
+      setPasswordSuccess(`OTP sent to your ${changePasswordChannel === "whatsapp" ? "WhatsApp" : "email"}.`);
     } catch (err: unknown) {
       setPasswordError(getApiErrorMessage(err, "Failed to send OTP."));
     } finally {
@@ -143,26 +153,74 @@ export default function SettingsPage() {
     if (!changePasswordOtp || changePasswordOtp.length !== 6) { setPasswordError("Please enter the 6-digit OTP."); return; }
     setPasswordSaving(true);
     try {
-      await api.post("/users/verify-change-password", { oldPassword, newPassword, otp: changePasswordOtp });
-      setPasswordSuccess("Password changed successfully!");
+      await api.post("/users/verify-change-password", { oldPassword, newPassword, otp: changePasswordOtp, channel: changePasswordChannel });
+      setPasswordSuccess("Password changed successfully! Please log in again.");
       setOldPassword(""); setNewPassword(""); setConfirmPassword(""); setChangePasswordOtp("");
       setOtpSent(false); setOtpVerified(false);
+      setTimeout(() => { logout(); router.push("/login"); }, 2000);
     } catch (err: unknown) { setPasswordError(getApiErrorMessage(err, "Failed to change password.")); }
     finally { setPasswordSaving(false); }
   };
 
+  // ── Forgot Password (no old password) ──
+  const handleSendForgotOtp = async () => {
+    setPasswordError(""); setPasswordSuccess("");
+    setForgotOtpSending(true);
+    try {
+      await api.post("/users/send-forgot-password-change-otp", { channel: forgotChannel });
+      setForgotOtpSent(true);
+      setPasswordSuccess(`OTP sent to your ${forgotChannel === "whatsapp" ? "WhatsApp" : "email"}.`);
+    } catch (err: unknown) {
+      setPasswordError(getApiErrorMessage(err, "Failed to send OTP."));
+    } finally {
+      setForgotOtpSending(false);
+    }
+  };
+
+  const handleForgotPasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError(""); setPasswordSuccess("");
+    if (newPassword !== confirmPassword) { setPasswordError("New passwords do not match."); return; }
+    if (newPassword.length < 6) { setPasswordError("New password must be at least 6 characters."); return; }
+    if (!changePasswordOtp || changePasswordOtp.length !== 6) { setPasswordError("Please enter the 6-digit OTP."); return; }
+    setPasswordSaving(true);
+    try {
+      await api.post("/users/verify-and-reset-password-via-otp", { newPassword, otp: changePasswordOtp, channel: forgotChannel });
+      setPasswordSuccess("Password reset successfully! Please log in again.");
+      setNewPassword(""); setConfirmPassword(""); setChangePasswordOtp("");
+      setForgotOtpSent(false); setForgotPasswordMode(false);
+      setTimeout(() => { logout(); router.push("/login"); }, 2000);
+    } catch (err: unknown) { setPasswordError(getApiErrorMessage(err, "Failed to reset password.")); }
+    finally { setPasswordSaving(false); }
+  };
+
+  // ── Delete Account ──
   const handleDeleteStep1 = () => {
     setDeleteError("");
     if (!deletePassword) { setDeleteError("Please enter your password."); return; }
     setDeleteStep(2);
   };
 
+  const handleSendDeleteOtp = async () => {
+    setDeleteError("");
+    setDeleteOtpSending(true);
+    try {
+      await api.post("/users/send-delete-account-otp", { password: deletePassword, channel: deleteChannel });
+      setDeleteOtpSent(true);
+    } catch (err: unknown) {
+      setDeleteError(getApiErrorMessage(err, "Failed to send OTP."));
+    } finally {
+      setDeleteOtpSending(false);
+    }
+  };
+
   const handleDeleteAccount = async () => {
     setDeleteError("");
     if (deleteConfirm !== "DELETE") return;
+    if (!deleteOtp || deleteOtp.length !== 6) { setDeleteError("Please enter the 6-digit OTP."); return; }
     setDeleting(true);
     try {
-      await api.delete("/users");
+      await api.post("/users/verify-and-delete-account", { password: deletePassword, otp: deleteOtp, channel: deleteChannel });
       logout();
       router.push("/login");
     } catch (err: unknown) {
@@ -214,86 +272,198 @@ export default function SettingsPage() {
             />
             {passwordError && <div style={{ padding: "0.7rem 1rem", backgroundColor: "var(--accent-warm-light)", color: "var(--accent-warm)", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem", border: "1px solid rgba(244,63,94,0.15)" }}>{passwordError}</div>}
             {passwordSuccess && <div style={{ padding: "0.7rem 1rem", backgroundColor: "var(--accent-light)", color: "var(--accent)", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem", border: "1px solid var(--border-focus)" }}>{passwordSuccess}</div>}
-            <form onSubmit={handleChangePassword} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Current Password</label>
-                <PasswordInput value={oldPassword} onChange={setOldPassword} placeholder="Enter current password" />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>New Password</label>
-                <PasswordInput value={newPassword} onChange={setNewPassword} placeholder="Enter new password" />
-                <PasswordStrength password={newPassword} />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Confirm New Password</label>
-                <PasswordInput value={confirmPassword} onChange={setConfirmPassword} placeholder="Re-enter new password" />
-                {confirmPassword && newPassword !== confirmPassword && <span style={{ fontSize: "0.72rem", color: "var(--accent-warm)" }}>Passwords do not match</span>}
-              </div>
+
+            {forgotPasswordMode ? (
+              <form onSubmit={handleForgotPasswordReset} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <div style={{ padding: "0.6rem 0.8rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-light)" }}>
+                  <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>We&apos;ll send an OTP to your email. No current password needed.</p>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>New Password</label>
+                  <PasswordInput value={newPassword} onChange={setNewPassword} placeholder="New password" />
+                  <PasswordStrength password={newPassword} />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Confirm New Password</label>
+                  <PasswordInput value={confirmPassword} onChange={setConfirmPassword} placeholder="Confirm password" />
+                  {confirmPassword && newPassword !== confirmPassword && <span style={{ fontSize: "0.72rem", color: "var(--accent-warm)" }}>Passwords do not match</span>}
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Verification OTP</label>
+                  {!forgotOtpSent ? (
+                    <>
+                      <div style={{ display: "flex", gap: "0.5rem" }}>
+                        <button type="button" onClick={() => setForgotChannel("email")}
+                          style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: forgotChannel === "email" ? "var(--accent)" : "var(--bg-secondary)", color: forgotChannel === "email" ? "#fff" : "var(--text-muted)", border: `1px solid ${forgotChannel === "email" ? "var(--accent)" : "var(--border-light)"}`, cursor: "pointer", transition: "all 0.2s" }}>
+                          📧 Email
+                        </button>
+                        <button type="button" onClick={() => setForgotChannel("whatsapp")}
+                          style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: forgotChannel === "whatsapp" ? "#25D366" : "var(--bg-secondary)", color: forgotChannel === "whatsapp" ? "#fff" : "var(--text-muted)", border: `1px solid ${forgotChannel === "whatsapp" ? "#25D366" : "var(--border-light)"}`, cursor: "pointer", transition: "all 0.2s" }}>
+                          💬 WhatsApp
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSendForgotOtp}
+                        disabled={forgotOtpSending}
+                        style={{
+                          padding: "0.65rem 1rem",
+                          borderRadius: "var(--radius-md)",
+                          fontSize: "0.85rem",
+                          fontWeight: 600,
+                          backgroundColor: "var(--bg-secondary)",
+                          color: "var(--accent)",
+                          border: "1px solid var(--accent)",
+                          cursor: !forgotOtpSending ? "pointer" : "not-allowed",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        {forgotOtpSending ? "Sending OTP..." : `Send OTP via ${forgotChannel === "whatsapp" ? "WhatsApp" : "Email"}`}
+                      </button>
+                    </>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      <input
+                        type="text"
+                        className="input-field"
+                        placeholder="000000"
+                        maxLength={6}
+                        pattern="[0-9]{6}"
+                        inputMode="numeric"
+                        value={changePasswordOtp}
+                        onChange={(e) => setChangePasswordOtp(e.target.value.replace(/\D/g, ""))}
+                        style={{ letterSpacing: "0.4em", textAlign: "center", fontSize: "1rem", fontWeight: 600 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSendForgotOtp}
+                        disabled={forgotOtpSending}
+                        style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.78rem", cursor: "pointer", textDecoration: "underline", textAlign: "left", padding: 0 }}
+                      >
+                        {forgotOtpSending ? "Sending..." : "Resend OTP"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
+                  <button type="button" onClick={() => { setForgotPasswordMode(false); setForgotOtpSent(false); setChangePasswordOtp(""); setNewPassword(""); setConfirmPassword(""); setPasswordError(""); setPasswordSuccess(""); }}
+                    style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-light)", cursor: "pointer" }}>
+                    Back to Password
+                  </button>
+                  <button type="submit" className="btn-primary"
+                    disabled={passwordSaving || !forgotOtpSent || changePasswordOtp.length !== 6}
+                    style={{
+                      padding: "0.65rem 1.5rem",
+                      borderRadius: "var(--radius-md)",
+                      fontSize: "0.9rem",
+                      opacity: passwordSaving || !forgotOtpSent || changePasswordOtp.length !== 6 ? 0.6 : 1,
+                      cursor: passwordSaving || !forgotOtpSent || changePasswordOtp.length !== 6 ? "not-allowed" : "pointer",
+                    }}>
+                    {passwordSaving ? "Resetting..." : "Reset Password"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleChangePassword} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Current Password</label>
+                  <PasswordInput value={oldPassword} onChange={setOldPassword} placeholder="Current password" />
+                  <button type="button" onClick={() => { setForgotPasswordMode(true); setPasswordError(""); setPasswordSuccess(""); setOldPassword(""); }}
+                    style={{ background: "none", border: "none", color: "var(--accent)", fontSize: "0.78rem", cursor: "pointer", textDecoration: "underline", textAlign: "left", padding: 0, marginTop: "-0.2rem" }}>
+                    Forgot your password?
+                  </button>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>New Password</label>
+                  <PasswordInput value={newPassword} onChange={setNewPassword} placeholder="New password" />
+                  <PasswordStrength password={newPassword} />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Confirm New Password</label>
+                  <PasswordInput value={confirmPassword} onChange={setConfirmPassword} placeholder="Confirm password" />
+                  {confirmPassword && newPassword !== confirmPassword && <span style={{ fontSize: "0.72rem", color: "var(--accent-warm)" }}>Passwords do not match</span>}
+                </div>
 
               {/* OTP Section */}
               <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                 <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Verification OTP</label>
                 {!otpSent ? (
-                  <button
-                    type="button"
-                    onClick={handleSendChangePasswordOtp}
-                    disabled={otpSending || !oldPassword}
-                    style={{
-                      padding: "0.65rem 1rem",
-                      borderRadius: "var(--radius-md)",
-                      fontSize: "0.85rem",
-                      fontWeight: 600,
-                      backgroundColor: "var(--bg-secondary)",
-                      color: "var(--accent)",
-                      border: "1px solid var(--accent)",
-                      cursor: oldPassword && !otpSending ? "pointer" : "not-allowed",
-                      transition: "all 0.2s",
-                    }}
-                  >
-                    {otpSending ? "Sending OTP..." : "Send OTP to verify password change"}
-                  </button>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                    <input
-                      type="text"
-                      className="input-field"
-                      placeholder="000000"
-                      maxLength={6}
-                      pattern="[0-9]{6}"
-                      inputMode="numeric"
-                      value={changePasswordOtp}
-                      onChange={(e) => setChangePasswordOtp(e.target.value.replace(/\D/g, ""))}
-                      style={{ letterSpacing: "0.4em", textAlign: "center", fontSize: "1rem", fontWeight: 600 }}
-                    />
+                  <>
+                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                      <button type="button" onClick={() => setChangePasswordChannel("email")}
+                        style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: changePasswordChannel === "email" ? "var(--accent)" : "var(--bg-secondary)", color: changePasswordChannel === "email" ? "#fff" : "var(--text-muted)", border: `1px solid ${changePasswordChannel === "email" ? "var(--accent)" : "var(--border-light)"}`, cursor: "pointer", transition: "all 0.2s" }}>
+                        📧 Email
+                      </button>
+                      <button type="button" onClick={() => setChangePasswordChannel("whatsapp")}
+                        style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: changePasswordChannel === "whatsapp" ? "#25D366" : "var(--bg-secondary)", color: changePasswordChannel === "whatsapp" ? "#fff" : "var(--text-muted)", border: `1px solid ${changePasswordChannel === "whatsapp" ? "#25D366" : "var(--border-light)"}`, cursor: "pointer", transition: "all 0.2s" }}>
+                        💬 WhatsApp
+                      </button>
+                    </div>
                     <button
                       type="button"
                       onClick={handleSendChangePasswordOtp}
-                      disabled={otpSending}
-                      style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.78rem", cursor: "pointer", textDecoration: "underline", textAlign: "left", padding: 0 }}
+                      disabled={otpSending || !oldPassword}
+                      style={{
+                        padding: "0.65rem 1rem",
+                        borderRadius: "var(--radius-md)",
+                        fontSize: "0.85rem",
+                        fontWeight: 600,
+                        backgroundColor: "var(--bg-secondary)",
+                        color: "var(--accent)",
+                        border: "1px solid var(--accent)",
+                        cursor: oldPassword && !otpSending ? "pointer" : "not-allowed",
+                        transition: "all 0.2s",
+                      }}
                     >
-                      {otpSending ? "Sending..." : "Resend OTP"}
+                      {otpSending ? "Sending OTP..." : `Send OTP via ${changePasswordChannel === "whatsapp" ? "WhatsApp" : "Email"}`}
                     </button>
-                  </div>
-                )}
-              </div>
+                  </>
+                ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      <input
+                        type="text"
+                        className="input-field"
+                        placeholder="000000"
+                        maxLength={6}
+                        pattern="[0-9]{6}"
+                        inputMode="numeric"
+                        value={changePasswordOtp}
+                        onChange={(e) => setChangePasswordOtp(e.target.value.replace(/\D/g, ""))}
+                        style={{ letterSpacing: "0.4em", textAlign: "center", fontSize: "1rem", fontWeight: 600 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSendChangePasswordOtp}
+                        disabled={otpSending}
+                        style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.78rem", cursor: "pointer", textDecoration: "underline", textAlign: "left", padding: 0 }}
+                      >
+                        {otpSending ? "Sending..." : "Resend OTP"}
+                      </button>
+                    </div>
+                  )}
+                </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <button
-                  type="submit"
-                  className="btn-primary"
-                  disabled={passwordSaving || !otpSent || changePasswordOtp.length !== 6}
-                  style={{
-                    padding: "0.65rem 1.5rem",
-                    borderRadius: "var(--radius-md)",
-                    fontSize: "0.9rem",
-                    opacity: passwordSaving || !otpSent || changePasswordOtp.length !== 6 ? 0.6 : 1,
-                    cursor: passwordSaving || !otpSent || changePasswordOtp.length !== 6 ? "not-allowed" : "pointer",
-                  }}
-                >
-                  {passwordSaving ? "Changing..." : "Change Password"}
-                </button>
-              </div>
-            </form>
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    disabled={passwordSaving || !otpSent || changePasswordOtp.length !== 6}
+                    style={{
+                      padding: "0.65rem 1.5rem",
+                      borderRadius: "var(--radius-md)",
+                      fontSize: "0.9rem",
+                      opacity: passwordSaving || !otpSent || changePasswordOtp.length !== 6 ? 0.6 : 1,
+                      cursor: passwordSaving || !otpSent || changePasswordOtp.length !== 6 ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    {passwordSaving ? "Changing..." : "Change Password"}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
 
           {/* 2. Appearance */}
@@ -464,12 +634,14 @@ export default function SettingsPage() {
 
             {deleteError && <div style={{ padding: "0.7rem 1rem", backgroundColor: "var(--accent-warm-light)", color: "var(--accent-warm)", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem", border: "1px solid rgba(244,63,94,0.15)" }}>{deleteError}</div>}
 
-            {deleteStep === 1 ? (
+            {/* Step 1: Password */}
+            {deleteStep === 1 && (
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--accent-warm)" }}>Enter your password to continue</label>
-                  <PasswordInput value={deletePassword} onChange={setDeletePassword} placeholder="Enter your password" />
+                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.25rem" }}>
+                  <span style={{ width: 24, height: 24, borderRadius: "50%", backgroundColor: "var(--accent-warm)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", fontWeight: 700 }}>1</span>
+                  <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--accent-warm)" }}>Enter your password</span>
                 </div>
+                <PasswordInput value={deletePassword} onChange={setDeletePassword} placeholder="Password" />
                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
                   <button onClick={handleDeleteStep1} disabled={!deletePassword}
                     style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-light)", cursor: deletePassword ? "pointer" : "not-allowed" }}>
@@ -477,17 +649,86 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </div>
-            ) : (
+            )}
+
+            {/* Step 2: OTP Verification */}
+            {deleteStep === 2 && (
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                <div style={{ padding: "0.7rem 1rem", backgroundColor: "#fef2f2", borderRadius: "var(--radius-md)", border: "1px solid rgba(244,63,94,0.2)" }}>
-                  <p style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--accent-warm)" }}>Step 2: Type DELETE to confirm</p>
+                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.25rem" }}>
+                  <span style={{ width: 24, height: 24, borderRadius: "50%", backgroundColor: "var(--accent-warm)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", fontWeight: 700 }}>2</span>
+                  <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--accent-warm)" }}>Verify with OTP</span>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                  <input type="text" className="input-field" value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} placeholder='Type "DELETE" to confirm'
-                    style={{ borderColor: deleteConfirm === "DELETE" ? "var(--accent-warm)" : undefined }} />
-                </div>
+                {!deleteOtpSent ? (
+                  <>
+                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                      <button type="button" onClick={() => setDeleteChannel("email")}
+                        style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: deleteChannel === "email" ? "var(--accent)" : "var(--bg-secondary)", color: deleteChannel === "email" ? "#fff" : "var(--text-muted)", border: `1px solid ${deleteChannel === "email" ? "var(--accent)" : "var(--border-light)"}`, cursor: "pointer", transition: "all 0.2s" }}>
+                        📧 Email
+                      </button>
+                      <button type="button" onClick={() => setDeleteChannel("whatsapp")}
+                        style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: deleteChannel === "whatsapp" ? "#25D366" : "var(--bg-secondary)", color: deleteChannel === "whatsapp" ? "#fff" : "var(--text-muted)", border: `1px solid ${deleteChannel === "whatsapp" ? "#25D366" : "var(--border-light)"}`, cursor: "pointer", transition: "all 0.2s" }}>
+                        💬 WhatsApp
+                      </button>
+                    </div>
+                    <button onClick={handleSendDeleteOtp} disabled={deleteOtpSending}
+                      style={{
+                        padding: "0.65rem 1rem",
+                        borderRadius: "var(--radius-md)",
+                        fontSize: "0.85rem",
+                        fontWeight: 600,
+                        backgroundColor: "var(--bg-secondary)",
+                        color: "var(--accent)",
+                        border: "1px solid var(--accent)",
+                        cursor: !deleteOtpSending ? "pointer" : "not-allowed",
+                        transition: "all 0.2s",
+                      }}>
+                      {deleteOtpSending ? "Sending OTP..." : `Send OTP via ${deleteChannel === "whatsapp" ? "WhatsApp" : "Email"}`}
+                    </button>
+                  </>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="000000"
+                      maxLength={6}
+                      pattern="[0-9]{6}"
+                      inputMode="numeric"
+                      value={deleteOtp}
+                      onChange={(e) => setDeleteOtp(e.target.value.replace(/\D/g, ""))}
+                      style={{ letterSpacing: "0.4em", textAlign: "center", fontSize: "1rem", fontWeight: 600 }}
+                    />
+                    <button type="button" onClick={handleSendDeleteOtp} disabled={deleteOtpSending}
+                      style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.78rem", cursor: "pointer", textDecoration: "underline", textAlign: "left", padding: 0 }}>
+                      {deleteOtpSending ? "Sending..." : "Resend OTP"}
+                    </button>
+                  </div>
+                )}
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
-                  <button onClick={() => { setDeleteStep(1); setDeleteConfirm(""); }} style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-light)", cursor: "pointer" }}>
+                  <button onClick={() => { setDeleteStep(1); setDeleteOtpSent(false); setDeleteOtp(""); }}
+                    style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-light)", cursor: "pointer" }}>
+                    Back
+                  </button>
+                  <button onClick={() => { if (!deleteOtp || deleteOtp.length !== 6) return; setDeleteStep(3); }}
+                    disabled={!deleteOtpSent || deleteOtp.length !== 6}
+                    style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: deleteOtpSent && deleteOtp.length === 6 ? "var(--accent-warm)" : "var(--bg-elevated)", color: deleteOtpSent && deleteOtp.length === 6 ? "#fff" : "var(--text-muted)", border: `1px solid ${deleteOtpSent && deleteOtp.length === 6 ? "var(--accent-warm)" : "var(--border-light)"}`, cursor: deleteOtpSent && deleteOtp.length === 6 ? "pointer" : "not-allowed", transition: "all 0.2s" }}>
+                    Continue
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Type DELETE */}
+            {deleteStep === 3 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.25rem" }}>
+                  <span style={{ width: 24, height: 24, borderRadius: "50%", backgroundColor: "var(--accent-warm)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", fontWeight: 700 }}>3</span>
+                  <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--accent-warm)" }}>Type DELETE to confirm</span>
+                </div>
+                <input type="text" className="input-field" value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} placeholder='Type DELETE'
+                  style={{ borderColor: deleteConfirm === "DELETE" ? "var(--accent-warm)" : undefined }} />
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
+                  <button onClick={() => { setDeleteStep(2); setDeleteConfirm(""); }} style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-light)", cursor: "pointer" }}>
                     Back
                   </button>
                   <button onClick={handleDeleteAccount} disabled={deleteConfirm !== "DELETE" || deleting}
