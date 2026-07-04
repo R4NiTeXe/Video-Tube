@@ -105,8 +105,8 @@ const SkeletonNav = () => (
 const SkeletonHero = () => (
   <div className="hero-card" style={{ pointerEvents: "none" }}>
     <div className="skeleton" style={{ position: "absolute", inset: 0, borderRadius: 0 }} />
-    <div style={{ position: "relative", zIndex: 10, padding: "3rem 3.5rem", width: "100%" }}>
-      <div className="skeleton" style={{ width: 140, height: 28, borderRadius: 99, marginBottom: "1.25rem" }} />
+    <div style={{ position: "relative", zIndex: 10, padding: "2rem 2.5rem", width: "100%" }}>
+      <div className="skeleton" style={{ width: 140, height: 28, borderRadius: 99, marginBottom: "0.85rem" }} />
       <div className="skeleton" style={{ width: "60%", height: 40, borderRadius: 8, marginBottom: "0.75rem" }} />
       <div className="skeleton" style={{ width: "35%", height: 20, borderRadius: 6, marginBottom: "1.75rem" }} />
       <div className="skeleton" style={{ width: 160, height: 48, borderRadius: 99 }} />
@@ -423,7 +423,7 @@ export default function Home() {
       )}
 
       {/* ── MAIN LAYOUT ── */}
-      <div style={{ display: "flex", flex: 1, paddingTop: "100px", width: "100%", position: "relative", zIndex: 10 }}>
+      <div style={{ display: "flex", flex: 1, paddingTop: "65px", width: "100%", position: "relative", zIndex: 10 }}>
         
         {/* ── SIDEBAR ── */}
         <aside className="sidebar-premium">
