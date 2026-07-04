@@ -1,16 +1,15 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import MascotAnimation from "@/src/components/MascotAnimation";
 import SocialLoginButtons from "@/src/components/SocialLoginButtons";
 
 const PlayLogo = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
 );
 const EyeIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -29,13 +28,10 @@ const XIcon = () => (
   </svg>
 );
 
-type ActiveField = "identifier" | "password" | "submit" | "none";
-
 export default function LoginPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
 
-  const [activeField, setActiveField] = useState<ActiveField>("none");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -54,7 +50,7 @@ export default function LoginPage() {
     return "email";
   };
 
-  const handlePasswordLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     const trimmed = identifier.trim();
@@ -82,8 +78,8 @@ export default function LoginPage() {
 
   if (authLoading) {
     return (
-      <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
-        <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ color: "var(--text-muted)", fontWeight: 500 }}>
+      <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", backgroundColor: "#050505" }}>
+        <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ color: "#6B7280", fontWeight: 500, fontSize: 14 }}>
           Checking session...
         </motion.div>
       </div>
@@ -92,110 +88,162 @@ export default function LoginPage() {
   if (isAuthenticated) return null;
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)", display: "flex", overflow: "hidden" }}>
+    <div style={{
+      minHeight: "100vh",
+      backgroundColor: "#050505",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      {/* Background curves */}
+      <div style={{
+        position: "absolute",
+        top: "-20%",
+        right: "-10%",
+        width: "60vw",
+        height: "60vw",
+        background: "radial-gradient(ellipse at center, rgba(255,255,255,0.06) 0%, transparent 70%)",
+        borderRadius: "50%",
+        filter: "blur(60px)",
+        pointerEvents: "none",
+      }} />
+      <div style={{
+        position: "absolute",
+        bottom: "-30%",
+        left: "-15%",
+        width: "50vw",
+        height: "50vw",
+        background: "radial-gradient(ellipse at center, rgba(255,255,255,0.04) 0%, transparent 70%)",
+        borderRadius: "50%",
+        filter: "blur(80px)",
+        pointerEvents: "none",
+      }} />
+      {/* Subtle curved shape */}
+      <svg style={{ position: "absolute", top: 0, right: 0, width: "50%", height: "100%", opacity: 0.03, pointerEvents: "none" }} viewBox="0 0 800 1200" preserveAspectRatio="none">
+        <path d="M800,0 Q600,300 700,600 Q800,900 600,1200 L800,1200 Z" fill="white" />
+      </svg>
+      <svg style={{ position: "absolute", top: 0, left: 0, width: "40%", height: "100%", opacity: 0.02, pointerEvents: "none" }} viewBox="0 0 600 1200" preserveAspectRatio="none">
+        <path d="M0,0 Q200,400 100,800 Q0,1000 200,1200 L0,1200 Z" fill="white" />
+      </svg>
 
-      {/* LEFT: FORM */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", zIndex: 10, backgroundColor: "var(--bg-primary)", overflowY: "auto" }}>
-
-        <header style={{ padding: "1.75rem 2rem", display: "flex", alignItems: "center", flexShrink: 0 }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.55rem" }}>
-            <div style={{ width: 32, height: 32, borderRadius: "8px", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
-              <PlayLogo />
-            </div>
-            <span style={{ fontWeight: 800, fontSize: "1.15rem", letterSpacing: "-0.04em", color: "var(--text-primary)" }}>
-              Video<span style={{ color: "var(--text-muted)" }}>Tube</span>
-            </span>
-          </Link>
-        </header>
-
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem 2rem 4rem" }}>
-          <motion.div
-            initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.45 }}
-            style={{ width: "100%", maxWidth: "400px" }}
-          >
-            <h1 style={{ fontSize: "1.9rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.4rem", letterSpacing: "-0.03em" }}>
-              Welcome back
-            </h1>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", marginBottom: "1.75rem" }}>
-              Sign in to continue to VideoTube
-            </p>
-
-            {/* Error */}
-            <AnimatePresence>
-              {error && (
-                <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                  style={{ padding: "0.7rem 1rem", backgroundColor: "var(--error-light)", color: "var(--error)", borderRadius: "var(--radius-md)", marginBottom: "1.25rem", fontSize: "0.85rem", border: "1px solid var(--error)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <XIcon /> {error}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Login Form */}
-            <form onSubmit={handlePasswordLogin} style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-                <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Email or Mobile</label>
-                <input type="text" required placeholder="Email or phone" className="input-field"
-                  value={identifier} onChange={e => setIdentifier(e.target.value)}
-                  onFocus={() => setActiveField("identifier")} onBlur={() => setActiveField("none")} />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Password</label>
-                  <Link href="/forgot-password" style={{ fontSize: "0.78rem", color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-                    Forgot Password?
-                  </Link>
-                </div>
-                <div style={{ position: "relative" }}>
-                  <input type={showPassword ? "text" : "password"} required placeholder="Password" className="input-field"
-                    value={password} onChange={e => setPassword(e.target.value)}
-                    onFocus={() => setActiveField("password")} onBlur={() => setActiveField("none")}
-                    style={{ paddingRight: "3rem" }} />
-                  <button type="button" onClick={() => setShowPassword(p => !p)} onMouseDown={e => e.preventDefault()}
-                    style={{ position: "absolute", right: "0.85rem", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", display: "flex", alignItems: "center", background: "none", border: "none", cursor: "pointer" }}>
-                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-                  </button>
-                </div>
-              </div>
-              <button type="submit" disabled={isLoading} className="btn-primary"
-                onMouseEnter={() => setActiveField("submit")} onMouseLeave={() => setActiveField("none")}
-                style={{ marginTop: "0.5rem", width: "100%", padding: "0.85rem" }}>
-                {isLoading ? "Signing in..." : "Sign In"}
-              </button>
-            </form>
-
-            {/* Divider */}
-            <div style={{ display: "flex", alignItems: "center", gap: "1rem", margin: "1.5rem 0" }}>
-              <div style={{ flex: 1, height: 1, backgroundColor: "var(--border-light)" }} />
-              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 500 }}>or continue with</span>
-              <div style={{ flex: 1, height: 1, backgroundColor: "var(--border-light)" }} />
-            </div>
-
-            <SocialLoginButtons />
-
-            <p style={{ marginTop: "1.75rem", textAlign: "center", fontSize: "0.88rem", color: "var(--text-muted)" }}>
-              Don&apos;t have an account?{" "}
-              <Link href="/register" style={{ color: "var(--text-primary)", fontWeight: 700, textDecoration: "underline" }}>
-                Sign up
-              </Link>
-            </p>
-          </motion.div>
+      {/* Form */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        style={{ width: "100%", maxWidth: 440, padding: "0 24px", position: "relative", zIndex: 10 }}
+      >
+        {/* Logo */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 32 }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: 14,
+            border: "1px solid rgba(255,255,255,0.1)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            backgroundColor: "rgba(255,255,255,0.05)",
+          }}>
+            <PlayLogo />
+          </div>
         </div>
-      </div>
 
-      {/* RIGHT: MASCOT */}
-      <div style={{ flex: 1.2, backgroundColor: "var(--bg-elevated)", borderLeft: "1px solid var(--border-medium)" }} className="mascot-panel">
-        <MascotAnimation
-          activeField={activeField === "identifier" ? "email" : activeField}
-          isPasswordVisible={showPassword}
-          isLoading={isLoading}
-          passwordMatch="idle"
-        />
-      </div>
+        {/* Title */}
+        <h1 style={{ fontSize: 28, fontWeight: 700, color: "#fff", textAlign: "center", marginBottom: 8, letterSpacing: "-0.02em" }}>
+          Welcome back
+        </h1>
+        <p style={{ color: "#A1A1AA", fontSize: 15, textAlign: "center", marginBottom: 32 }}>
+          Sign in to continue to VideoTube
+        </p>
 
-      <style dangerouslySetInnerHTML={{__html:`
-        @media (max-width:900px)  { .mascot-panel { display:none !important; } }
-        @media (min-width:901px)  { .mascot-panel { display:flex !important; } }
-      `}}/>
+        {/* Error */}
+        <AnimatePresence>
+          {error && (
+            <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+              style={{
+                padding: "10px 14px", backgroundColor: "rgba(239,68,68,0.10)", color: "#EF4444",
+                borderRadius: 12, marginBottom: 24, fontSize: 13,
+                border: "1px solid rgba(239,68,68,0.20)", display: "flex", alignItems: "center", gap: 8,
+              }}>
+              <XIcon /> {error}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Social Login */}
+        <SocialLoginButtons />
+
+        {/* Divider */}
+        <div style={{ display: "flex", alignItems: "center", gap: 16, margin: "24px 0" }}>
+          <div style={{ flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.08)" }} />
+          <span style={{ fontSize: 13, color: "#6B7280", fontWeight: 500 }}>or</span>
+          <div style={{ flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.08)" }} />
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <label style={{ fontSize: 13, fontWeight: 500, color: "#A1A1AA" }}>Email or Mobile</label>
+            <input
+              type="text" required
+              placeholder="alan.turing@example.com"
+              className="input-field"
+              value={identifier}
+              onChange={e => setIdentifier(e.target.value)}
+              style={{ backgroundColor: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.08)" }}
+            />
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <label style={{ fontSize: 13, fontWeight: 500, color: "#A1A1AA" }}>Password</label>
+              <Link href="/forgot-password" style={{ fontSize: 12, color: "#A1A1AA", fontWeight: 500, textDecoration: "none" }}>
+                Forgot Password?
+              </Link>
+            </div>
+            <div style={{ position: "relative" }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                placeholder="Enter your password"
+                className="input-field"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                style={{ backgroundColor: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.08)", paddingRight: 44 }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(p => !p)}
+                onMouseDown={e => e.preventDefault()}
+                style={{
+                  position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                  color: "#6B7280", display: "flex", alignItems: "center",
+                  background: "none", border: "none", cursor: "pointer", padding: 4,
+                }}>
+                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit" disabled={isLoading}
+            style={{
+              width: "100%", height: 48, borderRadius: 14,
+              backgroundColor: isLoading ? "rgba(255,69,58,0.5)" : "#FF453A",
+              color: "#fff", fontSize: 14, fontWeight: 600,
+              border: "none", cursor: isLoading ? "not-allowed" : "pointer",
+              transition: "all 0.2s ease", marginTop: 8,
+            }}
+          >
+            {isLoading ? "Signing in..." : "Sign in"}
+          </button>
+        </form>
+
+        {/* Footer */}
+        <p style={{ marginTop: 32, textAlign: "center", fontSize: 14, color: "#6B7280" }}>
+          Don&apos;t have an account?{" "}
+          <Link href="/register" style={{ color: "#fff", fontWeight: 600, textDecoration: "none" }}>
+            Sign up
+          </Link>
+        </p>
+      </motion.div>
     </div>
   );
 }
