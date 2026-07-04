@@ -838,6 +838,34 @@ export default function VideoPlayerPage() {
 
   const captions: Caption[] = captionsRes?.data || [];
 
+  // Fetch channel notification status
+  const { data: channelNotifRes } = useQuery({
+    queryKey: ["channel-notifications", video?.owner?._id],
+    queryFn: async () => {
+      const res = await api.get(`/subscriptions/c/${video?.owner?._id}/notifications`);
+      return res.data;
+    },
+    enabled: isAuthenticated && !!video?.owner?._id,
+  });
+
+  const channelMuted: boolean = channelNotifRes?.data?.isMuted ?? false;
+
+  // Toggle channel notifications mutation
+  const toggleNotifMutation = useMutation({
+    mutationFn: async () => {
+      await api.patch(`/subscriptions/c/${video?.owner?._id}/notifications`);
+    },
+    onMutate: async () => {
+      queryClient.setQueryData(["channel-notifications", video?.owner?._id], (old: Record<string, unknown> | undefined) => {
+        if (!old?.data) return old;
+        return { ...old, data: { ...old.data, isMuted: !old.data.isMuted } };
+      });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["channel-notifications", video?.owner?._id] });
+    },
+  });
+
   // Toggle like mutation
   const likeMutation = useMutation({
     mutationFn: async () => {
@@ -1254,42 +1282,44 @@ export default function VideoPlayerPage() {
                         initial={{ scale: 0, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         onClick={() => setBellActive(!bellActive)}
-                        title="Notifications"
+                        title={channelMuted ? "Notifications off" : "Notifications on"}
                         style={{
                           display: "flex", alignItems: "center", justifyContent: "center",
                           width: 34, height: 34, borderRadius: "50%",
-                          background: bellActive ? "var(--accent-light)" : "var(--bg-elevated)",
-                          border: `1px solid ${bellActive ? "var(--accent)" : "var(--border-light)"}`,
+                          background: !channelMuted ? "var(--accent-light)" : "var(--bg-elevated)",
+                          border: `1px solid ${!channelMuted ? "var(--accent)" : "var(--border-light)"}`,
                           cursor: "pointer",
-                          color: bellActive ? "var(--accent)" : "var(--text-secondary)",
+                          color: !channelMuted ? "var(--accent)" : "var(--text-secondary)",
                           transition: "all 0.2s",
                         }}
                       >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill={bellActive ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill={!channelMuted ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                       </motion.button>
                       {bellActive && (
                         <>
                           <div style={{ position: "fixed", inset: 0, zIndex: 9 }} onClick={() => setBellActive(false)} />
                           <div style={{
-                            position: "absolute", top: "calc(100% + 6px)", right: 0, width: 200, zIndex: 10,
+                            position: "absolute", top: "calc(100% + 6px)", right: 0, width: 220, zIndex: 10,
                             backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)",
                             borderRadius: "var(--radius-md)", boxShadow: "0 8px 24px rgba(0,0,0,0.15)", padding: "0.35rem",
                           }}>
-                            <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", padding: "0.4rem 0.6rem", fontWeight: 600 }}>Notification settings</p>
-                            {[
-                              { label: "All", desc: "All notifications", value: "all" },
-                              { label: "Personalized", desc: "Recommended for you", value: "personalized" },
-                              { label: "None", desc: "Turn off notifications", value: "none" },
-                            ].map((opt) => (
-                              <button key={opt.value} onClick={() => { setBellActive(false); }}
-                                style={{ display: "block", width: "100%", textAlign: "left", padding: "0.5rem 0.6rem", borderRadius: "var(--radius-sm)", fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)", background: "none", border: "none", cursor: "pointer", transition: "background 0.1s" }}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-elevated)")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                              >
-                                {opt.label}
-                                <span style={{ display: "block", fontSize: "0.7rem", fontWeight: 400, color: "var(--text-muted)", marginTop: "0.1rem" }}>{opt.desc}</span>
-                              </button>
-                            ))}
+                            <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", padding: "0.4rem 0.6rem", fontWeight: 600 }}>Notifications</p>
+                            <button onClick={() => { if (!channelMuted) return; toggleNotifMutation.mutate(); setBellActive(false); }}
+                              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", textAlign: "left", padding: "0.5rem 0.6rem", borderRadius: "var(--radius-sm)", fontSize: "0.82rem", fontWeight: !channelMuted ? 600 : 400, color: !channelMuted ? "var(--accent)" : "var(--text-primary)", background: !channelMuted ? "var(--accent-light)" : "none", border: "none", cursor: "pointer", transition: "background 0.1s" }}
+                              onMouseEnter={(e) => { if (channelMuted) e.currentTarget.style.backgroundColor = "var(--bg-elevated)"; }}
+                              onMouseLeave={(e) => { if (channelMuted) e.currentTarget.style.backgroundColor = "none"; }}
+                            >
+                              <span>All</span>
+                              {!channelMuted && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+                            </button>
+                            <button onClick={() => { if (channelMuted) return; toggleNotifMutation.mutate(); setBellActive(false); }}
+                              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", textAlign: "left", padding: "0.5rem 0.6rem", borderRadius: "var(--radius-sm)", fontSize: "0.82rem", fontWeight: channelMuted ? 600 : 400, color: channelMuted ? "var(--text-primary)" : "var(--text-primary)", background: channelMuted ? "var(--bg-elevated)" : "none", border: "none", cursor: "pointer", transition: "background 0.1s" }}
+                              onMouseEnter={(e) => { if (!channelMuted) e.currentTarget.style.backgroundColor = "var(--bg-elevated)"; }}
+                              onMouseLeave={(e) => { if (!channelMuted) e.currentTarget.style.backgroundColor = "none"; }}
+                            >
+                              <span>Muted</span>
+                              {channelMuted && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+                            </button>
                           </div>
                         </>
                       )}

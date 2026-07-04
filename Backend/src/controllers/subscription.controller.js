@@ -40,8 +40,9 @@ const toggleSubscription = asyncHandler(async (req, res) => {
   // Create notification for channel owner
   try {
     if (channelId !== req.user._id.toString()) {
-      const recipient = await User.findById(channelId).select("notificationPrefs").lean();
-      if (recipient?.notificationPrefs?.subscriptions !== false) {
+      const recipient = await User.findById(channelId).select("notificationPrefs mutedChannels").lean();
+      const isMuted = recipient?.mutedChannels?.some((id) => id.toString() === req.user._id.toString());
+      if (recipient?.notificationPrefs?.subscriptions !== false && !isMuted) {
         await Notification.create({
           recipient: channelId,
           sender: req.user._id,
@@ -204,4 +205,46 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     );
 });
 
-export { toggleSubscription, getUserChannelSubscribers, getSubscribedChannels };
+const getChannelNotificationStatus = asyncHandler(async (req, res) => {
+  const { channelId } = req.params;
+
+  if (!mongoose.isValidObjectId(channelId)) {
+    throw new ApiError(400, "Invalid channel id");
+  }
+
+  const user = await User.findById(req.user._id).select("mutedChannels").lean();
+  const isMuted = user?.mutedChannels?.some((id) => id.toString() === channelId);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { isMuted: !!isMuted }, "Channel notification status fetched"));
+});
+
+const toggleChannelNotifications = asyncHandler(async (req, res) => {
+  const { channelId } = req.params;
+
+  if (!mongoose.isValidObjectId(channelId)) {
+    throw new ApiError(400, "Invalid channel id");
+  }
+
+  if (channelId === req.user._id.toString()) {
+    throw new ApiError(400, "You cannot mute notifications for your own channel");
+  }
+
+  const user = await User.findById(req.user._id).select("mutedChannels");
+  const idx = user.mutedChannels.findIndex((id) => id.toString() === channelId);
+
+  if (idx >= 0) {
+    user.mutedChannels.splice(idx, 1);
+  } else {
+    user.mutedChannels.push(channelId);
+  }
+
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { isMuted: idx >= 0 ? false : true }, idx >= 0 ? "Notifications enabled" : "Notifications muted"));
+});
+
+export { toggleSubscription, getUserChannelSubscribers, getSubscribedChannels, getChannelNotificationStatus, toggleChannelNotifications };

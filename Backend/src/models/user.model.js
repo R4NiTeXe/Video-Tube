@@ -108,6 +108,12 @@ const userSchema = new Schema(
         ref: "User",
       },
     ],
+    mutedChannels: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     watchLater: [
       {
         type: Schema.Types.ObjectId,
