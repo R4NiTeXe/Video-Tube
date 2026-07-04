@@ -26,6 +26,7 @@ import {
   clearSearchHistory,
   clearWatchHistory,
   updateNotificationPrefs,
+  getNotificationPrefs,
   updatePrivacySettings,
   exportUserData,
   updateUserBanner,
@@ -148,6 +149,7 @@ router.route("/watch-later/:videoId").post(verifyJWT, addToWatchLater);
 router.route("/watch-later").get(verifyJWT, getWatchLater);
 router.route("/block/:userId").post(verifyJWT, blockUser);
 router.route("/mute/:userId").post(verifyJWT, muteUser);
+router.route("/notification-prefs").get(verifyJWT, getNotificationPrefs);
 router.route("/notification-prefs").patch(verifyJWT, updateNotificationPrefs);
 router.route("/privacy").patch(verifyJWT, updatePrivacySettings);
 router.route("/export-data").get(verifyJWT, exportUserData);

@@ -20,6 +20,7 @@ import mongoose from "mongoose";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import { createSession, deactivateSession, updateSessionActivity } from "./session.controller.js";
 
 const getCookieOptions = () => ({
   httpOnly: true,
@@ -186,6 +187,8 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const options = getCookieOptions();
 
+  await createSession(user._id, refreshToken, req);
+
   return res
     .status(200)
     .cookie("accessToken", accessToken, options)
@@ -204,6 +207,11 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
+  const incomingRefreshToken = req.cookies?.refreshToken;
+  if (incomingRefreshToken) {
+    await deactivateSession(incomingRefreshToken);
+  }
+
   await User.findByIdAndUpdate(
     req.user._id,
     {
@@ -257,6 +265,10 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
     user._id
   );
+
+  await deactivateSession(incomingRefreshToken);
+  await createSession(user._id, refreshToken, req);
+
   const options = getCookieOptions();
 
   return res
@@ -1011,6 +1023,11 @@ const clearWatchHistory = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, {}, "Watch history cleared"));
 });
 
+const getNotificationPrefs = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select("notificationPrefs").lean();
+  return res.status(200).json(new ApiResponse(200, user.notificationPrefs, "Notification preferences fetched"));
+});
+
 const updateNotificationPrefs = asyncHandler(async (req, res) => {
   const { likes, comments, replies, subscriptions, mentions } = req.body;
 
@@ -1321,6 +1338,8 @@ const socialLogin = asyncHandler(async (req, res) => {
   const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
 
   const options = getCookieOptions();
+
+  await createSession(user._id, refreshToken, req);
 
   return res
     .status(200)
@@ -1639,6 +1658,8 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
 
   const options = getCookieOptions();
 
+  await createSession(user._id, refreshToken, req);
+
   return res
     .status(200)
     .cookie("accessToken", accessToken, options)
@@ -1829,6 +1850,8 @@ const skipAndLogin = asyncHandler(async (req, res) => {
   const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
 
   const options = getCookieOptions();
+
+  await createSession(user._id, refreshToken, req);
 
   return res
     .status(200)
@@ -2180,6 +2203,7 @@ export {
   clearSearchHistory,
   clearWatchHistory,
   updateNotificationPrefs,
+  getNotificationPrefs,
   updatePrivacySettings,
   exportUserData,
   updateUserBanner,

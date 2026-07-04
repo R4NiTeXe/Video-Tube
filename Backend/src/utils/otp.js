@@ -7,13 +7,15 @@ export const generateOTP = () => {
 };
 
 // Store OTP in database (expires in 10 minutes)
-export const storeOTP = async (email, purpose) => {
+// identifier: email or mobile number
+// channel: "email" | "whatsapp"
+export const storeOTP = async (identifier, purpose, channel = "email") => {
   const otp = generateOTP();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
   await OTP.findOneAndUpdate(
-    { email, purpose },
-    { otp, expiresAt, attempts: 0, verified: false },
+    { identifier, purpose },
+    { otp, purpose, channel, identifier, expiresAt, attempts: 0, verified: false },
     { upsert: true, new: true }
   );
 
@@ -21,8 +23,9 @@ export const storeOTP = async (email, purpose) => {
 };
 
 // Verify OTP
-export const verifyOTP = async (email, otp, purpose) => {
-  const record = await OTP.findOne({ email, purpose });
+// identifier: email or mobile number
+export const verifyOTP = async (identifier, otp, purpose) => {
+  const record = await OTP.findOne({ identifier, purpose });
 
   if (!record) return { valid: false, message: "OTP not found. Please request a new one." };
   if (record.verified) return { valid: false, message: "OTP already used." };
@@ -39,5 +42,5 @@ export const verifyOTP = async (email, otp, purpose) => {
   record.verified = true;
   await record.save();
 
-  return { valid: true, message: "OTP verified." };
+  return { valid: true, message: "OTP verified.", channel: record.channel };
 };

@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { Comment } from "../models/comment.model.js";
 import { Video } from "../models/video.model.js";
 import { Notification } from "../models/notification.model.js";
+import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -127,14 +128,17 @@ const addComment = asyncHandler(async (req, res) => {
   try {
     const video = await Video.findById(videoId).select("owner title");
     if (video && video.owner.toString() !== req.user._id.toString()) {
-      await Notification.create({
-        recipient: video.owner,
-        sender: req.user._id,
-        type: "comment",
-        video: videoId,
-        comment: comment._id,
-        message: `${req.user.fullName || req.user.username} commented on your video "${video.title}"`,
-      });
+      const recipient = await User.findById(video.owner).select("notificationPrefs").lean();
+      if (recipient?.notificationPrefs?.comments !== false) {
+        await Notification.create({
+          recipient: video.owner,
+          sender: req.user._id,
+          type: "comment",
+          video: videoId,
+          comment: comment._id,
+          message: `${req.user.fullName || req.user.username} commented on your video "${video.title}"`,
+        });
+      }
     }
   } catch { /* notification failure should not block the comment */ }
 
@@ -234,14 +238,17 @@ const addReply = asyncHandler(async (req, res) => {
   // Create notification for parent comment owner
   try {
     if (parentComment.owner.toString() !== req.user._id.toString()) {
-      await Notification.create({
-        recipient: parentComment.owner,
-        sender: req.user._id,
-        type: "reply",
-        video: parentComment.video,
-        comment: reply._id,
-        message: `${req.user.fullName || req.user.username} replied to your comment`,
-      });
+      const recipient = await User.findById(parentComment.owner).select("notificationPrefs").lean();
+      if (recipient?.notificationPrefs?.replies !== false) {
+        await Notification.create({
+          recipient: parentComment.owner,
+          sender: req.user._id,
+          type: "reply",
+          video: parentComment.video,
+          comment: reply._id,
+          message: `${req.user.fullName || req.user.username} replied to your comment`,
+        });
+      }
     }
   } catch { /* notification failure should not block the reply */ }
 

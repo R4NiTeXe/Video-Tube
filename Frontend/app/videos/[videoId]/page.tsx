@@ -42,6 +42,14 @@ interface Video {
   chapters?: Chapter[];
 }
 
+interface Caption {
+  _id: string;
+  language: string;
+  label: string;
+  captionsFile: string;
+  createdAt: string;
+}
+
 interface Comment {
   _id: string;
   content: string;
@@ -758,6 +766,9 @@ export default function VideoPlayerPage() {
   const [showReportModal, setShowReportModal] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [showDescription, setShowDescription] = useState(false);
+  const [showCaptions, setShowCaptions] = useState(false);
+  const [selectedCaptionIdx, setSelectedCaptionIdx] = useState(-1);
+  const [uploadingCaption, setUploadingCaption] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // Redirect if not authenticated
@@ -794,6 +805,18 @@ export default function VideoPlayerPage() {
     },
     enabled: isAuthenticated && !!videoId,
   });
+
+  // Fetch captions
+  const { data: captionsRes } = useQuery({
+    queryKey: ["captions", videoId],
+    queryFn: async () => {
+      const res = await api.get(`/captions/${videoId}`);
+      return res.data;
+    },
+    enabled: isAuthenticated && !!videoId,
+  });
+
+  const captions: Caption[] = captionsRes?.data || [];
 
   // Sync liked state from video data
   useEffect(() => {
@@ -846,6 +869,37 @@ export default function VideoPlayerPage() {
       queryClient.invalidateQueries({ queryKey: ["comments", videoId] });
     },
   });
+
+  // Upload caption
+  const handleCaptionUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const label = prompt("Enter caption label (e.g. English, Hindi):");
+    if (!label?.trim()) return;
+    setUploadingCaption(true);
+    try {
+      const formData = new FormData();
+      formData.append("captionsFile", file);
+      formData.append("language", label.trim().toLowerCase());
+      formData.append("label", label.trim());
+      await api.post(`/captions/${videoId}`, formData, { headers: { "Content-Type": "multipart/form-data" } });
+      queryClient.invalidateQueries({ queryKey: ["captions", videoId] });
+    } catch {
+      // silent
+    } finally {
+      setUploadingCaption(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleDeleteCaption = async (captionId: string) => {
+    try {
+      await api.delete(`/captions/delete/${captionId}`);
+      queryClient.invalidateQueries({ queryKey: ["captions", videoId] });
+    } catch {
+      // silent
+    }
+  };
 
   // Copy URL to clipboard
   const handleShare = async () => {
@@ -955,7 +1009,48 @@ export default function VideoPlayerPage() {
               controls
               autoPlay
               style={{ width: "100%", maxHeight: theaterMode ? "85vh" : "70vh", outline: "none", display: "block" }}
-            />
+            >
+              {captions.map((cap, idx) => (
+                <track
+                  key={cap._id}
+                  src={cap.captionsFile}
+                  kind="subtitles"
+                  srcLang={cap.language}
+                  label={cap.label}
+                  default={idx === selectedCaptionIdx}
+                />
+              ))}
+            </video>
+            {/* CC Button */}
+            {captions.length > 0 && (
+              <button
+                onClick={() => {
+                  if (!videoRef.current) return;
+                  const tracks = videoRef.current.textTracks;
+                  if (selectedCaptionIdx >= 0) {
+                    for (let i = 0; i < tracks.length; i++) tracks[i].mode = "hidden";
+                    setSelectedCaptionIdx(-1);
+                  } else {
+                    if (tracks.length > 0) {
+                      tracks[0].mode = "showing";
+                      setSelectedCaptionIdx(0);
+                    }
+                  }
+                }}
+                style={{
+                  position: "absolute", bottom: "0.75rem", right: "0.75rem",
+                  width: 36, height: 36, borderRadius: "50%",
+                  backgroundColor: selectedCaptionIdx >= 0 ? "var(--accent)" : "rgba(0,0,0,0.6)",
+                  backdropFilter: "blur(8px)",
+                  border: "none", color: "#fff", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "0.7rem", fontWeight: 800,
+                }}
+                title={selectedCaptionIdx >= 0 ? "Hide captions" : "Show captions"}
+              >
+                CC
+              </button>
+            )}
             {/* Theater Mode Toggle */}
             <button
               onClick={() => setTheaterMode(!theaterMode)}
@@ -1243,6 +1338,50 @@ export default function VideoPlayerPage() {
 
           {/* Polls Section */}
           <VideoPoll videoId={videoId} />
+
+          {/* Subtitles Section */}
+          <div className="glass" style={{ padding: "1rem 1.25rem", borderRadius: "var(--radius-lg)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+              <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)" }}>Subtitles</h3>
+              {user?._id === video.owner._id && (
+                <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--accent)", cursor: "pointer", padding: "0.4rem 0.8rem", borderRadius: "var(--radius-md)", border: "1px solid var(--accent)", background: "none" }}>
+                  {uploadingCaption ? "Uploading..." : "+ Add"}
+                  <input type="file" accept=".srt,.vtt,.sbv,.sub,.mpsub,.lrc,.dfxp,.ttml" onChange={handleCaptionUpload} style={{ display: "none" }} disabled={uploadingCaption} />
+                </label>
+              )}
+            </div>
+            {captions.length === 0 ? (
+              <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>No subtitles available</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                {captions.map((cap, idx) => (
+                  <div key={cap._id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.5rem 0.75rem", borderRadius: "var(--radius-sm)", backgroundColor: selectedCaptionIdx === idx ? "var(--accent-light)" : "var(--bg-secondary)", border: `1px solid ${selectedCaptionIdx === idx ? "var(--accent)" : "var(--border-light)"}`, cursor: "pointer", transition: "all 0.15s" }}
+                    onClick={() => {
+                      if (!videoRef.current) return;
+                      const tracks = videoRef.current.textTracks;
+                      for (let i = 0; i < tracks.length; i++) tracks[i].mode = "hidden";
+                      if (selectedCaptionIdx === idx) {
+                        setSelectedCaptionIdx(-1);
+                      } else {
+                        if (tracks[idx]) tracks[idx].mode = "showing";
+                        setSelectedCaptionIdx(idx);
+                      }
+                    }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)" }}>{cap.label}</span>
+                      <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", textTransform: "uppercase" }}>{cap.language}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      {selectedCaptionIdx === idx && <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--accent)" }}>Active</span>}
+                      {user?._id === video.owner._id && (
+                        <button onClick={(e) => { e.stopPropagation(); handleDeleteCaption(cap._id); }} style={{ fontSize: "0.75rem", color: "var(--accent-warm)", background: "none", border: "none", cursor: "pointer", padding: "0.2rem 0.4rem" }}>Delete</button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Comments Section */}
           <motion.div

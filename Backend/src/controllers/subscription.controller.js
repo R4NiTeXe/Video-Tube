@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Subscription } from "../models/subscription.model.js";
 import { Notification } from "../models/notification.model.js";
+import { User } from "../models/user.model.js";
 import mongoose from "mongoose";
 
 const toggleSubscription = asyncHandler(async (req, res) => {
@@ -39,12 +40,15 @@ const toggleSubscription = asyncHandler(async (req, res) => {
   // Create notification for channel owner
   try {
     if (channelId !== req.user._id.toString()) {
-      await Notification.create({
-        recipient: channelId,
-        sender: req.user._id,
-        type: "subscribe",
-        message: `${req.user.fullName || req.user.username} subscribed to your channel`,
-      });
+      const recipient = await User.findById(channelId).select("notificationPrefs").lean();
+      if (recipient?.notificationPrefs?.subscriptions !== false) {
+        await Notification.create({
+          recipient: channelId,
+          sender: req.user._id,
+          type: "subscribe",
+          message: `${req.user.fullName || req.user.username} subscribed to your channel`,
+        });
+      }
     }
   } catch { /* notification failure should not block the subscription */ }
 

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { Donation } from "../models/donation.model.js";
 import { Notification } from "../models/notification.model.js";
+import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -29,14 +30,17 @@ const createDonation = asyncHandler(async (req, res) => {
 
   // Notify recipient
   try {
-    const senderName = isAnonymous ? "Someone" : (req.user.fullName || req.user.username);
-    await Notification.create({
-      recipient: recipientId,
-      sender: req.user._id,
-      type: "mention",
-      video: videoId || undefined,
-      message: `${senderName} sent you a $${amount} tip!`,
-    });
+    const recipient = await User.findById(recipientId).select("notificationPrefs").lean();
+    if (recipient?.notificationPrefs?.mentions !== false) {
+      const senderName = isAnonymous ? "Someone" : (req.user.fullName || req.user.username);
+      await Notification.create({
+        recipient: recipientId,
+        sender: req.user._id,
+        type: "mention",
+        video: videoId || undefined,
+        message: `${senderName} sent you a $${amount} tip!`,
+      });
+    }
   } catch { /* notification failure should not block donation */ }
 
   return res.status(201).json(new ApiResponse(201, donation, "Donation created"));

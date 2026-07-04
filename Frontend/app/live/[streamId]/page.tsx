@@ -43,13 +43,21 @@ export default function LiveStreamPage() {
 
   useEffect(() => {
     fetchStream();
+
+    // Increment viewer count on mount
+    api.post(`/live/${streamId}/viewer-increment`).catch(() => {});
+
     // Poll viewer count
     const interval = setInterval(() => {
       api.get(`/live/${streamId}`).then((res) => {
         setStream(res.data.data);
       }).catch(() => {});
     }, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      // Decrement viewer count on unmount
+      api.post(`/live/${streamId}/viewer-decrement`).catch(() => {});
+    };
   }, [streamId, fetchStream]);
 
   if (isLoading) {
@@ -180,6 +188,7 @@ export default function LiveStreamPage() {
         <DonationButton
           recipientId={stream.streamer._id}
           recipientName={stream.streamer.fullName}
+          videoId={stream._id}
         />
       </div>
 

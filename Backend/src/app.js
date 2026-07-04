@@ -104,9 +104,11 @@ import communityPostRouter from "./routes/communityPost.routes.js";
 import endScreenRouter from "./routes/endScreen.routes.js";
 import sseRouter from "./routes/sse.routes.js";
 import oauthRouter from "./routes/oauth.routes.js";
+import sessionRouter from "./routes/session.routes.js";
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/auth", oauthRouter);
+app.use("/api/v1/sessions", sessionRouter);
 app.use("/api/v1/videos", videoRouter);
 app.use("/api/v1/subscriptions", subscriptionRouter);
 app.use("/api/v1/comments", commentRouter);

@@ -93,9 +93,12 @@ export default function SettingsPage() {
   const [forgotChannel, setForgotChannel] = useState<"email" | "whatsapp">("email");
 
   // Notifications
+  const [notifLikes, setNotifLikes] = useState(true);
   const [notifComments, setNotifComments] = useState(true);
+  const [notifReplies, setNotifReplies] = useState(true);
   const [notifSubscribers, setNotifSubscribers] = useState(true);
-  const [notifUpdates, setNotifUpdates] = useState(false);
+  const [notifMentions, setNotifMentions] = useState(true);
+  const [notifSaving, setNotifSaving] = useState(false);
 
   // Privacy
   const [privateSubs, setPrivateSubs] = useState(false);
@@ -107,6 +110,11 @@ export default function SettingsPage() {
   // Content defaults
   const [defaultVisibility, setDefaultVisibility] = useState("public");
   const [defaultCategory, setDefaultCategory] = useState("General");
+
+  // Sessions
+  const [sessions, setSessions] = useState<Array<{ _id: string; deviceName: string; location: string; lastActiveAt: string; isCurrent: boolean }>>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [sessionError, setSessionError] = useState("");
 
   // Delete
   const [deletePassword, setDeletePassword] = useState("");
@@ -122,6 +130,22 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
   }, [isAuthenticated, authLoading, router]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      api.get("/sessions").then((res) => setSessions(res.data.data || [])).catch(() => setSessions([])).finally(() => setSessionsLoading(false));
+      api.get("/users/notification-prefs").then((res) => {
+        const prefs = res.data.data;
+        if (prefs) {
+          setNotifLikes(prefs.likes ?? true);
+          setNotifComments(prefs.comments ?? true);
+          setNotifReplies(prefs.replies ?? true);
+          setNotifSubscribers(prefs.subscriptions ?? true);
+          setNotifMentions(prefs.mentions ?? true);
+        }
+      }).catch(() => {});
+    }
+  }, [isAuthenticated]);
 
   if (authLoading || !isAuthenticated || !user) {
     return (
@@ -229,6 +253,45 @@ export default function SettingsPage() {
     } catch (err: unknown) {
       setDeleteError(getApiErrorMessage(err, "Failed to delete account."));
       setDeleting(false);
+    }
+  };
+
+  // ── Notification Preferences ──
+  const handleSaveNotificationPrefs = async () => {
+    setNotifSaving(true);
+    try {
+      await api.patch("/users/notification-prefs", {
+        likes: notifLikes,
+        comments: notifComments,
+        replies: notifReplies,
+        subscriptions: notifSubscribers,
+        mentions: notifMentions,
+      });
+    } catch {
+      // silent
+    } finally {
+      setNotifSaving(false);
+    }
+  };
+
+  // ── Sessions ──
+  const handleRevokeSession = async (sessionId: string) => {
+    setSessionError("");
+    try {
+      await api.delete(`/sessions/${sessionId}`);
+      setSessions((prev) => prev.filter((s) => s._id !== sessionId));
+    } catch {
+      setSessionError("Failed to revoke session.");
+    }
+  };
+
+  const handleRevokeAllSessions = async () => {
+    setSessionError("");
+    try {
+      await api.delete("/sessions");
+      setSessions((prev) => prev.filter((s) => s.isCurrent));
+    } catch {
+      setSessionError("Failed to revoke sessions.");
     }
   };
 
@@ -494,13 +557,15 @@ export default function SettingsPage() {
             <SectionHeader
               icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>}
               title="Notifications"
-              description="Choose what updates you receive via email"
+              description="Choose what notifications you receive"
             />
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               {[
+                { label: "Likes on my videos", desc: "Get notified when someone likes your video", checked: notifLikes, onChange: setNotifLikes },
                 { label: "Comments on my videos", desc: "Get notified when someone comments", checked: notifComments, onChange: setNotifComments },
+                { label: "Replies to my comments", desc: "Get notified when someone replies to you", checked: notifReplies, onChange: setNotifReplies },
                 { label: "New subscribers", desc: "Get notified when someone subscribes", checked: notifSubscribers, onChange: setNotifSubscribers },
-                { label: "Product updates", desc: "Hear about new features and improvements", checked: notifUpdates, onChange: setNotifUpdates },
+                { label: "Mentions", desc: "Get notified when someone mentions you", checked: notifMentions, onChange: setNotifMentions },
               ].map((item) => (
                 <label key={item.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.6rem 0", cursor: "pointer", borderBottom: "1px solid var(--border-light)" }}>
                   <div>
@@ -517,6 +582,12 @@ export default function SettingsPage() {
                   </div>
                 </label>
               ))}
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}>
+              <button onClick={handleSaveNotificationPrefs} disabled={notifSaving}
+                style={{ padding: "0.55rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.85rem", fontWeight: 600, backgroundColor: "var(--bg-elevated)", color: "var(--accent)", border: "1px solid var(--accent)", cursor: notifSaving ? "not-allowed" : "pointer", transition: "all 0.2s" }}>
+                {notifSaving ? "Saving..." : "Save Preferences"}
+              </button>
             </div>
           </div>
 
@@ -596,32 +667,57 @@ export default function SettingsPage() {
               title="Active Sessions"
               description="Manage devices where you're logged in"
             />
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              {[
-                { device: "Chrome on Windows", location: "Current session", time: "Active now", current: true },
-                { device: "Safari on iPhone", location: "Mumbai, India", time: "2 hours ago", current: false },
-                { device: "Firefox on Linux", location: "Delhi, India", time: "1 day ago", current: false },
-              ].map((session) => (
-                <div key={session.device} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.7rem 0", borderBottom: "1px solid var(--border-light)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                    <div style={{ width: 36, height: 36, borderRadius: "var(--radius-sm)", backgroundColor: session.current ? "var(--accent-light)" : "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", color: session.current ? "var(--accent)" : "var(--text-muted)" }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            {sessionError && <div style={{ padding: "0.7rem 1rem", backgroundColor: "var(--accent-warm-light)", color: "var(--accent-warm)", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem", border: "1px solid rgba(244,63,94,0.15)" }}>{sessionError}</div>}
+            {sessionsLoading ? (
+              <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Loading sessions...</p>
+            ) : sessions.length === 0 ? (
+              <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>No active sessions found.</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                {sessions.map((session) => {
+                  const timeAgo = (() => {
+                    const diff = Date.now() - new Date(session.lastActiveAt).getTime();
+                    const mins = Math.floor(diff / 60000);
+                    if (mins < 1) return "Active now";
+                    if (mins < 60) return `${mins}m ago`;
+                    const hours = Math.floor(mins / 60);
+                    if (hours < 24) return `${hours}h ago`;
+                    const days = Math.floor(hours / 24);
+                    return `${days}d ago`;
+                  })();
+
+                  return (
+                    <div key={session._id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.7rem 0", borderBottom: "1px solid var(--border-light)" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                        <div style={{ width: 36, height: 36, borderRadius: "var(--radius-sm)", backgroundColor: session.isCurrent ? "var(--accent-light)" : "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", color: session.isCurrent ? "var(--accent)" : "var(--text-muted)" }}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                        </div>
+                        <div>
+                          <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>{session.deviceName}</p>
+                          <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{session.location} &middot; {timeAgo}</p>
+                        </div>
+                      </div>
+                      {session.isCurrent ? (
+                        <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--accent)", padding: "0.25rem 0.6rem", backgroundColor: "var(--accent-light)", borderRadius: "2rem" }}>This device</span>
+                      ) : (
+                        <button onClick={() => handleRevokeSession(session._id)}
+                          style={{ fontSize: "0.78rem", fontWeight: 500, color: "var(--accent-warm)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                          Log out
+                        </button>
+                      )}
                     </div>
-                    <div>
-                      <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>{session.device}</p>
-                      <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{session.location} &middot; {session.time}</p>
-                    </div>
-                  </div>
-                  {session.current ? (
-                    <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--accent)", padding: "0.25rem 0.6rem", backgroundColor: "var(--accent-light)", borderRadius: "2rem" }}>This device</span>
-                  ) : (
-                    <button style={{ fontSize: "0.78rem", fontWeight: 500, color: "var(--accent-warm)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
-                      Log out
+                  );
+                })}
+                {sessions.length > 1 && (
+                  <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "0.5rem" }}>
+                    <button onClick={handleRevokeAllSessions}
+                      style={{ padding: "0.55rem 1.2rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: "var(--bg-elevated)", color: "var(--accent-warm)", border: "1px solid var(--accent-warm)", cursor: "pointer", transition: "all 0.2s" }}>
+                      Log out all other devices
                     </button>
-                  )}
-                </div>
-              ))}
-            </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* 8. Delete Account */}
