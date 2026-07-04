@@ -162,7 +162,7 @@ export default function MobileRegisterPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
               <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Mobile Number</label>
-              <input type="tel" placeholder="+91 9876543210" className="input-field" value={mobile}
+              <input type="tel" placeholder="Phone number" className="input-field" value={mobile}
                 onChange={e => setMobile(e.target.value)} autoFocus />
             </div>
             <button onClick={handleSendOTP} disabled={isLoading} className="btn-primary" style={{ width: "100%", padding: "0.85rem" }}>
@@ -197,17 +197,17 @@ export default function MobileRegisterPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
               <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Full Name</label>
-              <input type="text" placeholder="John Doe" className="input-field" value={fullName}
+              <input type="text" placeholder="Full name" className="input-field" value={fullName}
                 onChange={e => setFullName(e.target.value)} autoFocus />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
               <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Username</label>
-              <input type="text" placeholder="johndoe" className="input-field" value={username}
+              <input type="text" placeholder="Username" className="input-field" value={username}
                 onChange={e => setUsername(e.target.value.toLowerCase().replace(/\s/g, ""))} />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
               <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Password</label>
-              <input type="password" placeholder="Min. 6 characters" className="input-field" value={password}
+              <input type="password" placeholder="Password" className="input-field" value={password}
                 onChange={e => setPassword(e.target.value)} />
             </div>
             <button onClick={handleRegister} disabled={isLoading} className="btn-primary" style={{ width: "100%", padding: "0.85rem" }}>
