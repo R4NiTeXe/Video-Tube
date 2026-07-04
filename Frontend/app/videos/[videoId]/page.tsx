@@ -439,7 +439,7 @@ function PlaylistDropdown({ videoId, ownerId }: { videoId: string; ownerId: stri
                 <div style={{ padding: "0.5rem 0.75rem" }}>
                   <input
                     type="text"
-                    placeholder="Playlist name..."
+                    placeholder="Playlist name"
                     value={newPlaylistName}
                     onChange={(e) => setNewPlaylistName(e.target.value)}
                     onKeyDown={(e) => {
@@ -684,7 +684,7 @@ function CommentItem({
               <div style={{ display: "flex", gap: "0.5rem" }}>
                 <input
                   type="text"
-                  placeholder="Write a reply..."
+                  placeholder="Reply..."
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   onKeyDown={(e) => {
@@ -1266,7 +1266,7 @@ export default function VideoPlayerPage() {
               <div style={{ flex: 1 }}>
                 <input
                   type="text"
-                  placeholder="Add a comment..."
+                  placeholder="Comment..."
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   onKeyDown={(e) => {

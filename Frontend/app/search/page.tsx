@@ -194,7 +194,7 @@ export default function SearchPage() {
               type="text"
               value={query}
               onChange={(e) => handleQueryChange(e.target.value)}
-              placeholder="Search videos, channels, users..."
+              placeholder="Search"
               style={{ flex: 1, border: "none", background: "transparent", color: "var(--text-primary)", fontSize: "0.9rem", padding: "0.7rem 0", outline: "none" }}
             />
             {query && (

@@ -211,7 +211,7 @@ export default function CommunityPage() {
               <textarea
                 value={newPostContent}
                 onChange={(e) => setNewPostContent(e.target.value)}
-                placeholder="What's on your mind?"
+                placeholder="Share something..."
                 rows={3}
                 style={{
                   width: "100%",

@@ -120,17 +120,17 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
               <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Title <span style={{ color: "var(--accent-warm)" }}>*</span></label>
-              <input type="text" required placeholder="Enter video title..." className="input-field" value={title} onChange={(e) => setTitle(e.target.value)} disabled={uploading} />
+              <input type="text" required placeholder="Title" className="input-field" value={title} onChange={(e) => setTitle(e.target.value)} disabled={uploading} />
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
               <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Description <span style={{ color: "var(--accent-warm)" }}>*</span></label>
-              <textarea required placeholder="Describe your video..." className="input-field" value={description} onChange={(e) => setDescription(e.target.value)} disabled={uploading} rows={3} style={{ resize: "vertical", fontFamily: "inherit" }} />
+              <textarea required placeholder="Description" className="input-field" value={description} onChange={(e) => setDescription(e.target.value)} disabled={uploading} rows={3} style={{ resize: "vertical", fontFamily: "inherit" }} />
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
               <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Tags</label>
-              <input type="text" placeholder="e.g. tutorial, javascript, webdev (comma separated)" className="input-field" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} disabled={uploading} />
+              <input type="text" placeholder="Tags (comma separated)" className="input-field" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} disabled={uploading} />
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
@@ -162,7 +162,7 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
 
             <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
               <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Chapters (optional)</label>
-              <textarea className="input-field" placeholder={"0:00 Intro\n2:30 Setup\n5:45 Main Content\n10:00 Conclusion"} value={chaptersInput} onChange={(e) => setChaptersInput(e.target.value)} disabled={uploading} rows={4} style={{ fontFamily: "monospace", fontSize: "0.82rem", resize: "vertical" }} />
+              <textarea className="input-field" placeholder={"Timestamps (optional)"} value={chaptersInput} onChange={(e) => setChaptersInput(e.target.value)} disabled={uploading} rows={4} style={{ fontFamily: "monospace", fontSize: "0.82rem", resize: "vertical" }} />
               <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Format: MM:SS Title (one per line)</span>
             </div>
 

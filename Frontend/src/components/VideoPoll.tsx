@@ -96,7 +96,7 @@ export default function VideoPoll({ videoId }: PollProps) {
         }}>
           <input
             type="text"
-            placeholder="Ask a question..."
+            placeholder="Ask something..."
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             style={{

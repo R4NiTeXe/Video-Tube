@@ -353,7 +353,7 @@ export default function Home() {
             <input 
               ref={searchInputRef}
               type="text" 
-              placeholder="Search videos..." 
+              placeholder="Search videos" 
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
             />

@@ -184,7 +184,7 @@ export default function LiveChat({ streamId }: LiveChatProps) {
           type="text"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Send a message..."
+          placeholder="Message..."
           maxLength={500}
           style={{
             flex: 1, padding: "0.5rem 0.75rem", borderRadius: "var(--radius-sm)",

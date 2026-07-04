@@ -126,7 +126,7 @@ export default function PlaylistsPage() {
                     <label style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-secondary)" }}>Name</label>
                     <input
                       type="text"
-                      placeholder="Playlist name..."
+                      placeholder="Playlist name"
                       className="input-field"
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
@@ -135,7 +135,7 @@ export default function PlaylistsPage() {
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                     <label style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-secondary)" }}>Description</label>
                     <textarea
-                      placeholder="Describe your playlist..."
+                      placeholder="Description"
                       className="input-field"
                       value={newDesc}
                       onChange={(e) => setNewDesc(e.target.value)}

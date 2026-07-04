@@ -153,7 +153,7 @@ export default function DonationButton({ recipientId, recipientName, videoId }: 
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Add a message (optional)"
+                  placeholder="Message (optional)"
                   maxLength={500}
                   className="input-field"
                   style={{ width: "100%", minHeight: 60, resize: "vertical", marginBottom: "0.75rem", fontSize: "0.85rem" }}

@@ -592,7 +592,7 @@ export default function AdminPage() {
               </div>
               <input
                 type="text"
-                placeholder="Search users by name or username..."
+                placeholder="Search users..."
                 className="input-field"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

@@ -134,7 +134,7 @@ export default function MobileLoginPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
               <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Mobile Number</label>
-              <input type="tel" placeholder="+91 9876543210" className="input-field" value={mobile}
+              <input type="tel" placeholder="Phone number" className="input-field" value={mobile}
                 onChange={e => setMobile(e.target.value)} autoFocus />
             </div>
             <button onClick={handleSendOTP} disabled={isLoading} className="btn-primary" style={{ width: "100%", padding: "0.85rem" }}>

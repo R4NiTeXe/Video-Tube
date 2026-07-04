@@ -266,7 +266,7 @@ export default function EditProfilePage() {
                       onChange={(e) => { if (e.target.value.length <= 500) { setBio(e.target.value); markDirty(); } }}
                       maxLength={500}
                       rows={3}
-                      placeholder="Tell viewers about yourself..."
+                      placeholder="About you"
                     />
                     <div style={{ width: "100%", height: 3, backgroundColor: "var(--bg-elevated)", borderRadius: 99, overflow: "hidden" }}>
                       <div style={{ width: `${Math.min(bioPercent, 100)}%`, height: "100%", backgroundColor: bioColor, borderRadius: 99, transition: "width 0.2s, background-color 0.2s" }} />
