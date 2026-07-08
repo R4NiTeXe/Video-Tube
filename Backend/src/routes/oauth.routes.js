@@ -25,6 +25,25 @@ const handleOAuthCallback = async (req, res) => {
 
     await User.findByIdAndUpdate(req.user._id, { refreshToken });
 
+    const isProduction = process.env.NODE_ENV === "production";
+    const accessExpiry = 24 * 60 * 60 * 1000;
+    const refreshExpiry = 10 * 24 * 60 * 60 * 1000;
+
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: accessExpiry,
+      path: "/",
+    });
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: refreshExpiry,
+      path: "/",
+    });
+
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
     res.redirect(`${frontendUrl}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`);
   } catch (error) {

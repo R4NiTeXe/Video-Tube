@@ -88,12 +88,3 @@ export const broadcastToUser = (userId, data) => {
     }
   });
 };
-
-export const broadcastNotification = (userId, notification) => {
-  broadcastToUser(userId, {
-    type: "notification",
-    data: notification,
-  });
-};
-
-export const getWebSocketServer = () => wss;

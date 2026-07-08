@@ -130,7 +130,8 @@ export const revokeSession = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Session not found");
   }
 
-  if (session.isCurrent) {
+  const incomingRefreshToken = req.cookies?.refreshToken;
+  if (session.refreshToken === incomingRefreshToken) {
     throw new ApiError(400, "Cannot revoke your current session. Use logout instead.");
   }
 

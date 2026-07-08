@@ -13,6 +13,10 @@ const otpSchema = new mongoose.Schema({
       "verify-email",
       "social-link",
       "login",
+      "email-registration",
+      "delete-account",
+      "forgot-password-change",
+      "reset",
     ],
   },
   channel: {

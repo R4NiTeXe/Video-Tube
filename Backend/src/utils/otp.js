@@ -22,25 +22,41 @@ export const storeOTP = async (identifier, purpose, channel = "email") => {
   return otp;
 };
 
-// Verify OTP
+// Verify OTP — atomic attempt increment to prevent race conditions
 // identifier: email or mobile number
 export const verifyOTP = async (identifier, otp, purpose) => {
-  const record = await OTP.findOne({ identifier, purpose });
+  // First, atomically increment attempts and check if OTP is valid in one operation
+  const record = await OTP.findOneAndUpdate(
+    {
+      identifier,
+      purpose,
+      verified: false,
+      attempts: { $lt: 5 },
+      expiresAt: { $gt: new Date() },
+    },
+    {
+      $inc: { attempts: 1 },
+    },
+    { new: true }
+  );
 
-  if (!record) return { valid: false, message: "OTP not found. Please request a new one." };
-  if (record.verified) return { valid: false, message: "OTP already used." };
-  if (record.attempts >= 5) return { valid: false, message: "Too many attempts. Request a new OTP." };
-  if (new Date() > record.expiresAt) return { valid: false, message: "OTP expired. Request a new one." };
-
-  // Increment attempts
-  record.attempts += 1;
-  await record.save();
+  if (!record) {
+    // Check why it failed for a better error message
+    const existing = await OTP.findOne({ identifier, purpose });
+    if (!existing) return { valid: false, message: "OTP not found. Please request a new one." };
+    if (existing.verified) return { valid: false, message: "OTP already used." };
+    if (existing.attempts >= 5) return { valid: false, message: "Too many attempts. Request a new OTP." };
+    if (new Date() > existing.expiresAt) return { valid: false, message: "OTP expired. Request a new one." };
+    return { valid: false, message: "Invalid OTP." };
+  }
 
   if (record.otp !== otp) return { valid: false, message: "Invalid OTP." };
 
-  // Mark as verified
-  record.verified = true;
-  await record.save();
+  // Mark as verified atomically
+  await OTP.findOneAndUpdate(
+    { _id: record._id },
+    { $set: { verified: true } }
+  );
 
   return { valid: true, message: "OTP verified.", channel: record.channel };
 };

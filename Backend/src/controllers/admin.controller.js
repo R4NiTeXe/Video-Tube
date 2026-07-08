@@ -10,6 +10,7 @@ import { Report } from "../models/report.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { deleteFromCloudinary } from "../utils/cloudinary.js";
 
 const getPlatformStats = asyncHandler(async (req, res) => {
   const [totalUsers, totalVideos, totalComments, totalSubscriptions, totalLikes, totalPlaylists, totalReports] =
@@ -118,8 +119,17 @@ const banUser = asyncHandler(async (req, res) => {
   const user = await User.findById(userId);
   if (!user) throw new ApiError(404, "User not found");
 
-  // Unpublish all user's videos
+  // Unpublish all user's videos and clean up Cloudinary
+  const videos = await Video.find({ owner: userId }).select("videoFile thumbnail");
+  for (const video of videos) {
+    if (video.videoFile) await deleteFromCloudinary(video.videoFile, "video").catch(() => {});
+    if (video.thumbnail) await deleteFromCloudinary(video.thumbnail, "image").catch(() => {});
+  }
   await Video.updateMany({ owner: userId }, { $set: { isPublished: false } });
+
+  // Clean up user avatar and cover from Cloudinary
+  if (user.avatarPublicId) await deleteFromCloudinary(user.avatarPublicId, "image").catch(() => {});
+  if (user.coverImagePublicId) await deleteFromCloudinary(user.coverImagePublicId, "image").catch(() => {});
 
   // Delete user
   await User.findByIdAndDelete(userId);
@@ -137,7 +147,11 @@ const adminDeleteVideo = asyncHandler(async (req, res) => {
   const video = await Video.findByIdAndDelete(videoId);
   if (!video) throw new ApiError(404, "Video not found");
 
-  // Cleanup
+  // Cleanup Cloudinary
+  if (video.videoFile) await deleteFromCloudinary(video.videoFile, "video").catch(() => {});
+  if (video.thumbnail) await deleteFromCloudinary(video.thumbnail, "image").catch(() => {});
+
+  // Cleanup related data
   await Comment.deleteMany({ video: videoId });
   await Like.deleteMany({ video: videoId });
 

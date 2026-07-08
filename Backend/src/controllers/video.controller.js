@@ -348,13 +348,18 @@ const getVideoById = asyncHandler(async (req, res) => {
     throw new ApiError(403, "This video is private");
   }
 
-  // increment views
-  await Video.findByIdAndUpdate(videoId, {
-    $inc: { views: 1 },
-  });
+  // increment views only if not already watched
+  const user = await mongoose.model("User").findById(req.user?._id).select("watchHistory");
+  const alreadyWatched = user?.watchHistory?.some(
+    (id) => id.toString() === videoId.toString()
+  );
+
+  if (!alreadyWatched) {
+    await Video.findByIdAndUpdate(videoId, { $inc: { views: 1 } });
+  }
 
   // add to watch history
-  await mongoose.model("User").findByIdAndUpdate(req.user._id, {
+  await mongoose.model("User").findByIdAndUpdate(req.user?._id, {
     $addToSet: { watchHistory: videoId },
   });
 
@@ -884,7 +889,7 @@ const getShortsFeed = asyncHandler(async (req, res) => {
     {
       $match: {
         isPublished: true,
-        isShort: true,
+        duration: { $lte: 60 },
       },
     },
     { $sort: { createdAt: -1 } },

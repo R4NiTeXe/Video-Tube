@@ -62,7 +62,7 @@ export const sendWhatsAppOTP = async (mobile, otp) => {
     console.log(`Mobile: ${mobile}`);
     console.log(`OTP: ${otp}`);
     console.log("-------------------------------");
-    return { success: true, mode: "console" };
+    return { success: true, mode: "console", delivered: false, message: "OTP logged to console (dev mode)" };
   }
 
   // Format mobile number (remove + if present, ensure country code)
@@ -132,7 +132,7 @@ export const sendWhatsAppOTP = async (mobile, otp) => {
       console.log(`OTP: ${otp}`);
       console.log(`Error: ${data.error?.message || "Unknown"}`);
       console.log("------------------------------------------");
-      return { success: true, mode: "console-fallback" };
+      return { success: false, mode: "console-fallback", delivered: false, message: `WhatsApp API error: ${data.error?.message || "Unknown"}` };
     }
 
     return { success: true, data };
@@ -144,7 +144,7 @@ export const sendWhatsAppOTP = async (mobile, otp) => {
     console.log(`OTP: ${otp}`);
     console.log(`Error: ${error.message}`);
     console.log("----------------------------------------------");
-    return { success: true, mode: "console-fallback" };
+    return { success: false, mode: "console-fallback", delivered: false, message: `WhatsApp unreachable: ${error.message}` };
   }
 };
 

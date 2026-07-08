@@ -162,7 +162,13 @@ const decrementViewerCount = asyncHandler(async (req, res) => {
 
   if (!stream) throw new ApiError(404, "Stream not found");
 
-  return res.status(200).json(new ApiResponse(200, { viewerCount: Math.max(0, stream.viewerCount) }, "Viewer count updated"));
+  // Prevent negative viewer count
+  if (stream.viewerCount < 0) {
+    stream.viewerCount = 0;
+    await stream.save();
+  }
+
+  return res.status(200).json(new ApiResponse(200, { viewerCount: stream.viewerCount }, "Viewer count updated"));
 });
 
 const getUserStream = asyncHandler(async (req, res) => {

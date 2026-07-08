@@ -50,42 +50,6 @@ export const otpEmailTemplate = (otp, purpose) => {
   `;
 };
 
-export const welcomeEmailTemplate = (username) => {
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
-        .container { max-width: 500px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
-        .header { background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 30px; text-align: center; }
-        .header h1 { color: #fff; margin: 0; font-size: 22px; }
-        .body { padding: 30px; text-align: center; }
-        .text { color: #555; font-size: 14px; line-height: 1.6; }
-        .btn { display: inline-block; padding: 12px 30px; background: #6366f1; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 15px 0; }
-        .footer { padding: 20px; text-align: center; color: #999; font-size: 12px; border-top: 1px solid #eee; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>Welcome to VideoTube!</h1>
-        </div>
-        <div class="body">
-          <h2 style="color:#333;">Hey ${username}!</h2>
-          <p class="text">Your account has been created successfully. Start exploring videos, create content, and join our community.</p>
-          <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}" class="btn">Explore Videos</a>
-          <p class="text">If you have any questions, feel free to reach out to our support team.</p>
-        </div>
-        <div class="footer">
-          <p>VideoTube &copy; ${new Date().getFullYear()}</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
-};
-
 export const passwordChangedEmailTemplate = () => {
   return `
     <!DOCTYPE html>

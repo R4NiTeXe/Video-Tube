@@ -15,12 +15,12 @@ import { sendEmail } from "../utils/email.js";
 import { storeOTP, verifyOTP } from "../utils/otp.js";
 import { OTP } from "../models/otp.model.js";
 import { otpEmailTemplate, passwordChangedEmailTemplate } from "../utils/emailTemplates.js";
-import { sendWhatsAppOTP, storeWhatsAppOTP, verifyWhatsAppOTP } from "../utils/whatsappOtp.js";
+import { sendWhatsAppOTP } from "../utils/whatsappOtp.js";
 import mongoose from "mongoose";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { createSession, deactivateSession, updateSessionActivity } from "./session.controller.js";
+import { createSession, deactivateSession } from "./session.controller.js";
 
 const getCookieOptions = () => ({
   httpOnly: true,
@@ -1456,7 +1456,7 @@ const verifyRegistrationOTP = asyncHandler(async (req, res) => {
   const normalizedIdentifier = identifier.trim().toLowerCase();
   const channel = detectChannel(normalizedIdentifier);
 
-  const purpose = channel === "whatsapp" ? "registration" : "registration";
+  const purpose = "registration";
   const result = await verifyOTP(normalizedIdentifier, otpValue, purpose);
 
   if (!result.valid) {
@@ -2128,8 +2128,8 @@ const verifyAndResetPasswordViaOTP = asyncHandler(async (req, res) => {
     throw new ApiError(400, "New password and OTP are required");
   }
 
-  if (newPassword.length < 6) {
-    throw new ApiError(400, "New password must be at least 6 characters");
+  if (newPassword.length < 8) {
+    throw new ApiError(400, "New password must be at least 8 characters");
   }
 
   const user = await User.findById(req.user._id);
