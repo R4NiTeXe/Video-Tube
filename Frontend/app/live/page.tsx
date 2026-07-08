@@ -46,7 +46,7 @@ export default function LivePage() {
           {[1, 2, 3, 4].map((i) => (
             <div key={i} style={{
               borderRadius: "var(--radius-lg)", overflow: "hidden",
-              backgroundColor: "var(--bg-elevated)", border: "1px solid var(--border-light)",
+              backgroundColor: "var(--elevated)", border: "1px solid var(--border)",
             }}>
               <div style={{ height: 180, backgroundColor: "var(--bg-secondary)", animation: "pulse 1.5s ease-in-out infinite" }} />
               <div style={{ padding: "0.75rem" }}>
@@ -59,16 +59,16 @@ export default function LivePage() {
       ) : error ? (
         <div style={{
           padding: "2rem", textAlign: "center", color: "var(--text-muted)",
-          backgroundColor: "var(--bg-elevated)", borderRadius: "var(--radius-lg)",
-          border: "1px solid var(--border-light)",
+          backgroundColor: "var(--elevated)", borderRadius: "var(--radius-lg)",
+          border: "1px solid var(--border)",
         }}>
           {error}
         </div>
       ) : streams.length === 0 ? (
         <div style={{
           padding: "4rem 2rem", textAlign: "center",
-          backgroundColor: "var(--bg-elevated)", borderRadius: "var(--radius-lg)",
-          border: "1px solid var(--border-light)",
+          backgroundColor: "var(--elevated)", borderRadius: "var(--radius-lg)",
+          border: "1px solid var(--border)",
         }}>
           <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>📡</div>
           <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.5rem" }}>
@@ -86,7 +86,7 @@ export default function LivePage() {
               href={`/live/${stream._id}`}
               style={{
                 borderRadius: "var(--radius-lg)", overflow: "hidden",
-                backgroundColor: "var(--bg-elevated)", border: "1px solid var(--border-light)",
+                backgroundColor: "var(--elevated)", border: "1px solid var(--border)",
                 textDecoration: "none", transition: "transform 0.2s, box-shadow 0.2s",
               }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "var(--shadow-lg)"; }}
