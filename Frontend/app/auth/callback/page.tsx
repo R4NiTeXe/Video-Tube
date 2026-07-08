@@ -23,12 +23,13 @@ export default function AuthCallbackPage() {
     if (accessToken && refreshToken) {
       const fetchUser = async () => {
         try {
-          const response = await api.get("/users/current-user", {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          });
+          api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
+          const response = await api.get("/users/current-user");
+          delete api.defaults.headers.common["Authorization"];
           login(response.data.data);
           router.replace("/");
         } catch {
+          delete api.defaults.headers.common["Authorization"];
           router.replace("/login?error=auth_failed");
         }
       };
@@ -39,7 +40,7 @@ export default function AuthCallbackPage() {
   }, [searchParams, login, router]);
 
   return (
-    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", backgroundColor: "var(--bg-primary)" }}>
       <p style={{ color: "var(--text-muted)" }}>Completing sign-in...</p>
     </div>
   );
