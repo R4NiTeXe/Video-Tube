@@ -137,7 +137,7 @@ function PasswordStrengthBar({ password }: { password: string }) {
     <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
       <div style={{ display: "flex", gap: "3px" }}>
         {[0, 1, 2, 3, 4].map((i) => (
-          <div key={i} style={{ flex: 1, height: 3, borderRadius: 99, backgroundColor: i < score ? colors[level] : "var(--bg-elevated)", transition: "background-color 0.2s" }} />
+          <div key={i} style={{ flex: 1, height: 3, borderRadius: 99, backgroundColor: i < score ? colors[level] : "var(--elevated)", transition: "background-color 0.2s" }} />
         ))}
       </div>
       <span style={{ fontSize: "0.72rem", color: colors[level], fontWeight: 600 }}>{labels[level]}</span>
@@ -439,8 +439,8 @@ export default function RegisterPage() {
   const matchColour = "var(--success)";
   const mismatchColour = "var(--error)";
   const confirmBorderClass =
-    passwordMatch === "match" ? "input-field input-success" :
-    passwordMatch === "mismatch" ? "input-field input-error" : "input-field";
+    passwordMatch === "match" ? "input input-success" :
+    passwordMatch === "mismatch" ? "input input-error" : "input";
 
   // ── Step titles ─────────────────────────────────────────────────────────
   const stepNumber = step === "details" ? 1 : step === "otp" ? 2 : 3;
@@ -484,15 +484,15 @@ export default function RegisterPage() {
                   width: 28, height: 28, borderRadius: "50%",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: "0.75rem", fontWeight: 700,
-                  backgroundColor: stepNumber >= s ? "var(--accent)" : "var(--bg-elevated)",
+                  backgroundColor: stepNumber >= s ? "var(--accent)" : "var(--elevated)",
                   color: stepNumber >= s ? "#fff" : "var(--text-muted)",
-                  border: stepNumber >= s ? "none" : "1px solid var(--border-light)",
+                  border: stepNumber >= s ? "none" : "1px solid var(--border)",
                   transition: "all 0.3s",
                 }}>
                   {stepNumber > s ? <CheckIcon /> : s}
                 </div>
               ))}
-              <div style={{ flex: 1, height: 2, backgroundColor: "var(--border-light)", borderRadius: 1, marginLeft: "0.3rem" }}>
+              <div style={{ flex: 1, height: 2, backgroundColor: "var(--border)", borderRadius: 1, marginLeft: "0.3rem" }}>
                 <motion.div
                   animate={{ width: `${((stepNumber - 1) / 2) * 100}%` }}
                   transition={{ duration: 0.4 }}
@@ -529,7 +529,7 @@ export default function RegisterPage() {
             <AnimatePresence>
               {error && (
                 <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                  style={{ padding: "0.7rem 1rem", backgroundColor: "var(--error-light)", color: "var(--error)", borderRadius: "var(--radius-md)", marginBottom: "1.25rem", fontSize: "0.85rem", border: "1px solid var(--error)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  style={{ padding: "0.7rem 1rem", backgroundColor: "var(--error-subtle)", color: "var(--error)", borderRadius: "var(--radius-md)", marginBottom: "1.25rem", fontSize: "0.85rem", border: "1px solid var(--error)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
                   <XIcon /> {error}
                 </motion.div>
               )}
@@ -547,63 +547,51 @@ export default function RegisterPage() {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <form onSubmit={handleDetailsSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                  <form onSubmit={handleDetailsSubmit} style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
 
                     {/* Row 1: Full Name + Username */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                        <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", letterSpacing: "0.01em" }}>Full Name</label>
-                        <input type="text" required placeholder="Full name" className="input-field"
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--sp-3)" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+                        <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Full Name</label>
+                        <input type="text" required placeholder="Your name" className="input"
                           value={formData.fullName}
                           onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                          onFocus={() => setActiveField("name")} onBlur={() => setActiveField("none")}
-                          style={{ padding: "0.7rem 0.85rem", fontSize: "0.88rem" }} />
+                          onFocus={() => setActiveField("name")} onBlur={() => setActiveField("none")} />
                       </div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                        <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", letterSpacing: "0.01em" }}>Username</label>
-                        <input type="text" required placeholder="Username" className="input-field"
+                      <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+                        <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Username</label>
+                        <input type="text" required placeholder="Your username" className="input"
                           value={formData.username}
                           onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/\s/g, "") })}
-                          onFocus={() => setActiveField("username")} onBlur={() => setActiveField("none")}
-                          style={{ padding: "0.7rem 0.85rem", fontSize: "0.88rem" }} />
+                          onFocus={() => setActiveField("username")} onBlur={() => setActiveField("none")} />
                       </div>
                     </div>
 
-                    {/* Row 2: Email (full width) */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                      <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", letterSpacing: "0.01em" }}>Email</label>
-                      <input type="email" required placeholder="Email" className="input-field"
+                    {/* Row 2: Email */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+                      <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Email</label>
+                      <input type="email" required placeholder="Your email" className="input"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        onFocus={() => setActiveField("email")} onBlur={() => setActiveField("none")}
-                        style={{ padding: "0.7rem 0.85rem", fontSize: "0.88rem" }} />
+                        onFocus={() => setActiveField("email")} onBlur={() => setActiveField("none")} />
                     </div>
 
-                    {/* Row 3: Country Code + Mobile */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                      <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", letterSpacing: "0.01em" }}>Mobile Number</label>
-                      <div style={{ display: "flex", gap: "0" }}>
+                    {/* Row 3: Mobile */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+                      <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Mobile Number</label>
+                      <div style={{ display: "flex", gap: 0 }}>
                         <div style={{ position: "relative" }}>
                           <select
                             value={formData.countryCode}
                             onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
+                            className="input select"
                             style={{
-                              appearance: "none",
-                              WebkitAppearance: "none",
-                              padding: "0.7rem 2rem 0.7rem 0.65rem",
-                              fontSize: "0.88rem",
-                              fontWeight: 600,
+                              width: "auto",
                               borderRadius: "var(--radius-md) 0 0 var(--radius-md)",
-                              border: "1.5px solid var(--border-light)",
                               borderRight: "none",
-                              backgroundColor: "var(--bg-secondary)",
-                              color: "var(--text-primary)",
-                              cursor: "pointer",
-                              outline: "none",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "0.4rem",
-                              lineHeight: 1,
+                              padding: "0 var(--sp-8) 0 var(--sp-3)",
+                              fontWeight: 600,
+                              fontSize: 13,
                             }}
                           >
                             {COUNTRIES.map((c) => (
@@ -615,20 +603,20 @@ export default function RegisterPage() {
                           </div>
                         </div>
                         <div style={{ position: "relative", flex: 1 }}>
-                          <div style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", display: "flex", alignItems: "center", gap: "0.35rem", pointerEvents: "none" }}>
-                            <FlagImg iso={COUNTRIES.find(c => c.code === formData.countryCode)?.iso || "in"} />
+                          <div style={{ position: "absolute", left: "var(--sp-3)", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+                            <FlagImg iso={COUNTRIES.find(c => c.code === formData.countryCode)?.iso || "in"} size={16} />
                           </div>
                           <input
-                            type="tel" required placeholder="Mobile number"
-                            className="input-field"
+                            type="tel" required placeholder="Your number"
+                            className="input"
                             value={formData.mobile}
                             onChange={(e) => setFormData({ ...formData, mobile: e.target.value.replace(/\D/g, "") })}
                             onFocus={() => setActiveField("email")} onBlur={() => setActiveField("none")}
                             style={{
-                              padding: "0.7rem 0.85rem 0.7rem 3.2rem",
-                              fontSize: "0.88rem",
+                              paddingLeft: "var(--sp-8)",
                               borderRadius: "0 var(--radius-md) var(--radius-md) 0",
                               letterSpacing: "0.03em",
+                              fontSize: 13,
                             }}
                           />
                         </div>
@@ -636,16 +624,16 @@ export default function RegisterPage() {
                     </div>
 
                     {/* Row 4: Password */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                      <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", letterSpacing: "0.01em" }}>Password</label>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+                      <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Password</label>
                       <div style={{ position: "relative" }}>
-                        <input type={showPassword ? "text" : "password"} required placeholder="Password" className="input-field"
+                        <input type={showPassword ? "text" : "password"} required placeholder="Password" className="input"
                           value={formData.password}
                           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                           onFocus={() => setActiveField("password")} onBlur={() => setActiveField("none")}
-                          style={{ padding: "0.7rem 0.85rem", fontSize: "0.88rem", paddingRight: "3rem" }} />
+                          style={{ paddingRight: "var(--sp-12)" }} />
                         <button type="button" onClick={() => setShowPassword((p) => !p)} onMouseDown={(e) => e.preventDefault()}
-                          style={{ position: "absolute", right: "0.85rem", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", display: "flex", alignItems: "center", background: "none", border: "none", cursor: "pointer" }}>
+                          style={{ position: "absolute", right: "var(--sp-3)", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", display: "flex", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: "var(--sp-1)" }}>
                           {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                         </button>
                       </div>
@@ -653,10 +641,10 @@ export default function RegisterPage() {
                     </div>
 
                     {/* Row 5: Confirm Password */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                      <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", letterSpacing: "0.01em" }}>Confirm Password</label>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+                      <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Confirm Password</label>
                       <div style={{ position: "relative" }}>
-                        <input type={showConfirmPassword ? "text" : "password"} required placeholder="Confirm password"
+                        <input type={showConfirmPassword ? "text" : "password"} required placeholder="Password"
                           className={confirmBorderClass}
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
@@ -664,9 +652,9 @@ export default function RegisterPage() {
                           onCopy={(e) => e.preventDefault()}
                           onCut={(e) => e.preventDefault()}
                           onFocus={() => setActiveField("confirmPassword")} onBlur={() => setActiveField("none")}
-                          style={{ padding: "0.7rem 0.85rem", fontSize: "0.88rem", paddingRight: "3rem" }} />
+                          style={{ paddingRight: "var(--sp-12)" }} />
                         <button type="button" onClick={() => setShowConfirmPassword((p) => !p)} onMouseDown={(e) => e.preventDefault()}
-                          style={{ position: "absolute", right: "0.85rem", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", display: "flex", alignItems: "center", background: "none", border: "none", cursor: "pointer" }}>
+                          style={{ position: "absolute", right: "var(--sp-3)", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", display: "flex", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: "var(--sp-1)" }}>
                           {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
                         </button>
                       </div>
@@ -674,7 +662,8 @@ export default function RegisterPage() {
                         {passwordMatch !== "idle" && (
                           <motion.p key={passwordMatch} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
                             transition={{ duration: 0.2 }}
-                            style={{ fontSize: "0.78rem", fontWeight: 600, color: passwordMatch === "match" ? matchColour : mismatchColour, display: "flex", alignItems: "center", gap: "0.3rem", marginTop: "0.1rem" }}>
+                            className="text-caption"
+                            style={{ color: passwordMatch === "match" ? matchColour : mismatchColour, display: "flex", alignItems: "center", gap: "var(--sp-1)", marginTop: "var(--sp-1)" }}>
                             {passwordMatch === "match" ? <CheckIcon /> : <XIcon />}
                             {passwordMatch === "match" ? "Passwords match" : "Passwords do not match"}
                           </motion.p>
@@ -683,62 +672,62 @@ export default function RegisterPage() {
                     </div>
 
                     {/* Row 6: Profile Photo */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                      <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", letterSpacing: "0.01em" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+                      <label className="text-caption" style={{ color: "var(--text-secondary)" }}>
                         Profile Photo <span style={{ color: "var(--accent)" }}>*</span>
                       </label>
                       <div className={`upload-zone ${avatarPreview ? "has-file" : ""}`}
                         onMouseEnter={() => setActiveField("avatar")} onMouseLeave={() => setActiveField("none")}
-                        style={{ flexDirection: "row", gap: "1rem", padding: "0.85rem 1rem", justifyContent: "flex-start", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1.5px dashed var(--border-light)", cursor: "pointer", transition: "all 0.2s" }}>
+                        style={{ flexDirection: "row", gap: "var(--sp-3)", padding: "var(--sp-3)", justifyContent: "flex-start", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1.5px dashed var(--border)", cursor: "pointer", transition: "all 0.2s" }}>
                         <input type="file" accept="image/*" ref={avatarRef} onChange={handleAvatarChange} />
                         {avatarPreview
                           /* eslint-disable-next-line @next/next/no-img-element */
-                          ? <img src={avatarPreview} alt="Avatar" style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--accent)", flexShrink: 0 }} />
-                          : <div style={{ width: 44, height: 44, borderRadius: "50%", backgroundColor: "var(--bg-elevated)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", flexShrink: 0 }}><UserCircleIcon /></div>
+                          ? <img src={avatarPreview} alt="Avatar" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--accent)", flexShrink: 0 }} />
+                          : <div style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "var(--elevated)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", flexShrink: 0 }}><UserCircleIcon /></div>
                         }
                         <div style={{ textAlign: "left" }}>
-                          <p style={{ fontSize: "0.82rem", fontWeight: 600, color: avatarPreview ? "var(--success)" : "var(--text-primary)" }}>{avatarName || "Upload profile photo"}</p>
-                          <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.1rem" }}>JPG, PNG, WEBP — max 5 MB</p>
+                          <p style={{ fontSize: 13, fontWeight: 600, color: avatarPreview ? "var(--success)" : "var(--text-primary)" }}>{avatarName || "Upload profile photo"}</p>
+                          <p style={{ fontSize: 11, color: "var(--text-muted)" }}>JPG, PNG, WEBP — max 5 MB</p>
                         </div>
                       </div>
                     </div>
 
                     {/* Row 7: Channel Banner */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                      <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", letterSpacing: "0.01em" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+                      <label className="text-caption" style={{ color: "var(--text-secondary)" }}>
                         Channel Banner <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(optional)</span>
                       </label>
                       <div className={`upload-zone ${coverPreview ? "has-file" : ""}`}
                         onMouseEnter={() => setActiveField("cover")} onMouseLeave={() => setActiveField("none")}
-                        style={{ padding: "0", height: 76, backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1.5px dashed var(--border-light)", cursor: "pointer", overflow: "hidden", transition: "all 0.2s" }}>
+                        style={{ padding: 0, height: 56, backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1.5px dashed var(--border)", cursor: "pointer", overflow: "hidden", transition: "all 0.2s" }}>
                         <input type="file" accept="image/*" ref={coverRef} onChange={handleCoverChange} />
                         {coverPreview
                           /* eslint-disable-next-line @next/next/no-img-element */
                           ? <img src={coverPreview} alt="Cover" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "var(--radius-md)" }} />
-                          : <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: "0.3rem" }}>
+                          : <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", gap: "var(--sp-2)" }}>
                             <div style={{ color: "var(--text-muted)" }}><UploadImageIcon /></div>
-                            <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", fontWeight: 500 }}>{coverName || "Upload channel banner"}</p>
+                            <p style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 500 }}>{coverName || "Upload channel banner"}</p>
                           </div>
                         }
                       </div>
                     </div>
 
-                    <button type="submit" className="btn-primary" disabled={passwordMatch === "mismatch"}
+                    <button type="submit" className="btn btn-primary" disabled={passwordMatch === "mismatch"}
                       onMouseEnter={() => setActiveField("submit")} onMouseLeave={() => setActiveField("none")}
-                      style={{ marginTop: "0.5rem", width: "100%", padding: "0.85rem", fontSize: "0.92rem", fontWeight: 700, letterSpacing: "-0.01em" }}>
+                      style={{ marginTop: "var(--sp-1)", width: "100%" }}>
                       Continue to Verification
                     </button>
                   </form>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: "1rem", margin: "1.5rem 0" }}>
-                    <div style={{ flex: 1, height: 1, backgroundColor: "var(--border-light)" }} />
-                    <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 500 }}>or continue with</span>
-                    <div style={{ flex: 1, height: 1, backgroundColor: "var(--border-light)" }} />
+                  <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)", margin: "var(--sp-4) 0" }}>
+                    <div style={{ flex: 1, height: 1, backgroundColor: "var(--border)" }} />
+                    <span className="text-caption" style={{ color: "var(--text-muted)" }}>or continue with</span>
+                    <div style={{ flex: 1, height: 1, backgroundColor: "var(--border)" }} />
                   </div>
 
                   <SocialLoginButtons />
 
-                  <p style={{ marginTop: "1.75rem", textAlign: "center", fontSize: "0.88rem", color: "var(--text-muted)" }}>
+                  <p style={{ marginTop: "var(--sp-4)", textAlign: "center", fontSize: 13, color: "var(--text-muted)" }}>
                     Already have an account?{" "}
                     <Link href="/login" style={{ color: "var(--text-primary)", fontWeight: 700, textDecoration: "underline" }}>
                       Sign in
@@ -778,13 +767,13 @@ export default function RegisterPage() {
                             display: "flex", alignItems: "center", gap: "0.75rem",
                             padding: "1rem 1.2rem",
                             borderRadius: "var(--radius-md)",
-                            border: "1.5px solid var(--border-light)",
+                            border: "1.5px solid var(--border)",
                             backgroundColor: "var(--bg-secondary)",
                             cursor: "pointer",
                             transition: "all 0.2s",
                           }}
-                          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.backgroundColor = "var(--accent-light)"; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-light)"; e.currentTarget.style.backgroundColor = "var(--bg-secondary)"; }}
+                          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.backgroundColor = "var(--accent-subtle)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.backgroundColor = "var(--bg-secondary)"; }}
                         >
                           <div style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", flexShrink: 0 }}>
                             <MailIcon />
@@ -802,13 +791,13 @@ export default function RegisterPage() {
                             display: "flex", alignItems: "center", gap: "0.75rem",
                             padding: "1rem 1.2rem",
                             borderRadius: "var(--radius-md)",
-                            border: "1.5px solid var(--border-light)",
+                            border: "1.5px solid var(--border)",
                             backgroundColor: "var(--bg-secondary)",
                             cursor: "pointer",
                             transition: "all 0.2s",
                           }}
-                          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.backgroundColor = "var(--accent-light)"; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-light)"; e.currentTarget.style.backgroundColor = "var(--bg-secondary)"; }}
+                          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.backgroundColor = "var(--accent-subtle)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.backgroundColor = "var(--bg-secondary)"; }}
                         >
                           <div style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "#25D366", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", flexShrink: 0 }}>
                             <PhoneIcon />
@@ -829,7 +818,7 @@ export default function RegisterPage() {
                         style={{
                           padding: "1.2rem",
                           borderRadius: "var(--radius-md)",
-                          border: "1px solid var(--border-light)",
+                          border: "1px solid var(--border)",
                           backgroundColor: "var(--bg-secondary)",
                         }}
                       >
@@ -847,19 +836,19 @@ export default function RegisterPage() {
                               onChange={(e) => handleOtpChange(i, e.target.value, setEmailOtp, emailOtpRefs, true)}
                               onKeyDown={(e) => handleOtpKeyDown(i, e, setEmailOtp, emailOtpRefs, true)}
                               onPaste={(e) => handleOtpPaste(e, setEmailOtp, emailOtpRefs)}
-                              style={{ width: 44, height: 48, textAlign: "center", fontSize: "1.15rem", fontWeight: 700, borderRadius: "var(--radius-md)", border: "1.5px solid var(--border-light)", backgroundColor: "var(--bg-primary)", color: "var(--text-primary)", outline: "none" }} />
+                              style={{ width: 44, height: 48, textAlign: "center", fontSize: "1.15rem", fontWeight: 700, borderRadius: "var(--radius-md)", border: "1.5px solid var(--border)", backgroundColor: "var(--bg-primary)", color: "var(--text-primary)", outline: "none" }} />
                           ))}
                         </div>
                         {emailOtpError && <p style={{ fontSize: "0.78rem", color: "var(--error)", textAlign: "center", marginBottom: "0.75rem" }}>{emailOtpError}</p>}
                         <div style={{ display: "flex", gap: "0.6rem" }}>
                           <button type="button" disabled={emailVerifying || emailOtp.join("").length < OTP_LENGTH}
                             onClick={() => verifyOtp(formData.email, emailOtp.join(""), true)}
-                            className="btn-primary" style={{ flex: 1, padding: "0.7rem", fontSize: "0.82rem" }}>
+                            className="btn btn-primary" style={{ flex: 1, padding: "0.7rem", fontSize: "0.82rem" }}>
                             {emailVerifying ? "Verifying..." : "Verify Email"}
                           </button>
                           <button type="button" disabled={emailCooldown > 0 || sendingOtp}
                             onClick={() => { sendOtps("email"); setEmailOtp(Array(OTP_LENGTH).fill("")); setEmailOtpError(""); }}
-                            style={{ padding: "0.7rem 1rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-light)", backgroundColor: "var(--bg-secondary)", color: emailCooldown > 0 ? "var(--text-muted)" : "var(--text-primary)", fontSize: "0.78rem", fontWeight: 600, cursor: emailCooldown > 0 ? "not-allowed" : "pointer" }}>
+                            style={{ padding: "0.7rem 1rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", backgroundColor: "var(--bg-secondary)", color: emailCooldown > 0 ? "var(--text-muted)" : "var(--text-primary)", fontSize: "0.78rem", fontWeight: 600, cursor: emailCooldown > 0 ? "not-allowed" : "pointer" }}>
                             {emailCooldown > 0 ? `${emailCooldown}s` : "Resend"}
                           </button>
                         </div>
@@ -878,7 +867,7 @@ export default function RegisterPage() {
                         style={{
                           padding: "1.2rem",
                           borderRadius: "var(--radius-md)",
-                          border: "1px solid var(--border-light)",
+                          border: "1px solid var(--border)",
                           backgroundColor: "var(--bg-secondary)",
                         }}
                       >
@@ -896,19 +885,19 @@ export default function RegisterPage() {
                               onChange={(e) => handleOtpChange(i, e.target.value, setMobileOtp, mobileOtpRefs, false)}
                               onKeyDown={(e) => handleOtpKeyDown(i, e, setMobileOtp, mobileOtpRefs, false)}
                               onPaste={(e) => handleOtpPaste(e, setMobileOtp, mobileOtpRefs)}
-                              style={{ width: 44, height: 48, textAlign: "center", fontSize: "1.15rem", fontWeight: 700, borderRadius: "var(--radius-md)", border: "1.5px solid var(--border-light)", backgroundColor: "var(--bg-primary)", color: "var(--text-primary)", outline: "none" }} />
+                              style={{ width: 44, height: 48, textAlign: "center", fontSize: "1.15rem", fontWeight: 700, borderRadius: "var(--radius-md)", border: "1.5px solid var(--border)", backgroundColor: "var(--bg-primary)", color: "var(--text-primary)", outline: "none" }} />
                           ))}
                         </div>
                         {mobileOtpError && <p style={{ fontSize: "0.78rem", color: "var(--error)", textAlign: "center", marginBottom: "0.75rem" }}>{mobileOtpError}</p>}
                         <div style={{ display: "flex", gap: "0.6rem" }}>
                           <button type="button" disabled={mobileVerifying || mobileOtp.join("").length < OTP_LENGTH}
                             onClick={() => verifyOtp(fullMobile, mobileOtp.join(""), false)}
-                            className="btn-primary" style={{ flex: 1, padding: "0.7rem", fontSize: "0.82rem", backgroundColor: "#25D366" }}>
+                            className="btn btn-primary" style={{ flex: 1, padding: "0.7rem", fontSize: "0.82rem", backgroundColor: "#25D366" }}>
                             {mobileVerifying ? "Verifying..." : "Verify WhatsApp"}
                           </button>
                           <button type="button" disabled={mobileCooldown > 0 || sendingOtp}
                             onClick={() => { sendOtps("whatsapp"); setMobileOtp(Array(OTP_LENGTH).fill("")); setMobileOtpError(""); }}
-                            style={{ padding: "0.7rem 1rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-light)", backgroundColor: "var(--bg-secondary)", color: mobileCooldown > 0 ? "var(--text-muted)" : "var(--text-primary)", fontSize: "0.78rem", fontWeight: 600, cursor: mobileCooldown > 0 ? "not-allowed" : "pointer" }}>
+                            style={{ padding: "0.7rem 1rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", backgroundColor: "var(--bg-secondary)", color: mobileCooldown > 0 ? "var(--text-muted)" : "var(--text-primary)", fontSize: "0.78rem", fontWeight: 600, cursor: mobileCooldown > 0 ? "not-allowed" : "pointer" }}>
                             {mobileCooldown > 0 ? `${mobileCooldown}s` : "Resend"}
                           </button>
                         </div>
@@ -934,7 +923,7 @@ export default function RegisterPage() {
 
                     {/* ── Create Account button ── */}
                     <motion.button type="button" disabled={!(emailVerified || mobileVerified) || isLoading}
-                      onClick={handleFinalRegister} className="btn-primary"
+                      onClick={handleFinalRegister} className="btn btn-primary"
                       whileHover={(emailVerified || mobileVerified) && !isLoading ? { scale: 1.01 } : {}}
                       whileTap={(emailVerified || mobileVerified) && !isLoading ? { scale: 0.98 } : {}}
                       style={{ width: "100%", padding: "0.85rem", opacity: (emailVerified || mobileVerified) && !isLoading ? 1 : 0.5, cursor: (emailVerified || mobileVerified) && !isLoading ? "pointer" : "not-allowed" }}>
@@ -1000,7 +989,7 @@ export default function RegisterPage() {
       </div>
 
       {/* RIGHT: MASCOT */}
-      <div style={{ flex: 1.2, backgroundColor: "var(--bg-elevated)", borderLeft: "1px solid var(--border-medium)" }} className="mascot-panel">
+      <div style={{ flex: 1.2, backgroundColor: "var(--elevated)", borderLeft: "1px solid var(--border-medium)" }} className="mascot-panel">
         <MascotAnimation
           activeField={activeField}
           isPasswordVisible={showPassword}
