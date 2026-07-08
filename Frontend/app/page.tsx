@@ -9,8 +9,6 @@ import { useEffect, useState } from "react";
 import { formatViews, formatDuration } from "@/src/lib/utils";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import TopNav from "@/src/components/TopNav";
-import PremiumSidebar from "@/src/components/PremiumSidebar";
 import { PlaySmallIcon, FireIcon, PlusIcon } from "@/src/components/icons";
 
 interface VideoOwner {
@@ -59,7 +57,6 @@ export default function Home() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
   const [activeCategory, setActiveCategory] = useState("Latest Videos");
-  const [activeSidebar, setActiveSidebar] = useState("home");
 
   useKeyboardShortcuts([
     { key: "Escape", description: "Close / Go back", action: () => {} },
@@ -99,61 +96,52 @@ export default function Home() {
   const featuredVideo = videos.length > 0 ? videos[0] : null;
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
-      <TopNav />
-
-      <div className="page-layout">
-        <PremiumSidebar activeSection={activeSidebar} />
-
-        <main className="page-content content-max">
-          {/* Hero */}
-          {videosLoading ? (
-            <SkeletonHero />
-          ) : featuredVideo ? (
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="hero"
-            >
-              <div className="hero-bg" style={{ backgroundImage: `url(${featuredVideo.thumbnail})` }} />
-              <div className="hero-gradient" />
-              <div className="hero-content">
-                <div>
-                  <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="hero-badge">
-                    <FireIcon size={14} /> Featured
-                  </motion.div>
-                  <motion.h1 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }} className="hero-title">
-                    {featuredVideo.title}
-                  </motion.h1>
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="hero-meta">
-                    <span>{featuredVideo.owner?.fullName}</span>
-                    <span className="dot" />
-                    <span>{formatViews(featuredVideo.views)} views</span>
-                    <span className="dot" />
-                    <span>{formatDuration(featuredVideo.duration)}</span>
-                  </motion.div>
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
-                    <Link href={`/videos/${featuredVideo._id}`} className="hero-btn">
-                      <PlaySmallIcon size={14} /> Watch Now
-                    </Link>
-                  </motion.div>
-                </div>
-              </div>
-            </motion.div>
-          ) : null}
-
-          {/* Category Chips */}
-          <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }} className="scroll-hide">
-            {["Latest Videos", "Trending", "Liked Videos"].map((cat) => (
-              <button key={cat} onClick={() => setActiveCategory(cat)} className={`chip ${activeCategory === cat ? "active" : ""}`}>
-                {cat}
-              </button>
-            ))}
+    <>
+      {/* Hero */}
+      {videosLoading ? (
+        <SkeletonHero />
+      ) : featuredVideo ? (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="hero"
+        >
+          <div className="hero-bg" style={{ backgroundImage: `url(${featuredVideo.thumbnail})` }} />
+          <div className="hero-gradient" />
+          <div className="hero-content">
+            <div>
+              <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="hero-badge">
+                <FireIcon size={14} /> Featured
+              </motion.div>
+              <motion.h1 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }} className="hero-title">
+                {featuredVideo.title}
+              </motion.h1>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="hero-meta">
+                <span>{featuredVideo.owner?.fullName}</span>
+                <span className="dot" />
+                <span>{formatViews(featuredVideo.views)} views</span>
+                <span className="dot" />
+                <span>{formatDuration(featuredVideo.duration)}</span>
+              </motion.div>
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+                <Link href={`/videos/${featuredVideo._id}`} className="hero-btn">
+                  <PlaySmallIcon size={14} /> Watch Now
+                </Link>
+              </motion.div>
+            </div>
           </div>
+        </motion.div>
+      ) : null}
 
-        </main>
+      {/* Category Chips */}
+      <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }} className="scroll-hide">
+        {["Latest Videos", "Trending", "Liked Videos"].map((cat) => (
+          <button key={cat} onClick={() => setActiveCategory(cat)} className={`chip ${activeCategory === cat ? "active" : ""}`}>
+            {cat}
+          </button>
+        ))}
       </div>
-    </div>
+    </>
   );
 }

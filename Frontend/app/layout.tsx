@@ -7,6 +7,7 @@ import SplashWrapper from "@/src/components/SplashWrapper";
 import BottomNav from "@/src/components/BottomNav";
 import ShortcutsDialog from "@/src/components/ShortcutsDialog";
 import { ErrorBoundary } from "@/src/components/ErrorBoundary";
+import AppShell from "@/src/components/AppShell";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -36,7 +37,9 @@ export default function RootLayout({
           <AuthProvider>
             <ErrorBoundary>
               <SplashWrapper>
-                {children}
+                <AppShell>
+                  {children}
+                </AppShell>
               </SplashWrapper>
             </ErrorBoundary>
             <BottomNav />

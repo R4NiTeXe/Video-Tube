@@ -5,7 +5,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import TopNav from "@/src/components/TopNav";
 import { timeAgo, formatDuration } from "@/src/lib/utils";
@@ -22,6 +21,9 @@ import {
   UploadIcon,
   ImageIcon,
   GlobeIcon,
+  TrendingIcon,
+  ClockIcon,
+  DownloadIcon,
 } from "@/src/components/icons";
 
 const CATEGORIES = ["General", "Gaming", "Music", "Education", "Entertainment", "Sports", "News", "Technology", "Science", "Travel", "Food", "Fashion", "Art", "Podcasts"] as const;
@@ -222,7 +224,7 @@ function StatCard({ label, value, icon, color }: { label: string; value: number;
   );
 }
 
-// ── Video Card ──
+// ── Video Card (Horizontal) ──
 function VideoCard({ video, isSelected, onSelect, onToggleSelect }: {
   video: { _id: string; thumbnail: string; title: string; isPublished: boolean; createdAt: string; views: number; likesCount: number; duration: number };
   isSelected: boolean;
@@ -238,38 +240,39 @@ function VideoCard({ video, isSelected, onSelect, onToggleSelect }: {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       style={{
+        display: "flex",
+        gap: 0,
+        overflow: "hidden",
         borderColor: isSelected ? "var(--accent)" : undefined,
         boxShadow: isSelected ? "0 0 0 1px var(--accent)" : undefined,
       }}
     >
       {/* Thumbnail */}
-      <div style={{ position: "relative", cursor: "pointer" }} onClick={onSelect}>
-        <div className="video-thumb">
-          <img src={video.thumbnail} alt={video.title} />
-        </div>
-        <div style={{ position: "absolute", top: "var(--sp-2)", left: "var(--sp-2)", zIndex: 2, display: "flex", alignItems: "center", gap: "var(--sp-2)" }}>
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onChange={onToggleSelect}
-            onClick={(e) => e.stopPropagation()}
-            style={{ accentColor: "var(--accent)", width: 16, height: 16, cursor: "pointer", backgroundColor: "rgba(0,0,0,0.5)", borderRadius: "var(--radius-xs)" }}
-          />
+      <div style={{ position: "relative", cursor: "pointer", width: 200, minHeight: 112, flexShrink: 0 }} onClick={onSelect}>
+        <div style={{ width: "100%", height: "100%", backgroundColor: "var(--elevated)", borderRadius: 0 }}>
+          <img src={video.thumbnail} alt={video.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
         </div>
         <span className="video-duration">{formatDuration(video.duration)}</span>
         <span style={{
-          position: "absolute", top: "var(--sp-2)", right: "var(--sp-2)", zIndex: 2,
+          position: "absolute", top: "var(--sp-2)", left: "var(--sp-2)", zIndex: 2,
           padding: "2px 8px", borderRadius: "var(--radius-full)", fontSize: "11px", fontWeight: 600,
           backgroundColor: video.isPublished ? "var(--accent)" : "var(--elevated)",
           color: video.isPublished ? "#fff" : "var(--text-muted)",
         }}>
           {video.isPublished ? "Public" : "Private"}
         </span>
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={onToggleSelect}
+          onClick={(e) => e.stopPropagation()}
+          style={{ position: "absolute", bottom: "var(--sp-2)", left: "var(--sp-2)", zIndex: 2, accentColor: "var(--accent)", width: 16, height: 16, cursor: "pointer" }}
+        />
       </div>
 
       {/* Info */}
-      <div style={{ padding: "var(--sp-3) var(--sp-4)" }}>
-        <p className="video-title">{video.title}</p>
+      <div style={{ padding: "var(--sp-3) var(--sp-4)", flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <p className="video-title" style={{ fontSize: "0.95rem", marginBottom: "0.3rem" }}>{video.title}</p>
         <div className="video-meta">
           <span>{video.views.toLocaleString()} views</span>
           <span>&middot;</span>
@@ -279,18 +282,18 @@ function VideoCard({ video, isSelected, onSelect, onToggleSelect }: {
         </div>
 
         {/* Actions */}
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", marginTop: "var(--sp-3)", borderTop: "1px solid var(--border)", paddingTop: "var(--sp-3)" }}>
-          <button className="btn btn-sm btn-secondary" style={{ flex: 1 }} onClick={() => router.push(`/videos/${video._id}`)}>
-            <EyeIcon size={14} />
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", marginTop: "var(--sp-3)" }}>
+          <button className="btn btn-sm btn-secondary" style={{ padding: "0.35rem 0.8rem", fontSize: "0.78rem" }} onClick={() => router.push(`/videos/${video._id}`)}>
+            <EyeIcon size={13} />
             View
           </button>
-          <button className="btn btn-sm btn-secondary" style={{ flex: 1 }} onClick={() => router.push(`/studio?edit=${video._id}`)}>
-            <Edit2Icon size={14} />
+          <button className="btn btn-sm btn-secondary" style={{ padding: "0.35rem 0.8rem", fontSize: "0.78rem" }} onClick={() => router.push(`/studio?edit=${video._id}`)}>
+            <Edit2Icon size={13} />
             Edit
           </button>
           <div style={{ position: "relative" }}>
-            <button className="btn btn-sm btn-ghost btn-icon" onClick={() => setMenuOpen(!menuOpen)}>
-              <span style={{ fontSize: "16px", lineHeight: 1 }}>&hellip;</span>
+            <button className="btn btn-sm btn-ghost btn-icon" onClick={() => setMenuOpen(!menuOpen)} style={{ width: 28, height: 28 }}>
+              <span style={{ fontSize: "14px", lineHeight: 1 }}>&hellip;</span>
             </button>
             {menuOpen && (
               <>
@@ -369,24 +372,18 @@ export default function CreatorStudio() {
 
   if (authLoading || !isAuthenticated) {
     return (
-      <div className="page-layout">
-        <TopNav />
-        <div className="page-content" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div className="skeleton" style={{ width: 160, height: 20 }} />
-        </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "6rem 2rem" }}>
+        <div className="skeleton" style={{ width: 160, height: 20 }} />
       </div>
     );
   }
 
   if (statsLoading || videosLoading) {
     return (
-      <div className="page-layout">
-        <TopNav />
-        <div className="page-content" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "var(--sp-4)" }}>
-            <div className="skeleton" style={{ width: 200, height: 20 }} />
-            <p className="text-caption" style={{ color: "var(--text-muted)" }}>Loading your studio...</p>
-          </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "6rem 2rem" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "var(--sp-4)" }}>
+          <div className="skeleton" style={{ width: 200, height: 20 }} />
+          <p className="text-caption" style={{ color: "var(--text-muted)" }}>Loading your studio...</p>
         </div>
       </div>
     );
@@ -411,31 +408,23 @@ export default function CreatorStudio() {
     <>
       {showUploadModal && <UploadModal onClose={() => setShowUploadModal(false)} onSuccess={handleUploadSuccess} />}
 
-      <TopNav />
-
-      <div className="page-layout">
-        <main className="page-content">
-          <div className="content-max">
-            {/* Welcome with Quick Actions */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "var(--sp-8)", flexWrap: "wrap", gap: "var(--sp-4)" }}>
-              <div>
-                <h1 className="text-page" style={{ marginBottom: "var(--sp-1)" }}>Creator Studio</h1>
-                <p className="text-caption" style={{ color: "var(--text-muted)", textTransform: "none", letterSpacing: 0 }}>Welcome back, {user?.fullName}</p>
-              </div>
+      <div className="content-max">
+        {/* Welcome with Quick Actions */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "var(--sp-8)", flexWrap: "wrap", gap: "var(--sp-4)" }}>
+          <div>
+            <h1 className="text-page" style={{ marginBottom: "var(--sp-1)" }}>Creator Studio</h1>
+            <p className="text-caption" style={{ color: "var(--text-muted)", textTransform: "none", letterSpacing: 0 }}>Welcome back, {user?.fullName}</p>
+          </div>
               <div style={{ display: "flex", gap: "var(--sp-2)", flexWrap: "wrap" }}>
                 <button className="btn btn-primary btn-pill" onClick={() => setShowUploadModal(true)}>
                   <PlusIcon size={16} />
                   Upload
                 </button>
-                <Link href="/" className="btn btn-ghost btn-pill" style={{ textDecoration: "none" }}>
-                  <GlobeIcon size={14} />
-                  View Channel
-                </Link>
               </div>
             </div>
 
-            {/* Stats */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "var(--sp-4)", marginBottom: "var(--sp-10)" }}>
+            {/* Analytics Dashboard */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "var(--sp-4)", marginBottom: "var(--sp-6)" }}>
               <StatCard label="Total Views" value={stats?.totalViews || 0} color="var(--accent-subtle)"
                 icon={<EyeIcon size={18} />}
               />
@@ -448,6 +437,81 @@ export default function CreatorStudio() {
               <StatCard label="Total Videos" value={stats?.totalVideos || 0} color="var(--error-subtle)"
                 icon={<VideoIcon size={18} />}
               />
+            </div>
+
+            {/* Insights Row */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--sp-6)", marginBottom: "var(--sp-8)" }}>
+              {/* Top Performing Videos */}
+              <div className="form-card" style={{ padding: "var(--sp-5)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", marginBottom: "var(--sp-4)" }}>
+                  <TrendingIcon size={18} />
+                  <h3 className="text-section" style={{ margin: 0, fontSize: "0.95rem" }}>Top Performing</h3>
+                </div>
+                {sortedVideos.length === 0 ? (
+                  <p className="text-caption" style={{ color: "var(--text-muted)" }}>No videos yet</p>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-2)" }}>
+                    {[...sortedVideos]
+                      .sort((a: { views: number }, b: { views: number }) => b.views - a.views)
+                      .slice(0, 5)
+                      .map((video: { _id: string; title: string; views: number; likesCount: number }, i: number) => (
+                        <div key={video._id} style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)", padding: "var(--sp-2) var(--sp-3)", borderRadius: "var(--radius-sm)", backgroundColor: "var(--bg-secondary)" }}>
+                          <span style={{ width: 20, fontSize: "0.8rem", fontWeight: 700, color: "var(--text-muted)", textAlign: "center" }}>{i + 1}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{video.title}</p>
+                            <p style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{video.views.toLocaleString()} views &middot; {video.likesCount.toLocaleString()} likes</p>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Channel Analytics */}
+              <div className="form-card" style={{ padding: "var(--sp-5)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", marginBottom: "var(--sp-4)" }}>
+                  <TrendingIcon size={18} />
+                  <h3 className="text-section" style={{ margin: 0, fontSize: "0.95rem" }}>Channel Analytics</h3>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "var(--sp-2) 0", borderBottom: "1px solid var(--border)" }}>
+                    <span style={{ fontSize: "0.82rem", color: "var(--text-secondary)" }}>Avg Views / Video</span>
+                    <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                      {stats?.totalVideos > 0 ? Math.round((stats?.totalViews || 0) / stats.totalVideos).toLocaleString() : 0}
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "var(--sp-2) 0", borderBottom: "1px solid var(--border)" }}>
+                    <span style={{ fontSize: "0.82rem", color: "var(--text-secondary)" }}>Engagement Rate</span>
+                    <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                      {stats?.totalViews > 0 ? `${((stats?.totalLikes || 0) / stats.totalViews * 100).toFixed(1)}%` : "0%"}
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "var(--sp-2) 0", borderBottom: "1px solid var(--border)" }}>
+                    <span style={{ fontSize: "0.82rem", color: "var(--text-secondary)" }}>Like-to-Sub Ratio</span>
+                    <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                      {stats?.totalSubscribers > 0 ? `${((stats?.totalLikes || 0) / stats.totalSubscribers * 100).toFixed(0)}%` : "0%"}
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "var(--sp-2) 0", borderBottom: "1px solid var(--border)" }}>
+                    <span style={{ fontSize: "0.82rem", color: "var(--text-secondary)" }}>Likes per Video</span>
+                    <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                      {stats?.totalVideos > 0 ? Math.round((stats?.totalLikes || 0) / stats.totalVideos).toLocaleString() : 0}
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "var(--sp-2) 0", borderBottom: "1px solid var(--border)" }}>
+                    <span style={{ fontSize: "0.82rem", color: "var(--text-secondary)" }}>Views per Subscriber</span>
+                    <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                      {stats?.totalSubscribers > 0 ? (stats?.totalViews / stats.totalSubscribers).toFixed(1) : "0"}
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "var(--sp-2) 0" }}>
+                    <span style={{ fontSize: "0.82rem", color: "var(--text-secondary)" }}>Subscriber Efficiency</span>
+                    <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                      {stats?.totalVideos > 0 ? `${Math.round((stats?.totalSubscribers || 0) / stats.totalVideos).toLocaleString()} / video` : "0"}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Content */}
@@ -525,7 +589,7 @@ export default function CreatorStudio() {
                 </button>
               </div>
             ) : (
-              <div className="video-grid">
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
                 {sortedVideos.map((video: { _id: string; thumbnail: string; title: string; isPublished: boolean; createdAt: string; views: number; likesCount: number; duration: number }) => (
                   <VideoCard
                     key={video._id}
@@ -538,8 +602,6 @@ export default function CreatorStudio() {
               </div>
             )}
           </div>
-        </main>
-      </div>
-    </>
-  );
-}
+        </>
+      );
+    }

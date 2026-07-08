@@ -7,7 +7,22 @@ import { useAuthStore } from "@/src/store/useAuthStore";
 import { useThemeStore } from "@/src/store/useThemeStore";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import PageNavDropdown from "@/src/components/PageNavDropdown";
+import {
+  KeyIcon,
+  SunIcon,
+  MoonIcon,
+  BellIcon,
+  ShieldCheckIcon,
+  GlobeIcon,
+  EyeIcon,
+  EyeOffIcon,
+  TrashIcon,
+  UserIcon,
+  MailIcon,
+  PhoneIcon,
+  VideoIcon,
+  HeartIcon,
+} from "@/src/components/icons";
 
 function PasswordInput({ value, onChange, placeholder, minLength = 6, blockPaste = false }: { value: string; onChange: (v: string) => void; placeholder?: string; minLength?: number; blockPaste?: boolean }) {
   const [show, setShow] = useState(false);
@@ -103,13 +118,19 @@ export default function SettingsPage() {
   // Privacy
   const [privateSubs, setPrivateSubs] = useState(false);
   const [showSubsList, setShowSubsList] = useState(true);
+  const [privacySaving, setPrivacySaving] = useState(false);
+  const [privacyMsg, setPrivacyMsg] = useState("");
 
   // Language
   const [language, setLanguage] = useState("English");
+  const [langSaving, setLangSaving] = useState(false);
+  const [langMsg, setLangMsg] = useState("");
 
   // Content defaults
   const [defaultVisibility, setDefaultVisibility] = useState("public");
   const [defaultCategory, setDefaultCategory] = useState("General");
+  const [defaultsSaving, setDefaultsSaving] = useState(false);
+  const [defaultsMsg, setDefaultsMsg] = useState("");
 
   // Sessions
   const [sessions, setSessions] = useState<Array<{ _id: string; deviceName: string; location: string; lastActiveAt: string; isCurrent: boolean }>>([]);
@@ -126,6 +147,54 @@ export default function SettingsPage() {
   const [deleteOtpSent, setDeleteOtpSent] = useState(false);
   const [deleteOtpSending, setDeleteOtpSending] = useState(false);
   const [deleteChannel, setDeleteChannel] = useState<"email" | "whatsapp">("email");
+  const [activeSection, setActiveSection] = useState("profile");
+
+  const settingsSections = [
+    { id: "profile", label: "Profile", icon: UserIcon },
+    { id: "password", label: "Password", icon: KeyIcon },
+    { id: "appearance", label: "Appearance", icon: SunIcon },
+    { id: "notifications", label: "Notifications", icon: BellIcon },
+    { id: "privacy", label: "Privacy", icon: ShieldCheckIcon },
+    { id: "language", label: "Language", icon: GlobeIcon },
+    { id: "content", label: "Content Defaults", icon: VideoIcon },
+    { id: "sessions", label: "Sessions", icon: EyeIcon },
+    { id: "danger", label: "Delete Account", icon: TrashIcon },
+  ];
+
+  const SectionNav = () => (
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+      {settingsSections.map((section) => (
+        <button
+          key={section.id}
+          onClick={() => setActiveSection(section.id)}
+          className={`settings-nav-btn${activeSection === section.id ? " active" : ""}`}
+        >
+          <section.icon size={16} />
+          <span>{section.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+
+  const ProfileCard = () => user ? (
+    <div className="form-card" style={{ padding: "1.5rem", marginBottom: "1.5rem" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+        <div style={{ width: 64, height: 64, borderRadius: "50%", border: "2px solid var(--accent)", padding: 2, flexShrink: 0 }}>
+          <img src={user.avatar} alt={user.fullName} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <h2 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)" }}>{user.fullName}</h2>
+          <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>@{user.username}</p>
+          <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>{user.email}</p>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
+  const getSectionIcon = (id: string) => {
+    const found = settingsSections.find(s => s.id === id);
+    return found ? <found.icon size={18} /> : null;
+  };
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
@@ -274,6 +343,27 @@ export default function SettingsPage() {
     }
   };
 
+  // ── Privacy ──
+  const handleSavePrivacy = async () => {
+    setPrivacyMsg(""); setPrivacySaving(true);
+    try { await api.patch("/users/privacy", { privateSubs, showSubsList }); setPrivacyMsg("Saved"); } catch { setPrivacyMsg("Failed to save"); }
+    finally { setPrivacySaving(false); setTimeout(() => setPrivacyMsg(""), 3000); }
+  };
+
+  // ── Language ──
+  const handleSaveLanguage = async () => {
+    setLangMsg(""); setLangSaving(true);
+    try { await api.patch("/users/language", { language }); setLangMsg("Saved"); } catch { setLangMsg("Failed to save"); }
+    finally { setLangSaving(false); setTimeout(() => setLangMsg(""), 3000); }
+  };
+
+  // ── Content Defaults ──
+  const handleSaveDefaults = async () => {
+    setDefaultsMsg(""); setDefaultsSaving(true);
+    try { await api.patch("/users/content-defaults", { defaultVisibility, defaultCategory }); setDefaultsMsg("Saved"); } catch { setDefaultsMsg("Failed to save"); }
+    finally { setDefaultsSaving(false); setTimeout(() => setDefaultsMsg(""), 3000); }
+  };
+
   // ── Sessions ──
   const handleRevokeSession = async (sessionId: string) => {
     setSessionError("");
@@ -308,26 +398,35 @@ export default function SettingsPage() {
   );
 
   return (
-    <main style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
-      <header className="glass" style={{ position: "sticky", top: 0, zIndex: 50, padding: "0.75rem 2rem", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "none", borderLeft: "none", borderRight: "none", borderRadius: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <PageNavDropdown />
-          <span style={{ color: "var(--border)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
-          <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Settings</span>
-        </div>
-      </header>
+    <div style={{ width: "100%", padding: "2rem" }}>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+        <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "1.5rem" }}>Settings</h1>
 
-      <div style={{ width: "100%", padding: "2rem" }}>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ display: "block" }}>
-          <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "1.5rem" }}>Settings</h1>
+        <ProfileCard />
 
-          <style dangerouslySetInnerHTML={{__html: `
-            .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
-            .settings-grid .card-full { grid-column: 1 / -1; }
-            @media (max-width: 768px) { .settings-grid { grid-template-columns: 1fr; } }
-          `}} />
+        <div style={{ display: "flex", gap: "2rem", alignItems: "flex-start" }}>
+          {/* Settings Sidebar */}
+          <div className="settings-sidebar">
+            <style dangerouslySetInnerHTML={{__html: `
+              .settings-sidebar { width: 200px; flexShrink: 0; position: sticky; top: calc(var(--nav-h) + 2rem); }
+              .settings-nav-btn { display: flex; align-items: center; gap: 0.6rem; width: 100%; padding: 0.55rem 0.75rem; border: none; border-radius: var(--radius-md); background: none; color: var(--text-secondary); font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.15s; text-align: left; }
+              .settings-nav-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
+              .settings-nav-btn.active { background: var(--accent-subtle); color: var(--accent); font-weight: 600; }
+              @media (max-width: 900px) { .settings-sidebar { display: none; } }
+            `}} />
+            <SectionNav />
+          </div>
 
-          <div className="settings-grid">
+          {/* Settings Content */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <style dangerouslySetInnerHTML={{__html: `
+              .settings-grid { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
+              @media (min-width: 768px) { .settings-grid { grid-template-columns: 1fr 1fr; } }
+              .settings-grid .card-full { grid-column: 1 / -1; }
+              .form-card { border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-primary); }
+            `}} />
+
+            <div className="settings-grid">
 
           {/* 1. Change Password */}
           <div className="form-card" style={{ padding: "1.5rem" }}>
@@ -619,6 +718,12 @@ export default function SettingsPage() {
                 </label>
               ))}
             </div>
+            {privacyMsg && <p style={{ fontSize: "0.78rem", color: privacyMsg === "Saved" ? "var(--accent)" : "var(--accent-warm)", marginTop: "0.5rem" }}>{privacyMsg}</p>}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "0.75rem" }}>
+              <button onClick={handleSavePrivacy} disabled={privacySaving} style={{ padding: "0.55rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.85rem", fontWeight: 600, backgroundColor: "var(--elevated)", color: "var(--accent)", border: "1px solid var(--accent)", cursor: privacySaving ? "not-allowed" : "pointer" }}>
+                {privacySaving ? "Saving..." : "Save Privacy"}
+              </button>
+            </div>
           </div>
 
           {/* 5. Language */}
@@ -632,6 +737,12 @@ export default function SettingsPage() {
               className="input" style={{ width: "100%", boxSizing: "border-box", cursor: "pointer" }}>
               {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
             </select>
+            {langMsg && <p style={{ fontSize: "0.78rem", color: langMsg === "Saved" ? "var(--accent)" : "var(--accent-warm)", marginTop: "0.5rem" }}>{langMsg}</p>}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "0.75rem" }}>
+              <button onClick={handleSaveLanguage} disabled={langSaving} style={{ padding: "0.55rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.85rem", fontWeight: 600, backgroundColor: "var(--elevated)", color: "var(--accent)", border: "1px solid var(--accent)", cursor: langSaving ? "not-allowed" : "pointer" }}>
+                {langSaving ? "Saving..." : "Save Language"}
+              </button>
+            </div>
           </div>
 
           {/* 6. Content Defaults */}
@@ -657,6 +768,12 @@ export default function SettingsPage() {
                   {["General", "Gaming", "Music", "Education", "Entertainment", "Sports", "News", "Technology", "Science", "Travel", "Food", "Fashion", "Art", "Podcasts"].map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
+            </div>
+            {defaultsMsg && <p style={{ fontSize: "0.78rem", color: defaultsMsg === "Saved" ? "var(--accent)" : "var(--accent-warm)", marginTop: "0.5rem" }}>{defaultsMsg}</p>}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "0.75rem" }}>
+              <button onClick={handleSaveDefaults} disabled={defaultsSaving} style={{ padding: "0.55rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.85rem", fontWeight: 600, backgroundColor: "var(--elevated)", color: "var(--accent)", border: "1px solid var(--accent)", cursor: defaultsSaving ? "not-allowed" : "pointer" }}>
+                {defaultsSaving ? "Saving..." : "Save Defaults"}
+              </button>
             </div>
           </div>
 
@@ -840,8 +957,9 @@ export default function SettingsPage() {
           </div>
 
           </div>{/* end settings-grid */}
+          </div>{/* end content area */}
+        </div>{/* end flex wrapper */}
         </motion.div>
       </div>
-    </main>
-  );
-}
+    );
+  }

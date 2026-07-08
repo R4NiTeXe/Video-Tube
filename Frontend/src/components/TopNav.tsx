@@ -5,32 +5,26 @@ import { useRouter } from "next/navigation";
 import { useRef, useEffect, useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/src/store/useAuthStore";
-import { useThemeStore } from "@/src/store/useThemeStore";
 import { api } from "@/src/services/api";
 import { useKeyboardShortcuts } from "@/src/hooks/useKeyboardShortcuts";
 import {
   SearchIcon,
   BellIcon,
-  SunIcon,
-  MoonIcon,
   PlayIcon,
   UserIcon,
   UploadIcon,
   SettingsIcon,
-  LogoutIcon,
-  ChevronDownIcon,
-  StudioIcon,
-  UsersIcon,
-  ClockIcon,
-  HeartIcon,
-  LibraryIcon,
-  ExternalLinkIcon,
+   LogoutIcon,
+   StudioIcon,
+   ChevronDownIcon,
+   HistoryIcon,
+   ClockIcon,
+   HeartIcon,
 } from "@/src/components/icons";
 
 export default function TopNav() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
-  const { theme, toggleTheme } = useThemeStore();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -172,41 +166,33 @@ export default function TopNav() {
               style={{ color: "var(--accent)", fontWeight: 500 }}
               onClick={() => setIsDropdownOpen(false)}
             >
-              View your channel
-              <ExternalLinkIcon size={14} />
-            </Link>
-
-            <div className="dropdown-divider" />
-
-            <Link href={`/channel/${user.username}`} className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
               <UserIcon size={16} />
               My Channel
-              <span style={{ marginLeft: "auto" }}><ChevronDownIcon size={14} /></span>
+            </Link>
+
+            <Link href="/edit-profile" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+              <UserIcon size={16} />
+              Edit Profile
             </Link>
 
             <Link href="/studio" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
               <StudioIcon size={16} />
               Creator Studio
-              <span style={{ marginLeft: "auto" }}><ChevronDownIcon size={14} /></span>
             </Link>
 
-            <button className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
-              <UsersIcon size={16} />
-              Switch Account
-              <span style={{ marginLeft: "auto" }}><ChevronDownIcon size={14} /></span>
-            </button>
+            <Link href="/settings" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+              <SettingsIcon size={16} />
+              Settings
+            </Link>
 
             <div className="dropdown-divider" />
 
-            <Link href="/notifications" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
-              <BellIcon size={16} />
-              Notifications
-              {unreadCount > 0 && (
-                <span className="dropdown-badge">{unreadCount}</span>
-              )}
+            <Link href="/history" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+              <HistoryIcon size={16} />
+              History
             </Link>
 
-            <Link href="/library" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+            <Link href="/playlist?list=WL" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
               <ClockIcon size={16} />
               Watch Later
             </Link>
@@ -215,26 +201,6 @@ export default function TopNav() {
               <HeartIcon size={16} />
               Liked Videos
             </Link>
-
-            <Link href="/history" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
-              <LibraryIcon size={16} />
-              History
-            </Link>
-
-            <div className="dropdown-divider" />
-
-            <Link href="/settings" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
-              <SettingsIcon size={16} />
-              Settings
-            </Link>
-
-            <button className="dropdown-item" onClick={toggleTheme}>
-              {theme === "dark" ? <SunIcon size={16} /> : <MoonIcon size={16} />}
-              Appearance
-              <span style={{ marginLeft: "auto", color: "var(--text-muted)" }}>
-                {theme === "dark" ? <SunIcon size={16} /> : <MoonIcon size={16} />}
-              </span>
-            </button>
 
             <div className="dropdown-divider" />
 

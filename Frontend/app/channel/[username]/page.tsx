@@ -7,7 +7,6 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import PageNavDropdown from "@/src/components/PageNavDropdown";
 import { formatViews, formatDuration, timeAgo } from "@/src/lib/utils";
 
 interface ChannelProfile {
@@ -196,20 +195,7 @@ export default function ChannelPage() {
   const playlists: Playlist[] = playlistsRes?.data || [];
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
-      <header className="glass" style={{
-        position: "sticky", top: 0, zIndex: 50,
-        padding: "0.75rem 2rem",
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-        borderTop: "none", borderLeft: "none", borderRight: "none", borderRadius: 0,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <PageNavDropdown />
-          <span style={{ color: "var(--border)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
-          <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Channel</span>
-        </div>
-      </header>
-
+    <>
       {isLoading ? (
         <div style={{ display: "flex", justifyContent: "center", padding: "6rem 2rem" }}>
           <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ color: "var(--text-muted)" }}>
@@ -238,32 +224,19 @@ export default function ChannelPage() {
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.5), transparent 60%)" }} />
           </motion.div>
 
-          {/* Profile Info — Vertical Layout */}
-          <div style={{ padding: "0 2rem" }}>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-              style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: -50, marginBottom: "1.5rem" }}
-            >
-              {/* Avatar */}
-              <div style={{ width: 100, height: 100, borderRadius: "50%", border: "3px solid var(--accent)", padding: 3, flexShrink: 0, boxShadow: "var(--shadow-accent)", backgroundColor: "var(--bg-primary)" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={channel.avatar} alt={channel.fullName} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
-              </div>
+          {/* Channel Header Card */}
+          <div className="form-card" style={{ marginTop: "-2rem", position: "relative", zIndex: 2, marginLeft: "2rem", marginRight: "2rem", padding: "1.5rem 2rem", display: "flex", alignItems: "center", gap: "1.5rem", flexWrap: "wrap" }}>
+            {/* Avatar */}
+            <div style={{ width: 96, height: 96, borderRadius: "50%", border: "3px solid var(--accent)", padding: 3, flexShrink: 0, boxShadow: "var(--shadow-accent)", backgroundColor: "var(--bg-primary)", marginTop: "-3.5rem" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={channel.avatar} alt={channel.fullName} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
+            </div>
 
-              {/* Name */}
-              <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2, marginTop: "0.75rem", textAlign: "center" }}>
-                {channel.fullName}
-              </h1>
-              <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "0.75rem" }}>
-                @{channel.username}
-              </p>
-
-              {/* Subscribe / Edit button */}
-              {isOwnChannel ? (
-                <Link href="/edit-profile" className="btn btn-ghost" style={{ borderRadius: 99, padding: "0.55rem 1.4rem", fontSize: "0.85rem" }}>
-                  Edit Profile
-                </Link>
-              ) : (
+            {/* Info + actions */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>{channel.fullName}</h1>
+              <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "0.5rem" }}>@{channel.username}</p>
+              {!isOwnChannel ? (
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={() => subscribeMutation.mutate()}
@@ -273,55 +246,38 @@ export default function ChannelPage() {
                 >
                   <AnimatePresence mode="wait" initial={false}>
                     {channel.isSubscribed ? (
-                      <motion.span
-                        key="subscribed"
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        transition={{ duration: 0.15 }}
-                        style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}
-                      >
+                      <motion.span key="subscribed" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ duration: 0.15 }} style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
                         <BellIcon /> Subscribed
                       </motion.span>
                     ) : (
-                      <motion.span
-                        key="subscribe"
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        transition={{ duration: 0.15 }}
-                      >
+                      <motion.span key="subscribe" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ duration: 0.15 }}>
                         Subscribe
                       </motion.span>
                     )}
                   </AnimatePresence>
                 </motion.button>
+              ) : (
+                <Link href="/edit-profile" className="btn btn-secondary" style={{ borderRadius: 99, padding: "0.55rem 1.4rem", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+                  Edit Profile
+                </Link>
               )}
-            </motion.div>
+            </div>
 
-            {/* Stats — Vertical Grid (2x2) */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-              style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.75rem", marginBottom: "1.5rem", maxWidth: 400, margin: "0 auto 1.5rem" }}
-            >
-              {[
-                { label: "Subscribers", value: formatViews(aboutData?.subscriberCount || channel.subscribersCount), icon: <BellIcon /> },
-                { label: "Videos", value: formatViews(aboutData?.videoCount || (channel.totalVideos ?? videos.length)), icon: <PlayCircleIcon /> },
-                { label: "Views", value: formatViews(aboutData?.totalViews ?? channel.totalViews ?? 0), icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> },
-                { label: "Subscribed to", value: formatViews(channel.channelsSubscribedToCount || 0), icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
-              ].map((stat) => (
-                <div key={stat.label} style={{ textAlign: "center", padding: "1rem 0.5rem", background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", color: "var(--accent)", marginBottom: "0.3rem" }}>
-                    {stat.icon}
-                    <span style={{ fontSize: "1.2rem", fontWeight: 800, color: "var(--text-primary)" }}>{stat.value}</span>
-                  </div>
-                  <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{stat.label}</p>
-                </div>
-              ))}
-            </motion.div>
+            {/* Stats */}
+            <div style={{ display: "flex", gap: "1.5rem", flexShrink: 0 }}>
+              <div style={{ textAlign: "center" }}>
+                <p style={{ fontSize: "1.2rem", fontWeight: 800, color: "var(--text-primary)" }}>{channel.subscribersCount || 0}</p>
+                <p style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>Subscribers</p>
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <p style={{ fontSize: "1.2rem", fontWeight: 800, color: "var(--text-primary)" }}>{videos.length}</p>
+                <p style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>Videos</p>
+              </div>
+            </div>
+          </div>
 
-            {/* Tabs */}
-            <div style={{ display: "flex", gap: "0.5rem", borderBottom: "1px solid var(--border)", marginBottom: "1.5rem" }}>
+          {/* Tabs */}
+          <div style={{ display: "flex", gap: "0.5rem", borderBottom: "1px solid var(--border)", marginBottom: "1.5rem" }}>
               {(["videos", "about", "playlists"] as const).map((tab) => (
                 <button
                   key={tab}
@@ -586,8 +542,7 @@ export default function ChannelPage() {
               </motion.div>
             </AnimatePresence>
           </div>
-        </div>
       )}
-    </div>
+    </>
   );
 }
