@@ -24,21 +24,22 @@ const UserIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 );
 
-const navItems = [
-  { href: "/", label: "Home", icon: HomeIcon },
-  { href: "/?sortBy=views&sortType=desc", label: "Trending", icon: TrendingIcon },
-  { href: "/library", label: "Library", icon: LibraryIcon },
-  { href: "/notifications", label: "Alerts", icon: BellIcon },
-  { href: "/profile", label: "Profile", icon: UserIcon },
-];
-
 export default function BottomNav() {
   const pathname = usePathname();
   const { user } = useAuthStore();
 
+  const profileHref = user?.username ? `/channel/${user.username}` : "/login";
+
+  const navItems = [
+    { href: "/", label: "Home", icon: HomeIcon },
+    { href: "/?sortBy=views&sortType=desc", label: "Trending", icon: TrendingIcon },
+    { href: "/library", label: "Library", icon: LibraryIcon },
+    { href: "/notifications", label: "Alerts", icon: BellIcon },
+    { href: profileHref, label: "Profile", icon: UserIcon },
+  ];
+
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
-    if (href === "/profile") return false;
     return pathname.startsWith(href.split("?")[0]);
   };
 
@@ -46,13 +47,10 @@ export default function BottomNav() {
     <nav className="bottom-nav">
       {navItems.map((item) => {
         const active = isActive(item.href);
-        const href = item.href === "/profile" && user?.username
-          ? `/channel/${user.username}`
-          : item.href;
         return (
           <Link
-            key={item.href}
-            href={href}
+            key={item.label}
+            href={item.href}
             className={`bottom-nav-item${active ? " active" : ""}`}
           >
             <item.icon active={active} />

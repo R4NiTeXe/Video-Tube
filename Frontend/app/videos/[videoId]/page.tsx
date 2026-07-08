@@ -9,6 +9,19 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import VideoPoll from "@/src/components/VideoPoll";
 
+import TopNav from "@/src/components/TopNav";
+import {
+  ArrowLeftIcon,
+  CloseIcon,
+  EditIcon,
+  TrashIcon,
+  PlusIcon,
+  CheckIcon,
+  DownloadIcon,
+  ShareIcon,
+  SettingsIcon,
+} from "@/src/components/icons";
+
 // ── Types ──
 interface VideoOwner {
   _id: string;
@@ -128,34 +141,18 @@ const formatTime = (sec: number): string => {
 };
 
 // ── SVG Icons ──
-const PlayLogo = ({ size = 22 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-);
-const BackIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-);
 const ThumbsUpIcon = ({ filled }: { filled?: boolean }) => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
 );
 const ThumbsDownIcon = ({ filled }: { filled?: boolean }) => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10zM17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
 );
-const ShareIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-);
 const FlagIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
 );
 const BookmarkIcon = ({ filled }: { filled?: boolean }) => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-);
-const DownloadIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-);
-const CloseIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-);
-const MaximizeIcon = () => (
+);const MaximizeIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
 );
 const MinimizeIcon = () => (
@@ -163,46 +160,28 @@ const MinimizeIcon = () => (
 );
 const ReplyIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
-);
-const EditIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-);
-const TrashIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-);
-const ChevronDownIcon = () => (
+);const ChevronDownIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-);
-const PlusIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-);
-const CheckIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-);
-const CopyIcon = () => (
+);const CopyIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-);
-const PlaySmall = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-);
-const ReportModalIcon = () => (
+);const ReportModalIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
 );
 
 // ── Skeleton ──
 const SkeletonVideoPage = () => (
-  <div style={{ width: "100%", padding: "1.5rem 2rem", display: "flex", gap: "1.5rem" }}>
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+  <div style={{ width: "100%", padding: "var(--sp-6) var(--sp-8)", display: "flex", gap: "var(--sp-6)" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "var(--sp-5)" }}>
       <div className="skeleton" style={{ width: "100%", paddingTop: "56.25%", borderRadius: "var(--radius-lg)" }} />
       <div className="skeleton" style={{ width: "70%", height: 28, borderRadius: 8 }} />
       <div className="skeleton" style={{ width: "40%", height: 18, borderRadius: 6 }} />
       <div className="skeleton" style={{ width: "100%", height: 80, borderRadius: "var(--radius-md)" }} />
     </div>
-    <div style={{ width: 380, display: "flex", flexDirection: "column", gap: "1rem" }}>
+    <div style={{ width: 380, display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} style={{ display: "flex", gap: "0.75rem" }}>
+        <div key={i} style={{ display: "flex", gap: "var(--sp-3)" }}>
           <div className="skeleton" style={{ width: 160, height: 90, borderRadius: "var(--radius-sm)", flexShrink: 0 }} />
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
             <div className="skeleton" style={{ width: "90%", height: 14, borderRadius: 4 }} />
             <div className="skeleton" style={{ width: "60%", height: 12, borderRadius: 4 }} />
           </div>
@@ -254,45 +233,45 @@ function ReportModal({ videoId, onClose }: { videoId: string; onClose: () => voi
         style={{
           width: "100%", maxWidth: 480,
           borderRadius: "var(--radius-xl)", padding: "2rem",
-          backgroundColor: "var(--bg-card)",
-          border: "1px solid var(--border-light)",
+          backgroundColor: "var(--card)",
+          border: "1px solid var(--border)",
           boxShadow: "var(--shadow-lg)",
         }}
       >
         {submitted ? (
-          <div style={{ textAlign: "center", padding: "2rem 0" }}>
-            <div style={{ width: 56, height: 56, borderRadius: "50%", backgroundColor: "var(--success-light)", display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem", color: "var(--success)" }}>
-              <CheckIcon />
+          <div style={{ textAlign: "center", padding: "var(--sp-8) 0" }}>
+            <div style={{ width: 56, height: 56, borderRadius: "50%", backgroundColor: "var(--success-subtle)", display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: "var(--sp-4)", color: "var(--success)" }}>
+              <CheckIcon size={16} />
             </div>
-            <h3 style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.5rem" }}>Report Submitted</h3>
-            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "1.5rem" }}>Thank you for helping keep our community safe.</p>
-            <button onClick={onClose} className="btn-primary" style={{ borderRadius: 99 }}>Done</button>
+            <h3 style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "var(--sp-2)" }}>Report Submitted</h3>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "var(--sp-6)" }}>Thank you for helping keep our community safe.</p>
+            <button onClick={onClose} className="btn btn-primary btn-pill">Done</button>
           </div>
         ) : (
           <>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                <div style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "var(--error-light)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--error)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--sp-6)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)" }}>
+                <div style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "var(--error-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--error)" }}>
                   <ReportModalIcon />
                 </div>
                 <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--text-primary)" }}>Report Video</h2>
               </div>
               <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: 4 }}>
-                <CloseIcon />
+                <CloseIcon size={16} />
               </button>
             </div>
 
             <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", marginBottom: "1.25rem" }}>Why are you reporting this video?</p>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1.5rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-2)", marginBottom: "var(--sp-6)" }}>
               {REPORT_REASONS.map((r) => (
                 <label
                   key={r.value}
                   style={{
-                    display: "flex", alignItems: "center", gap: "0.75rem",
+                    display: "flex", alignItems: "center", gap: "var(--sp-3)",
                     padding: "0.75rem 1rem", borderRadius: "var(--radius-md)",
-                    border: `1.5px solid ${selectedReason === r.value ? "var(--accent)" : "var(--border-light)"}`,
-                    backgroundColor: selectedReason === r.value ? "var(--accent-light)" : "transparent",
+                    border: `1.5px solid ${selectedReason === r.value ? "var(--accent)" : "var(--border)"}`,
+                    backgroundColor: selectedReason === r.value ? "var(--accent-subtle)" : "transparent",
                     cursor: "pointer", transition: "all 0.2s",
                   }}
                 >
@@ -321,10 +300,10 @@ function ReportModal({ videoId, onClose }: { videoId: string; onClose: () => voi
             </div>
 
             <button
-              className="btn-primary"
+              className="btn btn-primary btn-pill"
+              style={{ width: "100%" }}
               disabled={!selectedReason || reportMutation.isPending}
               onClick={() => reportMutation.mutate()}
-              style={{ width: "100%", borderRadius: 99 }}
             >
               {reportMutation.isPending ? "Submitting..." : "Submit Report"}
             </button>
@@ -395,8 +374,7 @@ function PlaylistDropdown({ videoId, ownerId }: { videoId: string; ownerId: stri
     <div ref={dropdownRef} style={{ position: "relative" }}>
       <button
         onClick={() => setOpen(!open)}
-        className="btn-ghost"
-        style={{ borderRadius: 99, padding: "0.5rem 1rem", fontSize: "0.85rem" }}
+        className="btn btn-sm btn-ghost btn-pill"
       >
         <BookmarkIcon /> Save
         <ChevronDownIcon />
@@ -411,14 +389,14 @@ function PlaylistDropdown({ videoId, ownerId }: { videoId: string; ownerId: stri
             transition={{ duration: 0.18 }}
             style={{
               position: "absolute", top: "calc(100% + 8px)", left: 0, zIndex: 100,
-              width: 280, backgroundColor: "var(--bg-card)",
-              border: "1px solid var(--border-light)",
+              width: 280, backgroundColor: "var(--card)",
+              border: "1px solid var(--border)",
               borderRadius: "var(--radius-lg)",
               boxShadow: "var(--shadow-lg)",
               padding: "0.5rem", overflow: "hidden",
             }}
           >
-            <div style={{ padding: "0.5rem 0.75rem 0.75rem", borderBottom: "1px solid var(--border-light)", marginBottom: "0.25rem" }}>
+            <div style={{ padding: "0.5rem 0.75rem 0.75rem", borderBottom: "1px solid var(--border)", marginBottom: "var(--sp-1)" }}>
               <p style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>Save to playlist</p>
             </div>
 
@@ -428,13 +406,13 @@ function PlaylistDropdown({ videoId, ownerId }: { videoId: string; ownerId: stri
                 onClick={() => addToPlaylistMutation.mutate(pl._id)}
                 disabled={addToPlaylistMutation.isPending}
                 style={{
-                  display: "flex", alignItems: "center", gap: "0.75rem",
+                  display: "flex", alignItems: "center", gap: "var(--sp-3)",
                   width: "100%", padding: "0.6rem 0.75rem",
                   borderRadius: "var(--radius-sm)", textAlign: "left",
                   fontSize: "0.85rem", color: "var(--text-primary)",
                   transition: "background-color 0.15s",
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-elevated)")}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--elevated)")}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
               >
                 <BookmarkIcon filled />
@@ -448,12 +426,12 @@ function PlaylistDropdown({ videoId, ownerId }: { videoId: string; ownerId: stri
             ))}
 
             {playlists.length === 0 && !showCreate && (
-              <p style={{ padding: "0.75rem", fontSize: "0.82rem", color: "var(--text-muted)", textAlign: "center" }}>No playlists yet</p>
+              <p style={{ padding: "var(--sp-3)", fontSize: "0.82rem", color: "var(--text-muted)", textAlign: "center" }}>No playlists yet</p>
             )}
 
-            <div style={{ borderTop: "1px solid var(--border-light)", marginTop: "0.25rem", paddingTop: "0.25rem" }}>
+            <div style={{ borderTop: "1px solid var(--border)", marginTop: "0.25rem", paddingTop: "0.25rem" }}>
               {showCreate ? (
-                <div style={{ padding: "0.5rem 0.75rem" }}>
+                <div style={{ padding: "var(--sp-2) var(--sp-3)" }}>
                   <input
                     type="text"
                     placeholder="Playlist name"
@@ -462,23 +440,23 @@ function PlaylistDropdown({ videoId, ownerId }: { videoId: string; ownerId: stri
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && newPlaylistName.trim()) createPlaylistMutation.mutate();
                     }}
-                    className="input-field"
+                    className="input"
                     autoFocus
-                    style={{ fontSize: "0.85rem", padding: "0.5rem 0.75rem" }}
+                    style={{ fontSize: "0.85rem", padding: "var(--sp-2) var(--sp-3)" }}
                   />
-                  <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+                  <div style={{ display: "flex", gap: "var(--sp-2)", marginTop: "var(--sp-2)" }}>
                     <button
                       onClick={() => { setShowCreate(false); setNewPlaylistName(""); }}
-                      className="btn-ghost"
-                      style={{ flex: 1, padding: "0.4rem", fontSize: "0.8rem", borderRadius: 99 }}
+                      className="btn btn-sm btn-ghost btn-pill"
+                      style={{ flex: 1 }}
                     >
                       Cancel
                     </button>
                     <button
                       onClick={() => createPlaylistMutation.mutate()}
                       disabled={!newPlaylistName.trim() || createPlaylistMutation.isPending}
-                      className="btn-primary"
-                      style={{ flex: 1, padding: "0.4rem", fontSize: "0.8rem", borderRadius: 99 }}
+                      className="btn btn-sm btn-primary btn-pill"
+                      style={{ flex: 1 }}
                     >
                       Create
                     </button>
@@ -488,16 +466,16 @@ function PlaylistDropdown({ videoId, ownerId }: { videoId: string; ownerId: stri
                 <button
                   onClick={() => setShowCreate(true)}
                   style={{
-                    display: "flex", alignItems: "center", gap: "0.75rem",
+                    display: "flex", alignItems: "center", gap: "var(--sp-3)",
                     width: "100%", padding: "0.65rem 0.75rem",
                     fontSize: "0.85rem", fontWeight: 600, color: "var(--accent)",
                     textAlign: "left", borderRadius: "var(--radius-sm)",
                     transition: "background-color 0.15s",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-elevated)")}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--elevated)")}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                 >
-                  <PlusIcon /> Create new playlist
+                  <PlusIcon size={16} /> Create new playlist
                 </button>
               )}
             </div>
@@ -585,7 +563,7 @@ function CommentItem({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       style={{
-        display: "flex", gap: "0.75rem",
+        display: "flex", gap: "var(--sp-3)",
         paddingLeft: depth > 0 ? "2.5rem" : 0,
       }}
     >
@@ -597,12 +575,12 @@ function CommentItem({
       />
       <div style={{ flex: 1, minWidth: 0 }}>
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", marginBottom: "var(--sp-1)" }}>
           <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>
             {comment.owner?.fullName}
           </span>
           {comment.isPinned && (
-            <span style={{ fontSize: "0.7rem", fontWeight: 600, color: "var(--accent)", backgroundColor: "var(--accent-light)", padding: "0.1rem 0.5rem", borderRadius: 99 }}>
+            <span style={{ fontSize: "0.7rem", fontWeight: 600, color: "var(--accent)", backgroundColor: "var(--accent-subtle)", padding: "0.1rem 0.5rem", borderRadius: "var(--radius-full)" }}>
               Pinned
             </span>
           )}
@@ -613,17 +591,17 @@ function CommentItem({
 
         {/* Content */}
         {editing ? (
-          <div style={{ marginBottom: "0.5rem" }}>
+          <div style={{ marginBottom: "var(--sp-2)" }}>
             <textarea
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
-              className="input-field"
+              className="input"
               rows={2}
               style={{ fontSize: "0.88rem", resize: "vertical" }}
             />
-            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.4rem" }}>
-              <button onClick={() => { setEditing(false); setEditText(comment.content); }} className="btn-ghost" style={{ padding: "0.3rem 0.75rem", fontSize: "0.78rem", borderRadius: 99 }}>Cancel</button>
-              <button onClick={() => editMutation.mutate()} disabled={!editText.trim() || editMutation.isPending} className="btn-primary" style={{ padding: "0.3rem 0.75rem", fontSize: "0.78rem", borderRadius: 99 }}>Save</button>
+            <div style={{ display: "flex", gap: "var(--sp-2)", marginTop: "var(--sp-1)" }}>
+              <button onClick={() => { setEditing(false); setEditText(comment.content); }} className="btn btn-sm btn-ghost btn-pill">Cancel</button>
+              <button onClick={() => editMutation.mutate()} disabled={!editText.trim() || editMutation.isPending} className="btn btn-sm btn-primary btn-pill">Save</button>
             </div>
           </div>
         ) : (
@@ -631,11 +609,11 @@ function CommentItem({
         )}
 
         {/* Actions */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.4rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)", marginTop: "var(--sp-1)" }}>
           <button
             onClick={() => likeMutation.mutate()}
             style={{
-              display: "flex", alignItems: "center", gap: "0.3rem",
+              display: "flex", alignItems: "center", gap: "var(--sp-1)",
               fontSize: "0.8rem", fontWeight: 500,
               color: comment.isLiked ? "var(--accent)" : "var(--text-muted)",
               background: "none", border: "none", cursor: "pointer",
@@ -651,7 +629,7 @@ function CommentItem({
             <button
               onClick={() => setShowReplyForm(!showReplyForm)}
               style={{
-                display: "flex", alignItems: "center", gap: "0.3rem",
+                display: "flex", alignItems: "center", gap: "var(--sp-1)",
                 fontSize: "0.8rem", fontWeight: 500, color: "var(--text-muted)",
                 background: "none", border: "none", cursor: "pointer",
                 padding: "0.2rem 0.4rem", borderRadius: "var(--radius-sm)",
@@ -666,24 +644,24 @@ function CommentItem({
               <button
                 onClick={() => setEditing(true)}
                 style={{
-                  display: "flex", alignItems: "center", gap: "0.3rem",
+                  display: "flex", alignItems: "center", gap: "var(--sp-1)",
                   fontSize: "0.8rem", fontWeight: 500, color: "var(--text-muted)",
                   background: "none", border: "none", cursor: "pointer",
                   padding: "0.2rem 0.4rem", borderRadius: "var(--radius-sm)",
                 }}
               >
-                <EditIcon /> Edit
+                <EditIcon size={14} /> Edit
               </button>
               <button
                 onClick={() => { if (window.confirm("Delete this comment?")) deleteMutation.mutate(); }}
                 style={{
-                  display: "flex", alignItems: "center", gap: "0.3rem",
+                  display: "flex", alignItems: "center", gap: "var(--sp-1)",
                   fontSize: "0.8rem", fontWeight: 500, color: "var(--error)",
                   background: "none", border: "none", cursor: "pointer",
                   padding: "0.2rem 0.4rem", borderRadius: "var(--radius-sm)",
                 }}
               >
-                <TrashIcon /> Delete
+                <TrashIcon size={14} /> Delete
               </button>
             </>
           )}
@@ -696,9 +674,9 @@ function CommentItem({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              style={{ marginTop: "0.5rem", overflow: "hidden" }}
+              style={{ marginTop: "var(--sp-2)", overflow: "hidden" }}
             >
-              <div style={{ display: "flex", gap: "0.5rem" }}>
+              <div style={{ display: "flex", gap: "var(--sp-2)" }}>
                 <input
                   type="text"
                   placeholder="Reply..."
@@ -707,15 +685,14 @@ function CommentItem({
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && replyText.trim()) replyMutation.mutate();
                   }}
-                  className="input-field"
+                  className="input"
                   autoFocus
-                  style={{ flex: 1, fontSize: "0.85rem", padding: "0.5rem 0.75rem" }}
+                  style={{ flex: 1, fontSize: "0.85rem", padding: "var(--sp-2) var(--sp-3)" }}
                 />
                 <button
                   onClick={() => replyMutation.mutate()}
                   disabled={!replyText.trim() || replyMutation.isPending}
-                  className="btn-primary"
-                  style={{ padding: "0.4rem 0.75rem", fontSize: "0.8rem", borderRadius: 99 }}
+                  className="btn btn-sm btn-primary btn-pill"
                 >
                   Reply
                 </button>
@@ -729,10 +706,10 @@ function CommentItem({
           <button
             onClick={() => setShowReplies(!showReplies)}
             style={{
-              display: "flex", alignItems: "center", gap: "0.3rem",
+              display: "flex", alignItems: "center", gap: "var(--sp-1)",
               fontSize: "0.8rem", fontWeight: 600, color: "var(--accent)",
               background: "none", border: "none", cursor: "pointer",
-              marginTop: "0.4rem", padding: "0.2rem 0",
+              marginTop: "var(--sp-1)", padding: "0.2rem 0",
             }}
           >
             <ChevronDownIcon />
@@ -747,7 +724,7 @@ function CommentItem({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              style={{ marginTop: "0.75rem", display: "flex", flexDirection: "column", gap: "0.75rem", borderLeft: "2px solid var(--border-light)", paddingLeft: "0.75rem", overflow: "hidden" }}
+              style={{ marginTop: "var(--sp-3)", display: "flex", flexDirection: "column", gap: "var(--sp-3)", borderLeft: "2px solid var(--border)", paddingLeft: "var(--sp-3)", overflow: "hidden" }}
             >
               {replies.map((reply) => (
                 <CommentItem key={reply._id} comment={reply} videoId={videoId} currentUserId={currentUserId} depth={1} />
@@ -839,13 +816,14 @@ export default function VideoPlayerPage() {
   const captions: Caption[] = captionsRes?.data || [];
 
   // Fetch channel notification status
+  const ownerId = videoRes?.data?.owner?._id;
   const { data: channelNotifRes } = useQuery({
-    queryKey: ["channel-notifications", video?.owner?._id],
+    queryKey: ["channel-notifications", ownerId],
     queryFn: async () => {
-      const res = await api.get(`/subscriptions/c/${video?.owner?._id}/notifications`);
+      const res = await api.get(`/subscriptions/c/${ownerId}/notifications`);
       return res.data;
     },
-    enabled: isAuthenticated && !!video?.owner?._id,
+    enabled: isAuthenticated && !!ownerId,
   });
 
   const channelMuted: boolean = channelNotifRes?.data?.isMuted ?? false;
@@ -853,16 +831,16 @@ export default function VideoPlayerPage() {
   // Toggle channel notifications mutation
   const toggleNotifMutation = useMutation({
     mutationFn: async () => {
-      await api.patch(`/subscriptions/c/${video?.owner?._id}/notifications`);
+      await api.patch(`/subscriptions/c/${ownerId}/notifications`);
     },
     onMutate: async () => {
-      queryClient.setQueryData(["channel-notifications", video?.owner?._id], (old: Record<string, unknown> | undefined) => {
+      queryClient.setQueryData(["channel-notifications", ownerId], (old: { data?: { isMuted?: boolean } } | undefined) => {
         if (!old?.data) return old;
         return { ...old, data: { ...old.data, isMuted: !old.data.isMuted } };
       });
     },
     onError: () => {
-      queryClient.invalidateQueries({ queryKey: ["channel-notifications", video?.owner?._id] });
+      queryClient.invalidateQueries({ queryKey: ["channel-notifications", ownerId] });
     },
   });
 
@@ -876,9 +854,9 @@ export default function VideoPlayerPage() {
       const wasLiked = cached?.data?.isLiked ?? liked;
       setLiked(!wasLiked);
       if (wasLiked) setDisliked(false);
-      queryClient.setQueryData(["video", videoId], (old: Record<string, unknown> | undefined) => {
+      queryClient.setQueryData(["video", videoId], (old: { data?: { isLiked?: boolean; likesCount?: number } } | undefined) => {
         if (!old?.data) return old;
-        return { ...old, data: { ...old.data, isLiked: !wasLiked, likesCount: old.data.likesCount + (wasLiked ? -1 : 1) } };
+        return { ...old, data: { ...old.data, isLiked: !wasLiked, likesCount: (old.data.likesCount ?? 0) + (wasLiked ? -1 : 1) } };
       });
     },
     onError: () => {
@@ -992,9 +970,9 @@ export default function VideoPlayerPage() {
     return (
       <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
         <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}
-          style={{ color: "var(--text-secondary)", fontWeight: 500, display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
+          style={{ color: "var(--text-secondary)", fontWeight: 500, display: "flex", flexDirection: "column", alignItems: "center", gap: "var(--sp-4)" }}>
           <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            style={{ width: 36, height: 36, border: "3px solid var(--border-light)", borderTopColor: "var(--accent)", borderRadius: "50%" }} />
+            style={{ width: 36, height: 36, border: "3px solid var(--border)", borderTopColor: "var(--accent)", borderRadius: "50%" }} />
           {authLoading ? "Checking session..." : "Redirecting to login..."}
         </motion.div>
       </div>
@@ -1009,54 +987,40 @@ export default function VideoPlayerPage() {
 
   if (!video) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)", padding: "2rem" }}>
-        <div style={{ width: 80, height: 80, borderRadius: "50%", backgroundColor: "var(--bg-elevated)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1.5rem", color: "var(--text-muted)" }}>
+      <div className="empty-state">
+        <div style={{ width: 80, height: 80, borderRadius: "50%", backgroundColor: "var(--elevated)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "var(--sp-6)", color: "var(--text-muted)" }}>
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         </div>
-        <p style={{ fontSize: "1.2rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.5rem" }}>Video not found</p>
-        <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem", fontSize: "0.9rem" }}>This video doesn&apos;t exist or has been removed.</p>
-        <Link href="/" className="btn-primary" style={{ borderRadius: 99, padding: "0.7rem 1.75rem" }}>Go Home</Link>
+        <p style={{ fontSize: "1.2rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "var(--sp-2)" }}>Video not found</p>
+        <p style={{ color: "var(--text-muted)", marginBottom: "var(--sp-6)", fontSize: "0.9rem" }}>This video doesn&apos;t exist or has been removed.</p>
+        <Link href="/" className="btn btn-primary btn-pill">Go Home</Link>
       </div>
     );
   }
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
-      {/* Sticky Header */}
-      <header className="glass" style={{
-        position: "sticky", top: 0, zIndex: 50,
-        padding: "0.75rem 2rem",
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-        borderTop: "none", borderLeft: "none", borderRight: "none", borderRadius: 0,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <button onClick={() => router.back()} style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--text-secondary)", fontSize: "0.88rem", fontWeight: 500, background: "none", border: "none", cursor: "pointer" }}>
-            <BackIcon /> Back
-          </button>
-          <span style={{ color: "var(--border-light)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
-          <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Now Playing</span>
-        </div>
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>
-            <PlayLogo size={14} />
-          </div>
-          <span style={{ fontWeight: 800, fontSize: "1rem" }}>
-            Video<span style={{ color: "var(--accent)" }}>Tube</span>
-          </span>
-        </Link>
-      </header>
+      <TopNav />
 
-      {/* Main Content */}
+      {/* Breadcrumb */}
+      <div style={{ position: "sticky", top: "var(--nav-h)", zIndex: 40, padding: "var(--sp-3) var(--sp-8)", display: "flex", alignItems: "center", gap: "var(--sp-3)", backgroundColor: "var(--bg-primary)", borderBottom: "1px solid var(--border)" }}>
+        <button onClick={() => router.back()} className="btn btn-ghost btn-sm">
+          <ArrowLeftIcon size={18} /> Back
+        </button>
+        <span style={{ color: "var(--border)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
+        <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Now Playing</span>
+      </div>
+
       <div style={{
         width: "100%",
-        padding: "1.5rem 2rem",
+        padding: "var(--sp-6) var(--sp-8)",
         display: "flex",
-        gap: "1.5rem",
+        gap: "var(--sp-6)",
         transition: "max-width 0.3s ease",
       }}>
 
         {/* Left Column: Player + Info + Comments */}
-        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "var(--sp-5)" }}>
 
           {/* Video Player */}
           <motion.div
@@ -1070,7 +1034,7 @@ export default function VideoPlayerPage() {
               borderRadius: "var(--radius-lg)",
               overflow: "hidden",
               position: "relative",
-              border: "1px solid var(--border-light)",
+              border: "1px solid var(--border)",
               cursor: showControls ? "default" : "none",
             }}
           >
@@ -1123,7 +1087,7 @@ export default function VideoPlayerPage() {
 
               {/* Controls Row */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)" }}>
                   {/* Play/Pause */}
                   <button onClick={() => { if (!videoRef.current) return; videoRef.current.paused ? videoRef.current.play() : videoRef.current.pause(); }}
                     style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", padding: "0.25rem", display: "flex", alignItems: "center" }}>
@@ -1135,7 +1099,7 @@ export default function VideoPlayerPage() {
                   </button>
 
                   {/* Volume */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-1)" }}>
                     <button onClick={() => { if (!videoRef.current) return; videoRef.current.muted = !videoRef.current.muted; setIsMuted(!isMuted); }}
                       style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", padding: "0.25rem", display: "flex", alignItems: "center" }}>
                       {isMuted || volume === 0 ? (
@@ -1158,7 +1122,7 @@ export default function VideoPlayerPage() {
                   </span>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-1)" }}>
                   {/* CC Button */}
                   {captions.length > 0 && (
                     <button onClick={() => { if (!videoRef.current) return; const tracks = videoRef.current.textTracks; if (selectedCaptionIdx >= 0) { for (let i = 0; i < tracks.length; i++) tracks[i].mode = "hidden"; setSelectedCaptionIdx(-1); } else { if (tracks.length > 0) { tracks[0].mode = "showing"; setSelectedCaptionIdx(0); } } }}
@@ -1171,7 +1135,7 @@ export default function VideoPlayerPage() {
                   <div style={{ position: "relative" }}>
                     <button onClick={() => setShowQualityMenu(!showQualityMenu)}
                       style={{ background: "none", border: "none", color: "rgba(255,255,255,0.8)", cursor: "pointer", padding: "0.25rem 0.4rem", fontSize: "0.65rem", fontWeight: 700, borderRadius: 4, display: "flex", alignItems: "center", gap: "0.2rem" }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                      <SettingsIcon size={16} />
                       {videoQuality !== "auto" && <span>{videoQuality}</span>}
                     </button>
                     {showQualityMenu && (
@@ -1190,7 +1154,7 @@ export default function VideoPlayerPage() {
                               onMouseLeave={(e) => { if (videoQuality !== q) e.currentTarget.style.backgroundColor = "none"; }}
                             >
                               <span>{q === "auto" ? "Auto" : q}</span>
-                              {videoQuality === q && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+                              {videoQuality === q && <CheckIcon size={14} />}
                             </button>
                           ))}
                         </div>
@@ -1219,7 +1183,7 @@ export default function VideoPlayerPage() {
             <motion.h1
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.3, marginBottom: "0.25rem" }}
+              style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.3, marginBottom: "var(--sp-1)" }}
             >
               {video.title}
             </motion.h1>
@@ -1232,19 +1196,19 @@ export default function VideoPlayerPage() {
             transition={{ delay: 0.05 }}
             style={{
               display: "flex", justifyContent: "space-between", alignItems: "center",
-              flexWrap: "wrap", gap: "1rem",
-              paddingBottom: "1rem",
-              borderBottom: "1px solid var(--border-light)",
+              flexWrap: "wrap", gap: "var(--sp-4)",
+              paddingBottom: "var(--sp-4)",
+              borderBottom: "1px solid var(--border)",
             }}
           >
             {/* Left: Avatar + Name + Subscribe */}
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)" }}>
               <Link href={`/channel/${video.owner?.username}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={video.owner?.avatar}
                   alt={video.owner?.fullName}
-                  style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border-light)", transition: "border-color 0.2s" }}
+                  style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border)", transition: "border-color 0.2s" }}
                 />
               </Link>
               <div>
@@ -1256,23 +1220,12 @@ export default function VideoPlayerPage() {
                 </p>
               </div>
               {user?._id !== video.owner?._id && (
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginLeft: "0.5rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", marginLeft: "0.5rem" }}>
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={() => subscribeMutation.mutate()}
                     disabled={subscribeMutation.isPending}
-                    style={{
-                      borderRadius: 99,
-                      padding: "0.5rem 1.25rem",
-                      fontSize: "0.85rem",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      transition: "all 0.2s",
-                      border: "none",
-                      ...(video.isSubscribed
-                        ? { backgroundColor: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-light)" }
-                        : { backgroundColor: "var(--accent)", color: "#fff" }),
-                    }}
+                    className={`btn btn-sm btn-pill ${video.isSubscribed ? "btn-secondary" : "btn-primary"}`}
                   >
                     {video.isSubscribed ? "Subscribed" : "Subscribe"}
                   </motion.button>
@@ -1286,8 +1239,8 @@ export default function VideoPlayerPage() {
                         style={{
                           display: "flex", alignItems: "center", justifyContent: "center",
                           width: 34, height: 34, borderRadius: "50%",
-                          background: !channelMuted ? "var(--accent-light)" : "var(--bg-elevated)",
-                          border: `1px solid ${!channelMuted ? "var(--accent)" : "var(--border-light)"}`,
+                          background: !channelMuted ? "var(--accent-subtle)" : "var(--elevated)",
+                          border: `1px solid ${!channelMuted ? "var(--accent)" : "var(--border)"}`,
                           cursor: "pointer",
                           color: !channelMuted ? "var(--accent)" : "var(--text-secondary)",
                           transition: "all 0.2s",
@@ -1300,25 +1253,25 @@ export default function VideoPlayerPage() {
                           <div style={{ position: "fixed", inset: 0, zIndex: 9 }} onClick={() => setBellActive(false)} />
                           <div style={{
                             position: "absolute", top: "calc(100% + 6px)", right: 0, width: 220, zIndex: 10,
-                            backgroundColor: "var(--bg-card)", border: "1px solid var(--border-light)",
+                            backgroundColor: "var(--card)", border: "1px solid var(--border)",
                             borderRadius: "var(--radius-md)", boxShadow: "0 8px 24px rgba(0,0,0,0.15)", padding: "0.35rem",
                           }}>
                             <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", padding: "0.4rem 0.6rem", fontWeight: 600 }}>Notifications</p>
                             <button onClick={() => { if (!channelMuted) return; toggleNotifMutation.mutate(); setBellActive(false); }}
-                              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", textAlign: "left", padding: "0.5rem 0.6rem", borderRadius: "var(--radius-sm)", fontSize: "0.82rem", fontWeight: !channelMuted ? 600 : 400, color: !channelMuted ? "var(--accent)" : "var(--text-primary)", background: !channelMuted ? "var(--accent-light)" : "none", border: "none", cursor: "pointer", transition: "background 0.1s" }}
-                              onMouseEnter={(e) => { if (channelMuted) e.currentTarget.style.backgroundColor = "var(--bg-elevated)"; }}
+                              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", textAlign: "left", padding: "0.5rem 0.6rem", borderRadius: "var(--radius-sm)", fontSize: "0.82rem", fontWeight: !channelMuted ? 600 : 400, color: !channelMuted ? "var(--accent)" : "var(--text-primary)", background: !channelMuted ? "var(--accent-subtle)" : "none", border: "none", cursor: "pointer", transition: "background 0.1s" }}
+                              onMouseEnter={(e) => { if (channelMuted) e.currentTarget.style.backgroundColor = "var(--elevated)"; }}
                               onMouseLeave={(e) => { if (channelMuted) e.currentTarget.style.backgroundColor = "none"; }}
                             >
                               <span>All</span>
-                              {!channelMuted && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+                              {!channelMuted && <CheckIcon size={14} />}
                             </button>
                             <button onClick={() => { if (channelMuted) return; toggleNotifMutation.mutate(); setBellActive(false); }}
-                              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", textAlign: "left", padding: "0.5rem 0.6rem", borderRadius: "var(--radius-sm)", fontSize: "0.82rem", fontWeight: channelMuted ? 600 : 400, color: channelMuted ? "var(--text-primary)" : "var(--text-primary)", background: channelMuted ? "var(--bg-elevated)" : "none", border: "none", cursor: "pointer", transition: "background 0.1s" }}
-                              onMouseEnter={(e) => { if (!channelMuted) e.currentTarget.style.backgroundColor = "var(--bg-elevated)"; }}
+                              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", textAlign: "left", padding: "0.5rem 0.6rem", borderRadius: "var(--radius-sm)", fontSize: "0.82rem", fontWeight: channelMuted ? 600 : 400, color: channelMuted ? "var(--text-primary)" : "var(--text-primary)", background: channelMuted ? "var(--elevated)" : "none", border: "none", cursor: "pointer", transition: "background 0.1s" }}
+                              onMouseEnter={(e) => { if (!channelMuted) e.currentTarget.style.backgroundColor = "var(--elevated)"; }}
                               onMouseLeave={(e) => { if (!channelMuted) e.currentTarget.style.backgroundColor = "none"; }}
                             >
                               <span>Muted</span>
-                              {channelMuted && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+                              {channelMuted && <CheckIcon size={14} />}
                             </button>
                           </div>
                         </>
@@ -1330,21 +1283,21 @@ export default function VideoPlayerPage() {
             </div>
 
             {/* Right: Action Buttons */}
-            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-1)", flexWrap: "wrap" }}>
               {/* Like/Dislike Group */}
-              <div style={{ display: "flex", alignItems: "center", borderRadius: 99, overflow: "hidden", border: "1px solid var(--border-light)", backgroundColor: "var(--bg-elevated)" }}>
+              <div style={{ display: "flex", alignItems: "center", borderRadius: "var(--radius-full)", overflow: "hidden", border: "1px solid var(--border)", backgroundColor: "var(--elevated)" }}>
                 <motion.button
                   whileTap={{ scale: 0.92 }}
                   onClick={() => likeMutation.mutate()}
                   disabled={likeMutation.isPending}
                   style={{
-                    display: "flex", alignItems: "center", gap: "0.4rem",
+                    display: "flex", alignItems: "center", gap: "var(--sp-1)",
                     padding: "0.5rem 0.85rem",
-                    backgroundColor: liked ? "var(--accent-light)" : "transparent",
+                    backgroundColor: liked ? "var(--accent-subtle)" : "transparent",
                     color: liked ? "var(--accent)" : "var(--text-secondary)",
                     fontWeight: 600, fontSize: "0.85rem",
                     cursor: "pointer", transition: "all 0.15s",
-                    border: "none", borderRight: "1px solid var(--border-light)",
+                    border: "none", borderRight: "1px solid var(--border)",
                   }}
                 >
                   <ThumbsUpIcon filled={liked} />
@@ -1371,16 +1324,16 @@ export default function VideoPlayerPage() {
                 whileTap={{ scale: 0.92 }}
                 onClick={handleShare}
                 style={{
-                  display: "flex", alignItems: "center", gap: "0.4rem",
-                  padding: "0.5rem 1rem", borderRadius: 99,
-                  backgroundColor: copied ? "var(--success-light)" : "var(--bg-elevated)",
-                  border: `1.5px solid ${copied ? "var(--success)" : "var(--border-light)"}`,
+                  display: "flex", alignItems: "center", gap: "var(--sp-1)",
+                  padding: "0.5rem 1rem", borderRadius: "var(--radius-full)",
+                  backgroundColor: copied ? "var(--success-subtle)" : "var(--elevated)",
+                  border: `1.5px solid ${copied ? "var(--success)" : "var(--border)"}`,
                   color: copied ? "var(--success)" : "var(--text-secondary)",
                   fontWeight: 600, fontSize: "0.85rem",
                   cursor: "pointer", transition: "all 0.2s",
                 }}
               >
-                {copied ? <CheckIcon /> : <ShareIcon />}
+                {copied ? <CheckIcon size={16} /> : <ShareIcon size={18} />}
                 {copied ? "Copied!" : "Share"}
               </motion.button>
 
@@ -1392,10 +1345,10 @@ export default function VideoPlayerPage() {
                 whileTap={{ scale: 0.92 }}
                 onClick={() => watchLaterMutation.mutate()}
                 style={{
-                  display: "flex", alignItems: "center", gap: "0.4rem",
-                  padding: "0.5rem 1rem", borderRadius: 99,
-                  backgroundColor: savedToWatchLater ? "var(--accent)" : "var(--bg-elevated)",
-                  border: `1.5px solid ${savedToWatchLater ? "var(--accent)" : "var(--border-light)"}`,
+                  display: "flex", alignItems: "center", gap: "var(--sp-1)",
+                  padding: "0.5rem 1rem", borderRadius: "var(--radius-full)",
+                  backgroundColor: savedToWatchLater ? "var(--accent)" : "var(--elevated)",
+                  border: `1.5px solid ${savedToWatchLater ? "var(--accent)" : "var(--border)"}`,
                   color: savedToWatchLater ? "white" : "var(--text-secondary)",
                   fontWeight: 600, fontSize: "0.85rem",
                   cursor: "pointer", transition: "all 0.2s",
@@ -1413,17 +1366,17 @@ export default function VideoPlayerPage() {
                   download
                   target="_blank"
                   style={{
-                    display: "flex", alignItems: "center", gap: "0.4rem",
-                    padding: "0.5rem 1rem", borderRadius: 99,
-                    backgroundColor: "var(--bg-elevated)",
-                    border: "1.5px solid var(--border-light)",
+                    display: "flex", alignItems: "center", gap: "var(--sp-1)",
+                    padding: "0.5rem 1rem", borderRadius: "var(--radius-full)",
+                    backgroundColor: "var(--elevated)",
+                    border: "1.5px solid var(--border)",
                     color: "var(--text-secondary)",
                     fontWeight: 600, fontSize: "0.85rem",
                     cursor: "pointer", transition: "all 0.2s",
                     textDecoration: "none",
                   }}
                 >
-                  <DownloadIcon /> Download
+                  <DownloadIcon size={18} /> Download
                 </motion.a>
               )}
 
@@ -1432,10 +1385,10 @@ export default function VideoPlayerPage() {
                 whileTap={{ scale: 0.92 }}
                 onClick={() => setShowReportModal(true)}
                 style={{
-                  display: "flex", alignItems: "center", gap: "0.4rem",
-                  padding: "0.5rem 1rem", borderRadius: 99,
-                  backgroundColor: "var(--bg-elevated)",
-                  border: "1.5px solid var(--border-light)",
+                  display: "flex", alignItems: "center", gap: "var(--sp-1)",
+                  padding: "0.5rem 1rem", borderRadius: "var(--radius-full)",
+                  backgroundColor: "var(--elevated)",
+                  border: "1.5px solid var(--border)",
                   color: "var(--text-secondary)",
                   fontWeight: 600, fontSize: "0.85rem",
                   cursor: "pointer", transition: "all 0.2s",
@@ -1452,10 +1405,10 @@ export default function VideoPlayerPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             className="glass"
-            style={{ padding: "1rem 1.25rem", borderRadius: "var(--radius-lg)", cursor: "pointer" }}
+            style={{ padding: "var(--sp-4) var(--sp-5)", borderRadius: "var(--radius-lg)", cursor: "pointer" }}
             onClick={() => setShowDescription(!showDescription)}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: showDescription ? "0.75rem" : 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)", marginBottom: showDescription ? "0.75rem" : 0 }}>
               <p style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>
                 {formatViews(video.views)} views &bull; {formatFullDate(video.createdAt)}
               </p>
@@ -1486,14 +1439,14 @@ export default function VideoPlayerPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
               style={{
-                padding: "1rem 1.25rem",
+                padding: "var(--sp-4) var(--sp-5)",
                 borderRadius: "var(--radius-lg)",
-                backgroundColor: "var(--bg-card)",
-                border: "1px solid var(--border-light)",
+                backgroundColor: "var(--card)",
+                border: "1px solid var(--border)",
               }}
             >
-              <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.75rem" }}>Chapters</h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+              <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "var(--sp-3)" }}>Chapters</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
                 {video.chapters.map((ch) => (
                   <button
                     key={ch._id}
@@ -1504,13 +1457,13 @@ export default function VideoPlayerPage() {
                       }
                     }}
                     style={{
-                      display: "flex", alignItems: "center", gap: "0.75rem",
-                      padding: "0.5rem 0.75rem", borderRadius: "var(--radius-sm)",
+                      display: "flex", alignItems: "center", gap: "var(--sp-3)",
+                      padding: "var(--sp-2) var(--sp-3)", borderRadius: "var(--radius-sm)",
                       fontSize: "0.85rem", color: "var(--text-primary)", textAlign: "left",
                       background: "none", border: "none", cursor: "pointer",
                       transition: "background-color 0.15s",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-elevated)")}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--elevated)")}
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                   >
                     <span style={{ fontFamily: "monospace", fontSize: "0.78rem", color: "var(--accent)", fontWeight: 600, minWidth: 48 }}>
@@ -1527,8 +1480,8 @@ export default function VideoPlayerPage() {
           <VideoPoll videoId={videoId} />
 
           {/* Subtitles Section */}
-          <div className="glass" style={{ padding: "1rem 1.25rem", borderRadius: "var(--radius-lg)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+          <div className="glass" style={{ padding: "var(--sp-4) var(--sp-5)", borderRadius: "var(--radius-lg)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--sp-3)" }}>
               <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)" }}>Subtitles</h3>
               {user?._id === video.owner._id && (
                 <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--accent)", cursor: "pointer", padding: "0.4rem 0.8rem", borderRadius: "var(--radius-md)", border: "1px solid var(--accent)", background: "none" }}>
@@ -1540,9 +1493,9 @@ export default function VideoPlayerPage() {
             {captions.length === 0 ? (
               <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>No subtitles available</p>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-2)" }}>
                 {captions.map((cap, idx) => (
-                  <div key={cap._id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.5rem 0.75rem", borderRadius: "var(--radius-sm)", backgroundColor: selectedCaptionIdx === idx ? "var(--accent-light)" : "var(--bg-secondary)", border: `1px solid ${selectedCaptionIdx === idx ? "var(--accent)" : "var(--border-light)"}`, cursor: "pointer", transition: "all 0.15s" }}
+                  <div key={cap._id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "var(--sp-2) var(--sp-3)", borderRadius: "var(--radius-sm)", backgroundColor: selectedCaptionIdx === idx ? "var(--accent-subtle)" : "var(--bg-secondary)", border: `1px solid ${selectedCaptionIdx === idx ? "var(--accent)" : "var(--border)"}`, cursor: "pointer", transition: "all 0.15s" }}
                     onClick={() => {
                       if (!videoRef.current) return;
                       const tracks = videoRef.current.textTracks;
@@ -1554,11 +1507,11 @@ export default function VideoPlayerPage() {
                         setSelectedCaptionIdx(idx);
                       }
                     }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)" }}>
                       <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)" }}>{cap.label}</span>
                       <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", textTransform: "uppercase" }}>{cap.language}</span>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)" }}>
                       {selectedCaptionIdx === idx && <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--accent)" }}>Active</span>}
                       {user?._id === video.owner._id && (
                         <button onClick={(e) => { e.stopPropagation(); handleDeleteCaption(cap._id); }} style={{ fontSize: "0.75rem", color: "var(--accent-warm)", background: "none", border: "none", cursor: "pointer", padding: "0.2rem 0.4rem" }}>Delete</button>
@@ -1575,14 +1528,14 @@ export default function VideoPlayerPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            style={{ marginTop: "0.5rem" }}
+            style={{ marginTop: "var(--sp-2)" }}
           >
-            <h2 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "1rem" }}>
+            <h2 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "var(--sp-4)" }}>
               {comments.length} Comments
             </h2>
 
             {/* Add Comment Form */}
-            <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}>
+            <div style={{ display: "flex", gap: "var(--sp-3)", marginBottom: "var(--sp-6)" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={user?.avatar || ""}
@@ -1598,18 +1551,17 @@ export default function VideoPlayerPage() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && commentText.trim()) postCommentMutation.mutate();
                   }}
-                  className="input-field"
+                  className="input"
                   style={{ fontSize: "0.9rem" }}
                 />
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", marginTop: "0.5rem", opacity: commentText.trim() ? 1 : 0, transition: "opacity 0.2s" }}>
-                  <button onClick={() => setCommentText("")} className="btn-ghost" style={{ padding: "0.4rem 1rem", fontSize: "0.82rem", borderRadius: 99 }}>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "var(--sp-2)", marginTop: "var(--sp-2)", opacity: commentText.trim() ? 1 : 0, transition: "opacity 0.2s" }}>
+                  <button onClick={() => setCommentText("")} className="btn btn-sm btn-ghost btn-pill">
                     Cancel
                   </button>
                   <button
                     onClick={() => postCommentMutation.mutate()}
                     disabled={!commentText.trim() || postCommentMutation.isPending}
-                    className="btn-primary"
-                    style={{ padding: "0.4rem 1rem", fontSize: "0.82rem", borderRadius: 99 }}
+                    className="btn btn-sm btn-primary btn-pill"
                   >
                     {postCommentMutation.isPending ? "Posting..." : "Comment"}
                   </button>
@@ -1619,19 +1571,19 @@ export default function VideoPlayerPage() {
 
             {/* Comments List */}
             {commentsLoading ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} style={{ display: "flex", gap: "0.75rem" }}>
+                  <div key={i} style={{ display: "flex", gap: "var(--sp-3)" }}>
                     <div className="skeleton" style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0 }} />
                     <div style={{ flex: 1 }}>
-                      <div className="skeleton" style={{ width: "30%", height: 14, borderRadius: 4, marginBottom: "0.5rem" }} />
+                      <div className="skeleton" style={{ width: "30%", height: 14, borderRadius: 4, marginBottom: "var(--sp-2)" }} />
                       <div className="skeleton" style={{ width: "80%", height: 14, borderRadius: 4 }} />
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-5)" }}>
                 {comments.map((comment) => (
                   <CommentItem
                     key={comment._id}
@@ -1641,7 +1593,7 @@ export default function VideoPlayerPage() {
                   />
                 ))}
                 {comments.length === 0 && (
-                  <p style={{ textAlign: "center", color: "var(--text-muted)", padding: "2rem 0", fontSize: "0.9rem" }}>
+                  <p style={{ textAlign: "center", color: "var(--text-muted)", padding: "var(--sp-8) 0", fontSize: "0.9rem" }}>
                     No comments yet. Be the first to comment!
                   </p>
                 )}
@@ -1652,15 +1604,15 @@ export default function VideoPlayerPage() {
 
         {/* Right Sidebar: Related Videos */}
         <div style={{ width: 380, flexShrink: 0 }}>
-          <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "1rem" }}>
+          <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "var(--sp-4)" }}>
             Related Videos
           </h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
             {relatedLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} style={{ display: "flex", gap: "0.75rem" }}>
+                <div key={i} style={{ display: "flex", gap: "var(--sp-3)" }}>
                   <div className="skeleton" style={{ width: 160, height: 90, borderRadius: "var(--radius-sm)", flexShrink: 0 }} />
-                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.4rem", paddingTop: "0.25rem" }}>
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "var(--sp-1)", paddingTop: "0.25rem" }}>
                     <div className="skeleton" style={{ width: "90%", height: 14, borderRadius: 4 }} />
                     <div className="skeleton" style={{ width: "60%", height: 12, borderRadius: 4 }} />
                     <div className="skeleton" style={{ width: "40%", height: 12, borderRadius: 4 }} />
@@ -1673,41 +1625,32 @@ export default function VideoPlayerPage() {
                   key={rv._id}
                   href={`/videos/${rv._id}`}
                   style={{
-                    display: "flex", gap: "0.75rem",
+                    display: "flex", gap: "var(--sp-3)",
                     padding: "0.4rem", borderRadius: "var(--radius-md)",
                     textDecoration: "none", color: "inherit",
                     transition: "background-color 0.15s",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-elevated)")}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--elevated)")}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                 >
                   {/* Thumbnail */}
-                  <div style={{ position: "relative", width: 160, height: 90, borderRadius: "var(--radius-sm)", overflow: "hidden", flexShrink: 0, backgroundColor: "var(--bg-elevated)" }}>
+                  <div style={{ position: "relative", width: 160, height: 90, borderRadius: "var(--radius-sm)", overflow: "hidden", flexShrink: 0, backgroundColor: "var(--elevated)" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={rv.thumbnail} alt={rv.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    <span style={{
-                      position: "absolute", bottom: 4, right: 4,
-                      backgroundColor: "rgba(0,0,0,0.75)", color: "#fff",
-                      padding: "0.1rem 0.4rem", borderRadius: 4,
-                      fontSize: "0.7rem", fontWeight: 600,
-                    }}>
+                    <span className="video-duration">
                       {formatDuration(rv.duration)}
                     </span>
                   </div>
 
                   {/* Info */}
                   <div style={{ flex: 1, minWidth: 0, paddingTop: "0.15rem" }}>
-                    <p style={{
-                      fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)",
-                      display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
-                      overflow: "hidden", lineHeight: 1.3, marginBottom: "0.3rem",
-                    }}>
+                    <p className="video-title">
                       {rv.title}
                     </p>
-                    <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "0.15rem" }}>
+                    <p className="video-channel">
                       {rv.owner?.fullName}
                     </p>
-                    <p style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                    <p className="video-meta">
                       {formatViews(rv.views)} views &bull; {formatTimeAgo(rv.createdAt)}
                     </p>
                   </div>
@@ -1716,7 +1659,7 @@ export default function VideoPlayerPage() {
             )}
 
             {!relatedLoading && relatedVideos.length === 0 && (
-              <div style={{ textAlign: "center", padding: "2rem 1rem" }}>
+              <div style={{ textAlign: "center", padding: "var(--sp-8) var(--sp-4)" }}>
                 <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>No related videos found</p>
               </div>
             )}

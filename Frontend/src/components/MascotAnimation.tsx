@@ -217,7 +217,7 @@ export default function RobotMascot({
 
         {/* Antennas */}
         <div style={{ position:"relative", width:150, height:42, marginBottom:-4, zIndex:5 }}>
-          {[{side:"left",lx:38},{side:"right",rx:38}].map(({side,lx,rx})=>(
+          {[{side:"left",lx:38,rx:0},{side:"right",lx:0,rx:38}].map(({side,lx,rx})=>(
             <React.Fragment key={side}>
               <div style={{ position:"absolute", [side==="left"?"left":"right"]:lx, bottom:0, width:4, height:34,
                 background:`linear-gradient(to bottom, ${C.border}, ${C.body})`, borderRadius:2 }} />

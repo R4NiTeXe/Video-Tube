@@ -40,8 +40,8 @@ export default function ForgotPasswordPage() {
     return "email";
   };
 
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSendOtp = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     setError("");
     setSuccess("");
     const trimmed = identifier.trim();
@@ -120,7 +120,7 @@ export default function ForgotPasswordPage() {
     width: "100%",
     padding: "0.8rem 1rem",
     borderRadius: "var(--radius-md)",
-    border: "1.5px solid var(--border-light)",
+    border: "1.5px solid var(--border)",
     backgroundColor: "var(--bg-secondary)",
     color: "var(--text-primary)",
     fontSize: "0.95rem",
@@ -258,7 +258,7 @@ export default function ForgotPasswordPage() {
               <div
                 style={{
                   padding: "0.75rem 1rem",
-                  backgroundColor: "var(--accent-light)",
+                  backgroundColor: "var(--accent-subtle)",
                   color: "var(--accent)",
                   borderRadius: "var(--radius-md)",
                   marginBottom: "1.5rem",
@@ -273,7 +273,7 @@ export default function ForgotPasswordPage() {
               <div
                 style={{
                   padding: "0.75rem 1rem",
-                  backgroundColor: "var(--success-light, #dcfce7)",
+                  backgroundColor: "var(--success-subtle)",
                   color: "var(--success, #16a34a)",
                   borderRadius: "var(--radius-md)",
                   marginBottom: "1.5rem",
@@ -462,7 +462,7 @@ export default function ForgotPasswordPage() {
                     ...buttonStyle,
                     backgroundColor: "var(--bg-elevated, #f1f5f9)",
                     color: "var(--text-primary)",
-                    border: "1.5px solid var(--border-light)",
+                    border: "1.5px solid var(--border)",
                     marginTop: 0,
                     opacity: isLoading ? 0.6 : 1,
                   }}
@@ -555,7 +555,7 @@ export default function ForgotPasswordPage() {
                   <input
                     type={showPassword ? "text" : "password"}
                     required
-                    placeholder="Confirm password"
+                    placeholder="••••••••"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     onPaste={(e) => e.preventDefault()}
@@ -613,7 +613,7 @@ export default function ForgotPasswordPage() {
                     width: 64,
                     height: 64,
                     borderRadius: "50%",
-                    backgroundColor: "var(--success-light, #dcfce7)",
+                    backgroundColor: "var(--success-subtle)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -669,8 +669,8 @@ export default function ForgotPasswordPage() {
       <div
         style={{
           flex: 1.2,
-          backgroundColor: "var(--bg-elevated)",
-          borderLeft: "1px solid var(--border-light)",
+          backgroundColor: "var(--elevated)",
+          borderLeft: "1px solid var(--border)",
         }}
         className="mascot-panel"
       >

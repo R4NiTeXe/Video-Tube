@@ -97,7 +97,7 @@ export default function ShortcutsDialog() {
                 color: "var(--text-primary)",
                 fontWeight: 600,
               }}>
-                {shortcut.shift ? "Shift + " : ""}{shortcut.key === "/" ? "/" : shortcut.key.toUpperCase()}
+                {"shift" in shortcut && shortcut.shift ? "Shift + " : ""}{shortcut.key === "/" ? "/" : shortcut.key.toUpperCase()}
               </kbd>
             </div>
           ))}

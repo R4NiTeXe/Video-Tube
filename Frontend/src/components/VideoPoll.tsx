@@ -14,7 +14,7 @@ interface PollData {
   _id: string;
   question: string;
   options: PollOption[];
-  createdBy: { fullName: string; username: string; avatar: string };
+  createdBy: { _id: string; fullName: string; username: string; avatar: string };
   isActive: boolean;
   endsAt?: string;
   createdAt: string;
