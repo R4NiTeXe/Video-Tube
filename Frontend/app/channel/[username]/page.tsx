@@ -5,9 +5,10 @@ import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import PageNavDropdown from "@/src/components/PageNavDropdown";
+import { formatViews, formatDuration, timeAgo } from "@/src/lib/utils";
 
 interface ChannelProfile {
   _id: string;
@@ -50,35 +51,6 @@ interface Playlist {
   createdAt: string;
 }
 
-function formatViews(views: number): string {
-  if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M`;
-  if (views >= 1_000) return `${(views / 1_000).toFixed(1)}K`;
-  return String(views);
-}
-
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
-function timeAgo(dateStr: string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const seconds = Math.floor((now - then) / 1000);
-  if (seconds < 60) return "just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return `${months}mo ago`;
-  return `${Math.floor(months / 12)}y ago`;
-}
 
 function extractHandle(url: string): string {
   try {
@@ -233,7 +205,7 @@ export default function ChannelPage() {
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           <PageNavDropdown />
-          <span style={{ color: "var(--border-light)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
+          <span style={{ color: "var(--border)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
           <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Channel</span>
         </div>
       </header>
@@ -248,7 +220,7 @@ export default function ChannelPage() {
         <div style={{ textAlign: "center", padding: "6rem 2rem" }}>
           <p style={{ fontSize: "1.2rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.5rem" }}>Channel not found</p>
           <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem" }}>This channel doesn&apos;t exist or has been removed.</p>
-          <Link href="/" className="btn-primary" style={{ borderRadius: 99, padding: "0.7rem 1.75rem" }}>Go Home</Link>
+          <Link href="/" className="btn btn-primary" style={{ borderRadius: 99, padding: "0.7rem 1.75rem" }}>Go Home</Link>
         </div>
       ) : (
         <div style={{ width: "100%", padding: "0 2rem" }}>
@@ -261,7 +233,7 @@ export default function ChannelPage() {
               /* eslint-disable-next-line @next/next/no-img-element */
               <img src={channel.coverImage} alt="Cover" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
-              <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, var(--accent), var(--bg-elevated))" }} />
+              <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, var(--accent), var(--elevated))" }} />
             )}
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.5), transparent 60%)" }} />
           </motion.div>
@@ -288,7 +260,7 @@ export default function ChannelPage() {
 
               {/* Subscribe / Edit button */}
               {isOwnChannel ? (
-                <Link href="/edit-profile" className="btn-ghost" style={{ borderRadius: 99, padding: "0.55rem 1.4rem", fontSize: "0.85rem" }}>
+                <Link href="/edit-profile" className="btn btn-ghost" style={{ borderRadius: 99, padding: "0.55rem 1.4rem", fontSize: "0.85rem" }}>
                   Edit Profile
                 </Link>
               ) : (
@@ -338,7 +310,7 @@ export default function ChannelPage() {
                 { label: "Views", value: formatViews(aboutData?.totalViews ?? channel.totalViews ?? 0), icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> },
                 { label: "Subscribed to", value: formatViews(channel.channelsSubscribedToCount || 0), icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
               ].map((stat) => (
-                <div key={stat.label} style={{ textAlign: "center", padding: "1rem 0.5rem", background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-light)" }}>
+                <div key={stat.label} style={{ textAlign: "center", padding: "1rem 0.5rem", background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", color: "var(--accent)", marginBottom: "0.3rem" }}>
                     {stat.icon}
                     <span style={{ fontSize: "1.2rem", fontWeight: 800, color: "var(--text-primary)" }}>{stat.value}</span>
@@ -349,7 +321,7 @@ export default function ChannelPage() {
             </motion.div>
 
             {/* Tabs */}
-            <div style={{ display: "flex", gap: "0.5rem", borderBottom: "1px solid var(--border-light)", marginBottom: "1.5rem" }}>
+            <div style={{ display: "flex", gap: "0.5rem", borderBottom: "1px solid var(--border)", marginBottom: "1.5rem" }}>
               {(["videos", "about", "playlists"] as const).map((tab) => (
                 <button
                   key={tab}
@@ -397,7 +369,7 @@ export default function ChannelPage() {
                         }}
                         style={{
                           padding: "0.4rem 0.8rem", borderRadius: "var(--radius-md)",
-                          border: "1px solid var(--border-light)", backgroundColor: "var(--bg-elevated)",
+                          border: "1px solid var(--border)", backgroundColor: "var(--elevated)",
                           color: "var(--text-secondary)", fontSize: "0.82rem", fontWeight: 500,
                           cursor: "pointer",
                         }}
@@ -423,7 +395,7 @@ export default function ChannelPage() {
                         <p style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.5rem", marginTop: "1rem" }}>No videos yet</p>
                         <p style={{ color: "var(--text-muted)", marginBottom: "1.25rem" }}>This channel hasn&apos;t uploaded any videos.</p>
                         {isOwnChannel && (
-                          <Link href="/studio" className="btn-primary" style={{ borderRadius: 99, padding: "0.6rem 1.5rem", fontSize: "0.85rem", display: "inline-flex" }}>
+                          <Link href="/studio" className="btn btn-primary" style={{ borderRadius: 99, padding: "0.6rem 1.5rem", fontSize: "0.85rem", display: "inline-flex" }}>
                             Upload your first video
                           </Link>
                         )}
@@ -548,7 +520,7 @@ export default function ChannelPage() {
                     )}
 
                     {/* Joined & Subscribers */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", borderTop: "1px solid var(--border-light)", paddingTop: "1.5rem" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", borderTop: "1px solid var(--border)", paddingTop: "1.5rem" }}>
                       {(aboutData?.joinDate || channel?.createdAt) && (
                         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--text-secondary)", fontSize: "0.9rem" }}>
                           <CalendarIcon />
@@ -592,7 +564,7 @@ export default function ChannelPage() {
                             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "none"; (e.currentTarget as HTMLElement).style.boxShadow = ""; }}
                           >
                             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
-                              <div style={{ width: 40, height: 40, borderRadius: "var(--radius-sm)", backgroundColor: "var(--accent-light)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)", flexShrink: 0 }}>
+                              <div style={{ width: 40, height: 40, borderRadius: "var(--radius-sm)", backgroundColor: "var(--accent-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)", flexShrink: 0 }}>
                                 <PlayLogo size={18} />
                               </div>
                               <div style={{ minWidth: 0 }}>

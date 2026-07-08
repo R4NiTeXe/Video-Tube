@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { formatViews } from "@/src/lib/utils";
 
 // ── Types ──
 interface ShortVideo {
@@ -28,12 +29,6 @@ interface ShortVideo {
   isLiked?: boolean;
 }
 
-// ── Utility Functions ──
-const formatViews = (views: number): string => {
-  if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M`;
-  if (views >= 1_000) return `${(views / 1_000).toFixed(1)}K`;
-  return views.toString();
-};
 
 // ── SVG Icons ──
 const PlayLogo = ({ size = 22 }: { size?: number }) => (

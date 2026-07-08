@@ -15,7 +15,7 @@ function PasswordInput({ value, onChange, placeholder, minLength = 6, blockPaste
     <div style={{ position: "relative" }}>
       <input
         type={show ? "text" : "password"}
-        className="input-field"
+        className="input"
         style={{ width: "100%", boxSizing: "border-box", paddingRight: "2.5rem" }}
         required
         value={value}
@@ -59,7 +59,7 @@ function PasswordStrength({ password }: { password: string }) {
     <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
       <div style={{ display: "flex", gap: "3px" }}>
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} style={{ flex: 1, height: 3, borderRadius: 99, backgroundColor: i <= level ? colors[level] : "var(--bg-elevated)", transition: "background-color 0.2s" }} />
+          <div key={i} style={{ flex: 1, height: 3, borderRadius: 99, backgroundColor: i <= level ? colors[level] : "var(--elevated)", transition: "background-color 0.2s" }} />
         ))}
       </div>
       <span style={{ fontSize: "0.72rem", color: colors[level], fontWeight: 500 }}>{labels[level]}</span>
@@ -297,7 +297,7 @@ export default function SettingsPage() {
 
   const SectionHeader = ({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) => (
     <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
-      <div style={{ width: 40, height: 40, borderRadius: "var(--radius-md)", backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-light)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)", flexShrink: 0 }}>
+      <div style={{ width: 40, height: 40, borderRadius: "var(--radius-md)", backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)", flexShrink: 0 }}>
         {icon}
       </div>
       <div>
@@ -312,7 +312,7 @@ export default function SettingsPage() {
       <header className="glass" style={{ position: "sticky", top: 0, zIndex: 50, padding: "0.75rem 2rem", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "none", borderLeft: "none", borderRight: "none", borderRadius: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           <PageNavDropdown />
-          <span style={{ color: "var(--border-light)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
+          <span style={{ color: "var(--border)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
           <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Settings</span>
         </div>
       </header>
@@ -337,11 +337,11 @@ export default function SettingsPage() {
               description="Keep your account secure with a strong password"
             />
             {passwordError && <div style={{ padding: "0.7rem 1rem", backgroundColor: "var(--accent-warm-light)", color: "var(--accent-warm)", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem", border: "1px solid rgba(244,63,94,0.15)" }}>{passwordError}</div>}
-            {passwordSuccess && <div style={{ padding: "0.7rem 1rem", backgroundColor: "var(--accent-light)", color: "var(--accent)", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem", border: "1px solid var(--border-focus)" }}>{passwordSuccess}</div>}
+            {passwordSuccess && <div style={{ padding: "0.7rem 1rem", backgroundColor: "var(--accent-subtle)", color: "var(--accent)", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem", border: "1px solid var(--border-focus)" }}>{passwordSuccess}</div>}
 
             {forgotPasswordMode ? (
               <form onSubmit={handleForgotPasswordReset} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <div style={{ padding: "0.6rem 0.8rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-light)" }}>
+                <div style={{ padding: "0.6rem 0.8rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
                   <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>We&apos;ll send an OTP to your email. No current password needed.</p>
                 </div>
 
@@ -352,7 +352,7 @@ export default function SettingsPage() {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                   <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Confirm New Password</label>
-                  <PasswordInput value={confirmPassword} onChange={setConfirmPassword} placeholder="Confirm password" blockPaste />
+                  <PasswordInput value={confirmPassword} onChange={setConfirmPassword} placeholder="••••••••" blockPaste />
                   {confirmPassword && newPassword !== confirmPassword && <span style={{ fontSize: "0.72rem", color: "var(--accent-warm)" }}>Passwords do not match</span>}
                 </div>
 
@@ -362,11 +362,11 @@ export default function SettingsPage() {
                     <>
                       <div style={{ display: "flex", gap: "0.5rem" }}>
                         <button type="button" onClick={() => setForgotChannel("email")}
-                          style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: forgotChannel === "email" ? "var(--accent)" : "var(--bg-secondary)", color: forgotChannel === "email" ? "#fff" : "var(--text-muted)", border: `1px solid ${forgotChannel === "email" ? "var(--accent)" : "var(--border-light)"}`, cursor: "pointer", transition: "all 0.2s" }}>
+                          style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: forgotChannel === "email" ? "var(--accent)" : "var(--bg-secondary)", color: forgotChannel === "email" ? "#fff" : "var(--text-muted)", border: `1px solid ${forgotChannel === "email" ? "var(--accent)" : "var(--border)"}`, cursor: "pointer", transition: "all 0.2s" }}>
                           📧 Email
                         </button>
                         <button type="button" onClick={() => setForgotChannel("whatsapp")}
-                          style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: forgotChannel === "whatsapp" ? "#25D366" : "var(--bg-secondary)", color: forgotChannel === "whatsapp" ? "#fff" : "var(--text-muted)", border: `1px solid ${forgotChannel === "whatsapp" ? "#25D366" : "var(--border-light)"}`, cursor: "pointer", transition: "all 0.2s" }}>
+                          style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: forgotChannel === "whatsapp" ? "#25D366" : "var(--bg-secondary)", color: forgotChannel === "whatsapp" ? "#fff" : "var(--text-muted)", border: `1px solid ${forgotChannel === "whatsapp" ? "#25D366" : "var(--border)"}`, cursor: "pointer", transition: "all 0.2s" }}>
                           💬 WhatsApp
                         </button>
                       </div>
@@ -393,7 +393,7 @@ export default function SettingsPage() {
                     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                       <input
                         type="text"
-                        className="input-field"
+                        className="input"
                         placeholder="000000"
                         maxLength={6}
                         pattern="[0-9]{6}"
@@ -416,10 +416,10 @@ export default function SettingsPage() {
 
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
                   <button type="button" onClick={() => { setForgotPasswordMode(false); setForgotOtpSent(false); setChangePasswordOtp(""); setNewPassword(""); setConfirmPassword(""); setPasswordError(""); setPasswordSuccess(""); }}
-                    style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-light)", cursor: "pointer" }}>
+                    style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: "var(--elevated)", color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer" }}>
                     Back to Password
                   </button>
-                  <button type="submit" className="btn-primary"
+                  <button type="submit" className="btn btn-primary"
                     disabled={passwordSaving || !forgotOtpSent || changePasswordOtp.length !== 6}
                     style={{
                       padding: "0.65rem 1.5rem",
@@ -436,7 +436,7 @@ export default function SettingsPage() {
               <form onSubmit={handleChangePassword} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                   <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Current Password</label>
-                  <PasswordInput value={oldPassword} onChange={setOldPassword} placeholder="Current password" />
+                  <PasswordInput value={oldPassword} onChange={setOldPassword} placeholder="••••••••" />
                   <button type="button" onClick={() => { setForgotPasswordMode(true); setPasswordError(""); setPasswordSuccess(""); setOldPassword(""); }}
                     style={{ background: "none", border: "none", color: "var(--accent)", fontSize: "0.78rem", cursor: "pointer", textDecoration: "underline", textAlign: "left", padding: 0, marginTop: "-0.2rem" }}>
                     Forgot your password?
@@ -449,7 +449,7 @@ export default function SettingsPage() {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                   <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Confirm New Password</label>
-                  <PasswordInput value={confirmPassword} onChange={setConfirmPassword} placeholder="Confirm password" blockPaste />
+                  <PasswordInput value={confirmPassword} onChange={setConfirmPassword} placeholder="••••••••" blockPaste />
                   {confirmPassword && newPassword !== confirmPassword && <span style={{ fontSize: "0.72rem", color: "var(--accent-warm)" }}>Passwords do not match</span>}
                 </div>
 
@@ -460,11 +460,11 @@ export default function SettingsPage() {
                   <>
                     <div style={{ display: "flex", gap: "0.5rem" }}>
                       <button type="button" onClick={() => setChangePasswordChannel("email")}
-                        style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: changePasswordChannel === "email" ? "var(--accent)" : "var(--bg-secondary)", color: changePasswordChannel === "email" ? "#fff" : "var(--text-muted)", border: `1px solid ${changePasswordChannel === "email" ? "var(--accent)" : "var(--border-light)"}`, cursor: "pointer", transition: "all 0.2s" }}>
+                        style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: changePasswordChannel === "email" ? "var(--accent)" : "var(--bg-secondary)", color: changePasswordChannel === "email" ? "#fff" : "var(--text-muted)", border: `1px solid ${changePasswordChannel === "email" ? "var(--accent)" : "var(--border)"}`, cursor: "pointer", transition: "all 0.2s" }}>
                         📧 Email
                       </button>
                       <button type="button" onClick={() => setChangePasswordChannel("whatsapp")}
-                        style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: changePasswordChannel === "whatsapp" ? "#25D366" : "var(--bg-secondary)", color: changePasswordChannel === "whatsapp" ? "#fff" : "var(--text-muted)", border: `1px solid ${changePasswordChannel === "whatsapp" ? "#25D366" : "var(--border-light)"}`, cursor: "pointer", transition: "all 0.2s" }}>
+                        style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: changePasswordChannel === "whatsapp" ? "#25D366" : "var(--bg-secondary)", color: changePasswordChannel === "whatsapp" ? "#fff" : "var(--text-muted)", border: `1px solid ${changePasswordChannel === "whatsapp" ? "#25D366" : "var(--border)"}`, cursor: "pointer", transition: "all 0.2s" }}>
                         💬 WhatsApp
                       </button>
                     </div>
@@ -491,7 +491,7 @@ export default function SettingsPage() {
                     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                       <input
                         type="text"
-                        className="input-field"
+                        className="input"
                         placeholder="000000"
                         maxLength={6}
                         pattern="[0-9]{6}"
@@ -515,7 +515,7 @@ export default function SettingsPage() {
                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
                   <button
                     type="submit"
-                    className="btn-primary"
+                    className="btn btn-primary"
                     disabled={passwordSaving || !otpSent || changePasswordOtp.length !== 6}
                     style={{
                       padding: "0.65rem 1.5rem",
@@ -545,7 +545,7 @@ export default function SettingsPage() {
                 <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Currently using {theme} mode</p>
               </div>
               <button onClick={toggleTheme}
-                style={{ width: 52, height: 28, borderRadius: 99, backgroundColor: theme === "dark" ? "var(--accent)" : "var(--bg-elevated)", border: `2px solid ${theme === "dark" ? "var(--accent)" : "var(--border-light)"}`, cursor: "pointer", position: "relative", transition: "all 0.3s", flexShrink: 0 }}>
+                style={{ width: 52, height: 28, borderRadius: 99, backgroundColor: theme === "dark" ? "var(--accent)" : "var(--elevated)", border: `2px solid ${theme === "dark" ? "var(--accent)" : "var(--border)"}`, cursor: "pointer", position: "relative", transition: "all 0.3s", flexShrink: 0 }}>
                 <motion.div animate={{ x: theme === "dark" ? 24 : 2 }} transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   style={{ width: 20, height: 20, borderRadius: "50%", backgroundColor: "#fff", position: "absolute", top: 2, boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
               </button>
@@ -567,7 +567,7 @@ export default function SettingsPage() {
                 { label: "New subscribers", desc: "Get notified when someone subscribes", checked: notifSubscribers, onChange: setNotifSubscribers },
                 { label: "Mentions", desc: "Get notified when someone mentions you", checked: notifMentions, onChange: setNotifMentions },
               ].map((item) => (
-                <label key={item.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.6rem 0", cursor: "pointer", borderBottom: "1px solid var(--border-light)" }}>
+                <label key={item.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.6rem 0", cursor: "pointer", borderBottom: "1px solid var(--border)" }}>
                   <div>
                     <p style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--text-primary)" }}>{item.label}</p>
                     <p style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>{item.desc}</p>
@@ -575,7 +575,7 @@ export default function SettingsPage() {
                   <div style={{ position: "relative" }}>
                     <input type="checkbox" checked={item.checked} onChange={(e) => item.onChange(e.target.checked)} style={{ display: "none" }} />
                     <div onClick={() => item.onChange(!item.checked)}
-                      style={{ width: 40, height: 22, borderRadius: 99, backgroundColor: item.checked ? "var(--accent)" : "var(--bg-elevated)", border: `2px solid ${item.checked ? "var(--accent)" : "var(--border-light)"}`, cursor: "pointer", position: "relative", transition: "all 0.2s" }}>
+                      style={{ width: 40, height: 22, borderRadius: 99, backgroundColor: item.checked ? "var(--accent)" : "var(--elevated)", border: `2px solid ${item.checked ? "var(--accent)" : "var(--border)"}`, cursor: "pointer", position: "relative", transition: "all 0.2s" }}>
                       <motion.div animate={{ x: item.checked ? 18 : 2 }} transition={{ type: "spring", stiffness: 500, damping: 30 }}
                         style={{ width: 14, height: 14, borderRadius: "50%", backgroundColor: "#fff", position: "absolute", top: 3, boxShadow: "0 1px 2px rgba(0,0,0,0.15)" }} />
                     </div>
@@ -585,7 +585,7 @@ export default function SettingsPage() {
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}>
               <button onClick={handleSaveNotificationPrefs} disabled={notifSaving}
-                style={{ padding: "0.55rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.85rem", fontWeight: 600, backgroundColor: "var(--bg-elevated)", color: "var(--accent)", border: "1px solid var(--accent)", cursor: notifSaving ? "not-allowed" : "pointer", transition: "all 0.2s" }}>
+                style={{ padding: "0.55rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.85rem", fontWeight: 600, backgroundColor: "var(--elevated)", color: "var(--accent)", border: "1px solid var(--accent)", cursor: notifSaving ? "not-allowed" : "pointer", transition: "all 0.2s" }}>
                 {notifSaving ? "Saving..." : "Save Preferences"}
               </button>
             </div>
@@ -603,7 +603,7 @@ export default function SettingsPage() {
                 { label: "Keep subscriptions private", desc: "Others won't see which channels you subscribe to", checked: privateSubs, onChange: setPrivateSubs },
                 { label: "Show subscriptions list on channel", desc: "Display your subscriptions on your channel page", checked: showSubsList, onChange: setShowSubsList },
               ].map((item) => (
-                <label key={item.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.6rem 0", cursor: "pointer", borderBottom: "1px solid var(--border-light)" }}>
+                <label key={item.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.6rem 0", cursor: "pointer", borderBottom: "1px solid var(--border)" }}>
                   <div>
                     <p style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--text-primary)" }}>{item.label}</p>
                     <p style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>{item.desc}</p>
@@ -611,7 +611,7 @@ export default function SettingsPage() {
                   <div style={{ position: "relative" }}>
                     <input type="checkbox" checked={item.checked} onChange={(e) => item.onChange(e.target.checked)} style={{ display: "none" }} />
                     <div onClick={() => item.onChange(!item.checked)}
-                      style={{ width: 40, height: 22, borderRadius: 99, backgroundColor: item.checked ? "var(--accent)" : "var(--bg-elevated)", border: `2px solid ${item.checked ? "var(--accent)" : "var(--border-light)"}`, cursor: "pointer", position: "relative", transition: "all 0.2s" }}>
+                      style={{ width: 40, height: 22, borderRadius: 99, backgroundColor: item.checked ? "var(--accent)" : "var(--elevated)", border: `2px solid ${item.checked ? "var(--accent)" : "var(--border)"}`, cursor: "pointer", position: "relative", transition: "all 0.2s" }}>
                       <motion.div animate={{ x: item.checked ? 18 : 2 }} transition={{ type: "spring", stiffness: 500, damping: 30 }}
                         style={{ width: 14, height: 14, borderRadius: "50%", backgroundColor: "#fff", position: "absolute", top: 3, boxShadow: "0 1px 2px rgba(0,0,0,0.15)" }} />
                     </div>
@@ -629,7 +629,7 @@ export default function SettingsPage() {
               description="Select your preferred language for the interface"
             />
             <select value={language} onChange={(e) => setLanguage(e.target.value)}
-              className="input-field" style={{ width: "100%", boxSizing: "border-box", cursor: "pointer" }}>
+              className="input" style={{ width: "100%", boxSizing: "border-box", cursor: "pointer" }}>
               {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
             </select>
           </div>
@@ -645,7 +645,7 @@ export default function SettingsPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                 <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Default Upload Visibility</label>
                 <select value={defaultVisibility} onChange={(e) => setDefaultVisibility(e.target.value)}
-                  className="input-field" style={{ width: "100%", boxSizing: "border-box", cursor: "pointer" }}>
+                  className="input" style={{ width: "100%", boxSizing: "border-box", cursor: "pointer" }}>
                   <option value="public">Public</option>
                   <option value="private">Private</option>
                 </select>
@@ -653,7 +653,7 @@ export default function SettingsPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                 <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Default Category</label>
                 <select value={defaultCategory} onChange={(e) => setDefaultCategory(e.target.value)}
-                  className="input-field" style={{ width: "100%", boxSizing: "border-box", cursor: "pointer" }}>
+                  className="input" style={{ width: "100%", boxSizing: "border-box", cursor: "pointer" }}>
                   {["General", "Gaming", "Music", "Education", "Entertainment", "Sports", "News", "Technology", "Science", "Travel", "Food", "Fashion", "Art", "Podcasts"].map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
@@ -687,9 +687,9 @@ export default function SettingsPage() {
                   })();
 
                   return (
-                    <div key={session._id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.7rem 0", borderBottom: "1px solid var(--border-light)" }}>
+                    <div key={session._id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.7rem 0", borderBottom: "1px solid var(--border)" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                        <div style={{ width: 36, height: 36, borderRadius: "var(--radius-sm)", backgroundColor: session.isCurrent ? "var(--accent-light)" : "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", color: session.isCurrent ? "var(--accent)" : "var(--text-muted)" }}>
+                        <div style={{ width: 36, height: 36, borderRadius: "var(--radius-sm)", backgroundColor: session.isCurrent ? "var(--accent-subtle)" : "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", color: session.isCurrent ? "var(--accent)" : "var(--text-muted)" }}>
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                         </div>
                         <div>
@@ -698,7 +698,7 @@ export default function SettingsPage() {
                         </div>
                       </div>
                       {session.isCurrent ? (
-                        <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--accent)", padding: "0.25rem 0.6rem", backgroundColor: "var(--accent-light)", borderRadius: "2rem" }}>This device</span>
+                        <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--accent)", padding: "0.25rem 0.6rem", backgroundColor: "var(--accent-subtle)", borderRadius: "2rem" }}>This device</span>
                       ) : (
                         <button onClick={() => handleRevokeSession(session._id)}
                           style={{ fontSize: "0.78rem", fontWeight: 500, color: "var(--accent-warm)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
@@ -711,7 +711,7 @@ export default function SettingsPage() {
                 {sessions.length > 1 && (
                   <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "0.5rem" }}>
                     <button onClick={handleRevokeAllSessions}
-                      style={{ padding: "0.55rem 1.2rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: "var(--bg-elevated)", color: "var(--accent-warm)", border: "1px solid var(--accent-warm)", cursor: "pointer", transition: "all 0.2s" }}>
+                      style={{ padding: "0.55rem 1.2rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: "var(--elevated)", color: "var(--accent-warm)", border: "1px solid var(--accent-warm)", cursor: "pointer", transition: "all 0.2s" }}>
                       Log out all other devices
                     </button>
                   </div>
@@ -743,7 +743,7 @@ export default function SettingsPage() {
                 <PasswordInput value={deletePassword} onChange={setDeletePassword} placeholder="Password" />
                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
                   <button onClick={handleDeleteStep1} disabled={!deletePassword}
-                    style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-light)", cursor: deletePassword ? "pointer" : "not-allowed" }}>
+                    style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: "var(--elevated)", color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: deletePassword ? "pointer" : "not-allowed" }}>
                     Continue
                   </button>
                 </div>
@@ -761,11 +761,11 @@ export default function SettingsPage() {
                   <>
                     <div style={{ display: "flex", gap: "0.5rem" }}>
                       <button type="button" onClick={() => setDeleteChannel("email")}
-                        style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: deleteChannel === "email" ? "var(--accent)" : "var(--bg-secondary)", color: deleteChannel === "email" ? "#fff" : "var(--text-muted)", border: `1px solid ${deleteChannel === "email" ? "var(--accent)" : "var(--border-light)"}`, cursor: "pointer", transition: "all 0.2s" }}>
+                        style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: deleteChannel === "email" ? "var(--accent)" : "var(--bg-secondary)", color: deleteChannel === "email" ? "#fff" : "var(--text-muted)", border: `1px solid ${deleteChannel === "email" ? "var(--accent)" : "var(--border)"}`, cursor: "pointer", transition: "all 0.2s" }}>
                         📧 Email
                       </button>
                       <button type="button" onClick={() => setDeleteChannel("whatsapp")}
-                        style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: deleteChannel === "whatsapp" ? "#25D366" : "var(--bg-secondary)", color: deleteChannel === "whatsapp" ? "#fff" : "var(--text-muted)", border: `1px solid ${deleteChannel === "whatsapp" ? "#25D366" : "var(--border-light)"}`, cursor: "pointer", transition: "all 0.2s" }}>
+                        style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: deleteChannel === "whatsapp" ? "#25D366" : "var(--bg-secondary)", color: deleteChannel === "whatsapp" ? "#fff" : "var(--text-muted)", border: `1px solid ${deleteChannel === "whatsapp" ? "#25D366" : "var(--border)"}`, cursor: "pointer", transition: "all 0.2s" }}>
                         💬 WhatsApp
                       </button>
                     </div>
@@ -788,7 +788,7 @@ export default function SettingsPage() {
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                     <input
                       type="text"
-                      className="input-field"
+                      className="input"
                       placeholder="000000"
                       maxLength={6}
                       pattern="[0-9]{6}"
@@ -805,12 +805,12 @@ export default function SettingsPage() {
                 )}
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
                   <button onClick={() => { setDeleteStep(1); setDeleteOtpSent(false); setDeleteOtp(""); }}
-                    style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-light)", cursor: "pointer" }}>
+                    style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: "var(--elevated)", color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer" }}>
                     Back
                   </button>
                   <button onClick={() => { if (!deleteOtp || deleteOtp.length !== 6) return; setDeleteStep(3); }}
                     disabled={!deleteOtpSent || deleteOtp.length !== 6}
-                    style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: deleteOtpSent && deleteOtp.length === 6 ? "var(--accent-warm)" : "var(--bg-elevated)", color: deleteOtpSent && deleteOtp.length === 6 ? "#fff" : "var(--text-muted)", border: `1px solid ${deleteOtpSent && deleteOtp.length === 6 ? "var(--accent-warm)" : "var(--border-light)"}`, cursor: deleteOtpSent && deleteOtp.length === 6 ? "pointer" : "not-allowed", transition: "all 0.2s" }}>
+                    style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: deleteOtpSent && deleteOtp.length === 6 ? "var(--accent-warm)" : "var(--elevated)", color: deleteOtpSent && deleteOtp.length === 6 ? "#fff" : "var(--text-muted)", border: `1px solid ${deleteOtpSent && deleteOtp.length === 6 ? "var(--accent-warm)" : "var(--border)"}`, cursor: deleteOtpSent && deleteOtp.length === 6 ? "pointer" : "not-allowed", transition: "all 0.2s" }}>
                     Continue
                   </button>
                 </div>
@@ -824,14 +824,14 @@ export default function SettingsPage() {
                   <span style={{ width: 24, height: 24, borderRadius: "50%", backgroundColor: "var(--accent-warm)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", fontWeight: 700 }}>3</span>
                   <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--accent-warm)" }}>Type DELETE to confirm</span>
                 </div>
-                <input type="text" className="input-field" value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} placeholder='Type DELETE'
+                <input type="text" className="input" value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} placeholder='Type DELETE'
                   style={{ borderColor: deleteConfirm === "DELETE" ? "var(--accent-warm)" : undefined }} />
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
-                  <button onClick={() => { setDeleteStep(2); setDeleteConfirm(""); }} style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-light)", cursor: "pointer" }}>
+                  <button onClick={() => { setDeleteStep(2); setDeleteConfirm(""); }} style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: "var(--elevated)", color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer" }}>
                     Back
                   </button>
                   <button onClick={handleDeleteAccount} disabled={deleteConfirm !== "DELETE" || deleting}
-                    style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: deleteConfirm === "DELETE" ? "var(--accent-warm)" : "var(--bg-elevated)", color: deleteConfirm === "DELETE" ? "#fff" : "var(--text-muted)", border: `1px solid ${deleteConfirm === "DELETE" ? "var(--accent-warm)" : "var(--border-light)"}`, cursor: deleteConfirm === "DELETE" && !deleting ? "pointer" : "not-allowed", opacity: deleting ? 0.7 : 1, transition: "all 0.2s" }}>
+                    style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: deleteConfirm === "DELETE" ? "var(--accent-warm)" : "var(--elevated)", color: deleteConfirm === "DELETE" ? "#fff" : "var(--text-muted)", border: `1px solid ${deleteConfirm === "DELETE" ? "var(--accent-warm)" : "var(--border)"}`, cursor: deleteConfirm === "DELETE" && !deleting ? "pointer" : "not-allowed", opacity: deleting ? 0.7 : 1, transition: "all 0.2s" }}>
                     {deleting ? "Deleting..." : "Delete Account Permanently"}
                   </button>
                 </div>

@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatDuration, formatViews } from "@/src/lib/utils";
 
 interface Video {
   _id: string;
@@ -43,19 +44,6 @@ const XIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 );
 
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
-
-function formatViews(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return String(n);
-}
 
 export default function PlaylistDetailPage() {
   const params = useParams();
@@ -138,7 +126,7 @@ export default function PlaylistDetailPage() {
         <div style={{ textAlign: "center" }}>
           <p style={{ fontSize: "1.2rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.5rem" }}>Playlist not found</p>
           <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem" }}>This playlist doesn&apos;t exist or has been removed.</p>
-          <Link href="/playlists" className="btn-primary" style={{ borderRadius: 99, padding: "0.7rem 1.75rem" }}>Go to Playlists</Link>
+          <Link href="/playlists" className="btn btn-primary" style={{ borderRadius: 99, padding: "0.7rem 1.75rem" }}>Go to Playlists</Link>
         </div>
       </div>
     );
@@ -161,12 +149,12 @@ export default function PlaylistDetailPage() {
           <button onClick={() => router.back()} style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--text-secondary)", fontSize: "0.88rem", fontWeight: 500, background: "none", border: "none", cursor: "pointer" }}>
             <BackIcon /> Back
           </button>
-          <span style={{ color: "var(--border-light)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
+          <span style={{ color: "var(--border)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
           <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Playlist</span>
         </div>
         {isOwner && !editing && (
           <button
-            className="btn-ghost"
+            className="btn btn-ghost"
             onClick={() => {
               setEditName(playlist.name);
               setEditDesc(playlist.description);
@@ -189,7 +177,7 @@ export default function PlaylistDetailPage() {
                   <label style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-secondary)" }}>Name</label>
                   <input
                     type="text"
-                    className="input-field"
+                    className="input"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
                   />
@@ -197,7 +185,7 @@ export default function PlaylistDetailPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                   <label style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-secondary)" }}>Description</label>
                   <textarea
-                    className="input-field"
+                    className="input"
                     value={editDesc}
                     onChange={(e) => setEditDesc(e.target.value)}
                     rows={2}
@@ -206,7 +194,7 @@ export default function PlaylistDetailPage() {
                 </div>
                 <div style={{ display: "flex", gap: "0.75rem", justifyContent: "space-between" }}>
                   <button
-                    className="btn-ghost"
+                    className="btn btn-ghost"
                     onClick={() => { if (window.confirm("Delete this playlist? This cannot be undone.")) deletePlaylist.mutate(); }}
                     disabled={deletePlaylist.isPending}
                     style={{ padding: "0.5rem 1rem", fontSize: "0.85rem", color: "var(--error)", borderColor: "var(--error)" }}
@@ -214,11 +202,11 @@ export default function PlaylistDetailPage() {
                     <TrashIcon /> {deletePlaylist.isPending ? "Deleting..." : "Delete Playlist"}
                   </button>
                   <div style={{ display: "flex", gap: "0.6rem" }}>
-                    <button className="btn-ghost" onClick={() => setEditing(false)} style={{ padding: "0.5rem 1.1rem", fontSize: "0.85rem" }}>
+                    <button className="btn btn-ghost" onClick={() => setEditing(false)} style={{ padding: "0.5rem 1.1rem", fontSize: "0.85rem" }}>
                       Cancel
                     </button>
                     <button
-                      className="btn-primary"
+                      className="btn btn-primary"
                       onClick={() => updatePlaylist.mutate()}
                       disabled={!editName.trim() || updatePlaylist.isPending}
                       style={{ padding: "0.5rem 1.4rem", fontSize: "0.85rem" }}
@@ -233,9 +221,9 @@ export default function PlaylistDetailPage() {
             <div style={{ display: "flex", alignItems: "flex-start", gap: "1.5rem", flexWrap: "wrap" }}>
               <div style={{
                 width: 180, height: 110, borderRadius: "var(--radius-lg)",
-                backgroundColor: "var(--bg-elevated)", overflow: "hidden", flexShrink: 0,
+                backgroundColor: "var(--elevated)", overflow: "hidden", flexShrink: 0,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                border: "1px solid var(--border-light)",
+                border: "1px solid var(--border)",
               }}>
                 {videos.length > 0 && videos[0].thumbnail ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
@@ -268,7 +256,7 @@ export default function PlaylistDetailPage() {
           <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
             <div style={{
               width: 64, height: 64, borderRadius: "50%",
-              backgroundColor: "var(--bg-elevated)",
+              backgroundColor: "var(--elevated)",
               display: "inline-flex", alignItems: "center", justifyContent: "center",
               marginBottom: "1rem", color: "var(--text-muted)",
             }}>
@@ -295,8 +283,8 @@ export default function PlaylistDetailPage() {
                       display: "flex", flexDirection: "row", alignItems: "center", gap: "1rem",
                       padding: "0.75rem",
                       borderRadius: "var(--radius-lg)",
-                      border: "1px solid var(--border-light)",
-                      backgroundColor: "var(--bg-card)",
+                      border: "1px solid var(--border)",
+                      backgroundColor: "var(--card)",
                     }}
                   >
                     <Link href={`/videos/${video._id}`} style={{ flexShrink: 0, width: 180, position: "relative" }}>
@@ -335,14 +323,14 @@ export default function PlaylistDetailPage() {
                           flexShrink: 0,
                           width: 34, height: 34, borderRadius: "50%",
                           backgroundColor: "transparent",
-                          border: "1px solid var(--border-light)",
+                          border: "1px solid var(--border)",
                           display: "flex", alignItems: "center", justifyContent: "center",
                           color: "var(--text-muted)",
                           cursor: "pointer",
                           transition: "all 0.2s",
                         }}
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--error-light)"; (e.currentTarget as HTMLElement).style.color = "var(--error)"; (e.currentTarget as HTMLElement).style.borderColor = "var(--error)"; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; (e.currentTarget as HTMLElement).style.borderColor = "var(--border-light)"; }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--error-subtle)"; (e.currentTarget as HTMLElement).style.color = "var(--error)"; (e.currentTarget as HTMLElement).style.borderColor = "var(--error)"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"; }}
                       >
                         <XIcon />
                       </button>

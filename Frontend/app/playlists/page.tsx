@@ -90,11 +90,11 @@ export default function PlaylistsPage() {
           <button onClick={() => router.back()} style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--text-secondary)", fontSize: "0.88rem", fontWeight: 500, background: "none", border: "none", cursor: "pointer" }}>
             <BackIcon /> Back
           </button>
-          <span style={{ color: "var(--border-light)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
+          <span style={{ color: "var(--border)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
           <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Playlists</span>
         </div>
         <button
-          className="btn-primary"
+          className="btn btn-primary"
           onClick={() => setShowCreate(!showCreate)}
           style={{ padding: "0.5rem 1.1rem", fontSize: "0.85rem", borderRadius: 99 }}
         >
@@ -127,7 +127,7 @@ export default function PlaylistsPage() {
                     <input
                       type="text"
                       placeholder="Playlist name"
-                      className="input-field"
+                      className="input"
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
                     />
@@ -136,7 +136,7 @@ export default function PlaylistsPage() {
                     <label style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-secondary)" }}>Description</label>
                     <textarea
                       placeholder="Description"
-                      className="input-field"
+                      className="input"
                       value={newDesc}
                       onChange={(e) => setNewDesc(e.target.value)}
                       rows={2}
@@ -144,11 +144,11 @@ export default function PlaylistsPage() {
                     />
                   </div>
                   <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
-                    <button className="btn-ghost" onClick={() => { setShowCreate(false); setNewName(""); setNewDesc(""); }} style={{ padding: "0.5rem 1.1rem", fontSize: "0.85rem" }}>
+                    <button className="btn btn-ghost" onClick={() => { setShowCreate(false); setNewName(""); setNewDesc(""); }} style={{ padding: "0.5rem 1.1rem", fontSize: "0.85rem" }}>
                       Cancel
                     </button>
                     <button
-                      className="btn-primary"
+                      className="btn btn-primary"
                       onClick={() => createPlaylist.mutate()}
                       disabled={!newName.trim() || createPlaylist.isPending}
                       style={{ padding: "0.5rem 1.4rem", fontSize: "0.85rem" }}
@@ -172,7 +172,7 @@ export default function PlaylistsPage() {
           <div style={{ textAlign: "center", padding: "5rem 2rem" }}>
             <div style={{
               width: 72, height: 72, borderRadius: "50%",
-              backgroundColor: "var(--bg-elevated)",
+              backgroundColor: "var(--elevated)",
               display: "inline-flex", alignItems: "center", justifyContent: "center",
               marginBottom: "1.25rem", color: "var(--text-muted)",
             }}>
@@ -180,7 +180,7 @@ export default function PlaylistsPage() {
             </div>
             <p style={{ fontWeight: 600, fontSize: "1.05rem", color: "var(--text-secondary)", marginBottom: "0.4rem" }}>No playlists yet</p>
             <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1.25rem" }}>Create your first playlist to organize your favorite videos.</p>
-            <button className="btn-primary" onClick={() => setShowCreate(true)}>
+            <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
               <PlusIcon /> Create your first playlist
             </button>
           </div>
@@ -209,7 +209,7 @@ export default function PlaylistsPage() {
                       {/* Cover */}
                       <div style={{
                         width: "100%", height: 160,
-                        backgroundColor: "var(--bg-elevated)",
+                        backgroundColor: "var(--elevated)",
                         position: "relative", overflow: "hidden",
                       }}>
                         {pl.videos.length > 0 && pl.videos[0].thumbnail ? (

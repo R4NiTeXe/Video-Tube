@@ -4,10 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import PageNavDropdown from "@/src/components/PageNavDropdown";
+import { formatViews, formatDuration } from "@/src/lib/utils";
 
 interface VideoOwner {
   fullName: string;
@@ -75,17 +76,6 @@ const SkeletonPlaylist = () => (
   </div>
 );
 
-const formatViews = (views: number) => {
-  if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M`;
-  if (views >= 1_000) return `${(views / 1_000).toFixed(1)}K`;
-  return views.toString();
-};
-
-const formatDuration = (sec: number) => {
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60).toString().padStart(2, "0");
-  return `${m}:${s}`;
-};
 
 type Tab = "history" | "liked" | "playlists" | "watchLater";
 
@@ -141,7 +131,7 @@ export default function LibraryPage() {
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            style={{ width: 36, height: 36, border: "3px solid var(--border-light)", borderTopColor: "var(--accent)", borderRadius: "50%" }}
+            style={{ width: 36, height: 36, border: "3px solid var(--border)", borderTopColor: "var(--accent)", borderRadius: "50%" }}
           />
           {authLoading ? "Loading session..." : "Redirecting to login..."}
         </motion.div>
@@ -180,7 +170,7 @@ export default function LibraryPage() {
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           <PageNavDropdown />
-          <span style={{ color: "var(--border-light)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
+          <span style={{ color: "var(--border)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
           <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Library</span>
         </div>
       </header>
@@ -258,7 +248,7 @@ export default function LibraryPage() {
                         style={{ display: "block" }}
                       >
                         <div className="thumb-wrapper">
-                          <div style={{ width: "100%", paddingTop: "56.25%", background: "var(--bg-elevated)", borderRadius: "var(--radius-lg)", display: "flex", alignItems: "center", justifyContent: "center", position: "absolute", inset: 0 }}>
+                          <div style={{ width: "100%", paddingTop: "56.25%", background: "var(--elevated)", borderRadius: "var(--radius-lg)", display: "flex", alignItems: "center", justifyContent: "center", position: "absolute", inset: 0 }}>
                             <div style={{ position: "absolute", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem", color: "var(--text-muted)" }}>
                               <PlaylistIcon />
                               <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>{playlist.videos.length} videos</span>
@@ -303,7 +293,7 @@ export default function LibraryPage() {
                   <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "1.5rem" }}>
                     {activeTab === "history" ? "Videos you watch will appear here" : "Videos you like will appear here"}
                   </p>
-                  <Link href="/" className="btn-primary" style={{ borderRadius: 99, padding: "0.7rem 1.75rem" }}>
+                  <Link href="/" className="btn btn-primary" style={{ borderRadius: 99, padding: "0.7rem 1.75rem" }}>
                     Browse Videos
                   </Link>
                 </div>

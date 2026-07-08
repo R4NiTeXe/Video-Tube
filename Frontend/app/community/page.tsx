@@ -3,9 +3,10 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import PageNavDropdown from "@/src/components/PageNavDropdown";
+import { timeAgo } from "@/src/lib/utils";
 
 interface PostOwner {
   _id: string;
@@ -47,22 +48,9 @@ const SendIcon = () => (
   </svg>
 );
 
-const timeAgo = (date: string): string => {
-  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-  if (seconds < 60) return "just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return `${months}mo ago`;
-  return `${Math.floor(months / 12)}y ago`;
-};
 
 const SkeletonPost = () => (
-  <div style={{ padding: "1.5rem", backgroundColor: "var(--bg-card)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-light)" }}>
+  <div style={{ padding: "1.5rem", backgroundColor: "var(--card)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)" }}>
     <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", marginBottom: "1rem" }}>
       <div className="skeleton" style={{ width: 40, height: 40, borderRadius: "50%" }} />
       <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
@@ -156,7 +144,7 @@ export default function CommunityPage() {
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            style={{ width: 36, height: 36, border: "3px solid var(--border-light)", borderTopColor: "var(--accent)", borderRadius: "50%" }}
+            style={{ width: 36, height: 36, border: "3px solid var(--border)", borderTopColor: "var(--accent)", borderRadius: "50%" }}
           />
           {authLoading ? "Loading session..." : "Redirecting to login..."}
         </motion.div>
@@ -178,7 +166,7 @@ export default function CommunityPage() {
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           <PageNavDropdown />
-          <span style={{ color: "var(--border-light)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
+          <span style={{ color: "var(--border)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
           <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Community</span>
         </div>
       </header>
@@ -218,8 +206,8 @@ export default function CommunityPage() {
                   resize: "vertical",
                   padding: "0.75rem 1rem",
                   borderRadius: "var(--radius-md)",
-                  border: "1px solid var(--border-light)",
-                  backgroundColor: "var(--bg-elevated)",
+                  border: "1px solid var(--border)",
+                  backgroundColor: "var(--elevated)",
                   color: "var(--text-primary)",
                   fontSize: "0.9rem",
                   fontFamily: "inherit",
@@ -228,7 +216,7 @@ export default function CommunityPage() {
                   transition: "border-color 0.2s",
                 }}
                 onFocus={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-light)")}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
               />
 
               {imagePreview && (
@@ -269,7 +257,7 @@ export default function CommunityPage() {
                     style={{
                       display: "flex", alignItems: "center", gap: "0.4rem",
                       padding: "0.45rem 0.85rem", borderRadius: 99,
-                      border: "1px solid var(--border-light)",
+                      border: "1px solid var(--border)",
                       background: "transparent",
                       color: "var(--text-secondary)",
                       cursor: "pointer",
@@ -278,7 +266,7 @@ export default function CommunityPage() {
                       transition: "all 0.2s",
                     }}
                     onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.color = "var(--accent)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-light)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
                   >
                     <ImageIcon /> Image
                   </button>
@@ -287,7 +275,7 @@ export default function CommunityPage() {
                 <button
                   onClick={handleCreatePost}
                   disabled={createPostMutation.isPending || (!newPostContent.trim() && !newPostImage)}
-                  className="btn-primary"
+                  className="btn btn-primary"
                   style={{
                     display: "flex", alignItems: "center", gap: "0.4rem",
                     padding: "0.55rem 1.25rem", borderRadius: 99,
@@ -387,7 +375,7 @@ export default function CommunityPage() {
                   )}
 
                   {/* ── Post Actions ── */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", paddingTop: "0.5rem", borderTop: "1px solid var(--border-light)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", paddingTop: "0.5rem", borderTop: "1px solid var(--border)" }}>
                     <button
                       onClick={() => likeMutation.mutate(post._id)}
                       disabled={likeMutation.isPending}
@@ -395,7 +383,7 @@ export default function CommunityPage() {
                         display: "flex", alignItems: "center", gap: "0.4rem",
                         padding: "0.4rem 0.75rem", borderRadius: 99,
                         border: "none", cursor: "pointer",
-                        backgroundColor: post.isLiked ? "var(--accent-light)" : "transparent",
+                        backgroundColor: post.isLiked ? "var(--accent-subtle)" : "transparent",
                         color: post.isLiked ? "var(--accent)" : "var(--text-muted)",
                         fontWeight: 500, fontSize: "0.85rem",
                         transition: "all 0.2s",
@@ -430,7 +418,7 @@ export default function CommunityPage() {
                 <button
                   onClick={() => fetchNextPage()}
                   disabled={isFetchingNextPage}
-                  className="btn-primary"
+                  className="btn btn-primary"
                   style={{
                     display: "flex", alignItems: "center", gap: "0.5rem",
                     padding: "0.65rem 1.75rem", borderRadius: 99,

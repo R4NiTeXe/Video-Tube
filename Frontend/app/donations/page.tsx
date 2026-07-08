@@ -61,7 +61,7 @@ export default function DonationsPage() {
       <header className="glass" style={{ position: "sticky", top: 0, zIndex: 50, padding: "0.75rem 2rem", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "none", borderLeft: "none", borderRight: "none", borderRadius: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           <PageNavDropdown />
-          <span style={{ color: "var(--border-light)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
+          <span style={{ color: "var(--border)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
           <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Donations</span>
         </div>
       </header>
@@ -91,7 +91,7 @@ export default function DonationsPage() {
         <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem" }}>
           {(["received", "sent"] as const).map((t) => (
             <button key={t} onClick={() => { setTab(t); setPage(1); }}
-              style={{ padding: "0.55rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.85rem", fontWeight: 600, backgroundColor: tab === t ? "var(--accent)" : "var(--bg-elevated)", color: tab === t ? "#fff" : "var(--text-secondary)", border: `1px solid ${tab === t ? "var(--accent)" : "var(--border-light)"}`, cursor: "pointer", transition: "all 0.2s", textTransform: "capitalize" }}>
+              style={{ padding: "0.55rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.85rem", fontWeight: 600, backgroundColor: tab === t ? "var(--accent)" : "var(--elevated)", color: tab === t ? "#fff" : "var(--text-secondary)", border: `1px solid ${tab === t ? "var(--accent)" : "var(--border)"}`, cursor: "pointer", transition: "all 0.2s", textTransform: "capitalize" }}>
               {t} Donations
             </button>
           ))}
@@ -143,12 +143,12 @@ export default function DonationsPage() {
         {totalDocs > 20 && (
           <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem", marginTop: "1.5rem" }}>
             <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
-              style={{ padding: "0.5rem 1rem", borderRadius: "var(--radius-md)", fontSize: "0.85rem", fontWeight: 600, backgroundColor: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-light)", cursor: page === 1 ? "not-allowed" : "pointer", opacity: page === 1 ? 0.5 : 1 }}>
+              style={{ padding: "0.5rem 1rem", borderRadius: "var(--radius-md)", fontSize: "0.85rem", fontWeight: 600, backgroundColor: "var(--elevated)", color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: page === 1 ? "not-allowed" : "pointer", opacity: page === 1 ? 0.5 : 1 }}>
               Previous
             </button>
             <span style={{ padding: "0.5rem 1rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>Page {page}</span>
             <button onClick={() => setPage((p) => p + 1)} disabled={donations.length < 20}
-              style={{ padding: "0.5rem 1rem", borderRadius: "var(--radius-md)", fontSize: "0.85rem", fontWeight: 600, backgroundColor: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-light)", cursor: donations.length < 20 ? "not-allowed" : "pointer", opacity: donations.length < 20 ? 0.5 : 1 }}>
+              style={{ padding: "0.5rem 1rem", borderRadius: "var(--radius-md)", fontSize: "0.85rem", fontWeight: 600, backgroundColor: "var(--elevated)", color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: donations.length < 20 ? "not-allowed" : "pointer", opacity: donations.length < 20 ? 0.5 : 1 }}>
               Next
             </button>
           </div>

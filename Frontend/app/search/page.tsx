@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatViews, formatDuration } from "@/src/lib/utils";
 
 const STORAGE_KEY = "vt-recent-searches";
 const MAX_RECENT = 8;
@@ -25,17 +26,6 @@ const PlaySmall = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
 );
 
-const formatViews = (views: number) => {
-  if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M`;
-  if (views >= 1_000) return `${(views / 1_000).toFixed(1)}K`;
-  return views.toString();
-};
-
-const formatDuration = (sec: number) => {
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60).toString().padStart(2, "0");
-  return `${m}:${s}`;
-};
 
 interface VideoResult {
   _id: string;
@@ -248,19 +238,19 @@ export default function SearchPage() {
                       key={term}
                       onClick={() => pickRecent(term)}
                       style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.65rem 0.75rem", borderRadius: "var(--radius-sm)", background: "none", border: "none", cursor: "pointer", color: "var(--text-primary)", fontSize: "0.88rem", textAlign: "left", transition: "background 0.15s" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-elevated)")}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--elevated)")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
                     >
                       <ClockIcon /> {term}
                     </button>
                   ))}
                 </div>
-                <div style={{ height: 1, background: "var(--border-light)", margin: "1.25rem 0" }} />
+                <div style={{ height: 1, background: "var(--border)", margin: "1.25rem 0" }} />
               </div>
             )}
 
             <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
-              <div style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--bg-elevated)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.25rem", color: "var(--text-muted)" }}>
+              <div style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--elevated)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.25rem", color: "var(--text-muted)" }}>
                 <SearchIcon size={28} />
               </div>
               <p style={{ fontSize: "1rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.4rem" }}>Search VideoTube</p>
@@ -344,7 +334,7 @@ export default function SearchPage() {
                   {channelsLoading && (
                     <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                       {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "0.85rem 1rem", background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-light)" }}>
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "0.85rem 1rem", background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
                           <div className="skeleton" style={{ width: 48, height: 48, borderRadius: "50%", flexShrink: 0 }} />
                           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                             <div className="skeleton" style={{ width: "40%", height: 14, borderRadius: 6 }} />
@@ -371,12 +361,12 @@ export default function SearchPage() {
                         <motion.div key={ch._id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(idx * 0.06, 0.4) }}>
                           <Link
                             href={`/channel/${ch.username || ch._id}`}
-                            style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "0.85rem 1rem", background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-light)", transition: "border-color 0.2s, box-shadow 0.2s", textDecoration: "none" }}
+                            style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "0.85rem 1rem", background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", transition: "border-color 0.2s, box-shadow 0.2s", textDecoration: "none" }}
                             onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-glow)"; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-light)"; e.currentTarget.style.boxShadow = "none"; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.boxShadow = "none"; }}
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={ch.avatar} alt={ch.fullName} style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border-light)" }} />
+                            <img src={ch.avatar} alt={ch.fullName} style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border)" }} />
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <p style={{ fontWeight: 700, fontSize: "0.92rem", color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ch.fullName}</p>
                               <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>@{ch.username}{typeof ch.subscribersCount === "number" ? ` · ${formatViews(ch.subscribersCount)} subscribers` : ""}</p>
@@ -395,7 +385,7 @@ export default function SearchPage() {
                   {usersLoading && (
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "0.75rem" }}>
                       {Array.from({ length: 6 }).map((_, i) => (
-                        <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.85rem 1rem", background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-light)" }}>
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.85rem 1rem", background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
                           <div className="skeleton" style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0 }} />
                           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.3rem" }}>
                             <div className="skeleton" style={{ width: "60%", height: 13, borderRadius: 6 }} />
@@ -422,12 +412,12 @@ export default function SearchPage() {
                         <motion.div key={u._id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(idx * 0.05, 0.4) }}>
                           <Link
                             href={`/channel/${u.username || u._id}`}
-                            style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.85rem 1rem", background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-light)", textDecoration: "none", transition: "border-color 0.2s, box-shadow 0.2s" }}
+                            style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.85rem 1rem", background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", textDecoration: "none", transition: "border-color 0.2s, box-shadow 0.2s" }}
                             onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-glow)"; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-light)"; e.currentTarget.style.boxShadow = "none"; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.boxShadow = "none"; }}
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={u.avatar} alt={u.fullName} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border-light)", flexShrink: 0 }} />
+                            <img src={u.avatar} alt={u.fullName} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border)", flexShrink: 0 }} />
                             <div style={{ minWidth: 0 }}>
                               <p style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{u.fullName}</p>
                               <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>@{u.username}</p>

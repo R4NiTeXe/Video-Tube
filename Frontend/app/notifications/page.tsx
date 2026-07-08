@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import PageNavDropdown from "@/src/components/PageNavDropdown";
+import { timeAgo } from "@/src/lib/utils";
 
 interface Notification {
   _id: string;
@@ -30,19 +31,6 @@ const CheckAllIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
 );
 
-function timeAgo(dateStr: string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const seconds = Math.floor((now - then) / 1000);
-  if (seconds < 60) return "just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  return new Date(dateStr).toLocaleDateString();
-}
 
 export default function NotificationsPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
@@ -106,7 +94,7 @@ export default function NotificationsPage() {
       >
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           <PageNavDropdown />
-          <span style={{ color: "var(--border-light)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
+          <span style={{ color: "var(--border)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
           <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Notifications</span>
         </div>
       </header>
@@ -115,7 +103,7 @@ export default function NotificationsPage() {
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem" }}>
           <div style={{
             width: 44, height: 44, borderRadius: "50%",
-            backgroundColor: "var(--accent-light)",
+            backgroundColor: "var(--accent-subtle)",
             display: "flex", alignItems: "center", justifyContent: "center",
             color: "var(--accent)",
           }}>
@@ -139,7 +127,7 @@ export default function NotificationsPage() {
           <div style={{ textAlign: "center", padding: "5rem 2rem" }}>
             <div style={{
               width: 72, height: 72, borderRadius: "50%",
-              backgroundColor: "var(--bg-elevated)",
+              backgroundColor: "var(--elevated)",
               display: "inline-flex", alignItems: "center", justifyContent: "center",
               marginBottom: "1.25rem", color: "var(--text-muted)",
             }}>
@@ -166,12 +154,12 @@ export default function NotificationsPage() {
                     display: "flex", alignItems: "center", gap: "1rem",
                     padding: "1rem 1.25rem",
                     borderRadius: "var(--radius-lg)",
-                    backgroundColor: n.isRead ? "transparent" : "var(--accent-light)",
-                    border: `1px solid ${n.isRead ? "var(--border-light)" : "var(--accent)"}`,
+                    backgroundColor: n.isRead ? "transparent" : "var(--accent-subtle)",
+                    border: `1px solid ${n.isRead ? "var(--border)" : "var(--accent)"}`,
                     cursor: "pointer",
                     transition: "background-color 0.2s, border-color 0.2s",
                   }}
-                  onMouseEnter={(e) => { if (n.isRead) (e.currentTarget as HTMLElement).style.backgroundColor = "var(--bg-elevated)"; }}
+                  onMouseEnter={(e) => { if (n.isRead) (e.currentTarget as HTMLElement).style.backgroundColor = "var(--elevated)"; }}
                   onMouseLeave={(e) => { if (n.isRead) (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
                 >
                   {/* Unread dot */}
@@ -180,7 +168,7 @@ export default function NotificationsPage() {
                     <img
                       src={n.sender?.avatar || ""}
                       alt={n.sender?.fullName || "User"}
-                      style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border-light)" }}
+                      style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border)" }}
                     />
                     {!n.isRead && (
                       <div style={{
@@ -214,7 +202,7 @@ export default function NotificationsPage() {
                       <img
                         src={n.video.thumbnail}
                         alt={n.video.title}
-                        style={{ width: 72, height: 44, objectFit: "cover", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-light)" }}
+                        style={{ width: 72, height: 44, objectFit: "cover", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)" }}
                       />
                     </Link>
                   )}

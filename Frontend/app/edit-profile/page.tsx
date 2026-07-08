@@ -152,7 +152,7 @@ export default function EditProfilePage() {
       <header className="glass" style={{ position: "sticky", top: 0, zIndex: 50, padding: "0.75rem 2rem", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "none", borderLeft: "none", borderRight: "none", borderRadius: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           <PageNavDropdown />
-          <span style={{ color: "var(--border-light)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
+          <span style={{ color: "var(--border)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
           <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Edit Profile</span>
         </div>
       </header>
@@ -167,7 +167,7 @@ export default function EditProfilePage() {
           )}
 
           {success && (
-            <div style={{ padding: "0.7rem 1rem", backgroundColor: "var(--accent-light)", color: "var(--accent)", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem", border: "1px solid var(--border-focus)" }}>{success}</div>
+            <div style={{ padding: "0.7rem 1rem", backgroundColor: "var(--accent-subtle)", color: "var(--accent)", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem", border: "1px solid var(--border-focus)" }}>{success}</div>
           )}
 
           {isDirty && (
@@ -194,9 +194,9 @@ export default function EditProfilePage() {
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.6rem", zIndex: 1, flexShrink: 0 }}>
                     <div
                       onClick={() => avatarInputRef.current?.click()}
-                      style={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "var(--bg-elevated)", border: "2px dashed var(--border-light)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden", transition: "border-color 0.2s" }}
+                      style={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "var(--elevated)", border: "2px dashed var(--border)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden", transition: "border-color 0.2s" }}
                       onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "var(--accent)")}
-                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "var(--border-light)")}
+                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "var(--border)")}
                     >
                       {avatarPreview ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
@@ -243,16 +243,16 @@ export default function EditProfilePage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                     <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Full Name</label>
-                    <input type="text" className="input-field" style={{ width: "100%", boxSizing: "border-box" }} value={fullName} onChange={(e) => { setFullName(e.target.value); markDirty(); }} required />
+                    <input type="text" className="input" style={{ width: "100%", boxSizing: "border-box" }} value={fullName} onChange={(e) => { setFullName(e.target.value); markDirty(); }} required />
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                     <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Username</label>
-                    <input type="text" className="input-field" style={{ width: "100%", boxSizing: "border-box", opacity: 0.6, cursor: "not-allowed" }} value={user.username} readOnly />
+                    <input type="text" className="input" style={{ width: "100%", boxSizing: "border-box", opacity: 0.6, cursor: "not-allowed" }} value={user.username} readOnly />
                     <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Username cannot be changed</span>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                     <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Email</label>
-                    <input type="email" className="input-field" style={{ width: "100%", boxSizing: "border-box" }} value={email} onChange={(e) => { setEmail(e.target.value); markDirty(); }} required />
+                    <input type="email" className="input" style={{ width: "100%", boxSizing: "border-box" }} value={email} onChange={(e) => { setEmail(e.target.value); markDirty(); }} required />
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -260,7 +260,7 @@ export default function EditProfilePage() {
                       <span style={{ fontSize: "0.72rem", color: bioColor, fontWeight: 500 }}>{bio.length}/500</span>
                     </div>
                     <textarea
-                      className="input-field"
+                      className="input"
                       style={{ width: "100%", boxSizing: "border-box", resize: "vertical", fontFamily: "inherit", minHeight: 80 }}
                       value={bio}
                       onChange={(e) => { if (e.target.value.length <= 500) { setBio(e.target.value); markDirty(); } }}
@@ -268,7 +268,7 @@ export default function EditProfilePage() {
                       rows={3}
                       placeholder="About you"
                     />
-                    <div style={{ width: "100%", height: 3, backgroundColor: "var(--bg-elevated)", borderRadius: 99, overflow: "hidden" }}>
+                    <div style={{ width: "100%", height: 3, backgroundColor: "var(--elevated)", borderRadius: 99, overflow: "hidden" }}>
                       <div style={{ width: `${Math.min(bioPercent, 100)}%`, height: "100%", backgroundColor: bioColor, borderRadius: 99, transition: "width 0.2s, background-color 0.2s" }} />
                     </div>
                   </div>
@@ -292,7 +292,7 @@ export default function EditProfilePage() {
                         <div style={{ position: "relative" }}>
                           <input
                             type="url"
-                            className="input-field"
+                            className="input"
                             style={{ width: "100%", boxSizing: "border-box", paddingRight: field.value ? "2rem" : undefined }}
                             value={field.value}
                             onChange={(e) => { field.setter(e.target.value); markDirty(); }}
@@ -319,11 +319,11 @@ export default function EditProfilePage() {
 
             {/* Save Button */}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "1.5rem" }}>
-              <Link href={`/channel/${user.username}`} className="btn-ghost" style={{ padding: "0.7rem 1.5rem", borderRadius: "var(--radius-md)", textDecoration: "none", fontSize: "0.9rem" }}
+              <Link href={`/channel/${user.username}`} className="btn btn-ghost" style={{ padding: "0.7rem 1.5rem", borderRadius: "var(--radius-md)", textDecoration: "none", fontSize: "0.9rem" }}
                 onClick={(e) => { if (isDirty && !confirm("You have unsaved changes. Are you sure you want to leave?")) e.preventDefault(); }}>
                 Cancel
               </Link>
-              <button type="submit" className="btn-primary" disabled={saving || !isDirty} style={{ padding: "0.7rem 2rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", opacity: !isDirty ? 0.6 : 1 }}>
+              <button type="submit" className="btn btn-primary" disabled={saving || !isDirty} style={{ padding: "0.7rem 2rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", opacity: !isDirty ? 0.6 : 1 }}>
                 {saving ? "Saving..." : "Save Changes"}
               </button>
             </div>

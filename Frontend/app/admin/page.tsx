@@ -74,8 +74,8 @@ function StatCard({ label, value, icon, color }: { label: string; value: number;
       style={{
         padding: "1.5rem",
         borderRadius: "var(--radius-lg)",
-        backgroundColor: "var(--bg-card)",
-        border: "1px solid var(--border-light)",
+        backgroundColor: "var(--card)",
+        border: "1px solid var(--border)",
         display: "flex",
         alignItems: "center",
         gap: "1rem",
@@ -105,8 +105,8 @@ function StatCard({ label, value, icon, color }: { label: string; value: number;
 function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { bg: string; color: string; label: string }> = {
     pending: { bg: "var(--accent-warm-light)", color: "var(--accent-warm)", label: "Pending" },
-    reviewed: { bg: "var(--accent-light)", color: "var(--accent)", label: "Reviewed" },
-    resolved: { bg: "var(--success-light, #dcfce7)", color: "var(--success, #16a34a)", label: "Resolved" },
+    reviewed: { bg: "var(--accent-subtle)", color: "var(--accent)", label: "Reviewed" },
+    resolved: { bg: "var(--success-subtle)", color: "var(--success, #16a34a)", label: "Resolved" },
   };
   const c = config[status] || config.pending;
   return (
@@ -195,7 +195,7 @@ export default function AdminPage() {
         <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}
           style={{ color: "var(--text-secondary)", fontWeight: 500, display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
           <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            style={{ width: 36, height: 36, border: "3px solid var(--border-light)", borderTopColor: "var(--accent)", borderRadius: "50%" }} />
+            style={{ width: 36, height: 36, border: "3px solid var(--border)", borderTopColor: "var(--accent)", borderRadius: "50%" }} />
           {authLoading ? "Checking session..." : "Redirecting to login..."}
         </motion.div>
       </div>
@@ -211,7 +211,7 @@ export default function AdminPage() {
         </div>
         <p style={{ fontSize: "1.3rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.5rem" }}>Access Denied</p>
         <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem", fontSize: "0.9rem", textAlign: "center", maxWidth: 400 }}>You do not have admin privileges to access this page. Contact an administrator if you believe this is an error.</p>
-        <Link href="/" className="btn-primary" style={{ borderRadius: 99, padding: "0.7rem 1.75rem" }}>Go Home</Link>
+        <Link href="/" className="btn btn-primary" style={{ borderRadius: 99, padding: "0.7rem 1.75rem" }}>Go Home</Link>
       </div>
     );
   }
@@ -245,7 +245,7 @@ export default function AdminPage() {
           <button onClick={() => router.back()} style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--text-secondary)", fontSize: "0.88rem", fontWeight: 500, background: "none", border: "none", cursor: "pointer" }}>
             <BackIcon /> Back
           </button>
-          <span style={{ color: "var(--border-light)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
+          <span style={{ color: "var(--border)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
           <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--accent-warm)", fontWeight: 600, fontSize: "0.9rem" }}>
             <ShieldIcon /> Admin Panel
           </div>
@@ -274,7 +274,7 @@ export default function AdminPage() {
           <StatCard
             label="Total Users"
             value={usersLoading ? 0 : totalUsers}
-            color="var(--accent-light)"
+            color="var(--accent-subtle)"
             icon={<UsersIcon />}
           />
           <StatCard
@@ -300,7 +300,7 @@ export default function AdminPage() {
             <div style={{ position: "relative" }}>
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="btn-ghost"
+                className="btn btn-ghost"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -326,8 +326,8 @@ export default function AdminPage() {
                       right: 0,
                       zIndex: 100,
                       width: 180,
-                      backgroundColor: "var(--bg-card)",
-                      border: "1px solid var(--border-light)",
+                      backgroundColor: "var(--card)",
+                      border: "1px solid var(--border)",
                       borderRadius: "var(--radius-lg)",
                       boxShadow: "var(--shadow-lg)",
                       padding: "0.35rem",
@@ -349,12 +349,12 @@ export default function AdminPage() {
                           fontSize: "0.85rem",
                           fontWeight: statusFilter === s ? 600 : 400,
                           color: statusFilter === s ? "var(--accent)" : "var(--text-primary)",
-                          backgroundColor: statusFilter === s ? "var(--accent-light)" : "transparent",
+                          backgroundColor: statusFilter === s ? "var(--accent-subtle)" : "transparent",
                           transition: "background-color 0.15s",
                           border: "none",
                           cursor: "pointer",
                         }}
-                        onMouseEnter={(e) => { if (statusFilter !== s) e.currentTarget.style.backgroundColor = "var(--bg-elevated)"; }}
+                        onMouseEnter={(e) => { if (statusFilter !== s) e.currentTarget.style.backgroundColor = "var(--elevated)"; }}
                         onMouseLeave={(e) => { if (statusFilter !== s) e.currentTarget.style.backgroundColor = "transparent"; }}
                       >
                         {s === "all" ? "All Reports" : s.charAt(0).toUpperCase() + s.slice(1)}
@@ -371,8 +371,8 @@ export default function AdminPage() {
           <div style={{
             borderRadius: "var(--radius-lg)",
             overflow: "hidden",
-            backgroundColor: "var(--bg-card)",
-            border: "1px solid var(--border-light)",
+            backgroundColor: "var(--card)",
+            border: "1px solid var(--border)",
           }}>
             {reportsLoading ? (
               <div style={{ padding: "4rem 2rem", textAlign: "center" }}>
@@ -386,7 +386,7 @@ export default function AdminPage() {
                   width: 56,
                   height: 56,
                   borderRadius: "50%",
-                  backgroundColor: "var(--accent-light)",
+                  backgroundColor: "var(--accent-subtle)",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -406,7 +406,7 @@ export default function AdminPage() {
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                   <thead>
-                    <tr style={{ borderBottom: "1px solid var(--border-light)", backgroundColor: "var(--bg-elevated)" }}>
+                    <tr style={{ borderBottom: "1px solid var(--border)", backgroundColor: "var(--elevated)" }}>
                       <th style={{ padding: "0.85rem 1rem", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Reporter</th>
                       <th style={{ padding: "0.85rem 1rem", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Target</th>
                       <th style={{ padding: "0.85rem 1rem", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Reason</th>
@@ -419,8 +419,8 @@ export default function AdminPage() {
                     {filteredReports.map((report) => (
                       <tr
                         key={report._id}
-                        style={{ borderBottom: "1px solid var(--border-light)", transition: "background-color 0.15s" }}
-                        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "var(--bg-elevated)")}
+                        style={{ borderBottom: "1px solid var(--border)", transition: "background-color 0.15s" }}
+                        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "var(--elevated)")}
                         onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "transparent")}
                       >
                         {/* Reporter */}
@@ -500,7 +500,7 @@ export default function AdminPage() {
                                   color: "var(--text-muted)",
                                   transition: "all 0.15s",
                                 }}
-                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--bg-elevated)"; e.currentTarget.style.color = "var(--text-primary)"; }}
+                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--elevated)"; e.currentTarget.style.color = "var(--text-primary)"; }}
                                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--text-muted)"; }}
                                 title="View video"
                               >
@@ -524,7 +524,7 @@ export default function AdminPage() {
                                   cursor: "pointer",
                                   transition: "all 0.15s",
                                 }}
-                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--accent-light)"; }}
+                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--accent-subtle)"; }}
                                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
                                 title="Mark as reviewed"
                               >
@@ -548,7 +548,7 @@ export default function AdminPage() {
                                   cursor: "pointer",
                                   transition: "all 0.15s",
                                 }}
-                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--success-light, #dcfce7)"; }}
+                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--success-subtle)"; }}
                                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
                                 title="Mark as resolved"
                               >
@@ -592,8 +592,8 @@ export default function AdminPage() {
               </div>
               <input
                 type="text"
-                placeholder="Search users..."
-                className="input-field"
+                placeholder="Search..."
+                className="input"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
@@ -635,17 +635,17 @@ export default function AdminPage() {
                         gap: "1rem",
                         padding: "0.85rem 1rem",
                         borderRadius: "var(--radius-md)",
-                        border: "1px solid var(--border-light)",
+                        border: "1px solid var(--border)",
                         transition: "background-color 0.15s",
                       }}
-                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "var(--bg-elevated)")}
+                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "var(--elevated)")}
                       onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "transparent")}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={u.avatar}
                         alt={u.fullName}
-                        style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border-light)" }}
+                        style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border)" }}
                       />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontWeight: 600, fontSize: "0.9rem", color: "var(--text-primary)" }}>{u.fullName}</p>
@@ -653,7 +653,7 @@ export default function AdminPage() {
                       </div>
                       <Link
                         href={`/channel/${u.username}`}
-                        className="btn-ghost"
+                        className="btn btn-ghost"
                         style={{ padding: "0.4rem 0.85rem", fontSize: "0.78rem", borderRadius: 99 }}
                       >
                         View Channel
