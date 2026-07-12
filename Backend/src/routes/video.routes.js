@@ -20,7 +20,7 @@ import {
   getChannelAbout,
 } from "../controllers/video.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { upload } from "../middlewares/multer.middleware.js";
+import { upload, validateFileSize } from "../middlewares/multer.middleware.js";
 import { uploadLimiter } from "../middlewares/rateLimiter.middleware.js";
 import { contentModerator } from "../middlewares/contentModeration.middleware.js";
 
@@ -52,6 +52,7 @@ router
         maxCount: 1,
       },
     ]),
+    validateFileSize,
     contentModerator,
     publishAVideo
   );
@@ -64,7 +65,7 @@ router.route("/bulk/publish").post(bulkPublishVideos);
 router
   .route("/:videoId")
   .get(getVideoById)
-  .patch(upload.single("thumbnail"), updateVideo)
+  .patch(upload.single("thumbnail"), validateFileSize, updateVideo)
   .delete(deleteVideo);
 
 router.route("/:videoId/tags").patch(updateVideoTags);

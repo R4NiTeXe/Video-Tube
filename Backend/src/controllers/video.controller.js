@@ -348,14 +348,17 @@ const getVideoById = asyncHandler(async (req, res) => {
     throw new ApiError(403, "This video is private");
   }
 
-  // increment views only if not already watched
-  const user = await mongoose.model("User").findById(req.user?._id).select("watchHistory");
-  const alreadyWatched = user?.watchHistory?.some(
-    (id) => id.toString() === videoId.toString()
-  );
+  // increment views only if not the owner and not already watched
+  const isOwner = videoData.owner?._id?.toString() === req.user?._id?.toString();
+  if (!isOwner) {
+    const user = await mongoose.model("User").findById(req.user?._id).select("watchHistory");
+    const alreadyWatched = user?.watchHistory?.some(
+      (id) => id.toString() === videoId.toString()
+    );
 
-  if (!alreadyWatched) {
-    await Video.findByIdAndUpdate(videoId, { $inc: { views: 1 } });
+    if (!alreadyWatched) {
+      await Video.findByIdAndUpdate(videoId, { $inc: { views: 1 } });
+    }
   }
 
   // add to watch history
@@ -370,7 +373,7 @@ const getVideoById = asyncHandler(async (req, res) => {
 
 const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  const { title, description } = req.body;
+  const { title, description, tags, category } = req.body;
 
   if (!mongoose.isValidObjectId(videoId)) {
     throw new ApiError(400, "Invalid video id");
@@ -400,6 +403,20 @@ const updateVideo = asyncHandler(async (req, res) => {
       throw new ApiError(400, "Description cannot be empty");
     }
     updateFields.description = description.trim();
+  }
+
+  if (tags !== undefined) {
+    if (typeof tags === "string") {
+      updateFields.tags = tags.split(",").map((t) => t.trim()).filter(Boolean);
+    } else if (Array.isArray(tags)) {
+      updateFields.tags = tags.map((t) => String(t).trim()).filter(Boolean);
+    } else {
+      updateFields.tags = [];
+    }
+  }
+
+  if (category !== undefined) {
+    updateFields.category = typeof category === "string" ? category.trim() : "General";
   }
 
   // handle thumbnail update
