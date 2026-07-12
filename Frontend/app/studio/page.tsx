@@ -1,10 +1,10 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/src/services/api";
+import { api, getApiErrorMessage } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import TopNav from "@/src/components/TopNav";
 import { timeAgo, formatDuration } from "@/src/lib/utils";
@@ -32,6 +32,7 @@ const CATEGORIES = ["General", "Gaming", "Music", "Education", "Entertainment", 
 function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const videoRef = useRef<HTMLInputElement>(null);
   const thumbnailRef = useRef<HTMLInputElement>(null);
+  const progressRef = useRef<ReturnType<typeof setInterval>>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [tagsInput, setTagsInput] = useState("");
@@ -40,8 +41,20 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
   const [scheduledAt, setScheduledAt] = useState("");
   const [chaptersInput, setChaptersInput] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
+  const [videoName, setVideoName] = useState("");
+  const [thumbnailName, setThumbnailName] = useState("");
+
+  const MAX_VIDEO_MB = 20;
+  const MAX_THUMBNAIL_MB = 2;
+
+  useEffect(() => {
+    return () => {
+      if (progressRef.current) clearInterval(progressRef.current);
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +65,13 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
     if (!thumbnailFile) return setError("Please select a thumbnail image.");
     if (!title.trim()) return setError("Title is required.");
     if (!description.trim()) return setError("Description is required.");
+
+    if (videoFile.size > MAX_VIDEO_MB * 1024 * 1024) {
+      return setError(`Video size must be ${MAX_VIDEO_MB} MB or less`);
+    }
+    if (thumbnailFile.size > MAX_THUMBNAIL_MB * 1024 * 1024) {
+      return setError(`Thumbnail size must be ${MAX_THUMBNAIL_MB} MB or less`);
+    }
 
     const tags = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
 
@@ -76,17 +96,40 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
     formData.append("thumbnail", thumbnailFile);
 
     setUploading(true);
+    setProcessing(false);
+    setProgress(0);
+    if (progressRef.current) clearInterval(progressRef.current);
     try {
       await api.post("/videos", formData, {
         headers: { "Content-Type": "multipart/form-data" },
+        timeout: 300000,
         onUploadProgress: (evt) => {
-          if (evt.total) setProgress(Math.round((evt.loaded / evt.total) * 100));
+          if (evt.total) {
+            const pct = Math.round((evt.loaded / evt.total) * 60);
+            setProgress(Math.min(pct, 60));
+            if (evt.loaded === evt.total) {
+              setProcessing(true);
+              let tick = 60;
+              progressRef.current = setInterval(() => {
+                tick += Math.random() * 2 + 1;
+                if (tick >= 95) {
+                  tick = 95;
+                  if (progressRef.current) clearInterval(progressRef.current);
+                }
+                setProgress(Math.round(tick));
+              }, 800);
+            }
+          }
         },
       });
+      if (progressRef.current) clearInterval(progressRef.current);
+      setProgress(100);
       onSuccess();
-    } catch {
-      setError("Upload failed. Please try again.");
+    } catch (err: unknown) {
+      if (progressRef.current) clearInterval(progressRef.current);
+      setError(getApiErrorMessage(err, "Upload failed. Please try again."));
       setUploading(false);
+      setProcessing(false);
     }
   };
 
@@ -119,87 +162,134 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
           )}
 
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-              <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Title <span style={{ color: "var(--error)" }}>*</span></label>
-              <input type="text" required placeholder="Title" className="input" value={title} onChange={(e) => setTitle(e.target.value)} disabled={uploading} />
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-              <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Description <span style={{ color: "var(--error)" }}>*</span></label>
-              <textarea required placeholder="Description" className="input" value={description} onChange={(e) => setDescription(e.target.value)} disabled={uploading} rows={3} />
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-              <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Tags</label>
-              <input type="text" placeholder="gaming, tutorial, comedy" className="input" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} disabled={uploading} />
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-              <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Category</label>
-              <select className="input select" value={category} onChange={(e) => setCategory(e.target.value)} disabled={uploading}>
-                {CATEGORIES.map((c) => (<option key={c} value={c}>{c}</option>))}
-              </select>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-              <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Visibility</label>
-              <div style={{ display: "flex", gap: "var(--sp-5)" }}>
-                <label style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", cursor: "pointer", fontSize: "13px", color: "var(--text-primary)" }}>
-                  <input type="radio" name="visibility" checked={isPublished === true} onChange={() => setIsPublished(true)} disabled={uploading} style={{ accentColor: "var(--accent)" }} />
-                  <GlobeIcon size={14} />
-                  Public
-                </label>
-                <label style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", cursor: "pointer", fontSize: "13px", color: "var(--text-primary)" }}>
-                  <input type="radio" name="visibility" checked={isPublished === false} onChange={() => setIsPublished(false)} disabled={uploading} style={{ accentColor: "var(--accent)" }} />
-                  <CloseIcon size={14} />
-                  Private
-                </label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--sp-3)" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+                <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Title <span style={{ color: "var(--error)" }}>*</span></label>
+                <input type="text" required placeholder="Title" className="input" value={title} onChange={(e) => setTitle(e.target.value)} disabled={uploading} />
               </div>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-              <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Schedule Publishing (optional)</label>
-              <input type="datetime-local" className="input" value={scheduledAt} onChange={(e) => { setScheduledAt(e.target.value); if (e.target.value) setIsPublished(false); }} disabled={uploading} />
-              {scheduledAt && <span className="text-micro" style={{ color: "var(--text-muted)", textTransform: "none", letterSpacing: 0 }}>Video will be published automatically at this time</span>}
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-              <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Chapters (optional)</label>
-              <textarea className="input" placeholder={"00:00 Intro\n01:30 Main topic"} value={chaptersInput} onChange={(e) => setChaptersInput(e.target.value)} disabled={uploading} rows={4} style={{ fontFamily: "monospace", fontSize: "12px" }} />
-              <span className="text-micro" style={{ color: "var(--text-muted)", textTransform: "none", letterSpacing: 0 }}>Format: MM:SS Title (one per line)</span>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+                <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Description <span style={{ color: "var(--error)" }}>*</span></label>
+                <textarea required placeholder="Description" className="input" value={description} onChange={(e) => setDescription(e.target.value)} disabled={uploading} rows={3} />
+              </div>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--sp-3)" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+                <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Tags</label>
+                <textarea placeholder="gaming, tutorial, comedy" className="input" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} disabled={uploading} rows={2} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+                <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Category</label>
+                <select className="input select" value={category} onChange={(e) => setCategory(e.target.value)} disabled={uploading}>
+                  {CATEGORIES.map((c) => (<option key={c} value={c}>{c}</option>))}
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--sp-3)" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+                <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Visibility</label>
+                <div style={{ display: "flex", gap: "var(--sp-5)", padding: "0.6rem 0" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", cursor: "pointer", fontSize: "13px", color: "var(--text-primary)" }}>
+                    <input type="radio" name="visibility" checked={isPublished === true} onChange={() => setIsPublished(true)} disabled={uploading} style={{ accentColor: "var(--accent)" }} />
+                    <GlobeIcon size={14} />
+                    Public
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", cursor: "pointer", fontSize: "13px", color: "var(--text-primary)" }}>
+                    <input type="radio" name="visibility" checked={isPublished === false} onChange={() => setIsPublished(false)} disabled={uploading} style={{ accentColor: "var(--accent)" }} />
+                    <CloseIcon size={14} />
+                    Private
+                  </label>
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+                <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Schedule Publishing (optional)</label>
+                <input type="datetime-local" className="input" value={scheduledAt} onChange={(e) => { setScheduledAt(e.target.value); if (e.target.value) setIsPublished(false); }} disabled={uploading} />
+                {scheduledAt && <span className="text-micro" style={{ color: "var(--text-muted)", textTransform: "none", letterSpacing: 0 }}>Video will be published automatically at this time</span>}
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--sp-3)" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+                <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Chapters (optional)</label>
+                <textarea className="input" placeholder={"00:00 Intro\n01:30 Main topic"} value={chaptersInput} onChange={(e) => setChaptersInput(e.target.value)} disabled={uploading} rows={3} style={{ fontFamily: "monospace", fontSize: "12px" }} />
+                <span className="text-micro" style={{ color: "var(--text-muted)", textTransform: "none", letterSpacing: 0 }}>Format: MM:SS Title (one per line)</span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--sp-3)" }}>
               <div className="upload-zone">
-                <input type="file" accept="video/*" ref={videoRef} required disabled={uploading} />
+                <input type="file" accept="video/*" ref={videoRef} required disabled={uploading} onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setVideoName(file.name);
+                    if (file.size > MAX_VIDEO_MB * 1024 * 1024) {
+                      setError(`Video size must be ${MAX_VIDEO_MB} MB or less`);
+                    } else {
+                      setError("");
+                    }
+                  }
+                }} />
                 <div className="upload-zone-icon">
                   <VideoIcon size={18} />
                 </div>
-                <p className="upload-zone-label">Video File</p>
-                <p className="upload-zone-hint">MP4, MOV, AVI</p>
+                {videoName ? (
+                  <p className="upload-zone-label" style={{ fontSize: "11px", wordBreak: "break-all" }}>{videoName}</p>
+                ) : (
+                  <p className="upload-zone-label">Video File</p>
+                )}
+                <p className="upload-zone-hint">MP4, MOV, AVI (max {MAX_VIDEO_MB} MB)</p>
               </div>
               <div className="upload-zone">
-                <input type="file" accept="image/*" ref={thumbnailRef} required disabled={uploading} />
+                <input type="file" accept="image/*" ref={thumbnailRef} required disabled={uploading} onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setThumbnailName(file.name);
+                    if (file.size > MAX_THUMBNAIL_MB * 1024 * 1024) {
+                      setError(`Thumbnail size must be ${MAX_THUMBNAIL_MB} MB or less`);
+                    } else {
+                      setError("");
+                    }
+                  }
+                }} />
                 <div className="upload-zone-icon">
                   <ImageIcon size={18} />
                 </div>
-                <p className="upload-zone-label">Thumbnail</p>
-                <p className="upload-zone-hint">JPG, PNG, WEBP</p>
+                {thumbnailName ? (
+                  <p className="upload-zone-label" style={{ fontSize: "11px", wordBreak: "break-all" }}>{thumbnailName}</p>
+                ) : (
+                  <p className="upload-zone-label">Thumbnail</p>
+                )}
+                <p className="upload-zone-hint">JPG, PNG, WEBP (max {MAX_THUMBNAIL_MB} MB)</p>
+              </div>
               </div>
             </div>
 
             {uploading && (
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-2)" }}>
                 <div style={{ width: "100%", height: 6, backgroundColor: "var(--elevated)", borderRadius: "var(--radius-full)", overflow: "hidden" }}>
-                  <motion.div initial={{ width: "0%" }} animate={{ width: `${progress}%` }} style={{ height: "100%", background: "linear-gradient(to right, var(--accent), var(--warning))", borderRadius: "var(--radius-full)" }} />
+                  <motion.div initial={{ width: "0%" }} animate={{ width: `${progress}%` }} transition={{ duration: 0.4, ease: "easeOut" }} style={{ height: "100%", background: "var(--text-primary)", borderRadius: "var(--radius-full)" }} />
                 </div>
                 <p className="text-micro" style={{ color: "var(--text-muted)", textAlign: "center", textTransform: "none", letterSpacing: 0 }}>
-                  {progress < 100 ? `Uploading... ${progress}%` : "Processing on Cloudinary, please wait..."}
+                  {progress}%
                 </p>
               </div>
             )}
 
-            <button type="submit" className="btn btn-primary" disabled={uploading}>
+            <button type="submit" className="btn" disabled={uploading} style={{
+              width: "100%",
+              padding: "0.85rem",
+              borderRadius: "var(--radius-lg)",
+              fontSize: "0.95rem",
+              fontWeight: 700,
+              color: "#fff",
+              backgroundColor: "#ef4444",
+              border: "none",
+              cursor: uploading ? "not-allowed" : "pointer",
+              opacity: uploading ? 0.7 : 1,
+              transition: "opacity 0.2s, transform 0.15s",
+            }}
+              onMouseEnter={(e) => { if (!uploading) e.currentTarget.style.transform = "translateY(-1px)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
+            >
               {uploading ? "Uploading..." : "Publish Video"}
             </button>
           </form>
@@ -236,28 +326,34 @@ function VideoCard({ video, isSelected, onSelect, onToggleSelect }: {
 
   return (
     <motion.div
-      className="card"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       style={{
         display: "flex",
         gap: 0,
         overflow: "hidden",
-        borderColor: isSelected ? "var(--accent)" : undefined,
-        boxShadow: isSelected ? "0 0 0 1px var(--accent)" : undefined,
+        borderRadius: "var(--radius-lg)",
+        border: `1px solid ${isSelected ? "var(--accent)" : "var(--border)"}`,
+        backgroundColor: "var(--card)",
+        transition: "border-color 0.2s, box-shadow 0.2s",
+        boxShadow: isSelected ? "0 0 0 1px var(--accent)" : "0 1px 3px rgba(0,0,0,0.04)",
+        cursor: "default",
       }}
+      onMouseEnter={(e) => { if (!isSelected) { e.currentTarget.style.borderColor = "var(--border-hover)"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)"; } }}
+      onMouseLeave={(e) => { if (!isSelected) { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.04)"; } }}
     >
       {/* Thumbnail */}
-      <div style={{ position: "relative", cursor: "pointer", width: 200, minHeight: 112, flexShrink: 0 }} onClick={onSelect}>
-        <div style={{ width: "100%", height: "100%", backgroundColor: "var(--elevated)", borderRadius: 0 }}>
-          <img src={video.thumbnail} alt={video.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-        </div>
+      <div style={{ position: "relative", cursor: "pointer", width: 200, minHeight: 112, flexShrink: 0, overflow: "hidden" }} onClick={onSelect}>
+        <img src={video.thumbnail} alt={video.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.3s" }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.05)"}
+          onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+        />
         <span className="video-duration">{formatDuration(video.duration)}</span>
         <span style={{
           position: "absolute", top: "var(--sp-2)", left: "var(--sp-2)", zIndex: 2,
-          padding: "2px 8px", borderRadius: "var(--radius-full)", fontSize: "11px", fontWeight: 600,
-          backgroundColor: video.isPublished ? "var(--accent)" : "var(--elevated)",
-          color: video.isPublished ? "#fff" : "var(--text-muted)",
+          padding: "2px 10px", borderRadius: "var(--radius-full)", fontSize: "11px", fontWeight: 600,
+          backgroundColor: video.isPublished ? "var(--accent)" : "rgba(0,0,0,0.6)",
+          color: "#fff",
         }}>
           {video.isPublished ? "Public" : "Private"}
         </span>
@@ -271,9 +367,9 @@ function VideoCard({ video, isSelected, onSelect, onToggleSelect }: {
       </div>
 
       {/* Info */}
-      <div style={{ padding: "var(--sp-3) var(--sp-4)", flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-        <p className="video-title" style={{ fontSize: "0.95rem", marginBottom: "0.3rem" }}>{video.title}</p>
-        <div className="video-meta">
+      <div style={{ padding: "var(--sp-3) var(--sp-4)", flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center", gap: "var(--sp-1)" }}>
+        <p style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden", margin: 0 }}>{video.title}</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.78rem", color: "var(--text-muted)" }}>
           <span>{video.views.toLocaleString()} views</span>
           <span>&middot;</span>
           <span>{video.likesCount.toLocaleString()} likes</span>
@@ -282,13 +378,13 @@ function VideoCard({ video, isSelected, onSelect, onToggleSelect }: {
         </div>
 
         {/* Actions */}
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", marginTop: "var(--sp-3)" }}>
-          <button className="btn btn-sm btn-secondary" style={{ padding: "0.35rem 0.8rem", fontSize: "0.78rem" }} onClick={() => router.push(`/videos/${video._id}`)}>
-            <EyeIcon size={13} />
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", marginTop: "var(--sp-2)" }}>
+          <button className="btn btn-sm btn-secondary" style={{ padding: "0.3rem 0.75rem", fontSize: "0.75rem", fontWeight: 500 }} onClick={() => router.push(`/videos/${video._id}`)}>
+            <EyeIcon size={12} />
             View
           </button>
-          <button className="btn btn-sm btn-secondary" style={{ padding: "0.35rem 0.8rem", fontSize: "0.78rem" }} onClick={() => router.push(`/studio?edit=${video._id}`)}>
-            <Edit2Icon size={13} />
+          <button className="btn btn-sm btn-secondary" style={{ padding: "0.3rem 0.75rem", fontSize: "0.75rem", fontWeight: 500 }} onClick={() => router.push(`/studio?edit=${video._id}`)}>
+            <Edit2Icon size={12} />
             Edit
           </button>
           <div style={{ position: "relative" }}>
@@ -317,16 +413,240 @@ function VideoCard({ video, isSelected, onSelect, onToggleSelect }: {
   );
 }
 
+// ── Edit Modal ──
+function EditModal({ videoId, onClose, onSuccess }: { videoId: string; onClose: () => void; onSuccess: () => void }) {
+  const thumbnailRef = useRef<HTMLInputElement>(null);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [tagsInput, setTagsInput] = useState("");
+  const [category, setCategory] = useState<string>(CATEGORIES[0]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [thumbnailName, setThumbnailName] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await api.delete(`/videos/${videoId}`);
+      onSuccess();
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, "Failed to delete video."));
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
+
+  const { data: videoRes, isLoading: loading } = useQuery({
+    queryKey: ["edit-video", videoId],
+    queryFn: async () => {
+      const res = await api.get(`/videos/${videoId}`);
+      return res.data;
+    },
+    enabled: !!videoId,
+  });
+
+  const video = videoRes?.data;
+
+  useEffect(() => {
+    if (video) {
+      setTitle(video.title || "");
+      setDescription(video.description || "");
+      setTagsInput((video.tags || []).join(", "));
+      setCategory(video.category || CATEGORIES[0]);
+    }
+  }, [video]);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (!title.trim()) return setError("Title is required.");
+    if (!description.trim()) return setError("Description is required.");
+
+    setSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append("title", title.trim());
+      formData.append("description", description.trim());
+      formData.append("tags", tagsInput.split(",").map((t) => t.trim()).filter(Boolean).join(","));
+      formData.append("category", category);
+
+      const thumbnailFile = thumbnailRef.current?.files?.[0];
+      if (thumbnailFile) {
+        formData.append("thumbnail", thumbnailFile);
+      }
+
+      await api.patch(`/videos/${videoId}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 120000,
+      });
+      onSuccess();
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, "Failed to update video."));
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="modal-overlay">
+        <div className="modal-content" style={{ maxWidth: 520, padding: "2rem", textAlign: "center" }}>
+          <p style={{ color: "var(--text-muted)" }}>Loading video details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!video) {
+    return (
+      <div className="modal-overlay">
+        <div className="modal-content" style={{ maxWidth: 520, padding: "2rem", textAlign: "center" }}>
+          <p style={{ color: "var(--error)" }}>Video not found</p>
+          <button className="btn btn-sm btn-secondary" onClick={onClose} style={{ marginTop: "1rem" }}>Close</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="modal-overlay"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      >
+        <motion.div
+          className="modal-content"
+          initial={{ scale: 0.95, opacity: 0, y: 16 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          style={{ maxWidth: 520 }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--sp-6)" }}>
+            <h2 className="text-section">Edit Video</h2>
+            <button className="btn-icon btn-sm" onClick={onClose} disabled={saving}>
+              <CloseIcon size={18} />
+            </button>
+          </div>
+
+          {error && (
+            <div style={{ padding: "var(--sp-3) var(--sp-4)", backgroundColor: "var(--error-subtle)", color: "var(--error)", borderRadius: "var(--radius-md)", marginBottom: "var(--sp-4)", fontSize: "13px", border: "1px solid rgba(239,68,68,0.15)" }}>
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+              <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Title <span style={{ color: "var(--error)" }}>*</span></label>
+              <input type="text" required placeholder="Title" className="input" value={title} onChange={(e) => setTitle(e.target.value)} disabled={saving} />
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+              <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Description <span style={{ color: "var(--error)" }}>*</span></label>
+              <textarea required placeholder="Description" className="input" value={description} onChange={(e) => setDescription(e.target.value)} disabled={saving} rows={3} />
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+              <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Tags</label>
+              <input type="text" placeholder="gaming, tutorial, comedy" className="input" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} disabled={saving} />
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+              <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Category</label>
+              <select className="input select" value={category} onChange={(e) => setCategory(e.target.value)} disabled={saving}>
+                {CATEGORIES.map((c) => (<option key={c} value={c}>{c}</option>))}
+              </select>
+            </div>
+
+            <div className="upload-zone">
+              <input type="file" accept="image/*" ref={thumbnailRef} disabled={saving} onChange={(e) => setThumbnailName(e.target.files?.[0]?.name || "")} />
+              <div className="upload-zone-icon">
+                <ImageIcon size={18} />
+              </div>
+              {thumbnailName ? (
+                <p className="upload-zone-label" style={{ fontSize: "12px", wordBreak: "break-all" }}>{thumbnailName}</p>
+              ) : (
+                <>
+                  <p className="upload-zone-label">Replace Thumbnail</p>
+                  <p className="upload-zone-hint">Leave empty to keep current</p>
+                </>
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: "var(--sp-3)", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <button type="button" className="btn btn-sm btn-secondary" style={{ color: "var(--error)", borderColor: "rgba(239,68,68,0.2)" }} onClick={() => setConfirmDelete(true)}>
+                  <TrashIcon size={14} />
+                  Delete
+                </button>
+              </div>
+              <div style={{ display: "flex", gap: "var(--sp-3)" }}>
+                <button type="button" className="btn btn-secondary" onClick={onClose} disabled={saving || deleting}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={saving || deleting}>
+                  {saving ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </div>
+          </form>
+
+          {confirmDelete && (
+            <motion.div
+              className="modal-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              onClick={() => setConfirmDelete(false)}
+              style={{ position: "fixed", zIndex: 9999 }}
+            >
+              <motion.div
+                className="modal-content"
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                onClick={(e) => e.stopPropagation()}
+                style={{ maxWidth: 400, padding: "2rem", textAlign: "center" }}
+              >
+                <div style={{ width: 48, height: 48, borderRadius: "var(--radius-full)", backgroundColor: "var(--error-subtle)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1rem", color: "var(--error)" }}>
+                  <TrashIcon size={22} />
+                </div>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.5rem" }}>Delete Video</h3>
+                <p style={{ fontSize: "0.88rem", color: "var(--text-secondary)", marginBottom: "1.5rem", lineHeight: 1.5 }}>
+                  Are you sure you want to delete this video? This action cannot be undone.
+                </p>
+                <div style={{ display: "flex", gap: "var(--sp-3)", justifyContent: "center" }}>
+                  <button className="btn btn-secondary" onClick={() => setConfirmDelete(false)} disabled={deleting}>Cancel</button>
+                  <button className="btn btn-primary" style={{ backgroundColor: "var(--error)", borderColor: "var(--error)" }} onClick={handleDelete} disabled={deleting}>
+                    {deleting ? "Deleting..." : "Delete"}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+          </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 // ── Main Page ──
-export default function CreatorStudio() {
+function CreatorStudioContent() {
   const { isAuthenticated, isLoading: authLoading, user } = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get("edit");
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [editVideoId, setEditVideoId] = useState<string | null>(null);
   const [selectedVideos, setSelectedVideos] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortType, setSortType] = useState("desc");
   const [filterStatus, setFilterStatus] = useState<"all" | "public" | "private">("all");
+
+  useEffect(() => {
+    setEditVideoId(editId);
+  }, [editId]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
@@ -349,6 +669,18 @@ export default function CreatorStudio() {
     queryClient.invalidateQueries({ queryKey: ["channel-stats"] });
     queryClient.invalidateQueries({ queryKey: ["channel-videos"] });
     queryClient.invalidateQueries({ queryKey: ["videos"] });
+  };
+
+  const handleEditSuccess = () => {
+    setEditVideoId(null);
+    router.replace("/studio");
+    queryClient.invalidateQueries({ queryKey: ["channel-videos"] });
+    queryClient.invalidateQueries({ queryKey: ["videos"] });
+  };
+
+  const handleEditClose = () => {
+    setEditVideoId(null);
+    router.replace("/studio");
   };
 
   const bulkDeleteMutation = useMutation({
@@ -407,6 +739,7 @@ export default function CreatorStudio() {
   return (
     <>
       {showUploadModal && <UploadModal onClose={() => setShowUploadModal(false)} onSuccess={handleUploadSuccess} />}
+      {editVideoId && <EditModal videoId={editVideoId} onClose={handleEditClose} onSuccess={handleEditSuccess} />}
 
       <div className="content-max">
         {/* Welcome with Quick Actions */}
@@ -604,4 +937,12 @@ export default function CreatorStudio() {
           </div>
         </>
       );
-    }
+}
+
+export default function CreatorStudio() {
+  return (
+    <Suspense fallback={<div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}><div style={{ color: "var(--text-secondary)" }}>Loading studio...</div></div>}>
+      <CreatorStudioContent />
+    </Suspense>
+  );
+}
