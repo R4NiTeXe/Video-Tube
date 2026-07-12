@@ -100,6 +100,7 @@ export default function RobotMascot({
   // Blink controller
   const leftEye  = useAnimationControls();
   const rightEye = useAnimationControls();
+  const isMounted = useRef(false);
 
   const floatRef  = useRef<ReturnType<typeof setInterval> | null>(null);
   const blinkRef  = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -152,19 +153,20 @@ export default function RobotMascot({
 
   // ── Blink ────────────────────────────────────────────────────────────────
   const doBlink = () => {
-    // Don't blink when eyes are already closed
-    if (mood === "secret") return;
+    // Don't blink when eyes are already closed or not mounted
+    if (mood === "secret" || !isMounted.current) return;
     const anim = { scaleY:[1,0.06,1] as number[], transition:{ duration:0.16, times:[0,0.5,1] } };
     leftEye.start(anim);
     rightEye.start(anim);
   };
   useEffect(() => {
+    isMounted.current = true;
     doBlink();
     blinkRef.current = setInterval(() => {
       doBlink();
       if (Math.random() > 0.65) setTimeout(doBlink, 320);
     }, 2800 + Math.random() * 1600);
-    return () => { if (blinkRef.current) clearInterval(blinkRef.current); };
+    return () => { isMounted.current = false; if (blinkRef.current) clearInterval(blinkRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mood]);
 
@@ -401,7 +403,7 @@ export default function RobotMascot({
         />
       </motion.div>
 
-      {/* ── Caption ── */}
+{/* ── Caption ── */}
       <AnimatePresence mode="wait">
         <motion.div key={mood}
           initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-8 }}
@@ -423,8 +425,9 @@ export default function RobotMascot({
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-// Eye: renders open (with pupil) OR closed (smooth lid arc) based on eyeClose spring
 import type { MotionValue } from "framer-motion";
+
+// Eye: renders open (with pupil) OR closed (smooth lid arc) based on eyeClose spring
 function Eye({
   ctrl, eyeW, eyeH, eyeShape, pupilX, pupilY, eyeClose, mood,
 }: {

@@ -35,34 +35,30 @@ export const getApiErrorMessage = (error: unknown, fallback: string) => {
 // Response Interceptor for handling token refresh logic globally
 api.interceptors.response.use(
   (response) => {
-    // Any status code within the range of 2xx triggers this function
     return response;
   },
   async (error: AxiosError<ApiErrorBody>) => {
     const originalRequest = error.config as RetryableRequestConfig | undefined;
 
-    // If the error is 401 Unauthorized, and we haven't already retried this exact request
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        // Attempt to hit the refresh token endpoint
-        // Since withCredentials is true, the refresh cookie is sent automatically
         await axios.post(`${API_BASE_URL}/users/refresh-token`, {}, { withCredentials: true });
-
-        // If successful, the backend sets a new access token cookie.
-        // We can now safely retry the original request!
         return api(originalRequest);
       } catch (refreshError) {
-        // If refresh fails, redirect to login — but not if we're already there
-        if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
-          window.location.href = "/login";
+        // Only redirect to login for protected routes, not public pages
+        if (typeof window !== "undefined") {
+          const publicPaths = ["/", "/login", "/register", "/forgot-password", "/auth/callback"];
+          const isPublicPath = publicPaths.some((p) => window.location.pathname === p || window.location.pathname.startsWith(p + "/"));
+          if (!isPublicPath && !window.location.pathname.startsWith("/login")) {
+            window.location.href = "/login";
+          }
         }
         return Promise.reject(refreshError);
       }
     }
 
-    // Reject for all other errors (400, 404, 500, etc.)
     return Promise.reject(error);
   }
 );

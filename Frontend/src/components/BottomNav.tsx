@@ -26,7 +26,10 @@ const UserIcon = () => (
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
+
+  const isLandingPage = pathname === "/" && !isAuthenticated;
+  if (isLandingPage) return null;
 
   const profileHref = user?.username ? `/channel/${user.username}` : "/login";
 

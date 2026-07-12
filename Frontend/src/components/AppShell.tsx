@@ -3,15 +3,18 @@
 import { usePathname } from "next/navigation";
 import TopNav from "./TopNav";
 import PremiumSidebar from "./PremiumSidebar";
+import { useAuthStore } from "@/src/store/useAuthStore";
 
 const authPages = ["/login", "/register", "/forgot-password", "/embed"];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { isAuthenticated } = useAuthStore();
 
   const isAuthPage = authPages.includes(pathname) || pathname.startsWith("/embed");
+  const isLandingPage = pathname === "/" && !isAuthenticated;
 
-  if (isAuthPage) {
+  if (isAuthPage || isLandingPage) {
     return <>{children}</>;
   }
 

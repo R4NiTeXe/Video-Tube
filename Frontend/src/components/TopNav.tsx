@@ -192,7 +192,7 @@ export default function TopNav() {
               History
             </Link>
 
-            <Link href="/playlist?list=WL" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+            <Link href="/library" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
               <ClockIcon size={16} />
               Watch Later
             </Link>
