@@ -9,9 +9,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import VideoPoll from "@/src/components/VideoPoll";
 
-import TopNav from "@/src/components/TopNav";
 import {
-  ArrowLeftIcon,
   CloseIcon,
   EditIcon,
   TrashIcon,
@@ -29,6 +27,7 @@ interface VideoOwner {
   username: string;
   avatar: string;
   subscribersCount?: number;
+  isSubscribed?: boolean;
 }
 
 interface Chapter {
@@ -750,6 +749,7 @@ export default function VideoPlayerPage() {
   const [disliked, setDisliked] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [showDescription, setShowDescription] = useState(false);
   const [showCaptions, setShowCaptions] = useState(false);
@@ -762,11 +762,14 @@ export default function VideoPlayerPage() {
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [bellActive, setBellActive] = useState(false);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [videoQuality, setVideoQuality] = useState("auto");
+  const [videoSrc, setVideoSrc] = useState("");
   const controlsTimeout = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -797,7 +800,7 @@ export default function VideoPlayerPage() {
   const { data: relatedRes, isLoading: relatedLoading } = useQuery({
     queryKey: ["related-videos", videoId],
     queryFn: async () => {
-      const res = await api.get("/videos?limit=10&sortBy=views&sortType=desc");
+      const res = await api.get(`/videos/${videoId}/related`);
       return res.data;
     },
     enabled: isAuthenticated && !!videoId,
@@ -871,17 +874,17 @@ export default function VideoPlayerPage() {
       await api.post(`/subscriptions/c/${video.owner._id}`);
     },
     onMutate: async () => {
-      const cached = queryClient.getQueryData<{ data: { isSubscribed: boolean; owner: { subscribersCount: number } } }>(["video", videoId]);
-      const wasSubscribed = cached?.data?.isSubscribed ?? video?.isSubscribed;
+      const cached = queryClient.getQueryData<{ data: { owner: { isSubscribed: boolean; subscribersCount: number } } }>(["video", videoId]);
+      const wasSubscribed = cached?.data?.owner?.isSubscribed ?? isSubscribed;
       queryClient.setQueryData(["video", videoId], (old: Record<string, unknown> | undefined) => {
         if (!old?.data) return old;
         return {
           ...old,
           data: {
             ...old.data,
-            isSubscribed: !wasSubscribed,
             owner: {
               ...(old.data as Record<string, unknown>).owner as Record<string, unknown>,
+              isSubscribed: !wasSubscribed,
               subscribersCount: (((old.data as Record<string, unknown>).owner as Record<string, unknown>)?.subscribersCount as number || 0) + (wasSubscribed ? -1 : 1),
             },
           },
@@ -965,6 +968,30 @@ export default function VideoPlayerPage() {
     }
   };
 
+  const getQualityUrl = (url: string, quality: string) => {
+    if (quality === "auto" || !url.includes("cloudinary.com")) return url;
+    const widthMap: Record<string, string> = { "1080p": "w_1920", "720p": "w_1280", "480p": "w_854", "360p": "w_640" };
+    const transform = widthMap[quality];
+    if (!transform) return url;
+    return url.replace("/upload/", `/upload/${transform}/`);
+  };
+
+  useEffect(() => {
+    if (videoRes?.data?.videoFile) setVideoSrc(getQualityUrl(videoRes.data.videoFile, videoQuality));
+  }, [videoRes?.data?.videoFile, videoQuality]);
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
+
+  useEffect(() => {
+    if (videoRes?.data) {
+      setLiked(!!videoRes.data.isLiked);
+    }
+  }, [videoRes?.data?.isLiked]);
+
   // ── Loading / Auth states ──
   if (authLoading || !isAuthenticated) {
     return (
@@ -983,7 +1010,8 @@ export default function VideoPlayerPage() {
 
   const video: Video | undefined = videoRes?.data;
   const comments: Comment[] = commentsRes?.data?.docs || [];
-  const relatedVideos: RelatedVideo[] = (relatedRes?.data?.docs || []).filter((v: RelatedVideo) => v._id !== videoId);
+  const relatedVideos: RelatedVideo[] = (relatedRes?.data || []).filter((v: RelatedVideo) => v._id !== videoId);
+  const isSubscribed = video?.owner?.isSubscribed ?? false;
 
   if (!video) {
     return (
@@ -1000,16 +1028,6 @@ export default function VideoPlayerPage() {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
-      <TopNav />
-
-      {/* Breadcrumb */}
-      <div style={{ position: "sticky", top: "var(--nav-h)", zIndex: 40, padding: "var(--sp-3) var(--sp-8)", display: "flex", alignItems: "center", gap: "var(--sp-3)", backgroundColor: "var(--bg-primary)", borderBottom: "1px solid var(--border)" }}>
-        <button onClick={() => router.back()} className="btn btn-ghost btn-sm">
-          <ArrowLeftIcon size={18} /> Back
-        </button>
-        <span style={{ color: "var(--border)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
-        <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Now Playing</span>
-      </div>
 
       <div style={{
         width: "100%",
@@ -1024,6 +1042,7 @@ export default function VideoPlayerPage() {
 
           {/* Video Player */}
           <motion.div
+            ref={containerRef}
             layout
             className="video-player-container"
             onMouseMove={() => { setShowControls(true); if (controlsTimeout.current) clearTimeout(controlsTimeout.current); controlsTimeout.current = setTimeout(() => { if (isPlaying) setShowControls(false); }, 3000); }}
@@ -1040,7 +1059,7 @@ export default function VideoPlayerPage() {
           >
             <video
               ref={videoRef}
-              src={video.videoFile}
+              src={videoSrc || undefined}
               autoPlay
               onClick={() => { if (!videoRef.current) return; videoRef.current.paused ? videoRef.current.play() : videoRef.current.pause(); }}
               onPlay={() => setIsPlaying(true)}
@@ -1063,6 +1082,7 @@ export default function VideoPlayerPage() {
             </video>
 
             {/* Custom Controls Overlay */}
+            {!isFullscreen && (
             <div
               style={{
                 position: "absolute", bottom: 0, left: 0, right: 0,
@@ -1087,7 +1107,8 @@ export default function VideoPlayerPage() {
 
               {/* Controls Row */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)" }}>
+                {/* Left: Play/Pause + Volume + Time */}
+                <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)" }}>
                   {/* Play/Pause */}
                   <button onClick={() => { if (!videoRef.current) return; videoRef.current.paused ? videoRef.current.play() : videoRef.current.pause(); }}
                     style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", padding: "0.25rem", display: "flex", alignItems: "center" }}>
@@ -1122,15 +1143,8 @@ export default function VideoPlayerPage() {
                   </span>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-1)" }}>
-                  {/* CC Button */}
-                  {captions.length > 0 && (
-                    <button onClick={() => { if (!videoRef.current) return; const tracks = videoRef.current.textTracks; if (selectedCaptionIdx >= 0) { for (let i = 0; i < tracks.length; i++) tracks[i].mode = "hidden"; setSelectedCaptionIdx(-1); } else { if (tracks.length > 0) { tracks[0].mode = "showing"; setSelectedCaptionIdx(0); } } }}
-                      style={{ background: "none", border: "none", color: selectedCaptionIdx >= 0 ? "var(--accent)" : "rgba(255,255,255,0.8)", cursor: "pointer", padding: "0.25rem 0.4rem", fontSize: "0.7rem", fontWeight: 800, borderRadius: 4, backgroundColor: selectedCaptionIdx >= 0 ? "rgba(255,255,255,0.15)" : "transparent" }}>
-                      CC
-                    </button>
-                  )}
-
+                {/* Right: Quality + Fullscreen */}
+                <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)" }}>
                   {/* Quality Selector */}
                   <div style={{ position: "relative" }}>
                     <button onClick={() => setShowQualityMenu(!showQualityMenu)}
@@ -1162,20 +1176,15 @@ export default function VideoPlayerPage() {
                     )}
                   </div>
 
-                  {/* Theater Mode */}
-                  <button onClick={() => setTheaterMode(!theaterMode)}
-                    style={{ background: "none", border: "none", color: "rgba(255,255,255,0.8)", cursor: "pointer", padding: "0.25rem", display: "flex", alignItems: "center" }}>
-                    {theaterMode ? <MinimizeIcon /> : <MaximizeIcon />}
-                  </button>
-
                   {/* Fullscreen */}
-                  <button onClick={() => { const el = videoRef.current?.parentElement?.parentElement; if (!el) return; document.fullscreenElement ? document.exitFullscreen() : el.requestFullscreen(); }}
+                  <button onClick={() => { const el = containerRef.current; if (!el) return; document.fullscreenElement ? document.exitFullscreen() : el.requestFullscreen(); }}
                     style={{ background: "none", border: "none", color: "rgba(255,255,255,0.8)", cursor: "pointer", padding: "0.25rem", display: "flex", alignItems: "center" }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
                   </button>
                 </div>
               </div>
             </div>
+            )}
           </motion.div>
 
           {/* Video Title */}
@@ -1225,11 +1234,11 @@ export default function VideoPlayerPage() {
                     whileTap={{ scale: 0.95 }}
                     onClick={() => subscribeMutation.mutate()}
                     disabled={subscribeMutation.isPending}
-                    className={`btn btn-sm btn-pill ${video.isSubscribed ? "btn-secondary" : "btn-primary"}`}
+                    className={`btn btn-sm btn-pill ${isSubscribed ? "btn-secondary" : "btn-primary"}`}
                   >
-                    {video.isSubscribed ? "Subscribed" : "Subscribe"}
+                    {isSubscribed ? "Subscribed" : "Subscribe"}
                   </motion.button>
-                  {video.isSubscribed && (
+                  {isSubscribed && (
                     <div style={{ position: "relative" }}>
                       <motion.button
                         initial={{ scale: 0, opacity: 0 }}
@@ -1283,7 +1292,7 @@ export default function VideoPlayerPage() {
             </div>
 
             {/* Right: Action Buttons */}
-            <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-1)", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", flexWrap: "wrap" }}>
               {/* Like/Dislike Group */}
               <div style={{ display: "flex", alignItems: "center", borderRadius: "var(--radius-full)", overflow: "hidden", border: "1px solid var(--border)", backgroundColor: "var(--elevated)" }}>
                 <motion.button
@@ -1292,7 +1301,7 @@ export default function VideoPlayerPage() {
                   disabled={likeMutation.isPending}
                   style={{
                     display: "flex", alignItems: "center", gap: "var(--sp-1)",
-                    padding: "0.5rem 0.85rem",
+                    padding: "0.5rem 1rem",
                     backgroundColor: liked ? "var(--accent-subtle)" : "transparent",
                     color: liked ? "var(--accent)" : "var(--text-secondary)",
                     fontWeight: 600, fontSize: "0.85rem",
@@ -1308,7 +1317,7 @@ export default function VideoPlayerPage() {
                   onClick={() => { setDisliked(!disliked); if (!disliked) setLiked(false); }}
                   style={{
                     display: "flex", alignItems: "center",
-                    padding: "0.5rem 0.85rem",
+                    padding: "0.5rem 1rem",
                     backgroundColor: "transparent",
                     color: disliked ? "var(--text-primary)" : "var(--text-secondary)",
                     cursor: "pointer", transition: "all 0.15s",
@@ -1327,7 +1336,7 @@ export default function VideoPlayerPage() {
                   display: "flex", alignItems: "center", gap: "var(--sp-1)",
                   padding: "0.5rem 1rem", borderRadius: "var(--radius-full)",
                   backgroundColor: copied ? "var(--success-subtle)" : "var(--elevated)",
-                  border: `1.5px solid ${copied ? "var(--success)" : "var(--border)"}`,
+                  border: `1px solid ${copied ? "var(--success)" : "var(--border)"}`,
                   color: copied ? "var(--success)" : "var(--text-secondary)",
                   fontWeight: 600, fontSize: "0.85rem",
                   cursor: "pointer", transition: "all 0.2s",
@@ -1347,55 +1356,77 @@ export default function VideoPlayerPage() {
                 style={{
                   display: "flex", alignItems: "center", gap: "var(--sp-1)",
                   padding: "0.5rem 1rem", borderRadius: "var(--radius-full)",
-                  backgroundColor: savedToWatchLater ? "var(--accent)" : "var(--elevated)",
-                  border: `1.5px solid ${savedToWatchLater ? "var(--accent)" : "var(--border)"}`,
-                  color: savedToWatchLater ? "white" : "var(--text-secondary)",
+                  backgroundColor: savedToWatchLater ? "var(--accent-subtle)" : "var(--elevated)",
+                  border: `1px solid ${savedToWatchLater ? "var(--accent)" : "var(--border)"}`,
+                  color: savedToWatchLater ? "var(--accent)" : "var(--text-secondary)",
                   fontWeight: 600, fontSize: "0.85rem",
                   cursor: "pointer", transition: "all 0.2s",
                 }}
               >
-                <BookmarkIcon />
-                {savedToWatchLater ? "Saved" : "Watch Later"}
+                <BookmarkIcon filled={savedToWatchLater} />
+                {savedToWatchLater ? "Saved" : "Save"}
               </motion.button>
 
-              {/* Download */}
-              {video?.videoFile && (
-                <motion.a
+              {/* More (Download, Report) */}
+              <div style={{ position: "relative" }}>
+                <motion.button
                   whileTap={{ scale: 0.92 }}
-                  href={video.videoFile}
-                  download
-                  target="_blank"
+                  onClick={() => setShowMoreMenu(!showMoreMenu)}
                   style={{
-                    display: "flex", alignItems: "center", gap: "var(--sp-1)",
-                    padding: "0.5rem 1rem", borderRadius: "var(--radius-full)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    width: 36, height: 36, borderRadius: "var(--radius-full)",
                     backgroundColor: "var(--elevated)",
-                    border: "1.5px solid var(--border)",
+                    border: "1px solid var(--border)",
                     color: "var(--text-secondary)",
-                    fontWeight: 600, fontSize: "0.85rem",
                     cursor: "pointer", transition: "all 0.2s",
-                    textDecoration: "none",
                   }}
                 >
-                  <DownloadIcon size={18} /> Download
-                </motion.a>
-              )}
-
-              {/* Report */}
-              <motion.button
-                whileTap={{ scale: 0.92 }}
-                onClick={() => setShowReportModal(true)}
-                style={{
-                  display: "flex", alignItems: "center", gap: "var(--sp-1)",
-                  padding: "0.5rem 1rem", borderRadius: "var(--radius-full)",
-                  backgroundColor: "var(--elevated)",
-                  border: "1.5px solid var(--border)",
-                  color: "var(--text-secondary)",
-                  fontWeight: 600, fontSize: "0.85rem",
-                  cursor: "pointer", transition: "all 0.2s",
-                }}
-              >
-                <FlagIcon /> Report
-              </motion.button>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                </motion.button>
+                {showMoreMenu && (
+                  <>
+                    <div style={{ position: "fixed", inset: 0, zIndex: 9 }} onClick={() => setShowMoreMenu(false)} />
+                    <div style={{
+                      position: "absolute", top: "calc(100% + 6px)", right: 0, width: 200, zIndex: 10,
+                      backgroundColor: "var(--card)", border: "1px solid var(--border)",
+                      borderRadius: "var(--radius-md)", boxShadow: "0 8px 24px rgba(0,0,0,0.15)", padding: "0.35rem",
+                    }}>
+                      {video?.videoFile && (
+                        <a
+                          href={video.videoFile}
+                          download
+                          target="_blank"
+                          onClick={() => setShowMoreMenu(false)}
+                          style={{
+                            display: "flex", alignItems: "center", gap: "var(--sp-2)",
+                            padding: "0.5rem 0.75rem", borderRadius: "var(--radius-sm)",
+                            fontSize: "0.85rem", color: "var(--text-primary)",
+                            textDecoration: "none", cursor: "pointer", transition: "background 0.1s",
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--elevated)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                        >
+                          <DownloadIcon size={16} /> Download
+                        </a>
+                      )}
+                      <button
+                        onClick={() => { setShowMoreMenu(false); setShowReportModal(true); }}
+                        style={{
+                          display: "flex", alignItems: "center", gap: "var(--sp-2)",
+                          padding: "0.5rem 0.75rem", borderRadius: "var(--radius-sm)",
+                          fontSize: "0.85rem", color: "var(--text-primary)",
+                          background: "none", border: "none", width: "100%", textAlign: "left",
+                          cursor: "pointer", transition: "background 0.1s",
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--elevated)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                      >
+                        <FlagIcon /> Report
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </motion.div>
 
@@ -1475,53 +1506,6 @@ export default function VideoPlayerPage() {
               </div>
             </motion.div>
           )}
-
-          {/* Polls Section */}
-          <VideoPoll videoId={videoId} />
-
-          {/* Subtitles Section */}
-          <div className="glass" style={{ padding: "var(--sp-4) var(--sp-5)", borderRadius: "var(--radius-lg)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--sp-3)" }}>
-              <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)" }}>Subtitles</h3>
-              {user?._id === video.owner._id && (
-                <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--accent)", cursor: "pointer", padding: "0.4rem 0.8rem", borderRadius: "var(--radius-md)", border: "1px solid var(--accent)", background: "none" }}>
-                  {uploadingCaption ? "Uploading..." : "+ Add"}
-                  <input type="file" accept=".srt,.vtt,.sbv,.sub,.mpsub,.lrc,.dfxp,.ttml" onChange={handleCaptionUpload} style={{ display: "none" }} disabled={uploadingCaption} />
-                </label>
-              )}
-            </div>
-            {captions.length === 0 ? (
-              <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>No subtitles available</p>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-2)" }}>
-                {captions.map((cap, idx) => (
-                  <div key={cap._id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "var(--sp-2) var(--sp-3)", borderRadius: "var(--radius-sm)", backgroundColor: selectedCaptionIdx === idx ? "var(--accent-subtle)" : "var(--bg-secondary)", border: `1px solid ${selectedCaptionIdx === idx ? "var(--accent)" : "var(--border)"}`, cursor: "pointer", transition: "all 0.15s" }}
-                    onClick={() => {
-                      if (!videoRef.current) return;
-                      const tracks = videoRef.current.textTracks;
-                      for (let i = 0; i < tracks.length; i++) tracks[i].mode = "hidden";
-                      if (selectedCaptionIdx === idx) {
-                        setSelectedCaptionIdx(-1);
-                      } else {
-                        if (tracks[idx]) tracks[idx].mode = "showing";
-                        setSelectedCaptionIdx(idx);
-                      }
-                    }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)" }}>
-                      <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)" }}>{cap.label}</span>
-                      <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", textTransform: "uppercase" }}>{cap.language}</span>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)" }}>
-                      {selectedCaptionIdx === idx && <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--accent)" }}>Active</span>}
-                      {user?._id === video.owner._id && (
-                        <button onClick={(e) => { e.stopPropagation(); handleDeleteCaption(cap._id); }} style={{ fontSize: "0.75rem", color: "var(--accent-warm)", background: "none", border: "none", cursor: "pointer", padding: "0.2rem 0.4rem" }}>Delete</button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
 
           {/* Comments Section */}
           <motion.div
