@@ -6,7 +6,6 @@ import { Comment } from "../models/comment.model.js";
 import { escapeRegex } from "../utils/sanitizer.js";
 import { Like } from "../models/like.model.js";
 import { Playlist } from "../models/playlist.model.js";
-import { Report } from "../models/report.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -197,14 +196,13 @@ const getRecentActivity = asyncHandler(async (req, res) => {
   const { limit = 10 } = req.query;
   const limitNum = Math.min(parseInt(limit, 10) || 10, 50);
 
-  const [recentUsers, recentVideos, recentReports] = await Promise.all([
+  const [recentUsers, recentVideos] = await Promise.all([
     User.find().select("fullName avatar createdAt").sort({ createdAt: -1 }).limit(limitNum).lean(),
     Video.find({ isPublished: true }).select("title thumbnail views createdAt").sort({ createdAt: -1 }).limit(limitNum).lean(),
-    Report.find().select("targetType reason status createdAt").sort({ createdAt: -1 }).limit(limitNum).lean(),
   ]);
 
   return res.status(200).json(
-    new ApiResponse(200, { recentUsers, recentVideos, recentReports }, "Recent activity fetched")
+    new ApiResponse(200, { recentUsers, recentVideos }, "Recent activity fetched")
   );
 });
 
@@ -214,6 +212,5 @@ export {
   updateUserRole,
   banUser,
   adminDeleteVideo,
-  getAllReports,
   getRecentActivity,
 };

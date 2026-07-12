@@ -5,7 +5,6 @@ import {
   updateUserRole,
   banUser,
   adminDeleteVideo,
-  getAllReports,
   getRecentActivity,
 } from "../controllers/admin.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -21,7 +20,6 @@ router.route("/users").get(getAllUsers);
 router.route("/users/:userId/role").patch(updateUserRole);
 router.route("/users/:userId/ban").delete(banUser);
 router.route("/videos/:videoId").delete(adminDeleteVideo);
-router.route("/reports").get(getAllReports);
 router.route("/activity").get(getRecentActivity);
 
 export default router;
