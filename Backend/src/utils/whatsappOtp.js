@@ -1,59 +1,12 @@
-import crypto from "crypto";
+import { otpService } from "../services/otp.service.js";
 
-// In-memory OTP store (replace with Redis in production)
-const whatsappOtpStore = new Map();
-
-export const generateWhatsAppOTP = () => {
-  return crypto.randomInt(100000, 999999).toString();
-};
-
-export const storeWhatsAppOTP = async (mobile, purpose = "registration") => {
-  const otp = generateWhatsAppOTP();
-  const expiresAt = Date.now() + 10 * 60 * 1000;
-
-  whatsappOtpStore.set(`${mobile}:${purpose}`, {
-    otp,
-    expiresAt,
-    attempts: 0,
-    verified: false,
-  });
-
-  return otp;
-};
-
-export const verifyWhatsAppOTP = async (mobile, otp, purpose = "registration") => {
-  const key = `${mobile}:${purpose}`;
-  const record = whatsappOtpStore.get(key);
-
-  if (!record) return { valid: false, message: "OTP not found. Please request a new one." };
-  if (record.verified) return { valid: false, message: "OTP already used." };
-  if (record.attempts >= 5) return { valid: false, message: "Too many attempts. Request a new OTP." };
-  if (Date.now() > record.expiresAt) {
-    whatsappOtpStore.delete(key);
-    return { valid: false, message: "OTP expired. Request a new one." };
-  }
-
-  record.attempts += 1;
-
-  if (record.otp !== otp) {
-    whatsappOtpStore.set(key, record);
-    return { valid: false, message: "Invalid OTP." };
-  }
-
-  record.verified = true;
-  whatsappOtpStore.set(key, record);
-
-  return { valid: true, message: "OTP verified." };
-};
-
-// Send OTP via Meta WhatsApp Business API
+// Send OTP via Meta WhatsApp Business API (uses unified OTP service)
 export const sendWhatsAppOTP = async (mobile, otp) => {
   const API_URL = process.env.WHATSAPP_API_URL;
   const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
   const ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
   const TEMPLATE_NAME = process.env.WHATSAPP_TEMPLATE_NAME || "otp_verification";
   const LANGUAGE_CODE = process.env.WHATSAPP_LANGUAGE_CODE || "en";
-  // "text" for dev/test (free-form messages), "template" for production (requires approved template)
   const WHATSAPP_MODE = process.env.WHATSAPP_MODE || "text";
 
   // Dev mode: console.log fallback
@@ -147,15 +100,3 @@ export const sendWhatsAppOTP = async (mobile, otp) => {
     return { success: false, mode: "console-fallback", delivered: false, message: `WhatsApp unreachable: ${error.message}` };
   }
 };
-
-// Cleanup expired OTPs every 5 minutes
-const cleanupExpiredWhatsAppOTPs = () => {
-  const now = Date.now();
-  for (const [key, record] of whatsappOtpStore.entries()) {
-    if (now > record.expiresAt) {
-      whatsappOtpStore.delete(key);
-    }
-  }
-};
-
-setInterval(cleanupExpiredWhatsAppOTPs, 5 * 60 * 1000);

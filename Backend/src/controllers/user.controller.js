@@ -1574,6 +1574,139 @@ const registerUnified = asyncHandler(async (req, res) => {
     );
 });
 
+// ── Mobile Registration Flow ──
+// Step 1: Send mobile registration OTP
+const sendMobileRegistrationOTP = asyncHandler(async (req, res) => {
+  const { mobile } = req.body;
+
+  if (!mobile?.trim()) {
+    throw new ApiError(400, "Mobile number is required");
+  }
+
+  const normalizedMobile = mobile.trim().replace(/\s/g, "");
+
+  if (!isValidMobile(normalizedMobile)) {
+    throw new ApiError(400, "Invalid mobile number format. Use +91XXXXXXXXXX format");
+  }
+
+  // Check if mobile already registered
+  const existingUser = await User.findOne({ mobile: normalizedMobile });
+  if (existingUser) {
+    throw new ApiError(409, "Mobile number already registered. Please login.");
+  }
+
+  const otp = await storeOTP(normalizedMobile, "registration", "whatsapp");
+
+  try {
+    await sendWhatsAppOTP(normalizedMobile, otp);
+  } catch (error) {
+    console.error("Failed to send mobile registration OTP WhatsApp:", error.message);
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, { mobile: normalizedMobile }, "OTP sent to your mobile number")
+  );
+});
+
+// Step 2: Verify mobile registration OTP
+const verifyMobileRegistrationOTP = asyncHandler(async (req, res) => {
+  const { mobile, otp: otpValue } = req.body;
+
+  if (!mobile || !otpValue) {
+    throw new ApiError(400, "Mobile number and OTP are required");
+  }
+
+  const normalizedMobile = mobile.trim().replace(/\s/g, "");
+  const purpose = "registration";
+
+  const result = await verifyOTP(normalizedMobile, otpValue, purpose);
+
+  if (!result.valid) {
+    throw new ApiError(400, result.message);
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, { verified: true, mobile: normalizedMobile }, "Mobile number verified successfully")
+  );
+});
+
+// Step 3: Complete mobile registration
+const registerWithMobileOTP = asyncHandler(async (req, res) => {
+  const { mobile, otp, fullName, username, password } = req.body;
+
+  if (!mobile || !otp || !fullName || !username || !password) {
+    throw new ApiError(400, "All fields are required: mobile, otp, fullName, username, password");
+  }
+
+  const normalizedMobile = mobile.trim().replace(/\s/g, "");
+
+  if (!isValidMobile(normalizedMobile)) {
+    throw new ApiError(400, "Invalid mobile number format");
+  }
+  if (password.length < 8 || password.length > 16) {
+    throw new ApiError(400, "Password must be 8-16 characters");
+  }
+  if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+    throw new ApiError(400, "Password must contain uppercase, lowercase, number, and special character");
+  }
+
+  // Verify OTP
+  const result = await verifyOTP(normalizedMobile, otp, "registration");
+  if (!result.valid) {
+    throw new ApiError(400, result.message);
+  }
+
+  // Check uniqueness
+  const existingMobile = await User.findOne({ mobile: normalizedMobile });
+  if (existingMobile) throw new ApiError(409, "Mobile number already registered");
+
+  const existingUsername = await User.findOne({ username: username.toLowerCase() });
+  if (existingUsername) throw new ApiError(409, "Username already taken");
+
+  // Upload avatar to Cloudinary
+  let avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=6366f1&color=fff`;
+  let coverUrl = "";
+
+  const avatarLocalPath = req.files?.avatar?.[0]?.path;
+  if (avatarLocalPath) {
+    const uploaded = await uploadOnCloudinary(avatarLocalPath);
+    if (uploaded?.url) avatarUrl = uploaded.url;
+  }
+
+  const coverLocalPath = req.files?.coverImage?.[0]?.path;
+  if (coverLocalPath) {
+    const uploaded = await uploadOnCloudinary(coverLocalPath);
+    if (uploaded?.url) coverUrl = uploaded.url;
+  }
+
+  const user = await User.create({
+    username: username.toLowerCase(),
+    fullName: fullName.trim(),
+    mobile: normalizedMobile,
+    isMobileVerified: true,
+    password,
+    avatar: avatarUrl,
+    ...(coverUrl && { coverImage: coverUrl }),
+  });
+
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
+  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+
+  const options = getCookieOptions();
+
+  return res
+    .status(201)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        201,
+        { user: loggedInUser, accessToken, refreshToken },
+        "User registered successfully"
+      )
+    );
+});
+
 // ── OTP Login (Passwordless) ──
 // Step 1: Send login OTP
 const sendLoginOTP = asyncHandler(async (req, res) => {
@@ -2228,6 +2361,10 @@ export {
   verifyForgotPasswordOTP,
   resetPasswordWithResetToken,
   skipAndLogin,
+  // Mobile registration
+  sendMobileRegistrationOTP,
+  verifyMobileRegistrationOTP,
+  registerWithMobileOTP,
   // Keep old exports for backward compatibility
   sendEmailRegistrationOTP,
   verifyEmailRegistrationOTP,

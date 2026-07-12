@@ -21,30 +21,31 @@ const findOrCreateUser = async (provider, providerId, email, name, avatar) => {
       user.avatar = avatar;
     }
     await user.save({ validateBeforeSave: false });
-  } else {
-    const randomPassword = crypto.randomBytes(32).toString("hex");
-    const socialMap = new Map();
-    socialMap.set(provider, providerId);
-
-    const usernameBase = normalizedEmail.split("@")[0].replace(/[^a-z0-9]/g, "");
-    let username = usernameBase;
-    let suffix = 1;
-    while (await User.findOne({ username })) {
-      username = `${usernameBase}${suffix}`;
-      suffix++;
-    }
-
-    user = await User.create({
-      username,
-      fullName: name || normalizedEmail.split("@")[0],
-      email: normalizedEmail,
-      password: randomPassword,
-      avatar: avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || "User")}&background=6366f1&color=fff`,
-      socialAccounts: socialMap,
-    });
+    return { user, isNew: false };
   }
 
-  return user;
+  const randomPassword = crypto.randomBytes(32).toString("hex");
+  const socialMap = new Map();
+  socialMap.set(provider, providerId);
+
+  const usernameBase = normalizedEmail.split("@")[0].replace(/[^a-z0-9]/g, "");
+  let username = usernameBase;
+  let suffix = 1;
+  while (await User.findOne({ username })) {
+    username = `${usernameBase}${suffix}`;
+    suffix++;
+  }
+
+  user = await User.create({
+    username,
+    fullName: name || normalizedEmail.split("@")[0],
+    email: normalizedEmail,
+    password: randomPassword,
+    avatar: avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || "User")}&background=6366f1&color=fff`,
+    socialAccounts: socialMap,
+  });
+
+  return { user, isNew: true };
 };
 
 export const configurePassport = () => {
@@ -70,14 +71,14 @@ export const configurePassport = () => {
         },
         async (accessToken, refreshToken, profile, done) => {
           try {
-            const user = await findOrCreateUser(
+            const { user, isNew } = await findOrCreateUser(
               "google",
               profile.id,
               profile.emails?.[0]?.value,
               profile.displayName,
               profile.photos?.[0]?.value
             );
-            done(null, user);
+            done(null, { ...user.toObject(), _isNew: isNew });
           } catch (err) {
             done(err, null);
           }
@@ -99,14 +100,14 @@ export const configurePassport = () => {
         async (accessToken, refreshToken, profile, done) => {
           try {
             const email = profile.emails?.[0]?.value || `${profile.username}@github.local`;
-            const user = await findOrCreateUser(
+            const { user, isNew } = await findOrCreateUser(
               "github",
               profile.id.toString(),
               email,
               profile.displayName || profile.username,
               profile.photos?.[0]?.value
             );
-            done(null, user);
+            done(null, { ...user.toObject(), _isNew: isNew });
           } catch (err) {
             done(err, null);
           }
@@ -128,14 +129,14 @@ export const configurePassport = () => {
         async (accessToken, refreshToken, profile, done) => {
           try {
             const email = profile.emails?.[0]?.value || `${profile.id}@facebook.local`;
-            const user = await findOrCreateUser(
+            const { user, isNew } = await findOrCreateUser(
               "facebook",
               profile.id,
               email,
               profile.displayName,
               profile.photos?.[0]?.value
             );
-            done(null, user);
+            done(null, { ...user.toObject(), _isNew: isNew });
           } catch (err) {
             done(err, null);
           }
@@ -157,7 +158,7 @@ export const configurePassport = () => {
         async (accessToken, refreshToken, profile, done) => {
           try {
             const email = profile.email || `${profile.id}@discord.local`;
-            const user = await findOrCreateUser(
+            const { user, isNew } = await findOrCreateUser(
               "discord",
               profile.id,
               email,
@@ -166,7 +167,7 @@ export const configurePassport = () => {
                 ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png`
                 : null
             );
-            done(null, user);
+            done(null, { ...user.toObject(), _isNew: isNew });
           } catch (err) {
             done(err, null);
           }

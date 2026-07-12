@@ -131,6 +131,13 @@ const userSchema = new Schema(
     passwordResetExpires: {
       type: Date,
     },
+    otpDailyCount: {
+      type: Number,
+      default: 0,
+    },
+    otpDailyCountDate: {
+      type: Date,
+    },
     watchHistory: [
       {
         type: Schema.Types.ObjectId,

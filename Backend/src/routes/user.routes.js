@@ -51,6 +51,10 @@ import {
   verifyForgotPasswordOTP,
   resetPasswordWithResetToken,
   skipAndLogin,
+  // Mobile registration
+  sendMobileRegistrationOTP,
+  verifyMobileRegistrationOTP,
+  registerWithMobileOTP,
   // Keep old exports for backward compatibility
   sendEmailRegistrationOTP,
   verifyEmailRegistrationOTP,
@@ -104,6 +108,21 @@ router.route("/register-unified").post(
     { name: "coverImage", maxCount: 1 },
   ]),
   registerUnified
+);
+
+// ── Mobile Registration Flow ──
+// Step 1: Send mobile OTP
+router.route("/mobile/send-registration-otp").post(authLimiter, sendMobileRegistrationOTP);
+// Step 2: Verify mobile OTP
+router.route("/mobile/verify-registration-otp").post(authLimiter, verifyMobileRegistrationOTP);
+// Step 3: Complete mobile registration
+router.route("/mobile/register").post(
+  authLimiter,
+  upload.fields([
+    { name: "avatar", maxCount: 1 },
+    { name: "coverImage", maxCount: 1 },
+  ]),
+  registerWithMobileOTP
 );
 
 // ── OTP Login (Passwordless) ──

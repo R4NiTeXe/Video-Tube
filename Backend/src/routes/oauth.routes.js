@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
 
 const router = Router();
+const FE = () => process.env.FRONTEND_URL || "http://localhost:3000";
 
 const generateTokens = (userId) => {
   const accessToken = jwt.sign({ _id: userId }, process.env.ACCESS_TOKEN_SECRET, {
@@ -18,11 +19,10 @@ const generateTokens = (userId) => {
 const handleOAuthCallback = async (req, res) => {
   try {
     if (!req.user) {
-      return res.redirect(`${process.env.FRONTEND_URL || "http://localhost:3000"}/login?error=auth_failed`);
+      return res.redirect(`${FE()}/login?error=auth_failed`);
     }
 
     const { accessToken, refreshToken } = generateTokens(req.user._id);
-
     await User.findByIdAndUpdate(req.user._id, { refreshToken });
 
     const isProduction = process.env.NODE_ENV === "production";
@@ -44,44 +44,38 @@ const handleOAuthCallback = async (req, res) => {
       path: "/",
     });
 
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
-    res.redirect(`${frontendUrl}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`);
+    const isNew = req.user._isNew ? "true" : "false";
+    res.redirect(`${FE()}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&isNew=${isNew}`);
   } catch (error) {
     console.error("OAuth callback error:", error);
-    res.redirect(`${process.env.FRONTEND_URL || "http://localhost:3000"}/login?error=auth_failed`);
+    res.redirect(`${FE()}/login?error=auth_failed`);
   }
+};
+
+const oauthCallback = (provider) => (req, res, next) => {
+  passport.authenticate(provider, { session: false }, (err, user) => {
+    if (err || !user) {
+      return res.redirect(`${FE()}/login?error=auth_failed`);
+    }
+    req.user = user;
+    handleOAuthCallback(req, res);
+  })(req, res, next);
 };
 
 // Google
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
-router.get(
-  "/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login?error=auth_failed", session: false }),
-  handleOAuthCallback
-);
+router.get("/google/callback", oauthCallback("google"));
 
 // GitHub
 router.get("/github", passport.authenticate("github", { scope: ["user:email"] }));
-router.get(
-  "/github/callback",
-  passport.authenticate("github", { failureRedirect: "/login?error=auth_failed", session: false }),
-  handleOAuthCallback
-);
+router.get("/github/callback", oauthCallback("github"));
 
 // Facebook
 router.get("/facebook", passport.authenticate("facebook", { scope: ["public_profile"] }));
-router.get(
-  "/facebook/callback",
-  passport.authenticate("facebook", { failureRedirect: "/login?error=auth_failed", session: false }),
-  handleOAuthCallback
-);
+router.get("/facebook/callback", oauthCallback("facebook"));
 
 // Discord
 router.get("/discord", passport.authenticate("discord", { scope: ["identify", "email"] }));
-router.get(
-  "/discord/callback",
-  passport.authenticate("discord", { failureRedirect: "/login?error=auth_failed", session: false }),
-  handleOAuthCallback
-);
+router.get("/discord/callback", oauthCallback("discord"));
 
 export default router;
