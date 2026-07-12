@@ -6,7 +6,6 @@ import { useAuthStore } from "@/src/store/useAuthStore";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import SocialLoginButtons from "@/src/components/SocialLoginButtons";
 import MascotAnimation from "@/src/components/MascotAnimation";
 import { PlayIcon, EyeIcon, EyeOffIcon, CloseIcon } from "@/src/components/icons";
 
@@ -114,29 +113,21 @@ export default function LoginPage() {
               )}
             </AnimatePresence>
 
-            {/* Social Login */}
-            <SocialLoginButtons />
-
-            {/* Divider */}
-            <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-4)", margin: "var(--sp-6) 0" }}>
-              <div style={{ flex: 1, height: 1, backgroundColor: "var(--border)" }} />
-              <span className="text-caption" style={{ color: "var(--text-muted)" }}>or</span>
-              <div style={{ flex: 1, height: 1, backgroundColor: "var(--border)" }} />
-            </div>
-
             {/* Form */}
             <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-2)" }}>
                 <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Email or Mobile</label>
-                <input
-                  type="text" required
-                  placeholder="Email or mobile"
-                  className="input"
-                  value={identifier}
-                  onChange={e => setIdentifier(e.target.value)}
-                  onFocus={() => setActiveField("email")}
-                  onBlur={() => setActiveField("none")}
-                />
+                <div className="input-wrapper" onMouseEnter={() => {}} onMouseLeave={() => {}}>
+                  <input
+                    type="text" required
+                    placeholder="Email or mobile"
+                    className="input"
+                    value={identifier}
+                    onChange={e => setIdentifier(e.target.value)}
+                    onFocus={() => setActiveField("email")}
+                    onBlur={() => setActiveField("none")}
+                  />
+                </div>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-2)" }}>
@@ -146,7 +137,7 @@ export default function LoginPage() {
                     Forgot Password?
                   </Link>
                 </div>
-                <div style={{ position: "relative" }}>
+                <div className="password-field" style={{ position: "relative" }}>
                   <input
                     type={showPassword ? "text" : "password"}
                     required
@@ -160,13 +151,11 @@ export default function LoginPage() {
                   />
                   <button
                     type="button"
+                    className="password-toggle"
                     onClick={() => setShowPassword(p => !p)}
                     onMouseDown={e => e.preventDefault()}
-                    style={{
-                      position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
-                      color: "var(--text-muted)", display: "flex", alignItems: "center",
-                      background: "none", border: "none", cursor: "pointer", padding: 4,
-                    }}>
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
                     {showPassword ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
                   </button>
                 </div>

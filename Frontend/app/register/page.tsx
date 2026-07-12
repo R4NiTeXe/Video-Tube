@@ -111,7 +111,7 @@ const COUNTRIES = [
 
 const FlagImg = ({ iso, size = 20 }: { iso: string; size?: number }) => (
   <img
-    src={`https://flagcdn.com/w40/${iso}.png`}
+    src={`https://flagcdn.com/w${Math.max(20, size * 2)}/${iso.toLowerCase()}.png`}
     alt=""
     width={size}
     height={Math.round(size * 0.75)}
@@ -547,33 +547,47 @@ export default function RegisterPage() {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.3 }}
                 >
+                  <SocialLoginButtons />
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)", margin: "var(--sp-3) 0" }}>
+                    <div style={{ flex: 1, height: 1, backgroundColor: "var(--border)" }} />
+                    <span className="text-caption" style={{ color: "var(--text-muted)" }}>or register with</span>
+                    <div style={{ flex: 1, height: 1, backgroundColor: "var(--border)" }} />
+                  </div>
+
                   <form onSubmit={handleDetailsSubmit} style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
 
                     {/* Row 1: Full Name + Username */}
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--sp-3)" }}>
                       <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
                         <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Full Name</label>
-                        <input type="text" required placeholder="Your name" className="input"
-                          value={formData.fullName}
-                          onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                          onFocus={() => setActiveField("name")} onBlur={() => setActiveField("none")} />
+                        <div className="input-wrapper">
+                          <input type="text" required placeholder="Your name" className="input"
+                            value={formData.fullName}
+                            onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                            onFocus={() => setActiveField("name")} onBlur={() => setActiveField("none")} />
+                        </div>
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
                         <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Username</label>
-                        <input type="text" required placeholder="Your username" className="input"
-                          value={formData.username}
-                          onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/\s/g, "") })}
-                          onFocus={() => setActiveField("username")} onBlur={() => setActiveField("none")} />
+                        <div className="input-wrapper">
+                          <input type="text" required placeholder="Your username" className="input"
+                            value={formData.username}
+                            onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/\s/g, "") })}
+                            onFocus={() => setActiveField("username")} onBlur={() => setActiveField("none")} />
+                        </div>
                       </div>
                     </div>
 
                     {/* Row 2: Email */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
                       <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Email</label>
-                      <input type="email" required placeholder="Your email" className="input"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        onFocus={() => setActiveField("email")} onBlur={() => setActiveField("none")} />
+                      <div className="input-wrapper">
+                        <input type="email" required placeholder="Your email" className="input"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          onFocus={() => setActiveField("email")} onBlur={() => setActiveField("none")} />
+                      </div>
                     </div>
 
                     {/* Row 3: Mobile */}
@@ -623,18 +637,18 @@ export default function RegisterPage() {
                       </div>
                     </div>
 
-                    {/* Row 4: Password */}
+{/* Row 4: Password */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
                       <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Password</label>
-                      <div style={{ position: "relative" }}>
+                      <div className="password-field" style={{ position: "relative" }}>
                         <input type={showPassword ? "text" : "password"} required placeholder="Password" className="input"
                           value={formData.password}
                           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                           onFocus={() => setActiveField("password")} onBlur={() => setActiveField("none")}
                           style={{ paddingRight: "var(--sp-12)" }} />
-                        <button type="button" onClick={() => setShowPassword((p) => !p)} onMouseDown={(e) => e.preventDefault()}
-                          style={{ position: "absolute", right: "var(--sp-3)", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", display: "flex", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: "var(--sp-1)" }}>
-                          {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                        <button type="button" className="password-toggle" onClick={() => setShowPassword((p) => !p)} onMouseDown={(e) => e.preventDefault()}
+                          aria-label={showPassword ? "Hide password" : "Show password"}>
+{showPassword ? <EyeOffIcon /> : <EyeIcon />}
                         </button>
                       </div>
                       <PasswordStrengthBar password={formData.password} />
@@ -643,7 +657,7 @@ export default function RegisterPage() {
                     {/* Row 5: Confirm Password */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
                       <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Confirm Password</label>
-                      <div style={{ position: "relative" }}>
+                      <div className="password-field" style={{ position: "relative" }}>
                         <input type={showConfirmPassword ? "text" : "password"} required placeholder="Password"
                           className={confirmBorderClass}
                           value={confirmPassword}
@@ -653,8 +667,8 @@ export default function RegisterPage() {
                           onCut={(e) => e.preventDefault()}
                           onFocus={() => setActiveField("confirmPassword")} onBlur={() => setActiveField("none")}
                           style={{ paddingRight: "var(--sp-12)" }} />
-                        <button type="button" onClick={() => setShowConfirmPassword((p) => !p)} onMouseDown={(e) => e.preventDefault()}
-                          style={{ position: "absolute", right: "var(--sp-3)", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", display: "flex", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: "var(--sp-1)" }}>
+                        <button type="button" className="password-toggle" onClick={() => setShowConfirmPassword((p) => !p)} onMouseDown={(e) => e.preventDefault()}
+                          aria-label={showConfirmPassword ? "Hide password" : "Show password"}>
                           {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
                         </button>
                       </div>
@@ -718,14 +732,6 @@ export default function RegisterPage() {
                       Continue to Verification
                     </button>
                   </form>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)", margin: "var(--sp-4) 0" }}>
-                    <div style={{ flex: 1, height: 1, backgroundColor: "var(--border)" }} />
-                    <span className="text-caption" style={{ color: "var(--text-muted)" }}>or continue with</span>
-                    <div style={{ flex: 1, height: 1, backgroundColor: "var(--border)" }} />
-                  </div>
-
-                  <SocialLoginButtons />
 
                   <p style={{ marginTop: "var(--sp-4)", textAlign: "center", fontSize: 13, color: "var(--text-muted)" }}>
                     Already have an account?{" "}

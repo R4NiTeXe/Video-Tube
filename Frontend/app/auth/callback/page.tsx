@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { api } from "@/src/services/api";
 
-export default function AuthCallbackPage() {
+function CallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuthStore();
@@ -14,6 +14,7 @@ export default function AuthCallbackPage() {
     const accessToken = searchParams.get("accessToken");
     const refreshToken = searchParams.get("refreshToken");
     const error = searchParams.get("error");
+    const isNew = searchParams.get("isNew") === "true";
 
     if (error) {
       router.replace("/login?error=" + error);
@@ -21,6 +22,9 @@ export default function AuthCallbackPage() {
     }
 
     if (accessToken && refreshToken) {
+      if (isNew) sessionStorage.setItem("_welcome", "new");
+      else sessionStorage.setItem("_welcome", "back");
+
       const fetchUser = async () => {
         try {
           api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
@@ -43,5 +47,17 @@ export default function AuthCallbackPage() {
     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", backgroundColor: "var(--bg-primary)" }}>
       <p style={{ color: "var(--text-muted)" }}>Completing sign-in...</p>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", backgroundColor: "var(--bg-primary)" }}>
+        <p style={{ color: "var(--text-muted)" }}>Completing sign-in...</p>
+      </div>
+    }>
+      <CallbackContent />
+    </Suspense>
   );
 }
