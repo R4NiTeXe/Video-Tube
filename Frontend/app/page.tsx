@@ -1,147 +1,524 @@
 "use client";
 
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/src/services/api";
-import { useAuthStore } from "@/src/store/useAuthStore";
-import { useKeyboardShortcuts } from "@/src/hooks/useKeyboardShortcuts";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { formatViews, formatDuration } from "@/src/lib/utils";
-import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
-import { PlaySmallIcon, FireIcon, PlusIcon } from "@/src/components/icons";
+import SocialLoginButtons from "@/src/components/SocialLoginButtons";
+import { useAuthStore } from "@/src/store/useAuthStore";
+import { api } from "@/src/services/api";
+import { formatViews, formatDuration, timeAgo } from "@/src/lib/utils";
 
-interface VideoOwner {
-  fullName: string;
-  avatar: string;
-  username?: string;
-}
-
-interface Video {
+interface VideoResult {
   _id: string;
   thumbnail: string;
+  videoFile: string;
   title: string;
-  description?: string;
-  owner?: VideoOwner;
   views: number;
   duration: number;
   createdAt: string;
+  owner?: { fullName: string; avatar: string; username?: string };
 }
 
-const SkeletonHero = () => (
-  <div className="hero" style={{ pointerEvents: "none" }}>
-    <div className="skeleton" style={{ position: "absolute", inset: 0, borderRadius: 0 }} />
-    <div style={{ position: "relative", zIndex: 10, padding: "var(--sp-10) var(--sp-12)", width: "100%" }}>
-      <div className="skeleton" style={{ width: 120, height: 28, borderRadius: 99, marginBottom: 16 }} />
-      <div className="skeleton" style={{ width: "60%", height: 36, borderRadius: 12, marginBottom: 12 }} />
-      <div className="skeleton" style={{ width: "35%", height: 18, borderRadius: 12, marginBottom: 24 }} />
-      <div className="skeleton" style={{ width: 140, height: 44, borderRadius: 12 }} />
-    </div>
-  </div>
-);
+function VideoCard({ video }: { video: VideoResult }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [previewing, setPreviewing] = useState(false);
+  const [muted, setMuted] = useState(true);
+  const [previewReady, setPreviewReady] = useState(false);
+  const [remaining, setRemaining] = useState(0);
+  const [previewProgress, setPreviewProgress] = useState(0);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout>>(null);
+  const timeInterval = useRef<ReturnType<typeof setInterval>>(null);
+  const isTouchDevice = useRef(false);
 
-const SkeletonCard = () => (
-  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-    <div className="skeleton" style={{ width: "100%", paddingTop: "56.25%", borderRadius: 12 }} />
-    <div style={{ display: "flex", gap: 10, padding: "0 2px" }}>
-      <div className="skeleton" style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0 }} />
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
-        <div className="skeleton" style={{ width: "90%", height: 14, borderRadius: 6 }} />
-        <div className="skeleton" style={{ width: "60%", height: 12, borderRadius: 6 }} />
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
+  const startPreview = useCallback(() => {
+    setPreviewing(true);
+    if (videoRef.current) {
+      if (videoRef.current.readyState >= 2) {
+        setPreviewReady(true);
+      }
+      videoRef.current.play().catch(() => {});
+    }
+    timeInterval.current = setInterval(() => {
+      if (videoRef.current) {
+        const left = videoRef.current.duration - videoRef.current.currentTime;
+        setRemaining(left);
+        setPreviewProgress((videoRef.current.currentTime / videoRef.current.duration) * 100);
+      }
+    }, 200);
+  }, []);
+
+  const stopPreview = useCallback(() => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    if (timeInterval.current) clearInterval(timeInterval.current);
+    setPreviewing(false);
+    setRemaining(0);
+    setPreviewProgress(0);
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+    setPreviewReady(false);
+  }, []);
+
+  // Desktop: hover with delay
+  const handleMouseEnter = useCallback(() => {
+    if (isTouchDevice.current) return;
+    hoverTimer.current = setTimeout(startPreview, 500);
+  }, [startPreview]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (isTouchDevice.current) return;
+    stopPreview();
+  }, [stopPreview]);
+
+  // Mobile: tap to toggle preview
+  const handleTap = useCallback((e: React.TouchEvent) => {
+    isTouchDevice.current = true;
+    if (previewing) {
+      stopPreview();
+    } else {
+      startPreview();
+    }
+  }, [previewing, startPreview, stopPreview]);
+
+  // Also handle click for non-touch devices that don't have hover
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    if (isTouchDevice.current) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.muted = muted;
+  }, [muted]);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
+      if (timeInterval.current) clearInterval(timeInterval.current);
+    };
+  }, []);
+
+  return (
+    <Link
+      href={`/videos/${video._id}`}
+      className="video-card-premium"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTap}
+      onClick={handleClick}
+    >
+      <div className="thumb-wrapper">
+        {/* Static thumbnail */}
+        <img
+          src={video.thumbnail}
+          alt={video.title}
+          loading="lazy"
+          style={{ opacity: previewing && previewReady ? 0 : 1, transition: "opacity 0.3s" }}
+        />
+
+        {/* Video preview */}
+        <video
+          ref={videoRef}
+          src={video.videoFile}
+          loop
+          muted={muted}
+          playsInline
+          preload="none"
+          onLoadedData={() => setPreviewReady(true)}
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            opacity: previewing && previewReady ? 1 : 0,
+            transition: "opacity 0.3s",
+            zIndex: 1,
+          }}
+        />
+
+        {/* Hover gradient */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 40%)",
+            opacity: previewing ? 1 : 0,
+            transition: "opacity 0.3s",
+            zIndex: 2,
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Duration badge (hide during preview) */}
+        {!previewing && (
+          <span className="duration-badge">{formatDuration(video.duration)}</span>
+        )}
+
+        {/* Countdown during preview */}
+        {previewing && previewReady && (
+          <span className="duration-badge" style={{ background: "rgba(0,0,0,0.85)", bottom: 8, left: 8, right: "auto", zIndex: 3 }}>
+            {formatTime(remaining)}
+          </span>
+        )}
+
+        {/* Sound toggle (show during preview) */}
+        {previewing && previewReady && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setMuted(!muted);
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            style={{
+              position: "absolute",
+              bottom: 8,
+              right: 8,
+              zIndex: 3,
+              width: 32,
+              height: 32,
+              borderRadius: "var(--radius-full)",
+              background: "rgba(0,0,0,0.7)",
+              border: "none",
+              color: "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              backdropFilter: "blur(4px)",
+              transition: "background 0.2s",
+            }}
+          >
+            {muted ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <line x1="23" y1="9" x2="17" y2="15" />
+                <line x1="17" y1="9" x2="23" y2="15" />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              </svg>
+            )}
+          </button>
+        )}
+
+        {/* Progress line during preview */}
+        {previewing && previewReady && (
+          <div
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!videoRef.current) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              const pct = (e.clientX - rect.left) / rect.width;
+              videoRef.current.currentTime = pct * videoRef.current.duration;
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 6,
+              backgroundColor: "rgba(255,255,255,0.2)",
+              zIndex: 3,
+              cursor: "pointer",
+            }}
+          >
+            <div
+              style={{
+                width: `${previewProgress}%`,
+                height: "100%",
+                backgroundColor: "var(--accent)",
+                transition: "width 0.2s linear",
+                pointerEvents: "none",
+              }}
+            />
+          </div>
+        )}
       </div>
-    </div>
-  </div>
+
+      <div className="card-info">
+        <div style={{ display: "flex", gap: "var(--sp-3)", alignItems: "flex-start" }}>
+          {video.owner?.avatar && (
+            <img
+              src={video.owner.avatar}
+              alt={video.owner.fullName}
+              style={{ width: 36, height: 36, borderRadius: "var(--radius-full)", flexShrink: 0, objectFit: "cover" }}
+            />
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h3 className="card-title">{video.title}</h3>
+            <div className="card-meta">
+              <span className="channel-name">{video.owner?.fullName}</span>
+            </div>
+            <div className="card-meta">
+              <span>{formatViews(video.views)} views</span>
+              <span>&middot;</span>
+              <span>{timeAgo(video.createdAt)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+const PlaySmall = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
 );
 
 export default function Home() {
-  const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
-  const [activeCategory, setActiveCategory] = useState("Latest Videos");
+  const [welcomeMsg, setWelcomeMsg] = useState("");
 
-  useKeyboardShortcuts([
-    { key: "Escape", description: "Close / Go back", action: () => {} },
-    { key: "h", description: "Go home", action: () => router.push("/") },
-    { key: "l", description: "Go to library", action: () => router.push("/library") },
-    { key: "n", description: "Go to notifications", action: () => router.push("/notifications") },
-  ]);
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) router.push("/login");
-  }, [authLoading, isAuthenticated, router]);
-
-  const { data: response, isLoading: videosLoading } = useQuery({
-    queryKey: ["videos"],
+  const { data: videosResp, isLoading: videosLoading } = useQuery({
+    queryKey: ["home-videos"],
     queryFn: async () => {
-      const params = new URLSearchParams({ limit: "50" });
-      const res = await api.get(`/videos?${params.toString()}`);
+      const res = await api.get("/videos?limit=50&sortBy=createdAt&sortType=desc");
       return res.data;
     },
     enabled: isAuthenticated,
   });
 
-  if (authLoading || !isAuthenticated) {
+  const videos: VideoResult[] = videosResp?.data?.docs || [];
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      const msg = sessionStorage.getItem("_welcome");
+      if (msg === "new") {
+        setWelcomeMsg("Welcome! Your account has been created successfully.");
+      } else if (msg === "back") {
+        setWelcomeMsg("Welcome back!");
+      }
+      sessionStorage.removeItem("_welcome");
+      if (msg) {
+        const timer = setTimeout(() => setWelcomeMsg(""), 4000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [authLoading, isAuthenticated]);
+
+  if (authLoading) {
     return (
       <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
-        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}
-          style={{ color: "var(--text-secondary)", fontWeight: 500, display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            style={{ width: 32, height: 32, border: "2px solid var(--border)", borderTopColor: "var(--accent)", borderRadius: "50%" }} />
-          {authLoading ? "Loading session..." : "Redirecting to login..."}
-        </motion.div>
+        Loading...
       </div>
     );
   }
 
-  const videos: Video[] = response?.data?.docs || [];
-  const featuredVideo = videos.length > 0 ? videos[0] : null;
+  if (!isAuthenticated) {
+    return (
+      <div style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "var(--bg-primary)",
+        padding: "2rem",
+        position: "relative",
+        overflow: "hidden",
+      }}>
+        {/* Ambient Orbs */}
+        <motion.div
+          initial={{ scale: 0.6, opacity: 0 }}
+          animate={{ scale: [0.6, 1.2, 0.9, 1.1, 0.95], opacity: [0, 0.08, 0.05, 0.08, 0.06] }}
+          transition={{ duration: 8, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" }}
+          style={{ position: "absolute", width: 600, height: 600, borderRadius: "50%", backgroundColor: "var(--accent)", filter: "blur(120px)", top: "-10%", left: "-10%", pointerEvents: "none" }}
+        />
+        <motion.div
+          initial={{ scale: 0.6, opacity: 0 }}
+          animate={{ scale: [0.6, 1.1, 0.85, 1.05, 0.9], opacity: [0, 0.06, 0.04, 0.06, 0.05] }}
+          transition={{ duration: 10, ease: "easeInOut", repeat: Infinity, repeatType: "mirror", delay: 1 }}
+          style={{ position: "absolute", width: 500, height: 500, borderRadius: "50%", backgroundColor: "#FF6B6B", filter: "blur(100px)", bottom: "-15%", right: "-10%", pointerEvents: "none" }}
+        />
+        <motion.div
+          initial={{ scale: 0.6, opacity: 0 }}
+          animate={{ scale: [0.6, 1.15, 0.8, 1.1, 0.85], opacity: [0, 0.05, 0.03, 0.05, 0.04] }}
+          transition={{ duration: 12, ease: "easeInOut", repeat: Infinity, repeatType: "mirror", delay: 2 }}
+          style={{ position: "absolute", width: 400, height: 400, borderRadius: "50%", backgroundColor: "#E63529", filter: "blur(80px)", top: "40%", left: "60%", pointerEvents: "none" }}
+        />
 
-  return (
-    <>
-      {/* Hero */}
-      {videosLoading ? (
-        <SkeletonHero />
-      ) : featuredVideo ? (
+        {/* Logo Icon */}
+        <motion.div
+          initial={{ scale: 0, rotate: -30, opacity: 0 }}
+          animate={{ scale: 1, rotate: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 160, damping: 12, mass: 1.2 }}
+          style={{
+            width: 56, height: 56, borderRadius: 16,
+            background: "linear-gradient(135deg, #FF3B30 0%, #FF6B6B 100%)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 0 40px rgba(255,59,48,0.25), 0 8px 20px rgba(255,59,48,0.15)",
+            marginBottom: "1.2rem",
+          }}
+        >
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="white">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </motion.div>
+
+        {/* Title */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          style={{ textAlign: "center", marginBottom: "0.4rem" }}
+        >
+          <h1 style={{
+            fontSize: "clamp(1.3rem, 3.5vw, 1.8rem)",
+            fontWeight: 700,
+            color: "var(--text-primary)",
+            letterSpacing: "-0.02em",
+            lineHeight: 1.2,
+          }}>
+            <span style={{ color: "var(--accent)" }}>Video</span>Tube
+          </h1>
+        </motion.div>
+
+        {/* Tagline */}
+        <motion.p
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          style={{
+            color: "var(--text-muted)",
+            fontSize: "clamp(0.78rem, 1.4vw, 0.88rem)",
+            maxWidth: 380,
+            textAlign: "center",
+            lineHeight: 1.5,
+            marginBottom: "1.8rem",
+          }}
+        >
+          Discover, watch, and share videos.
+        </motion.p>
+
+        {/* OAuth + Auth Buttons */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="hero"
+          transition={{ delay: 0.3, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          style={{ width: "100%", maxWidth: 360 }}
         >
-          <div className="hero-bg" style={{ backgroundImage: `url(${featuredVideo.thumbnail})` }} />
-          <div className="hero-gradient" />
-          <div className="hero-content">
-            <div>
-              <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="hero-badge">
-                <FireIcon size={14} /> Featured
-              </motion.div>
-              <motion.h1 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }} className="hero-title">
-                {featuredVideo.title}
-              </motion.h1>
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="hero-meta">
-                <span>{featuredVideo.owner?.fullName}</span>
-                <span className="dot" />
-                <span>{formatViews(featuredVideo.views)} views</span>
-                <span className="dot" />
-                <span>{formatDuration(featuredVideo.duration)}</span>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
-                <Link href={`/videos/${featuredVideo._id}`} className="hero-btn">
-                  <PlaySmallIcon size={14} /> Watch Now
-                </Link>
-              </motion.div>
-            </div>
-          </div>
-        </motion.div>
-      ) : null}
+          <SocialLoginButtons />
 
-      {/* Category Chips */}
-      <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }} className="scroll-hide">
-        {["Latest Videos", "Trending", "Liked Videos"].map((cat) => (
-          <button key={cat} onClick={() => setActiveCategory(cat)} className={`chip ${activeCategory === cat ? "active" : ""}`}>
-            {cat}
-          </button>
-        ))}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "1.2rem 0" }}>
+            <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, var(--border), transparent)" }} />
+            <span style={{ color: "var(--text-muted)", fontSize: 12, fontWeight: 500, letterSpacing: "0.05em", textTransform: "uppercase" }}>or</span>
+            <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, var(--border), transparent)" }} />
+          </div>
+
+          <Link
+            href="/login"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: 46,
+              borderRadius: 12, fontSize: 15, fontWeight: 600, marginBottom: 10,
+              background: "linear-gradient(135deg, var(--accent) 0%, #FF6B6B 100%)",
+              color: "#fff", textDecoration: "none",
+              boxShadow: "0 3px 16px rgba(255,59,48,0.25)",
+              transition: "transform 0.15s ease, box-shadow 0.15s ease",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 5px 22px rgba(255,59,48,0.35)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 3px 16px rgba(255,59,48,0.25)"; }}
+          >
+            Sign in
+          </Link>
+
+          <Link
+            href="/register"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: 46,
+              borderRadius: 12, fontSize: 15, fontWeight: 600,
+              color: "var(--text-primary)", textDecoration: "none",
+              border: "1px solid var(--border)",
+              backgroundColor: "var(--card)",
+              transition: "border-color 0.15s ease, background-color 0.15s ease",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.backgroundColor = "rgba(255,59,48,0.05)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.backgroundColor = "var(--card)"; }}
+          >
+            Create account
+          </Link>
+        </motion.div>
+
+        {/* Footer */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+          style={{
+            position: "absolute", bottom: "2rem",
+            color: "var(--text-muted)", fontSize: 11, letterSpacing: "0.05em",
+          }}
+        >
+          &copy; {new Date().getFullYear()} VideoTube
+        </motion.p>
       </div>
+    );
+  }
+
+  return (
+    <>
+      <AnimatePresence>
+        {welcomeMsg && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: -20, x: "-50%" }}
+            transition={{ duration: 0.3 }}
+            style={{
+              position: "fixed", top: 20, left: "50%", zIndex: 9999,
+              padding: "12px 24px", borderRadius: 12, fontSize: 14, fontWeight: 600,
+              backgroundColor: "var(--accent)", color: "#fff",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.3)", whiteSpace: "nowrap",
+            }}
+          >
+            {welcomeMsg}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {videosLoading ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1.5rem", padding: "2rem" }}>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+              <div className="skeleton" style={{ aspectRatio: "16/9", borderRadius: "var(--radius-md)" }} />
+              <div className="skeleton" style={{ width: "80%", height: 14, borderRadius: 6 }} />
+              <div className="skeleton" style={{ width: "50%", height: 12, borderRadius: 6 }} />
+            </div>
+          ))}
+        </div>
+      ) : videos.length === 0 ? (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", padding: "2rem" }}>
+          <p style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "0.5rem" }}>No videos yet</p>
+          <p style={{ fontSize: "0.88rem", color: "var(--text-muted)" }}>Upload your first video to get started</p>
+        </div>
+      ) : (
+        <div style={{ padding: "1.5rem 2rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.5rem" }}>
+            {videos.map((v, idx) => (
+              <motion.div key={v._id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(idx * 0.03, 0.4) }}>
+                <VideoCard video={v} />
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
     </>
   );
 }
