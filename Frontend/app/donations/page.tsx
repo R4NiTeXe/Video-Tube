@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
-import PageNavDropdown from "@/src/components/PageNavDropdown";
 
 interface Donation {
   _id: string;
@@ -58,14 +57,6 @@ export default function DonationsPage() {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
-      <header className="glass" style={{ position: "sticky", top: 0, zIndex: 50, padding: "0.75rem 2rem", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "none", borderLeft: "none", borderRight: "none", borderRadius: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <PageNavDropdown />
-          <span style={{ color: "var(--border)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
-          <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Donations</span>
-        </div>
-      </header>
-
       <div style={{ width: "100%", padding: "2rem" }}>
         <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "1.5rem" }}>Donations</h1>
 

@@ -137,6 +137,14 @@ export default function SettingsPage() {
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [sessionError, setSessionError] = useState("");
 
+  // OTP Usage
+  const [otpUsage, setOtpUsage] = useState<{ dailyLimit: number; usedToday: number; remaining: number; resetAt: string } | null>(null);
+  const [otpUsageLoading, setOtpUsageLoading] = useState(true);
+
+  const refreshOtpUsage = () => {
+    api.get("/otp/usage").then((res) => setOtpUsage(res.data.data)).catch(() => {});
+  };
+
   // Delete
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState("");
@@ -147,34 +155,6 @@ export default function SettingsPage() {
   const [deleteOtpSent, setDeleteOtpSent] = useState(false);
   const [deleteOtpSending, setDeleteOtpSending] = useState(false);
   const [deleteChannel, setDeleteChannel] = useState<"email" | "whatsapp">("email");
-  const [activeSection, setActiveSection] = useState("profile");
-
-  const settingsSections = [
-    { id: "profile", label: "Profile", icon: UserIcon },
-    { id: "password", label: "Password", icon: KeyIcon },
-    { id: "appearance", label: "Appearance", icon: SunIcon },
-    { id: "notifications", label: "Notifications", icon: BellIcon },
-    { id: "privacy", label: "Privacy", icon: ShieldCheckIcon },
-    { id: "language", label: "Language", icon: GlobeIcon },
-    { id: "content", label: "Content Defaults", icon: VideoIcon },
-    { id: "sessions", label: "Sessions", icon: EyeIcon },
-    { id: "danger", label: "Delete Account", icon: TrashIcon },
-  ];
-
-  const SectionNav = () => (
-    <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-      {settingsSections.map((section) => (
-        <button
-          key={section.id}
-          onClick={() => setActiveSection(section.id)}
-          className={`settings-nav-btn${activeSection === section.id ? " active" : ""}`}
-        >
-          <section.icon size={16} />
-          <span>{section.label}</span>
-        </button>
-      ))}
-    </div>
-  );
 
   const ProfileCard = () => user ? (
     <div className="form-card" style={{ padding: "1.5rem", marginBottom: "1.5rem" }}>
@@ -190,11 +170,6 @@ export default function SettingsPage() {
       </div>
     </div>
   ) : null;
-
-  const getSectionIcon = (id: string) => {
-    const found = settingsSections.find(s => s.id === id);
-    return found ? <found.icon size={18} /> : null;
-  };
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
@@ -213,6 +188,7 @@ export default function SettingsPage() {
           setNotifMentions(prefs.mentions ?? true);
         }
       }).catch(() => {});
+      api.get("/otp/usage").then((res) => setOtpUsage(res.data.data)).catch(() => {}).finally(() => setOtpUsageLoading(false));
     }
   }, [isAuthenticated]);
 
@@ -234,6 +210,7 @@ export default function SettingsPage() {
       await api.post("/users/send-change-password-otp", { oldPassword, channel: changePasswordChannel });
       setOtpSent(true);
       setPasswordSuccess(`OTP sent to your ${changePasswordChannel === "whatsapp" ? "WhatsApp" : "email"}.`);
+      refreshOtpUsage();
     } catch (err: unknown) {
       setPasswordError(getApiErrorMessage(err, "Failed to send OTP."));
     } finally {
@@ -266,6 +243,7 @@ export default function SettingsPage() {
       await api.post("/users/send-forgot-password-change-otp", { channel: forgotChannel });
       setForgotOtpSent(true);
       setPasswordSuccess(`OTP sent to your ${forgotChannel === "whatsapp" ? "WhatsApp" : "email"}.`);
+      refreshOtpUsage();
     } catch (err: unknown) {
       setPasswordError(getApiErrorMessage(err, "Failed to send OTP."));
     } finally {
@@ -303,6 +281,7 @@ export default function SettingsPage() {
     try {
       await api.post("/users/send-delete-account-otp", { password: deletePassword, channel: deleteChannel });
       setDeleteOtpSent(true);
+      refreshOtpUsage();
     } catch (err: unknown) {
       setDeleteError(getApiErrorMessage(err, "Failed to send OTP."));
     } finally {
@@ -404,21 +383,7 @@ export default function SettingsPage() {
 
         <ProfileCard />
 
-        <div style={{ display: "flex", gap: "2rem", alignItems: "flex-start" }}>
-          {/* Settings Sidebar */}
-          <div className="settings-sidebar">
-            <style dangerouslySetInnerHTML={{__html: `
-              .settings-sidebar { width: 200px; flexShrink: 0; position: sticky; top: calc(var(--nav-h) + 2rem); }
-              .settings-nav-btn { display: flex; align-items: center; gap: 0.6rem; width: 100%; padding: 0.55rem 0.75rem; border: none; border-radius: var(--radius-md); background: none; color: var(--text-secondary); font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.15s; text-align: left; }
-              .settings-nav-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
-              .settings-nav-btn.active { background: var(--accent-subtle); color: var(--accent); font-weight: 600; }
-              @media (max-width: 900px) { .settings-sidebar { display: none; } }
-            `}} />
-            <SectionNav />
-          </div>
-
-          {/* Settings Content */}
-          <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
             <style dangerouslySetInnerHTML={{__html: `
               .settings-grid { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
               @media (min-width: 768px) { .settings-grid { grid-template-columns: 1fr 1fr; } }
@@ -956,9 +921,55 @@ export default function SettingsPage() {
             )}
           </div>
 
+          {/* OTP Usage */}
+          <div className="form-card card-full" style={{ padding: "1.5rem" }}>
+            <SectionHeader
+              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
+              title="OTP Usage"
+              description="Track your daily OTP limit and remaining requests"
+            />
+            {otpUsageLoading ? (
+              <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-muted)" }}>Loading OTP usage...</div>
+            ) : otpUsage ? (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem", marginBottom: "1rem" }}>
+                  <div style={{ padding: "1rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", textAlign: "center" }}>
+                    <div style={{ fontSize: "2rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>{otpUsage.dailyLimit}</div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: "0.25rem" }}>Daily Limit</div>
+                  </div>
+                  <div style={{ padding: "1rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", textAlign: "center" }}>
+                    <div style={{ fontSize: "2rem", fontWeight: 800, color: "var(--accent-warm)", lineHeight: 1.2 }}>{otpUsage.usedToday}</div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: "0.25rem" }}>Used Today</div>
+                  </div>
+                  <div style={{ padding: "1rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", textAlign: "center" }}>
+                    <div style={{ fontSize: "2rem", fontWeight: 800, color: "var(--accent)", lineHeight: 1.2 }}>{otpUsage.remaining}</div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: "0.25rem" }}>Remaining</div>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem 1rem", backgroundColor: "var(--accent-subtle)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-focus)" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                  <div style={{ fontSize: "0.82rem", color: "var(--accent)", lineHeight: 1.5 }}>
+                    <strong>Daily OTP Limit:</strong> {otpUsage.dailyLimit} per day across all OTP actions (login, password reset, email verification, etc.). Resets at midnight UTC.
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem 1rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                  <div style={{ fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                    Resets at <strong>{new Date(otpUsage.resetAt).toLocaleString()}</strong> (your local time)
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-muted)" }}>
+                Unable to load OTP usage data
+              </div>
+            )}
+          </div>
+
           </div>{/* end settings-grid */}
-          </div>{/* end content area */}
-        </div>{/* end flex wrapper */}
+        </div>{/* end content area */}
         </motion.div>
       </div>
     );

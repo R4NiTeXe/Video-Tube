@@ -84,37 +84,20 @@ export default function LikedPage() {
     );
   }
 
-  const videos: Video[] = response?.data || [];
+  const rawVideos: any[] = response?.data || [];
+  const dedupById = (arr: any[]) => {
+    const seen = new Set<string>();
+    return arr.filter((v: any) => {
+      const key = v?._id?.toString();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+  const videos: Video[] = dedupById(rawVideos.map((item: any) => item.likedVideo || item).filter(Boolean));
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
-      {/* ── AMBIENT BACKGROUND ── */}
-      <div style={{ position: "fixed", top: "5%", right: "10%", width: "40vw", height: "40vw", background: "var(--accent)", filter: "blur(250px)", opacity: 0.03, borderRadius: "50%", pointerEvents: "none", zIndex: 0 }} />
-
-      {/* ── HEADER ── */}
-      <header className="glass" style={{
-        position: "sticky", top: 0, zIndex: 50,
-        padding: "0.75rem 2rem",
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-        borderTop: "none", borderLeft: "none", borderRight: "none", borderRadius: 0,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <button onClick={() => router.back()} style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--text-secondary)", fontSize: "0.88rem", fontWeight: 500, background: "none", border: "none", cursor: "pointer" }}>
-            <BackIcon /> Back
-          </button>
-          <span style={{ color: "var(--border)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
-          <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Liked Videos</span>
-        </div>
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>
-            <PlayLogo size={14} />
-          </div>
-          <span style={{ fontWeight: 800, fontSize: "1rem" }}>
-            Video<span style={{ color: "var(--accent)" }}>Tube</span>
-          </span>
-        </Link>
-      </header>
-
       <div style={{ width: "100%", padding: "2rem" }}>
         {/* ── PAGE TITLE ── */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} style={{ marginBottom: "2rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>

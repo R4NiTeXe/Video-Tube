@@ -7,7 +7,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import PageNavDropdown from "@/src/components/PageNavDropdown";
 import { formatViews, formatDuration } from "@/src/lib/utils";
 
 interface VideoOwner {
@@ -139,12 +138,30 @@ export default function LibraryPage() {
     );
   }
 
+  const rawHistory: any[] = historyRes?.data || [];
+  const rawLiked: any[] = likedRes?.data || [];
+  const rawWatchLater: any[] = watchLaterRes?.data || [];
+
+  const dedupById = (arr: any[]) => {
+    const seen = new Set<string>();
+    return arr.filter((v: any) => {
+      const key = v?._id?.toString();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+
+  const historyVideos: Video[] = dedupById(rawHistory);
+  const likedVideos: Video[] = dedupById(rawLiked.map((item: any) => item.likedVideo || item).filter(Boolean));
+  const watchLaterVideos: Video[] = dedupById(rawWatchLater);
+
   const videos: Video[] = activeTab === "history"
-    ? historyRes?.data || []
+    ? historyVideos
     : activeTab === "liked"
-    ? likedRes?.data || []
+    ? likedVideos
     : activeTab === "watchLater"
-    ? watchLaterRes?.data || []
+    ? watchLaterVideos
     : [];
   const playlists: Playlist[] = playlistsRes?.data || [];
   const isLoading = activeTab === "history" ? historyLoading : activeTab === "liked" ? likedLoading : activeTab === "watchLater" ? watchLaterLoading : playlistsLoading;
@@ -162,19 +179,6 @@ export default function LibraryPage() {
       <div style={{ position: "fixed", top: "5%", left: "30%", width: "50vw", height: "50vw", background: "var(--accent)", filter: "blur(250px)", opacity: 0.035, borderRadius: "50%", pointerEvents: "none", zIndex: 0 }} />
 
       {/* ── HEADER ── */}
-      <header className="glass" style={{
-        position: "sticky", top: 0, zIndex: 50,
-        padding: "0.75rem 2rem",
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-        borderTop: "none", borderLeft: "none", borderRight: "none", borderRadius: 0,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <PageNavDropdown />
-          <span style={{ color: "var(--border)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
-          <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Library</span>
-        </div>
-      </header>
-
       <div style={{ width: "100%", padding: "2rem" }}>
         {/* ── PAGE TITLE ── */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} style={{ marginBottom: "2rem" }}>

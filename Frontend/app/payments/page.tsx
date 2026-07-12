@@ -1,20 +1,11 @@
 "use client";
 
 import React from "react";
-import PageNavDropdown from "@/src/components/PageNavDropdown";
 import { motion } from "framer-motion";
 
 export default function PaymentsPage() {
   return (
     <main style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
-      <header className="glass" style={{ position: "sticky", top: 0, zIndex: 50, padding: "0.75rem 2rem", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "none", borderLeft: "none", borderRight: "none", borderRadius: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <PageNavDropdown />
-          <span style={{ color: "var(--border-light)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
-          <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Payments</span>
-        </div>
-      </header>
-
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 60px)", padding: "2rem" }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}

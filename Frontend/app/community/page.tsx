@@ -5,7 +5,6 @@ import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import PageNavDropdown from "@/src/components/PageNavDropdown";
 import { timeAgo } from "@/src/lib/utils";
 
 interface PostOwner {
@@ -158,19 +157,6 @@ export default function CommunityPage() {
       <div style={{ position: "fixed", top: "5%", left: "30%", width: "50vw", height: "50vw", background: "var(--accent)", filter: "blur(250px)", opacity: 0.035, borderRadius: "50%", pointerEvents: "none", zIndex: 0 }} />
 
       {/* ── HEADER ── */}
-      <header className="glass" style={{
-        position: "sticky", top: 0, zIndex: 50,
-        padding: "0.75rem 2rem",
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-        borderTop: "none", borderLeft: "none", borderRight: "none", borderRadius: 0,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <PageNavDropdown />
-          <span style={{ color: "var(--border)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
-          <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Community</span>
-        </div>
-      </header>
-
       <div style={{ width: "100%", maxWidth: 680, margin: "0 auto", padding: "2rem 1rem" }}>
         {/* ── PAGE TITLE ── */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} style={{ marginBottom: "2rem" }}>
