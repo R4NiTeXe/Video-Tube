@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import morgan from "morgan";
 import passport from "passport";
+import multer from "multer";
 import logger from "./utils/logger.js";
 import { apiLimiter } from "./middlewares/rateLimiter.middleware.js";
 import { configurePassport } from "./config/passport.js";
@@ -88,46 +89,39 @@ import videoRouter from "./routes/video.routes.js";
 import subscriptionRouter from "./routes/subscription.routes.js";
 import commentRouter from "./routes/comment.routes.js";
 import likeRouter from "./routes/like.routes.js";
-import tweetRouter from "./routes/tweet.routes.js";
 import playlistRouter from "./routes/playlist.routes.js";
 import dashboardRouter from "./routes/dashboard.routes.js";
 import healthcheckRouter from "./routes/healthcheck.routes.js";
 import notificationRouter from "./routes/notification.routes.js";
-import reportRouter from "./routes/report.routes.js";
 import pollRouter from "./routes/poll.routes.js";
 import adminRouter from "./routes/admin.routes.js";
 import captionRouter from "./routes/caption.routes.js";
-import liveStreamRouter from "./routes/liveStream.routes.js";
 import donationRouter from "./routes/donation.routes.js";
-import chatRouter from "./routes/chat.routes.js";
 import communityPostRouter from "./routes/communityPost.routes.js";
-import endScreenRouter from "./routes/endScreen.routes.js";
 import sseRouter from "./routes/sse.routes.js";
 import oauthRouter from "./routes/oauth.routes.js";
 import sessionRouter from "./routes/session.routes.js";
+import otpRouter from "./routes/otp.routes.js";
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/auth", oauthRouter);
 app.use("/api/v1/sessions", sessionRouter);
+app.use("/api/v1/otp", otpRouter);
 app.use("/api/v1/videos", videoRouter);
 app.use("/api/v1/subscriptions", subscriptionRouter);
 app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/likes", likeRouter);
-app.use("/api/v1/tweets", tweetRouter);
 app.use("/api/v1/playlists", playlistRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/healthcheck", healthcheckRouter);
 app.use("/api/v1/notifications", notificationRouter);
-app.use("/api/v1/reports", reportRouter);
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/captions", captionRouter);
-app.use("/api/v1/live", liveStreamRouter);
 app.use("/api/v1/donations", donationRouter);
 app.use("/api/v1/polls", pollRouter);
-app.use("/api/v1/chat", chatRouter);
 app.use("/api/v1/community", communityPostRouter);
-app.use("/api/v1/end-screens", endScreenRouter);
 app.use("/api/v1/sse", sseRouter);
+app.use("/api/v1/otp", otpRouter);
 
 // ── oEmbed endpoint ──
 app.get("/api/v1/oembed", async (req, res) => {
@@ -164,28 +158,31 @@ app.get("/api/v1/oembed", async (req, res) => {
 
 // ── Error handler ──
 app.use((err, req, res, next) => {
-  const statusCode = err.statusCode || 500;
+  let statusCode = err.statusCode || 500;
+  let message = err.message || "Internal Server Error";
+
+  if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+    statusCode = 413;
+    message = "File size must be 20 MB or less";
+  }
 
   // Log server errors
   if (statusCode >= 500) {
     logger.error(`${req.method} ${req.originalUrl}`, {
       statusCode,
-      message: err.message,
+      message,
       stack: process.env.NODE_ENV === "production" ? undefined : err.stack,
     });
   } else {
     logger.warn(`${req.method} ${req.originalUrl} - ${statusCode}`, {
-      message: err.message,
+      message,
     });
   }
 
   return res.status(statusCode).json({
     success: false,
     statusCode,
-    message:
-      statusCode >= 500 && process.env.NODE_ENV === "production"
-        ? "Internal Server Error"
-        : err.message || "Internal Server Error",
+    message: statusCode >= 500 && process.env.NODE_ENV === "production" ? "Internal Server Error" : message,
     errors: err.errors || [],
   });
 });
