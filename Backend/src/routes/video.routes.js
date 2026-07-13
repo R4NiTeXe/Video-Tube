@@ -18,6 +18,7 @@ import {
   bulkPublishVideos,
   getShortsFeed,
   getChannelAbout,
+  getTranscodingStatus,
 } from "../controllers/video.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { upload, validateFileSize } from "../middlewares/multer.middleware.js";
@@ -71,6 +72,7 @@ router
 router.route("/:videoId/tags").patch(updateVideoTags);
 router.route("/:videoId/chapters").patch(updateVideoChapters);
 router.route("/:videoId/related").get(getRelatedVideos);
+router.route("/:videoId/transcoding").get(getTranscodingStatus);
 
 router.route("/toggle/publish/:videoId").patch(togglePublishStatus);
 

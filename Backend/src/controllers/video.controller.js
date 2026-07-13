@@ -5,6 +5,9 @@ import { Video } from "../models/video.model.js";
 import {
   uploadOnCloudinary,
   deleteFromCloudinary,
+  generateHlsManifest,
+  generateVideoQualities,
+  getPublicIdFromCloudinaryUrl,
 } from "../utils/cloudinary.js";
 import { escapeRegex } from "../utils/sanitizer.js";
 import mongoose from "mongoose";
@@ -226,13 +229,35 @@ const publishAVideo = asyncHandler(async (req, res) => {
     category: category?.trim() || "General",
     chapters: parsedChapters,
     scheduledAt: scheduledDate,
-    isPublished: !scheduledDate, // If scheduled, don't publish yet
+    isPublished: !scheduledDate,
+    transcodingStatus: "pending",
   });
 
   const createdVideo = await Video.findById(video._id);
 
   if (!createdVideo) {
     throw new ApiError(500, "Something went wrong while publishing the video");
+  }
+
+  // Trigger HLS transcoding in background
+  const publicId = getPublicIdFromCloudinaryUrl(videoFile.url);
+  if (publicId) {
+    Video.findByIdAndUpdate(video._id, { transcodingStatus: "processing" }).then(() => {
+      Promise.all([
+        generateHlsManifest(publicId),
+        generateVideoQualities(publicId),
+      ]).then(([hlsUrl, qualities]) => {
+        const updateData = { transcodingStatus: "completed" };
+        if (hlsUrl) updateData.hlsUrl = hlsUrl;
+        if (qualities?.length) updateData.qualities = qualities;
+        Video.findByIdAndUpdate(video._id, { $set: updateData }).catch((err) => {
+          console.error("Failed to update video with HLS data:", err);
+        });
+      }).catch((err) => {
+        console.error("HLS generation failed:", err);
+        Video.findByIdAndUpdate(video._id, { transcodingStatus: "failed" }).catch(() => {});
+      });
+    }).catch(() => {});
   }
 
   return res
@@ -317,6 +342,9 @@ const getVideoById = asyncHandler(async (req, res) => {
     },
     {
       $project: {
+        hlsUrl: 1,
+        qualities: 1,
+        transcodingStatus: 1,
         videoFile: 1,
         title: 1,
         description: 1,
@@ -1004,6 +1032,24 @@ const getChannelAbout = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, profiles[0], "Channel about fetched"));
 });
 
+const getTranscodingStatus = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+
+  if (!mongoose.isValidObjectId(videoId)) {
+    throw new ApiError(400, "Invalid video id");
+  }
+
+  const video = await Video.findById(videoId)
+    .select("transcodingStatus hlsUrl qualities")
+    .lean();
+
+  if (!video) throw new ApiError(404, "Video not found");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video, "Transcoding status fetched"));
+});
+
 export {
   getAllVideos,
   publishAVideo,
@@ -1023,4 +1069,5 @@ export {
   bulkPublishVideos,
   getShortsFeed,
   getChannelAbout,
+  getTranscodingStatus,
 };

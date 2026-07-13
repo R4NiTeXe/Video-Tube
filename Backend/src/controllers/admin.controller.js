@@ -6,6 +6,7 @@ import { Comment } from "../models/comment.model.js";
 import { escapeRegex } from "../utils/sanitizer.js";
 import { Like } from "../models/like.model.js";
 import { Playlist } from "../models/playlist.model.js";
+import { Report } from "../models/report.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -213,4 +214,5 @@ export {
   banUser,
   adminDeleteVideo,
   getRecentActivity,
+  getAllReports,
 };

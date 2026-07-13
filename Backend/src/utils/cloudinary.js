@@ -16,9 +16,8 @@ const uploadOnCloudinary = async (localFilePath) => {
       resource_type: "auto",
     });
 
-    fs.unlinkSync(localFilePath); // Delete the local file after successful upload
+    fs.unlinkSync(localFilePath);
 
-    // console.log("File is uploaded on cloudinary", response.url);
     return response;
   } catch (error) {
     logger.error("Error uploading to cloudinary", { error: error.message });
@@ -27,6 +26,63 @@ const uploadOnCloudinary = async (localFilePath) => {
     }
     return null;
   }
+};
+
+const generateHlsManifest = async (publicId) => {
+  try {
+    if (!publicId) return null;
+
+    const result = await cloudinary.api.update(publicId, {
+      resource_type: "video",
+      type: "upload",
+      raw_transformation: "sp_auto",
+    });
+
+    const hlsUrl = cloudinary.url(publicId, {
+      resource_type: "video",
+      format: "m3u8",
+      streaming_profile: "auto",
+      transformation: [{ flags: "streaming_attachment" }],
+    });
+
+    return hlsUrl;
+  } catch (error) {
+    logger.error("Error generating HLS manifest", { error: error.message });
+    return null;
+  }
+};
+
+const generateVideoQualities = async (publicId) => {
+  const resolutions = [
+    { resolution: "144p", width: 256, bitrate: 200 },
+    { resolution: "240p", width: 426, bitrate: 400 },
+    { resolution: "360p", width: 640, bitrate: 800 },
+    { resolution: "480p", width: 854, bitrate: 1200 },
+    { resolution: "720p", width: 1280, bitrate: 2500 },
+    { resolution: "1080p", width: 1920, bitrate: 5000 },
+  ];
+
+  const qualities = [];
+
+  for (const res of resolutions) {
+    try {
+      const url = cloudinary.url(publicId, {
+        resource_type: "video",
+        transformation: [
+          { width: res.width, crop: "scale", quality: "auto" },
+        ],
+      });
+      qualities.push({
+        resolution: res.resolution,
+        url,
+        bitrate: res.bitrate,
+      });
+    } catch (error) {
+      logger.error(`Error generating quality ${res.resolution}`, { error: error.message });
+    }
+  }
+
+  return qualities;
 };
 
 const getPublicIdFromCloudinaryUrl = (cloudinaryUrl) => {
@@ -72,4 +128,4 @@ const deleteFromCloudinary = async (publicIdOrUrl, resourceType = "image") => {
   }
 };
 
-export { uploadOnCloudinary, deleteFromCloudinary };
+export { uploadOnCloudinary, deleteFromCloudinary, generateHlsManifest, generateVideoQualities, getPublicIdFromCloudinaryUrl };

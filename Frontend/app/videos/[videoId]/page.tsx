@@ -7,7 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import VideoPoll from "@/src/components/VideoPoll";
+import Hls from "hls.js";
 
 import {
   CloseIcon,
@@ -767,9 +767,11 @@ export default function VideoPlayerPage() {
   const [videoQuality, setVideoQuality] = useState("auto");
   const [videoSrc, setVideoSrc] = useState("");
   const [buffering, setBuffering] = useState(false);
+  const [availableQualities, setAvailableQualities] = useState<{ height: number; name: string }[]>([]);
   const controlsTimeout = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const hlsRef = useRef<Hls | null>(null);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -968,17 +970,66 @@ export default function VideoPlayerPage() {
     }
   };
 
-  const getQualityUrl = (url: string, quality: string) => {
-    if (quality === "auto" || !url.includes("cloudinary.com")) return url;
-    const widthMap: Record<string, string> = { "1080p": "w_1920", "720p": "w_1280", "480p": "w_854", "360p": "w_640" };
-    const transform = widthMap[quality];
-    if (!transform) return url;
-    return url.replace("/upload/", `/upload/${transform}/`);
-  };
+  useEffect(() => {
+    if (!videoRes?.data || !videoRef.current) return;
+
+    const video = videoRes.data;
+
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+
+    // Use HLS URL if available, otherwise fall back to direct videoFile
+    const sourceUrl = video.hlsUrl || video.videoFile;
+
+    if (video.hlsUrl && Hls.isSupported()) {
+      const hls = new Hls();
+      hlsRef.current = hls;
+      hls.loadSource(video.hlsUrl);
+      hls.attachMedia(videoRef.current);
+
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        const levels = hls.levels.map((l: { height: number }, i: number) => ({
+          height: l.height,
+          name: l.height >= 1080 ? "1080p" : l.height >= 720 ? "720p" : l.height >= 480 ? "480p" : l.height >= 360 ? "360p" : l.height >= 240 ? "240p" : "144p",
+        }));
+        setAvailableQualities(levels);
+        const autoLevel = hls.autoLevelEnabled;
+        setVideoQuality(autoLevel ? "auto" : levels[levels.length - 1]?.name || "auto");
+      });
+
+      hls.on(Hls.Events.LEVEL_SWITCHED, (_event: any, data: { level: number }) => {
+        const level = hls.levels[data.level];
+        if (level) {
+          const name = level.height >= 1080 ? "1080p" : level.height >= 720 ? "720p" : level.height >= 480 ? "480p" : level.height >= 360 ? "360p" : level.height >= 240 ? "240p" : "144p";
+          setVideoQuality(name);
+        }
+      });
+
+      hls.on(Hls.Events.ERROR, (_event: any, data: { type: string; fatal: boolean }) => {
+        if (data.fatal) {
+          hls.destroy();
+          hlsRef.current = null;
+          setVideoSrc(video.videoFile);
+        }
+      });
+    } else {
+      setVideoSrc(video.videoFile);
+    }
+  }, [videoRes?.data]);
 
   useEffect(() => {
-    if (videoRes?.data?.videoFile) setVideoSrc(getQualityUrl(videoRes.data.videoFile, videoQuality));
-  }, [videoRes?.data?.videoFile, videoQuality]);
+    if (!hlsRef.current || videoQuality === "auto") return;
+    const hls = hlsRef.current;
+    const index = hls.levels.findIndex((l: { height: number }) => {
+      const targetHeight = parseInt(videoQuality);
+      return l.height === targetHeight;
+    });
+    if (index >= 0) {
+      hls.currentLevel = index;
+    }
+  }, [videoQuality]);
 
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -1187,7 +1238,7 @@ export default function VideoPlayerPage() {
                           borderRadius: "var(--radius-md)", padding: "0.35rem", backdropFilter: "blur(12px)",
                         }}>
                           <p style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.5)", padding: "0.3rem 0.6rem", fontWeight: 600 }}>Quality</p>
-                          {["auto", "1080p", "720p", "480p", "360p"].map((q) => (
+                          {["auto", ...availableQualities.map((q) => q.name)].map((q) => (
                             <button key={q} onClick={() => { setVideoQuality(q); setShowQualityMenu(false); }}
                               style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", textAlign: "left", padding: "0.4rem 0.6rem", borderRadius: "var(--radius-sm)", fontSize: "0.8rem", color: videoQuality === q ? "#fff" : "rgba(255,255,255,0.7)", background: videoQuality === q ? "rgba(255,255,255,0.1)" : "none", border: "none", cursor: "pointer", fontWeight: videoQuality === q ? 600 : 400, transition: "background 0.1s" }}
                               onMouseEnter={(e) => { if (videoQuality !== q) e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.05)"; }}

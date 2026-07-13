@@ -1,6 +1,14 @@
 import mongoose, { Schema } from "mongoose";
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
+const qualitySchema = new Schema(
+  {
+    resolution: { type: String, required: true },
+    url: { type: String, required: true },
+    bitrate: { type: Number },
+  },
+  { _id: false }
+);
 
 const videoSchema = new Schema(
   {
@@ -72,13 +80,22 @@ const videoSchema = new Schema(
         type:Number,
         default:0,
     },
+    hlsUrl:{
+        type:String,
+        default:"",
+    },
+    qualities:[qualitySchema],
+    transcodingStatus:{
+        type:String,
+        enum:["pending","processing","completed","failed"],
+        default:"pending",
+    },
   },
   {
     timestamps: true,
   }
 );
 
-// adding the plugin for pagination
 videoSchema.plugin(mongooseAggregatePaginate);
 
 export const Video = mongoose.model("Video", videoSchema);
