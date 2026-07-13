@@ -319,7 +319,17 @@ export default function Home() {
     enabled: isAuthenticated,
   });
 
+  const { data: historyResp } = useQuery({
+    queryKey: ["watch-history"],
+    queryFn: async () => {
+      const res = await api.get("/users/history");
+      return res.data;
+    },
+    enabled: isAuthenticated,
+  });
+
   const videos: VideoResult[] = videosResp?.data?.docs || [];
+  const historyVideos: VideoResult[] = (historyResp?.data || []).slice(0, 12);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -533,6 +543,18 @@ export default function Home() {
         </div>
       ) : (
         <div style={{ padding: "1.5rem 2rem" }}>
+          {historyVideos.length > 0 && (
+            <div style={{ marginBottom: "2rem" }}>
+              <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "1rem" }}>Continue Watching</h2>
+              <div style={{ display: "flex", gap: "1rem", overflowX: "auto", paddingBottom: "0.5rem" }}>
+                {historyVideos.map((v) => (
+                  <div key={v._id} style={{ minWidth: 260, maxWidth: 260, flexShrink: 0 }}>
+                    <VideoCard video={v} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.5rem" }}>
             {videos.map((v, idx) => (
               <motion.div key={v._id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(idx * 0.03, 0.4) }}>

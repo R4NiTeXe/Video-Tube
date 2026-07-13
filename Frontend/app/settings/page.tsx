@@ -22,6 +22,7 @@ import {
   PhoneIcon,
   VideoIcon,
   HeartIcon,
+  DownloadIcon,
 } from "@/src/components/icons";
 
 function PasswordInput({ value, onChange, placeholder, minLength = 6, blockPaste = false }: { value: string; onChange: (v: string) => void; placeholder?: string; minLength?: number; blockPaste?: boolean }) {
@@ -114,6 +115,7 @@ export default function SettingsPage() {
   const [notifSubscribers, setNotifSubscribers] = useState(true);
   const [notifMentions, setNotifMentions] = useState(true);
   const [notifSaving, setNotifSaving] = useState(false);
+  const [notifLoaded, setNotifLoaded] = useState(false);
 
   // Privacy
   const [privateSubs, setPrivateSubs] = useState(false);
@@ -140,6 +142,7 @@ export default function SettingsPage() {
   // OTP Usage
   const [otpUsage, setOtpUsage] = useState<{ dailyLimit: number; usedToday: number; remaining: number; resetAt: string } | null>(null);
   const [otpUsageLoading, setOtpUsageLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   const refreshOtpUsage = () => {
     api.get("/otp/usage").then((res) => setOtpUsage(res.data.data)).catch(() => {});
@@ -319,6 +322,25 @@ export default function SettingsPage() {
       // silent
     } finally {
       setNotifSaving(false);
+    }
+  };
+
+  // ── Data Export ──
+  const handleExportData = async () => {
+    setExporting(true);
+    try {
+      const res = await api.get("/users/export");
+      const blob = new Blob([JSON.stringify(res.data.data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `video-tube-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // silent
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -966,6 +988,26 @@ export default function SettingsPage() {
                 Unable to load OTP usage data
               </div>
             )}
+          </div>
+
+          {/* Data Export */}
+          <div className="form-card card-full" style={{ padding: "1.5rem" }}>
+            <SectionHeader
+              icon={<DownloadIcon size={18} />}
+              title="Export Your Data"
+              description="Download all your data including profile, videos, comments, and playlists"
+            />
+            <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", marginBottom: "1rem", lineHeight: 1.5 }}>
+              Get a complete JSON export of your account data. This includes your profile information, all uploaded videos, comments, and playlists.
+            </p>
+            <button onClick={handleExportData} disabled={exporting}
+              style={{
+                padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600,
+                backgroundColor: "var(--elevated)", color: "var(--text-primary)", border: "1px solid var(--border)",
+                cursor: exporting ? "not-allowed" : "pointer", transition: "all 0.2s",
+              }}>
+              {exporting ? "Exporting..." : "Export My Data"}
+            </button>
           </div>
 
           </div>{/* end settings-grid */}

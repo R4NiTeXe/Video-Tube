@@ -105,25 +105,14 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
         timeout: 300000,
         onUploadProgress: (evt) => {
           if (evt.total) {
-            const pct = Math.round((evt.loaded / evt.total) * 60);
-            setProgress(Math.min(pct, 60));
-            if (evt.loaded === evt.total) {
-              setProcessing(true);
-              let tick = 60;
-              progressRef.current = setInterval(() => {
-                tick += Math.random() * 2 + 1;
-                if (tick >= 95) {
-                  tick = 95;
-                  if (progressRef.current) clearInterval(progressRef.current);
-                }
-                setProgress(Math.round(tick));
-              }, 800);
-            }
+            const pct = Math.round((evt.loaded / evt.total) * 100);
+            setProgress(Math.min(pct, 100));
           }
         },
       });
       if (progressRef.current) clearInterval(progressRef.current);
       setProgress(100);
+      setProcessing(true);
       onSuccess();
     } catch (err: unknown) {
       if (progressRef.current) clearInterval(progressRef.current);
