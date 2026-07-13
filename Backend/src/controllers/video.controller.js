@@ -888,8 +888,8 @@ const bulkDeleteVideos = asyncHandler(async (req, res) => {
   }).select("videoFile thumbnail");
 
   for (const video of videos) {
-    if (video.videoFile) await deleteFromCloudinary(video.videoFile);
-    if (video.thumbnail) await deleteFromCloudinary(video.thumbnail);
+    if (video.videoFile) await deleteFromCloudinary(video.videoFile, "video").catch(() => {});
+    if (video.thumbnail) await deleteFromCloudinary(video.thumbnail, "image").catch(() => {});
   }
 
   await Video.deleteMany({ _id: { $in: validIds }, owner: req.user._id });

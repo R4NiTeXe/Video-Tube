@@ -5,23 +5,9 @@ import { useRouter } from "next/navigation";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useThemeStore } from "@/src/store/useThemeStore";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  KeyIcon,
-  SunIcon,
-  MoonIcon,
-  BellIcon,
-  ShieldCheckIcon,
-  GlobeIcon,
-  EyeIcon,
-  EyeOffIcon,
   TrashIcon,
-  UserIcon,
-  MailIcon,
-  PhoneIcon,
-  VideoIcon,
-  HeartIcon,
   DownloadIcon,
 } from "@/src/components/icons";
 
@@ -115,7 +101,6 @@ export default function SettingsPage() {
   const [notifSubscribers, setNotifSubscribers] = useState(true);
   const [notifMentions, setNotifMentions] = useState(true);
   const [notifSaving, setNotifSaving] = useState(false);
-  const [notifLoaded, setNotifLoaded] = useState(false);
 
   // Privacy
   const [privateSubs, setPrivateSubs] = useState(false);

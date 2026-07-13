@@ -6,7 +6,6 @@ import { api, getApiErrorMessage } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import TopNav from "@/src/components/TopNav";
 import { timeAgo, formatDuration } from "@/src/lib/utils";
 import {
   PlusIcon,
@@ -22,8 +21,6 @@ import {
   ImageIcon,
   GlobeIcon,
   TrendingIcon,
-  ClockIcon,
-  DownloadIcon,
 } from "@/src/components/icons";
 
 const CATEGORIES = ["General", "Gaming", "Music", "Education", "Entertainment", "Sports", "News", "Technology", "Science", "Travel", "Food", "Fashion", "Art", "Podcasts"] as const;

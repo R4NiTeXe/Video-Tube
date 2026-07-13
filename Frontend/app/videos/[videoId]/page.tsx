@@ -8,6 +8,7 @@ import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Hls from "hls.js";
+import { formatViews } from "@/src/lib/utils";
 
 import {
   CloseIcon,
@@ -92,12 +93,6 @@ interface RelatedVideo {
 }
 
 // ── Utility Functions ──
-const formatViews = (views: number): string => {
-  if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M`;
-  if (views >= 1_000) return `${(views / 1_000).toFixed(1)}K`;
-  return views.toString();
-};
-
 const formatDuration = (sec: number): string => {
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);

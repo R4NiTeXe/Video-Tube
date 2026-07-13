@@ -121,7 +121,6 @@ app.use("/api/v1/donations", donationRouter);
 app.use("/api/v1/polls", pollRouter);
 app.use("/api/v1/community", communityPostRouter);
 app.use("/api/v1/sse", sseRouter);
-app.use("/api/v1/otp", otpRouter);
 
 // ── oEmbed endpoint ──
 app.get("/api/v1/oembed", async (req, res) => {
