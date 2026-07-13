@@ -15,7 +15,6 @@ import {
   TrashIcon,
   PlusIcon,
   CheckIcon,
-  DownloadIcon,
   ShareIcon,
   SettingsIcon,
 } from "@/src/components/icons";
@@ -1394,7 +1393,7 @@ export default function VideoPlayerPage() {
                 {savedToWatchLater ? "Saved" : "Save"}
               </motion.button>
 
-              {/* More (Download, Report) */}
+              {/* More (Report) */}
               <div style={{ position: "relative" }}>
                 <motion.button
                   whileTap={{ scale: 0.92 }}
@@ -1418,24 +1417,6 @@ export default function VideoPlayerPage() {
                       backgroundColor: "var(--card)", border: "1px solid var(--border)",
                       borderRadius: "var(--radius-md)", boxShadow: "0 8px 24px rgba(0,0,0,0.15)", padding: "0.35rem",
                     }}>
-                      {video?.videoFile && (
-                        <a
-                          href={video.videoFile}
-                          download
-                          target="_blank"
-                          onClick={() => setShowMoreMenu(false)}
-                          style={{
-                            display: "flex", alignItems: "center", gap: "var(--sp-2)",
-                            padding: "0.5rem 0.75rem", borderRadius: "var(--radius-sm)",
-                            fontSize: "0.85rem", color: "var(--text-primary)",
-                            textDecoration: "none", cursor: "pointer", transition: "background 0.1s",
-                          }}
-                          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--elevated)"; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
-                        >
-                          <DownloadIcon size={16} /> Download
-                        </a>
-                      )}
                       <button
                         onClick={() => { setShowMoreMenu(false); setShowReportModal(true); }}
                         style={{
