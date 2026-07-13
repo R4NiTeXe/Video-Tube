@@ -328,8 +328,18 @@ export default function Home() {
     enabled: isAuthenticated,
   });
 
+  const { data: watchLaterResp } = useQuery({
+    queryKey: ["watch-later-home"],
+    queryFn: async () => {
+      const res = await api.get("/users/watch-later");
+      return res.data;
+    },
+    enabled: isAuthenticated,
+  });
+
   const videos: VideoResult[] = videosResp?.data?.docs || [];
   const historyVideos: VideoResult[] = (historyResp?.data || []).slice(0, 12);
+  const watchLaterVideos: VideoResult[] = (watchLaterResp?.data || []).slice(0, 12);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -548,6 +558,18 @@ export default function Home() {
               <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "1rem" }}>Continue Watching</h2>
               <div style={{ display: "flex", gap: "1rem", overflowX: "auto", paddingBottom: "0.5rem" }}>
                 {historyVideos.map((v) => (
+                  <div key={v._id} style={{ minWidth: 260, maxWidth: 260, flexShrink: 0 }}>
+                    <VideoCard video={v} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {watchLaterVideos.length > 0 && (
+            <div style={{ marginBottom: "2rem" }}>
+              <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "1rem" }}>Watch Later</h2>
+              <div style={{ display: "flex", gap: "1rem", overflowX: "auto", paddingBottom: "0.5rem" }}>
+                {watchLaterVideos.map((v) => (
                   <div key={v._id} style={{ minWidth: 260, maxWidth: 260, flexShrink: 0 }}>
                     <VideoCard video={v} />
                   </div>

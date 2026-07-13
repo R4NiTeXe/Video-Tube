@@ -36,6 +36,7 @@ export default function PlaylistsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const [newVisibility, setNewVisibility] = useState<"public" | "private" | "unlisted">("public");
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
@@ -52,7 +53,7 @@ export default function PlaylistsPage() {
 
   const createPlaylist = useMutation({
     mutationFn: async () => {
-      const res = await api.post("/playlists", { name: newName.trim(), description: newDesc.trim() });
+      const res = await api.post("/playlists", { name: newName.trim(), description: newDesc.trim(), visibility: newVisibility });
       return res.data;
     },
     onSuccess: () => {
@@ -60,6 +61,7 @@ export default function PlaylistsPage() {
       setShowCreate(false);
       setNewName("");
       setNewDesc("");
+      setNewVisibility("public");
     },
   });
 
@@ -142,6 +144,24 @@ export default function PlaylistsPage() {
                       rows={2}
                       style={{ resize: "vertical", fontFamily: "inherit" }}
                     />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                    <label style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-secondary)" }}>Privacy</label>
+                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                      {(["public", "unlisted", "private"] as const).map((v) => (
+                        <button key={v} type="button" onClick={() => setNewVisibility(v)}
+                          style={{
+                            flex: 1, padding: "0.45rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600,
+                            backgroundColor: newVisibility === v ? "var(--accent)" : "var(--bg-secondary)",
+                            color: newVisibility === v ? "#fff" : "var(--text-muted)",
+                            border: `1px solid ${newVisibility === v ? "var(--accent)" : "var(--border)"}`,
+                            cursor: "pointer", transition: "all 0.2s", textTransform: "capitalize",
+                          }}
+                        >
+                          {v}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
                     <button className="btn btn-ghost" onClick={() => { setShowCreate(false); setNewName(""); setNewDesc(""); }} style={{ padding: "0.5rem 1.1rem", fontSize: "0.85rem" }}>

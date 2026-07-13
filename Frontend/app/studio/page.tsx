@@ -46,6 +46,8 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
   const [error, setError] = useState("");
   const [videoName, setVideoName] = useState("");
   const [thumbnailName, setThumbnailName] = useState("");
+  const [cancelled, setCancelled] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   const MAX_VIDEO_MB = 20;
   const MAX_THUMBNAIL_MB = 2;
@@ -98,11 +100,17 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
     setUploading(true);
     setProcessing(false);
     setProgress(0);
+    setCancelled(false);
     if (progressRef.current) clearInterval(progressRef.current);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
       await api.post("/videos", formData, {
         headers: { "Content-Type": "multipart/form-data" },
         timeout: 300000,
+        signal: controller.signal,
         onUploadProgress: (evt) => {
           if (evt.total) {
             const pct = Math.round((evt.loaded / evt.total) * 100);
@@ -116,9 +124,23 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
       onSuccess();
     } catch (err: unknown) {
       if (progressRef.current) clearInterval(progressRef.current);
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setCancelled(true);
+        setUploading(false);
+        setProcessing(false);
+        abortRef.current = null;
+        return;
+      }
       setError(getApiErrorMessage(err, "Upload failed. Please try again."));
       setUploading(false);
       setProcessing(false);
+    }
+  };
+
+  const handleCancelUpload = () => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
     }
   };
 
@@ -257,9 +279,24 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
                 <div style={{ width: "100%", height: 6, backgroundColor: "var(--elevated)", borderRadius: "var(--radius-full)", overflow: "hidden" }}>
                   <motion.div initial={{ width: "0%" }} animate={{ width: `${progress}%` }} transition={{ duration: 0.4, ease: "easeOut" }} style={{ height: "100%", background: "var(--text-primary)", borderRadius: "var(--radius-full)" }} />
                 </div>
-                <p className="text-micro" style={{ color: "var(--text-muted)", textAlign: "center", textTransform: "none", letterSpacing: 0 }}>
-                  {progress}%
-                </p>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <p className="text-micro" style={{ color: "var(--text-muted)", textTransform: "none", letterSpacing: 0 }}>
+                    {progress}%
+                  </p>
+                  <button type="button" onClick={handleCancelUpload}
+                    style={{ background: "none", border: "none", color: "var(--error)", fontSize: "0.78rem", cursor: "pointer", textDecoration: "underline", padding: 0 }}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+            {cancelled && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.5rem 0.75rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+                <span>Upload cancelled</span>
+                <button type="button" onClick={() => { setCancelled(false); setError(""); }}
+                  style={{ background: "none", border: "none", color: "var(--accent)", cursor: "pointer", fontSize: "0.8rem", textDecoration: "underline", padding: 0 }}>
+                  Dismiss
+                </button>
               </div>
             )}
 
