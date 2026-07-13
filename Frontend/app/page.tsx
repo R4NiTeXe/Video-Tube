@@ -147,6 +147,29 @@ function VideoCard({ video }: { video: VideoResult }) {
         />
 
         {/* Hover gradient */}
+        {/* Buffering spinner for preview */}
+        {previewing && !previewReady && (
+          <div
+            style={{
+              position: "absolute", inset: 0, zIndex: 4,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              pointerEvents: "none",
+            }}
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+              style={{
+                width: 28, height: 28,
+                border: "2.5px solid rgba(255,255,255,0.2)",
+                borderTopColor: "#fff",
+                borderRadius: "50%",
+              }}
+            />
+          </div>
+        )}
+
+        {/* Hover gradient */}
         <div
           style={{
             position: "absolute",

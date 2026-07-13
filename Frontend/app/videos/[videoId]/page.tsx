@@ -767,6 +767,7 @@ export default function VideoPlayerPage() {
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [videoQuality, setVideoQuality] = useState("auto");
   const [videoSrc, setVideoSrc] = useState("");
+  const [buffering, setBuffering] = useState(false);
   const controlsTimeout = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1067,6 +1068,9 @@ export default function VideoPlayerPage() {
               onTimeUpdate={() => { if (!videoRef.current) return; setCurrentTime(videoRef.current.currentTime); setDuration(videoRef.current.duration || 0); setProgress(videoRef.current.duration ? (videoRef.current.currentTime / videoRef.current.duration) * 100 : 0); }}
               onLoadedMetadata={() => { if (videoRef.current) setDuration(videoRef.current.duration); }}
               onEnded={() => setIsPlaying(false)}
+              onWaiting={() => setBuffering(true)}
+              onCanPlay={() => setBuffering(false)}
+              onPlaying={() => setBuffering(false)}
               style={{ width: "100%", maxHeight: theaterMode ? "85vh" : "70vh", outline: "none", display: "block" }}
             >
               {captions.map((cap, idx) => (
@@ -1080,6 +1084,29 @@ export default function VideoPlayerPage() {
                 />
               ))}
             </video>
+
+            {/* Buffering spinner */}
+            {buffering && (
+              <div
+                style={{
+                  position: "absolute", inset: 0, zIndex: 5,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  backgroundColor: "rgba(0,0,0,0.3)",
+                  pointerEvents: "none",
+                }}
+              >
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                  style={{
+                    width: 48, height: 48,
+                    border: "3px solid rgba(255,255,255,0.2)",
+                    borderTopColor: "#fff",
+                    borderRadius: "50%",
+                  }}
+                />
+              </div>
+            )}
 
             {/* Custom Controls Overlay */}
             {!isFullscreen && (
