@@ -5,7 +5,7 @@ import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Hls from "hls.js";
 import { formatViews } from "@/src/lib/utils";
@@ -84,6 +84,15 @@ interface RelatedVideo {
   owner?: { fullName: string; avatar: string };
   createdAt: string;
 }
+
+type FullscreenDocument = Document & {
+  webkitFullscreenElement?: Element | null;
+  webkitExitFullscreen?: () => Promise<void> | void;
+};
+
+type FullscreenElement = HTMLElement & {
+  webkitRequestFullscreen?: () => Promise<void> | void;
+};
 
 // ── Utility Functions ──
 const formatDuration = (sec: number): string => {
@@ -1000,7 +1009,10 @@ export default function VideoPlayerPage() {
   }, [videoQuality]);
 
   useEffect(() => {
-    const isFullscreen = () => !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+    const isFullscreen = () => {
+      const fullscreenDocument = document as FullscreenDocument;
+      return !!(fullscreenDocument.fullscreenElement || fullscreenDocument.webkitFullscreenElement);
+    };
     const onFsChange = () => setIsFullscreen(isFullscreen());
     document.addEventListener("fullscreenchange", onFsChange);
     document.addEventListener("webkitfullscreenchange", onFsChange);
@@ -1017,27 +1029,12 @@ export default function VideoPlayerPage() {
   }, [videoRes?.data?.isLiked]);
 
   // ── Loading / Auth states ──
-  if (authLoading || !isAuthenticated) {
-    return (
-      <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
-        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}
-          style={{ color: "var(--text-secondary)", fontWeight: 500, display: "flex", flexDirection: "column", alignItems: "center", gap: "var(--sp-4)" }}>
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            style={{ width: 36, height: 36, border: "3px solid var(--border)", borderTopColor: "var(--accent)", borderRadius: "50%" }} />
-          {authLoading ? "Checking session..." : "Redirecting to login..."}
-        </motion.div>
-      </div>
-    );
-  }
-
-  if (videoLoading) return <SkeletonVideoPage />;
-
   const video: Video | undefined = videoRes?.data;
   const comments: Comment[] = commentsRes?.data?.docs || [];
   const relatedVideos: RelatedVideo[] = (relatedRes?.data || []).filter((v: RelatedVideo) => v._id !== videoId);
   const isSubscribed = video?.owner?.isSubscribed ?? false;
 
-  const videoJsonLd = useMemo(() => {
+  const videoJsonLd = (() => {
     if (!video) return undefined;
     return {
       "@context": "https://schema.org",
@@ -1052,7 +1049,22 @@ export default function VideoPlayerPage() {
         name: video.owner?.fullName,
       },
     };
-  }, [video]);
+  })();
+
+  if (authLoading || !isAuthenticated) {
+    return (
+      <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
+        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}
+          style={{ color: "var(--text-secondary)", fontWeight: 500, display: "flex", flexDirection: "column", alignItems: "center", gap: "var(--sp-4)" }}>
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            style={{ width: 36, height: 36, border: "3px solid var(--border)", borderTopColor: "var(--accent)", borderRadius: "50%" }} />
+          {authLoading ? "Checking session..." : "Redirecting to login..."}
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (videoLoading) return <SkeletonVideoPage />;
 
   if (!video) {
     return (
@@ -1296,12 +1308,13 @@ export default function VideoPlayerPage() {
                   <button onClick={() => {
                     const el = containerRef.current;
                     if (!el) return;
-                    if (document.fullscreenElement || (document as any).webkitFullscreenElement) {
+                    const fullscreenDocument = document as FullscreenDocument;
+                    if (fullscreenDocument.fullscreenElement || fullscreenDocument.webkitFullscreenElement) {
                       if (document.exitFullscreen) { void document.exitFullscreen(); }
-                      else { void (document as any).webkitExitFullscreen(); }
+                      else { void fullscreenDocument.webkitExitFullscreen?.(); }
                     } else {
                       if (el.requestFullscreen) { void el.requestFullscreen(); }
-                      else { void (el as any).webkitRequestFullscreen(); }
+                      else { void (el as FullscreenElement).webkitRequestFullscreen?.(); }
                     }
                   }}
                     aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
@@ -1592,8 +1605,8 @@ export default function VideoPlayerPage() {
             >
               <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "var(--sp-3)" }}>Chapters</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                {video.chapters!.map((ch, i) => {
-                  const nextCh = video.chapters![i + 1];
+                {video.chapters.map((ch, i) => {
+                  const nextCh = video.chapters?.[i + 1];
                   const isCurrent = currentTime >= ch.startTime && (!nextCh || currentTime < nextCh.startTime);
                   return (
                     <button

@@ -41,7 +41,22 @@ interface AdminReport {
   createdAt: string;
 }
 
-const statCards = [
+interface AdminVideo {
+  _id: string;
+  title: string;
+  thumbnail?: string;
+  views: number;
+  createdAt: string;
+}
+
+interface AdminActivity {
+  recentUsers?: AdminUser[];
+  recentVideos?: AdminVideo[];
+}
+
+type StatKey = keyof PlatformStats;
+
+const statCards: Array<{ key: StatKey; label: string; color?: string; format?: boolean }> = [
   { key: "totalUsers", label: "Users", color: "var(--accent)" },
   { key: "totalVideos", label: "Videos", color: "var(--success)" },
   { key: "publishedVideos", label: "Published", color: "#3B82F6" },
@@ -54,9 +69,9 @@ const statCards = [
 ];
 
 function formatCount(n: number): string {
-  if (n >= 1e9) return (n / 1e9).toFixed(1) + "B";
-  if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
-  if (n >= 1e3) return (n / 1e3).toFixed(1) + "K";
+  if (n >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
+  if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
   return n.toString();
 }
 
@@ -118,6 +133,7 @@ export default function AdminPage() {
   const stats = statsRes as PlatformStats | undefined;
   const users = usersRes as { docs: AdminUser[]; totalDocs: number } | undefined;
   const reports = reportsRes as { docs: AdminReport[]; totalDocs: number } | undefined;
+  const activity = activityRes as AdminActivity | undefined;
 
   if (authLoading) return <div style={{ display: "flex", justifyContent: "center", padding: "4rem", color: "var(--text-muted)" }}>Loading...</div>;
 
@@ -144,7 +160,7 @@ export default function AdminPage() {
       {tab === "stats" && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: "0.75rem" }}>
           {statCards.map((s) => {
-            const val = stats ? (stats as any)[s.key] : null;
+            const val = stats ? stats[s.key] : null;
             return (
               <div key={s.key} className="form-card" style={{ padding: "1.25rem" }}>
                 <p style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.4rem" }}>{s.label}</p>
@@ -237,7 +253,7 @@ export default function AdminPage() {
           <div>
             <h2 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.75rem" }}>Recent Users</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-              {activityRes?.recentUsers?.map((u: any) => (
+              {activity?.recentUsers?.map((u) => (
                 <div key={u._id} style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.4rem 0.6rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-sm)" }}>
                   <img src={u.avatar} alt={u.fullName} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} />
                   <span style={{ fontSize: "0.82rem", color: "var(--text-primary)", fontWeight: 500 }}>{u.fullName}</span>
@@ -249,7 +265,7 @@ export default function AdminPage() {
           <div>
             <h2 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.75rem" }}>Recent Videos</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-              {activityRes?.recentVideos?.map((v: any) => (
+              {activity?.recentVideos?.map((v) => (
                 <div key={v._id} style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.4rem 0.6rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-sm)" }}>
                   <div style={{ width: 40, height: 24, borderRadius: 4, overflow: "hidden", flexShrink: 0, backgroundColor: "var(--elevated)" }}>
                     {v.thumbnail && <img src={v.thumbnail} alt={v.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}

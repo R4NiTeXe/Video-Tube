@@ -52,6 +52,32 @@ interface Playlist {
   createdAt: string;
 }
 
+interface PollData {
+  _id: string;
+  question: string;
+  options: Array<{
+    _id: string;
+    text: string;
+    voters: string[];
+  }>;
+  isActive: boolean;
+  endsAt?: string;
+  createdAt: string;
+  createdBy?: { _id: string; fullName: string };
+}
+
+interface ChannelPost {
+  _id: string;
+  content: string;
+  image?: string;
+  createdAt: string;
+  owner: { fullName: string; username: string; avatar: string };
+  poll?: PollData;
+  likesCount: number;
+  commentsCount: number;
+  isLiked: boolean;
+}
+
 
 function extractHandle(url: string): string {
   try {
@@ -721,7 +747,7 @@ export default function ChannelPage() {
                       </div>
                     ) : (
                       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                        {postsRes.data.map((post: { _id: string; content: string; image?: string; createdAt: string; owner: { fullName: string; username: string; avatar: string }; poll?: any; likesCount: number; commentsCount: number; isLiked: boolean }, i: number) => (
+                        {postsRes.data.map((post: ChannelPost, i: number) => (
                           <motion.div
                             key={post._id}
                             initial={{ opacity: 0, y: 12 }}
