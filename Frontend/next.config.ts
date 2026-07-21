@@ -14,7 +14,7 @@ const securityHeaders = [
   {
     key: "Content-Security-Policy",
     value:
-      "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' res.cloudinary.com *.cloudinary.com lh3.googleusercontent.com avatars.githubusercontent.com platform-lookaside.fbsbx.com cdn.discordapp.com data: blob:; connect-src 'self' ws: wss:; font-src 'self' data:; frame-ancestors 'none';",
+       `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' res.cloudinary.com *.cloudinary.com lh3.googleusercontent.com avatars.githubusercontent.com platform-lookaside.fbsbx.com cdn.discordapp.com flagcdn.com data: blob:; connect-src 'self' http://localhost:8000 http://127.0.0.1:8000 ws: wss:; font-src 'self' data:; frame-ancestors 'none';`,
   },
 ];
 
