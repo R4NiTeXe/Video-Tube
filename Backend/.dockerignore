@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log
+.DS_Store
+.env
+.env.test
+.env.production
+.git
+.gitignore
+.prettierrc
+.prettierignore
+eslint.config.mjs
+jest.config.js
+tests/
+coverage/
+public/temp/*
+!public/temp/.gitkeep
