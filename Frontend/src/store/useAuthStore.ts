@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 interface User {
   _id: string;
@@ -31,14 +32,23 @@ interface AuthState {
   setLoading: (status: boolean) => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  isAuthenticated: false,
-  isLoading: true, // Initially true while we check auth status on mount
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      isAuthenticated: false,
+      isLoading: true, // Initially true while we check auth status on mount
 
-  login: (user) => set({ user, isAuthenticated: true, isLoading: false }),
-  
-  logout: () => set({ user: null, isAuthenticated: false, isLoading: false }),
-  
-  setLoading: (status) => set({ isLoading: status }),
-}));
+      login: (user) => set({ user, isAuthenticated: true, isLoading: false }),
+      
+      logout: () => set({ user: null, isAuthenticated: false, isLoading: false }),
+      
+      setLoading: (status) => set({ isLoading: status }),
+    }),
+    {
+      name: "auth-storage",
+      storage: createJSONStorage(() => sessionStorage),
+      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }), // Only persist user data, not loading state
+    }
+  )
+);
