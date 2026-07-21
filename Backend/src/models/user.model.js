@@ -222,8 +222,6 @@ userSchema.index({ username: "text", fullName: "text" });
 userSchema.index({ passwordResetToken: 1, passwordResetExpires: 1 });
 userSchema.index({ emailVerificationToken: 1 });
 
-
-// using the pre function to encrypt the password and hash verification tokens
 userSchema.pre("save", async function () {
   if (this.isModified("password")) {
     this.password = await bcrypt.hash(this.password, 10);
@@ -233,7 +231,6 @@ userSchema.pre("save", async function () {
   }
 });
 
-// this method is used to compare the password
 userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
@@ -248,7 +245,7 @@ userSchema.methods.generateAccessToken = function () {
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
-      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "1d",
     }
   );
 };
@@ -260,7 +257,7 @@ userSchema.methods.generateRefreshToken = function () {
     },
     process.env.REFRESH_TOKEN_SECRET,
     {
-      expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY || "10d",
     }
   );
 };

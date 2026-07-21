@@ -68,7 +68,7 @@ import {
   addToWatchLater,
 } from "../controllers/user/profile.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { upload } from "../middlewares/multer.middleware.js";
+import { upload, validateFileSize } from "../middlewares/multer.middleware.js";
 import { authLimiter, searchLimiter } from "../middlewares/rateLimiter.middleware.js";
 import { validateBody, validateParams, validateQuery, validateAll } from "../middlewares/validation.middleware.js";
 import {
@@ -178,13 +178,13 @@ router.route("/change-password").post(verifyJWT, validateBody(userSchemas.change
 router.route("/update-account").patch(verifyJWT, validateBody(userSchemas.updateAccount.body), updateAccountDetails);
 router
   .route("/avatar")
-  .patch(verifyJWT, upload.single("avatar"), updateUserAvatar);
+  .patch(verifyJWT, upload.single("avatar"), validateFileSize, updateUserAvatar);
 router
   .route("/cover-image")
-  .patch(verifyJWT, upload.single("coverImage"), updateUserCoverImage);
+  .patch(verifyJWT, upload.single("coverImage"), validateFileSize, updateUserCoverImage);
 router
   .route("/banner")
-  .patch(verifyJWT, upload.single("banner"), updateUserBanner);
+  .patch(verifyJWT, upload.single("banner"), validateFileSize, updateUserBanner);
 router.route("/c/:username").get(verifyJWT, validateParams(userSchemas.getUserChannelProfile.params), getUserChannelProfile);
 router.route("/history").get(verifyJWT, validateQuery(userSchemas.getWatchHistory.query), getWatchHistory);
 router.route("/history/clear").delete(verifyJWT, clearWatchHistory);

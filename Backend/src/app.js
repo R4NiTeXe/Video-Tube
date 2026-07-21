@@ -258,31 +258,39 @@ app.get("/health/ready", async (req, res) => {
   }
 });
 
-// ── Prometheus metrics ──
-app.get("/metrics", metricsHandler);
+// ── Prometheus metrics (token-protected in production) ──
+app.get("/metrics", (req, res, next) => {
+  const metricsToken = process.env.METRICS_TOKEN;
+  if (metricsToken && process.env.NODE_ENV === "production") {
+    const provided = req.headers["authorization"]?.replace("Bearer ", "") || req.query?.token;
+    if (provided !== metricsToken) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+  }
+  next();
+}, metricsHandler);
 
 // ── Swagger API Documentation (disabled in production) ──
 if (process.env.NODE_ENV !== "production") {
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCss: `
-    .swagger-ui .topbar { display: none; }
-    .swagger-ui .info .title { color: #ef4444; }
-    .swagger-ui .scheme-container { background: #f8fafc; padding: 1rem; border-radius: 0.5rem; }
-  `,
-  customSiteTitle: "VideoTube API Documentation",
-  swaggerOptions: {
-    persistAuthorization: true,
-    displayRequestDuration: true,
-    filter: true,
-    showExtensions: true,
-    showCommonExtensions: true,
-  },
-}));
-
-app.get("/api-docs.json", (req, res) => {
-  res.setHeader("Content-Type", "application/json");
-  res.send(swaggerSpec);
-});
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customCss: `
+      .swagger-ui .topbar { display: none; }
+      .swagger-ui .info .title { color: #ef4444; }
+      .swagger-ui .scheme-container { background: #f8fafc; padding: 1rem; border-radius: 0.5rem; }
+    `,
+    customSiteTitle: "VideoTube API Documentation",
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      filter: true,
+      showExtensions: true,
+      showCommonExtensions: true,
+    },
+  }));
+  app.get("/api-docs.json", (req, res) => {
+    res.setHeader("Content-Type", "application/json");
+    res.send(swaggerSpec);
+  });
 }
 
 // ── Cloudinary webhook (secured by shared secret) ──

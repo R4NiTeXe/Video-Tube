@@ -5,7 +5,7 @@ const DEFAULT_BANNED_WORDS = [
   "hate", "abuse", "harass", "bully", "kill",
   "stupid", "idiot", "moron", "dumb",
   "porn", "xxx", "nude", "sex",
-  "damn", "hell", "crap", "ass",
+  "damn", "hell", "crap",
   "nigger", "faggot", "retard",
 ];
 
@@ -42,10 +42,14 @@ const getBannedWords = () => {
   return DEFAULT_BANNED_WORDS;
 };
 
+// Module level regex caching
+const BANNED_WORDS = getBannedWords();
+const ESCAPED = BANNED_WORDS.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+const BANNED_PATTERN = new RegExp(`\\b(${ESCAPED.join("|")})\\b`, "i");
+
 const TEXT_FIELDS = ["content", "title", "description", "name", "bio", "comment", "text"];
 
 const contentModerator = (req, res, next) => {
-  const bannedWords = getBannedWords();
   const fieldsToCheck = [];
 
   for (const field of TEXT_FIELDS) {
@@ -56,9 +60,7 @@ const contentModerator = (req, res, next) => {
 
   const combinedText = normalizeText(fieldsToCheck.join(" "));
 
-  const escapedWords = bannedWords.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-  const pattern = new RegExp(`\\b(${escapedWords.join("|")})\\b`, "i");
-  if (pattern.test(combinedText)) {
+  if (BANNED_PATTERN.test(combinedText)) {
     throw new ApiError(400, "Content contains inappropriate language");
   }
 
