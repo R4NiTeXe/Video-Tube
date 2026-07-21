@@ -2,13 +2,28 @@ import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 import logger from "./logger.js";
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+const isTest = process.env.NODE_ENV === "test";
+
+const CLOUDINARY_TIMEOUT = 30000;
+
+if (!isTest) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    timeout: CLOUDINARY_TIMEOUT,
+  });
+}
 
 const uploadOnCloudinary = async (localFilePath) => {
+  if (isTest) {
+    return { 
+      secure_url: "http://test.cloudinary.com/test.jpg", 
+      public_id: "test_public_id",
+      url: "http://test.cloudinary.com/test.jpg",
+      duration: 300
+    };
+  }
   try {
     if (!localFilePath) return null;
 
@@ -16,19 +31,20 @@ const uploadOnCloudinary = async (localFilePath) => {
       resource_type: "auto",
     });
 
-    fs.unlinkSync(localFilePath);
+    await fs.promises.unlink(localFilePath);
 
     return response;
   } catch (error) {
     logger.error("Error uploading to cloudinary", { error: error.message });
     if (fs.existsSync(localFilePath)) {
-      fs.unlinkSync(localFilePath);
+      await fs.promises.unlink(localFilePath);
     }
     return null;
   }
 };
 
 const generateHlsManifest = async (publicId) => {
+  if (isTest) return "http://test.cloudinary.com/test.m3u8";
   try {
     if (!publicId) return null;
 
@@ -52,15 +68,17 @@ const generateHlsManifest = async (publicId) => {
   }
 };
 
+const resolutions = [
+  { resolution: "144p", width: 256, bitrate: 200 },
+  { resolution: "240p", width: 426, bitrate: 400 },
+  { resolution: "360p", width: 640, bitrate: 800 },
+  { resolution: "480p", width: 854, bitrate: 1200 },
+  { resolution: "720p", width: 1280, bitrate: 2500 },
+  { resolution: "1080p", width: 1920, bitrate: 5000 },
+];
+
 const generateVideoQualities = async (publicId) => {
-  const resolutions = [
-    { resolution: "144p", width: 256, bitrate: 200 },
-    { resolution: "240p", width: 426, bitrate: 400 },
-    { resolution: "360p", width: 640, bitrate: 800 },
-    { resolution: "480p", width: 854, bitrate: 1200 },
-    { resolution: "720p", width: 1280, bitrate: 2500 },
-    { resolution: "1080p", width: 1920, bitrate: 5000 },
-  ];
+  if (isTest) return [{ resolution: "720p", url: "http://test.cloudinary.com/test.mp4", bitrate: 2500 }];
 
   const qualities = [];
 
@@ -128,4 +146,21 @@ const deleteFromCloudinary = async (publicIdOrUrl, resourceType = "image") => {
   }
 };
 
-export { uploadOnCloudinary, deleteFromCloudinary, generateHlsManifest, generateVideoQualities, getPublicIdFromCloudinaryUrl };
+const checkCloudinaryConnection = async () => {
+  try {
+    const result = await cloudinary.api.ping();
+    return { connected: result.status === "ok", status: result.status };
+  } catch (error) {
+    logger.error("Cloudinary connection check failed", { error: error.message });
+    return { connected: false, status: error.message };
+  }
+};
+
+export {
+  uploadOnCloudinary,
+  deleteFromCloudinary,
+  generateHlsManifest,
+  generateVideoQualities,
+  getPublicIdFromCloudinaryUrl,
+  checkCloudinaryConnection,
+};

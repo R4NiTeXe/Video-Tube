@@ -36,36 +36,19 @@ const getChannelStats = asyncHandler(async (req, res) => {
   const totalViews = videoStats[0]?.totalViews || 0;
   const publishedVideos = videoStats[0]?.publishedVideos || 0;
 
-  const totalLikes = await Like.aggregate([
-    {
-      $lookup: {
-        from: "videos",
-        localField: "video",
-        foreignField: "_id",
-        as: "videoDetails",
-      },
-    },
-    { $unwind: "$videoDetails" },
-    { $match: { "videoDetails.owner": new mongoose.Types.ObjectId(userId) } },
-    { $count: "totalLikes" },
+  // Get user's video IDs once, then count likes/comments with a simple $in query
+  const videoIds = await Video.find({ owner: userId }).distinct("_id");
+  const [totalLikesResult, totalCommentsResult] = await Promise.all([
+    videoIds.length > 0
+      ? Like.countDocuments({ video: { $in: videoIds } })
+      : Promise.resolve(0),
+    videoIds.length > 0
+      ? Comment.countDocuments({ video: { $in: videoIds } })
+      : Promise.resolve(0),
   ]);
 
-  const totalComments = await Comment.aggregate([
-    {
-      $lookup: {
-        from: "videos",
-        localField: "video",
-        foreignField: "_id",
-        as: "videoDetails",
-      },
-    },
-    { $unwind: "$videoDetails" },
-    { $match: { "videoDetails.owner": new mongoose.Types.ObjectId(userId) } },
-    { $count: "totalComments" },
-  ]);
-
-  const totalLikesCount = totalLikes[0]?.totalLikes || 0;
-  const totalCommentsCount = totalComments[0]?.totalComments || 0;
+  const totalLikesCount = totalLikesResult;
+  const totalCommentsCount = totalCommentsResult;
 
   // Average views per video
   const avgViews = totalVideos > 0 ? Math.round(totalViews / totalVideos) : 0;
@@ -89,6 +72,10 @@ const getChannelStats = asyncHandler(async (req, res) => {
 
 const getChannelVideos = asyncHandler(async (req, res) => {
   const userId = req.user._id;
+  let { page = 1, limit = 20 } = req.query;
+  page = Math.max(1, parseInt(page, 10) || 1);
+  limit = Math.min(50, Math.max(1, parseInt(limit, 10) || 20));
+  const skip = (page - 1) * limit;
 
   const videos = await Video.aggregate([
     {
@@ -97,52 +84,67 @@ const getChannelVideos = asyncHandler(async (req, res) => {
       },
     },
     {
-      $lookup: {
-        from: "likes",
-        localField: "_id",
-        foreignField: "video",
-        as: "likes",
+      $facet: {
+        metadata: [{ $count: "total" }],
+        data: [
+          { $skip: skip },
+          { $limit: limit },
+          {
+            $lookup: {
+              from: "likes",
+              let: { videoId: "$_id" },
+              pipeline: [
+                { $match: { $expr: { $eq: ["$video", "$$videoId"] } } },
+                { $count: "count" },
+              ],
+              as: "likes",
+            },
+          },
+          {
+            $lookup: {
+              from: "comments",
+              let: { videoId: "$_id" },
+              pipeline: [
+                { $match: { $expr: { $eq: ["$video", "$$videoId"] } } },
+                { $count: "count" },
+              ],
+              as: "videoComments",
+            },
+          },
+          {
+            $addFields: {
+              likesCount: { $ifNull: [{ $arrayElemAt: ["$likes.count", 0] }, 0] },
+              commentsCount: { $ifNull: [{ $arrayElemAt: ["$videoComments.count", 0] }, 0] },
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              videoFile: 1,
+              thumbnail: 1,
+              title: 1,
+              description: 1,
+              views: 1,
+              duration: 1,
+              isPublished: 1,
+              createdAt: 1,
+              likesCount: 1,
+              commentsCount: 1,
+              tags: 1,
+              category: 1,
+            },
+          },
+          { $sort: { createdAt: -1 } },
+        ],
       },
-    },
-    {
-      $lookup: {
-        from: "comments",
-        localField: "_id",
-        foreignField: "video",
-        as: "videoComments",
-      },
-    },
-    {
-      $addFields: {
-        likesCount: { $size: "$likes" },
-        commentsCount: { $size: "$videoComments" },
-      },
-    },
-    {
-      $project: {
-        _id: 1,
-        videoFile: 1,
-        thumbnail: 1,
-        title: 1,
-        description: 1,
-        views: 1,
-        duration: 1,
-        isPublished: 1,
-        createdAt: 1,
-        likesCount: 1,
-        commentsCount: 1,
-        tags: 1,
-        category: 1,
-      },
-    },
-    {
-      $sort: { createdAt: -1 },
     },
   ]);
 
+  const total = videos[0]?.metadata[0]?.total || 0;
+
   return res
     .status(200)
-    .json(new ApiResponse(200, videos, "Channel videos fetched successfully"));
+    .json(new ApiResponse(200, { docs: videos[0]?.data || [], total, page, limit, totalPages: Math.ceil(total / limit) }, "Channel videos fetched successfully"));
 });
 
 const getSubscriberGrowth = asyncHandler(async (req, res) => {
@@ -192,7 +194,7 @@ const getVideoDetailedStats = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid video id");
   }
 
-  const video = await Video.findById(videoId).select("title views duration createdAt isPublished owner");
+  const video = await Video.findById(videoId).select("title views duration createdAt isPublished owner").lean();
   if (!video) throw new ApiError(404, "Video not found");
   if (video.owner.toString() !== req.user._id.toString()) {
     throw new ApiError(403, "Not authorized");
@@ -217,4 +219,42 @@ const getVideoDetailedStats = asyncHandler(async (req, res) => {
   );
 });
 
-export { getChannelStats, getChannelVideos, getSubscriberGrowth, getVideoDetailedStats };
+const getChannelAnalytics = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const { period = "7d" } = req.query;
+
+  const days = period === "30d" ? 30 : period === "90d" ? 90 : 7;
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+
+  const viewsOverTime = await Video.aggregate([
+    {
+      $match: {
+        owner: new mongoose.Types.ObjectId(userId),
+        createdAt: { $gte: startDate },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+        },
+        views: { $sum: "$views" },
+      },
+    },
+    { $sort: { _id: 1 } },
+    {
+      $project: {
+        _id: 0,
+        date: "$_id",
+        views: 1,
+      },
+    },
+  ]);
+
+  return res.status(200).json(
+    new ApiResponse(200, { viewsOverTime }, "Channel analytics fetched")
+  );
+});
+
+export { getChannelStats, getChannelVideos, getSubscriberGrowth, getVideoDetailedStats, getChannelAnalytics };

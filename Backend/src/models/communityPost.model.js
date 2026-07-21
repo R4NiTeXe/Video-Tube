@@ -18,6 +18,10 @@ const communityPostSchema = new Schema(
       ref: "User",
       required: true,
     },
+    poll: {
+      type: Schema.Types.ObjectId,
+      ref: "Poll",
+    },
     likesCount: {
       type: Number,
       default: 0,

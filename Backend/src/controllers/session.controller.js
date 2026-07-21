@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Session } from "../models/session.model.js";
 import jwt from "jsonwebtoken";
+import logger from "../utils/logger.js";
 
 function parseUserAgent(ua) {
   if (!ua) return { deviceName: "Unknown Device", browser: "", os: "" };
@@ -37,17 +38,27 @@ function parseUserAgent(ua) {
   return { deviceName: device, browser, os };
 }
 
-function getClientIp(req) {
-  const forwarded = req.headers["x-forwarded-for"];
-  if (forwarded) return forwarded.split(",")[0].trim();
-  return req.headers["x-real-ip"] || req.socket?.remoteAddress || "Unknown";
-}
-
 export const createSession = async (userId, refreshToken, req) => {
   try {
     const ua = req?.headers?.["user-agent"] || "";
-    const ip = getClientIp(req);
+    const ip = req?.ip || req?.socket?.remoteAddress || "Unknown";
     const { deviceName } = parseUserAgent(ua);
+
+    let location = "Unknown Location";
+    if (ip && ip !== "::1" && ip !== "127.0.0.1" && ip !== "Unknown") {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 2000);
+        const resp = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,country`, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (resp.ok) {
+          const geo = await resp.json();
+          if (geo.city) location = [geo.city, geo.regionName, geo.country].filter(Boolean).join(", ");
+        }
+      } catch {
+        // GeoIP lookup failed, keep "Unknown Location"
+      }
+    }
 
     await Session.create({
       user: userId,
@@ -55,12 +66,12 @@ export const createSession = async (userId, refreshToken, req) => {
       userAgent: ua,
       ipAddress: ip,
       deviceName,
-      location: "Unknown Location",
+      location,
       lastActiveAt: new Date(),
       isActive: true,
     });
   } catch (error) {
-    console.error("Failed to create session:", error);
+    logger.error("Failed to create session:", { error: error.message });
   }
 };
 
@@ -71,7 +82,7 @@ export const updateSessionActivity = async (refreshToken) => {
       { lastActiveAt: new Date() }
     );
   } catch (error) {
-    console.error("Failed to update session activity:", error);
+    logger.error("Failed to update session activity:", { error: error.message });
   }
 };
 
@@ -82,7 +93,7 @@ export const deactivateSession = async (refreshToken) => {
       { isActive: false }
     );
   } catch (error) {
-    console.error("Failed to deactivate session:", error);
+    logger.error("Failed to deactivate session:", { error: error.message });
   }
 };
 
@@ -95,8 +106,8 @@ export const getActiveSessions = asyncHandler(async (req, res) => {
     if (incomingRefreshToken) {
       decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
     }
-  } catch {
-    // Token invalid or missing, skip current session detection
+  } catch (err) {
+    logger.warn("Failed to decode refresh token", { error: err.message });
   }
 
   const sessions = await Session.find({
@@ -104,12 +115,12 @@ export const getActiveSessions = asyncHandler(async (req, res) => {
     isActive: true,
   })
     .sort({ lastActiveAt: -1 })
-    .select("-refreshToken -userAgent -__v")
+    .select("-userAgent -__v")
     .lean();
 
-  const enriched = sessions.map((s) => ({
-    ...s,
-    isCurrent: decodedToken ? s.refreshToken === req.cookies?.refreshToken : false,
+  const enriched = sessions.map(({ refreshToken, ...rest }) => ({
+    ...rest,
+    isCurrent: decodedToken ? refreshToken === req.cookies?.refreshToken : false,
   }));
 
   return res

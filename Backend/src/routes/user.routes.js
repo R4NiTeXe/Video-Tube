@@ -1,68 +1,86 @@
 import { Router } from "express";
 import {
-  changeCurrentPassword,
-  getCurrentUser,
-  getUserChannelProfile,
-  getWatchHistory,
+  registerUser,
   loginUser,
   logoutUser,
   refreshAccessToken,
-  registerUser,
-  updateAccountDetails,
-  updateUserAvatar,
-  updateUserCoverImage,
-  deleteCurrentUser,
-  updateUserProfile,
-  getUserProfile,
-  searchUsers,
+  getCurrentUser,
+  changeCurrentPassword,
   forgotPassword,
   resetPassword,
-  blockUser,
-  muteUser,
-  addToWatchLater,
-  getWatchLater,
-  addSearchHistory,
-  getSearchHistory,
-  clearSearchHistory,
-  clearWatchHistory,
-  updateNotificationPrefs,
-  getNotificationPrefs,
-  updatePrivacySettings,
-  exportUserData,
-  updateUserBanner,
+  socialLogin,
+} from "../controllers/auth/auth.controller.js";
+
+import {
   forgotPasswordOTP,
   verifyResetOTP,
   resetPasswordWithOTP,
-  sendChangePasswordOTP,
-  verifyAndChangePassword,
-  socialLogin,
-  linkSocialAccount,
-  sendDeleteAccountOTP,
-  verifyAndDeleteAccount,
-  sendForgotPasswordChangeOTP,
-  verifyAndResetPasswordViaOTP,
-  // New unified auth flows
+  skipAndLogin,
+} from "../controllers/user.controller.js";
+
+import {
+  sendOtp,
+  verifyOtp,
+  resendOtp,
+  getOtpUsage,
+} from "../controllers/auth/otp.controller.js";
+
+import {
   sendRegistrationOTP,
   verifyRegistrationOTP,
   registerUnified,
   sendLoginOTP,
   verifyLoginOTP,
-  sendForgotPasswordOTP,
-  verifyForgotPasswordOTP,
-  resetPasswordWithResetToken,
-  skipAndLogin,
-  // Mobile registration
-  sendMobileRegistrationOTP,
-  verifyMobileRegistrationOTP,
-  registerWithMobileOTP,
-  // Keep old exports for backward compatibility
-  sendEmailRegistrationOTP,
-  verifyEmailRegistrationOTP,
-  registerWithEmailOTP,
-} from "../controllers/user.controller.js";
+} from "../controllers/auth/unifiedAuth.controller.js";
+
+import {
+  sendChangePasswordOTP,
+  verifyAndChangePassword,
+  sendDeleteAccountOTP,
+  verifyAndDeleteAccount,
+  sendForgotPasswordChangeOTP,
+  verifyAndResetPasswordViaOTP,
+  getNotificationPrefs,
+  updateNotificationPrefs,
+  updatePrivacySettings,
+  addSearchHistory,
+  getSearchHistory,
+  clearSearchHistory,
+  clearWatchHistory,
+  getWatchLater,
+} from "../controllers/user/settings.controller.js";
+
+import {
+  updateAccountDetails,
+  updateUserAvatar,
+  updateUserCoverImage,
+  updateUserBanner,
+  getUserChannelProfile,
+  getWatchHistory,
+  deleteCurrentUser,
+  updateUserProfile,
+  getUserProfile,
+  searchUsers,
+  blockUser,
+  muteUser,
+  addToWatchLater,
+} from "../controllers/user/profile.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import { authLimiter } from "../middlewares/rateLimiter.middleware.js";
+import { authLimiter, searchLimiter } from "../middlewares/rateLimiter.middleware.js";
+import { validateBody, validateParams, validateQuery, validateAll } from "../middlewares/validation.middleware.js";
+import {
+  userSchemas,
+  otpSchemas,
+  settingsSchemas,
+} from "../validators/index.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { User } from "../models/user.model.js";
+import { verifyOTP } from "../utils/otp.js";
+import { generateAccessAndRefreshToken, getCookieOptions } from "../controllers/user.controller.js";
+import { createSession } from "../controllers/session.controller.js";
 
 const router = Router();
 
@@ -79,73 +97,84 @@ router.route("/register").post(
       maxCount: 1,
     },
   ]),
+  validateBody(userSchemas.register.body),
   registerUser
 );
-router.route("/login").post(authLimiter, loginUser);
-router.route("/refresh-token").post(authLimiter, refreshAccessToken);
-router.route("/forgot-password").post(authLimiter, forgotPassword);
-router.route("/reset-password").post(authLimiter, resetPassword);
-router.route("/forgot-password-otp").post(authLimiter, forgotPasswordOTP);
-router.route("/verify-reset-otp").post(authLimiter, verifyResetOTP);
-router.route("/reset-password-otp").post(authLimiter, resetPasswordWithOTP);
-router.route("/social-login").post(authLimiter, socialLogin);
+router.route("/login").post(authLimiter, validateBody(userSchemas.login.body), loginUser);
+router.route("/refresh-token").post(authLimiter, validateBody(userSchemas.refreshToken.body), refreshAccessToken);
+router.route("/forgot-password").post(authLimiter, validateBody(userSchemas.forgotPassword.body), forgotPassword);
+router.route("/reset-password").post(authLimiter, validateBody(userSchemas.resetPassword.body), resetPassword);
+router.route("/social-login").post(authLimiter, validateBody(userSchemas.socialLogin.body), socialLogin);
 
-// Email registration OTP routes (backward compatibility)
-router.route("/email/send-registration-otp").post(authLimiter, sendEmailRegistrationOTP);
-router.route("/email/verify-registration-otp").post(authLimiter, verifyEmailRegistrationOTP);
-router.route("/email/register").post(authLimiter, registerWithEmailOTP);
+// ── Forgot Password OTP Flow ──
+router.route("/send-forgot-otp").post(authLimiter, validateBody(userSchemas.sendForgotPasswordOTP.body), forgotPasswordOTP);
+router.route("/verify-forgot-otp").post(authLimiter, validateBody(userSchemas.verifyResetOTP.body), verifyResetOTP);
+router.route("/reset-password-token").post(authLimiter, validateBody(userSchemas.resetPasswordWithOTP.body), resetPasswordWithOTP);
+router.route("/skip-and-login").post(authLimiter, validateBody(userSchemas.skipAndLogin.body), skipAndLogin);
+
+// ── OTP Auth (Legacy) ──
+router.route("/otp/send").post(authLimiter, validateBody(otpSchemas.sendOtp.body), sendOtp);
+router.route("/otp/verify").post(authLimiter, validateBody(otpSchemas.verifyOtp.body), verifyOtp);
+router.route("/otp/resend").post(authLimiter, validateBody(otpSchemas.resendOtp.body), resendOtp);
+router.route("/otp/usage").get(verifyJWT, validateQuery(otpSchemas.getOtpUsage.query), getOtpUsage);
 
 // ── Unified Registration Flow ──
-// Step 1: Send OTPs to both email and mobile
-router.route("/send-registration-otp").post(authLimiter, sendRegistrationOTP);
-// Step 2: Verify OTP for a specific channel (email or mobile)
-router.route("/verify-registration-otp").post(authLimiter, verifyRegistrationOTP);
-// Step 3: Complete registration (requires at least ONE verified)
+router.route("/send-registration-otp").post(authLimiter, validateBody(userSchemas.sendRegistrationOTP.body), sendRegistrationOTP);
+router.route("/verify-registration-otp").post(authLimiter, validateBody(userSchemas.verifyRegistrationOTP.body), verifyRegistrationOTP);
 router.route("/register-unified").post(
   authLimiter,
   upload.fields([
     { name: "avatar", maxCount: 1 },
     { name: "coverImage", maxCount: 1 },
   ]),
+  validateBody(userSchemas.registerUnified.body),
   registerUnified
 );
 
-// ── Mobile Registration Flow ──
-// Step 1: Send mobile OTP
-router.route("/mobile/send-registration-otp").post(authLimiter, sendMobileRegistrationOTP);
-// Step 2: Verify mobile OTP
-router.route("/mobile/verify-registration-otp").post(authLimiter, verifyMobileRegistrationOTP);
-// Step 3: Complete mobile registration
+// ── OTP Login (Passwordless) ──
+router.route("/send-login-otp").post(authLimiter, validateBody(userSchemas.sendLoginOTP.body), sendLoginOTP);
+router.route("/verify-login-otp").post(authLimiter, validateBody(userSchemas.verifyLoginOTP.body), verifyLoginOTP);
+
+// ── Mobile Route Aliases ──
+router.route("/mobile/send-login-otp").post(authLimiter, validateBody(userSchemas.mobileSendLoginOTP.body), (req, _, next) => { req.body.identifier = req.body.mobile; next(); }, sendLoginOTP);
+router.route("/mobile/login").post(authLimiter, validateBody(userSchemas.mobileVerifyLoginOTP.body), (req, _, next) => { req.body.identifier = req.body.mobile; next(); }, verifyLoginOTP);
+router.route("/mobile/send-registration-otp").post(authLimiter, validateBody(userSchemas.mobileSendRegistrationOTP.body), (req, _, next) => { req.body.identifier = req.body.mobile; next(); }, sendRegistrationOTP);
+router.route("/mobile/verify-registration-otp").post(authLimiter, validateBody(userSchemas.mobileVerifyRegistrationOTP.body), (req, _, next) => { req.body.identifier = req.body.mobile; next(); }, verifyRegistrationOTP);
 router.route("/mobile/register").post(
   authLimiter,
-  upload.fields([
-    { name: "avatar", maxCount: 1 },
-    { name: "coverImage", maxCount: 1 },
-  ]),
-  registerWithMobileOTP
+  validateBody(userSchemas.mobileRegister.body),
+  asyncHandler(async (req, res) => {
+    const { mobile, otp: otpValue, fullName, username, password } = req.body;
+    const normalizedMobile = mobile.trim();
+    const result = await verifyOTP(normalizedMobile, otpValue, "login");
+    if (!result.valid) {
+      throw new ApiError(400, result.message);
+    }
+    const existing = await User.findOne({ $or: [{ mobile: normalizedMobile }, { username: username.toLowerCase() }] });
+    if (existing) {
+      throw new ApiError(409, existing.mobile === normalizedMobile ? "Mobile already registered" : "Username already taken");
+    }
+    const user = await User.create({
+      username: username.toLowerCase(),
+      fullName: fullName.trim(),
+      mobile: normalizedMobile,
+      password,
+      isMobileVerified: true,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName.trim())}&background=6366f1&color=fff`,
+    });
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken").lean();
+    const options = getCookieOptions();
+    await createSession(user._id, refreshToken, req);
+    return res.status(201).cookie("accessToken", accessToken, options).cookie("refreshToken", refreshToken, options).json(new ApiResponse(201, { user: loggedInUser }, "User registered successfully"));
+  })
 );
-
-// ── OTP Login (Passwordless) ──
-// Step 1: Send login OTP (email or mobile)
-router.route("/send-login-otp").post(authLimiter, sendLoginOTP);
-// Step 2: Verify login OTP and get tokens
-router.route("/verify-login-otp").post(authLimiter, verifyLoginOTP);
-
-// ── Forgot Password with Channel Selection ──
-// Step 1: Send forgot password OTP (user chooses email or WhatsApp)
-router.route("/send-forgot-otp").post(authLimiter, sendForgotPasswordOTP);
-// Step 2: Verify forgot password OTP
-router.route("/verify-forgot-otp").post(authLimiter, verifyForgotPasswordOTP);
-// Step 3a: Reset password with reset token
-router.route("/reset-password-token").post(authLimiter, resetPasswordWithResetToken);
-// Step 3b: Skip password reset and just login
-router.route("/skip-and-login").post(authLimiter, skipAndLogin);
 
 // secured routes
 router.route("/logout").post(verifyJWT, logoutUser);
 router.route("/current-user").get(verifyJWT, getCurrentUser);
-router.route("/change-password").post(verifyJWT, changeCurrentPassword);
-router.route("/update-account").patch(verifyJWT, updateAccountDetails);
+router.route("/change-password").post(verifyJWT, validateBody(userSchemas.changePassword.body), changeCurrentPassword);
+router.route("/update-account").patch(verifyJWT, validateBody(userSchemas.updateAccount.body), updateAccountDetails);
 router
   .route("/avatar")
   .patch(verifyJWT, upload.single("avatar"), updateUserAvatar);
@@ -155,30 +184,41 @@ router
 router
   .route("/banner")
   .patch(verifyJWT, upload.single("banner"), updateUserBanner);
-router.route("/c/:username").get(verifyJWT, getUserChannelProfile);
-router.route("/history").get(verifyJWT, getWatchHistory);
+router.route("/c/:username").get(verifyJWT, validateParams(userSchemas.getUserChannelProfile.params), getUserChannelProfile);
+router.route("/history").get(verifyJWT, validateQuery(userSchemas.getWatchHistory.query), getWatchHistory);
 router.route("/history/clear").delete(verifyJWT, clearWatchHistory);
-router.route("/search").get(verifyJWT, searchUsers);
+router.route("/search").get(verifyJWT, searchLimiter, validateQuery(userSchemas.searchUsers.query), searchUsers);
 router.route("/search/history").get(verifyJWT, getSearchHistory);
-router.route("/search/history").post(verifyJWT, addSearchHistory);
+router.route("/search/history").post(verifyJWT, validateBody(userSchemas.addSearchHistory.body), addSearchHistory);
 router.route("/search/history").delete(verifyJWT, clearSearchHistory);
-router.route("/profile/:username").get(verifyJWT, getUserProfile);
-router.route("/profile").patch(verifyJWT, updateUserProfile);
-router.route("/watch-later/:videoId").post(verifyJWT, addToWatchLater);
+router.route("/profile/:username").get(verifyJWT, validateParams(userSchemas.getUserProfile.params), getUserProfile);
+router.route("/profile").patch(verifyJWT, validateBody(userSchemas.updateProfile.body), updateUserProfile);
+router.route("/watch-later/:videoId").post(verifyJWT, validateParams(userSchemas.addToWatchLater.params), addToWatchLater);
 router.route("/watch-later").get(verifyJWT, getWatchLater);
-router.route("/block/:userId").post(verifyJWT, blockUser);
-router.route("/mute/:userId").post(verifyJWT, muteUser);
+router.route("/block/:userId").post(verifyJWT, validateParams(userSchemas.blockUser.params), blockUser);
+router.route("/mute/:userId").post(verifyJWT, validateParams(userSchemas.muteUser.params), muteUser);
 router.route("/notification-prefs").get(verifyJWT, getNotificationPrefs);
-router.route("/notification-prefs").patch(verifyJWT, updateNotificationPrefs);
-router.route("/privacy").patch(verifyJWT, updatePrivacySettings);
-router.route("/export-data").get(verifyJWT, exportUserData);
-router.route("/send-change-password-otp").post(verifyJWT, sendChangePasswordOTP);
-router.route("/verify-change-password").post(verifyJWT, verifyAndChangePassword);
-router.route("/link-social").post(verifyJWT, linkSocialAccount);
-router.route("/send-delete-account-otp").post(verifyJWT, sendDeleteAccountOTP);
-router.route("/verify-and-delete-account").post(verifyJWT, verifyAndDeleteAccount);
-router.route("/send-forgot-password-change-otp").post(verifyJWT, sendForgotPasswordChangeOTP);
-router.route("/verify-and-reset-password-via-otp").post(verifyJWT, verifyAndResetPasswordViaOTP);
+router.route("/notification-prefs").patch(verifyJWT, validateBody(settingsSchemas.updateNotificationPrefs.body), updateNotificationPrefs);
+router.route("/privacy").patch(verifyJWT, validateBody(userSchemas.updatePrivacy.body), updatePrivacySettings);
+router.route("/language").patch(verifyJWT, validateBody(userSchemas.updateLanguage.body), asyncHandler(async (req, res) => {
+  const { language } = req.body;
+  const user = await User.findByIdAndUpdate(req.user._id, { $set: { language } }, { new: true }).select("language").lean();
+  res.status(200).json(new ApiResponse(200, user, "Language updated"));
+}));
+router.route("/content-defaults").patch(verifyJWT, validateBody(userSchemas.updateContentDefaults.body), asyncHandler(async (req, res) => {
+  const { defaultVisibility, defaultCategory } = req.body;
+  const update = {};
+  if (defaultVisibility) update.defaultVisibility = defaultVisibility;
+  if (defaultCategory) update.defaultCategory = defaultCategory;
+  const user = await User.findByIdAndUpdate(req.user._id, { $set: update }, { new: true }).select("defaultVisibility defaultCategory").lean();
+  res.status(200).json(new ApiResponse(200, user, "Content defaults updated"));
+}));
+router.route("/send-change-password-otp").post(verifyJWT, validateBody(userSchemas.sendChangePasswordOTP.body), sendChangePasswordOTP);
+router.route("/verify-change-password").post(verifyJWT, validateBody(userSchemas.verifyAndChangePassword.body), verifyAndChangePassword);
+router.route("/send-delete-account-otp").post(verifyJWT, validateBody(userSchemas.sendDeleteAccountOTP.body), sendDeleteAccountOTP);
+router.route("/verify-and-delete-account").post(verifyJWT, validateBody(userSchemas.verifyAndDeleteAccount.body), verifyAndDeleteAccount);
+router.route("/send-forgot-password-change-otp").post(verifyJWT, validateBody(userSchemas.sendForgotPasswordChangeOTP.body), sendForgotPasswordChangeOTP);
+router.route("/verify-and-reset-password-via-otp").post(verifyJWT, validateBody(userSchemas.verifyAndResetPasswordViaOTP.body), verifyAndResetPasswordViaOTP);
 router.route("/").delete(verifyJWT, deleteCurrentUser);
 
 export default router;

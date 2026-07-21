@@ -14,7 +14,7 @@ const reportSchema = new Schema(
     },
     target: {
       type: Schema.Types.ObjectId,
-      refPath: "targetType",
+      ref: function () { return { video: "Video", comment: "Comment", user: "User" }[this.targetType]; },
       required: true,
     },
     reason: {
@@ -44,5 +44,6 @@ const reportSchema = new Schema(
 reportSchema.index({ status: 1, createdAt: -1 });
 reportSchema.index({ reporter: 1 });
 reportSchema.index({ targetType: 1, target: 1 });
+reportSchema.index({ targetType: 1, status: 1, createdAt: -1 });
 
 export const Report = mongoose.model("Report", reportSchema);

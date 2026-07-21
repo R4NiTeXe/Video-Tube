@@ -5,7 +5,10 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 const getNotifications = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 20 } = req.query;
+  let { page = 1, limit = 20 } = req.query;
+  page = Math.max(1, parseInt(page, 10) || 1);
+  limit = Math.min(50, Math.max(1, parseInt(limit, 10) || 20));
+  const skip = (page - 1) * limit;
 
   const notifications = await Notification.aggregate([
     {
@@ -17,10 +20,10 @@ const getNotifications = asyncHandler(async (req, res) => {
       $sort: { createdAt: -1 },
     },
     {
-      $skip: (Number(page) - 1) * Number(limit),
+      $skip: skip,
     },
     {
-      $limit: Number(limit),
+      $limit: limit,
     },
     {
       $lookup: {
@@ -78,8 +81,8 @@ const getNotifications = asyncHandler(async (req, res) => {
         {
           notifications,
           totalNotifications,
-          totalPages: Math.ceil(totalNotifications / Number(limit)),
-          currentPage: Number(page),
+          totalPages: Math.ceil(totalNotifications / limit),
+          currentPage: page,
         },
         "Notifications fetched successfully"
       )

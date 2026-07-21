@@ -2,6 +2,8 @@ import { Router } from "express";
 import passport from "passport";
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
+import { createSession } from "../controllers/session.controller.js";
+import logger from "../utils/logger.js";
 
 const router = Router();
 const FE = () => process.env.FRONTEND_URL || "http://localhost:3000";
@@ -23,7 +25,7 @@ const handleOAuthCallback = async (req, res) => {
     }
 
     const { accessToken, refreshToken } = generateTokens(req.user._id);
-    await User.findByIdAndUpdate(req.user._id, { refreshToken });
+    await createSession(req.user._id, refreshToken, req);
 
     const isProduction = process.env.NODE_ENV === "production";
     const accessExpiry = 24 * 60 * 60 * 1000;
@@ -45,9 +47,9 @@ const handleOAuthCallback = async (req, res) => {
     });
 
     const isNew = req.user._isNew ? "true" : "false";
-    res.redirect(`${FE()}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&isNew=${isNew}`);
+    res.redirect(`${FE()}/auth/callback${isNew === "true" ? "?isNew=true" : ""}`);
   } catch (error) {
-    console.error("OAuth callback error:", error);
+    logger.error("OAuth callback error:", { error: error.message });
     res.redirect(`${FE()}/login?error=auth_failed`);
   }
 };

@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { CommunityPost } from "../models/communityPost.model.js";
+import { Poll } from "../models/poll.model.js";
 import { PostLike } from "../models/postLike.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -10,7 +11,7 @@ import {
 } from "../utils/cloudinary.js";
 
 const createCommunityPost = asyncHandler(async (req, res) => {
-  const { content } = req.body;
+  const { content, pollQuestion, pollOptions, pollEndsAt } = req.body;
 
   if (!content?.trim()) {
     throw new ApiError(400, "Post content is required");
@@ -26,94 +27,153 @@ const createCommunityPost = asyncHandler(async (req, res) => {
     imageData = await uploadOnCloudinary(imageLocalPath);
   }
 
-  const post = await CommunityPost.create({
-    content: content.trim(),
-    image: imageData?.url || "",
-    imagePublicId: imageData?.public_id || "",
-    owner: req.user._id,
-  });
+  let post;
+  try {
+    post = await CommunityPost.create({
+      content: content.trim(),
+      image: imageData?.url || "",
+      imagePublicId: imageData?.public_id || "",
+      owner: req.user._id,
+    });
+  } catch (dbError) {
+    if (imageData?.public_id) {
+      await deleteFromCloudinary(imageData.public_id, "image");
+    }
+    throw dbError;
+  }
 
   if (!post) {
+    if (imageData?.public_id) {
+      await deleteFromCloudinary(imageData.public_id, "image");
+    }
     throw new ApiError(500, "Something went wrong while creating the post");
   }
 
+  // Create poll if question and options provided
+  if (pollQuestion?.trim() && Array.isArray(pollOptions) && pollOptions.length >= 2) {
+    const cleanOptions = pollOptions
+      .map((o) => ({ text: String(o).trim() }))
+      .filter((o) => o.text);
+
+    if (cleanOptions.length >= 2) {
+      const poll = await Poll.create({
+        question: pollQuestion.trim(),
+        options: cleanOptions,
+        createdBy: req.user._id,
+        communityPost: post._id,
+        endsAt: pollEndsAt || undefined,
+      });
+
+      post.poll = poll._id;
+      await post.save();
+    }
+  }
+
+  const populated = await CommunityPost.findById(post._id)
+    .populate("owner", "fullName username avatar")
+    .populate({
+      path: "poll",
+      select: "question options isActive endsAt createdAt",
+    });
+
   return res
     .status(201)
-    .json(new ApiResponse(201, post, "Post created successfully"));
+    .json(new ApiResponse(201, populated, "Post created successfully"));
 });
 
 const getAllCommunityPosts = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10 } = req.query;
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+  const skip = (page - 1) * limit;
 
-  const posts = await CommunityPost.aggregate([
+  const [{ data, metadata } = { data: [], metadata: [{ total: 0 }] }] = await CommunityPost.aggregate([
     {
-      $lookup: {
-        from: "users",
-        localField: "owner",
-        foreignField: "_id",
-        as: "owner",
-        pipeline: [
+      $facet: {
+        metadata: [{ $count: "total" }],
+        data: [
+          { $sort: { createdAt: -1 } },
+          { $skip: skip },
+          { $limit: limit },
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [{ $project: { fullName: 1, username: 1, avatar: 1 } }],
+            },
+          },
+          {
+            $lookup: {
+              from: "postlikes",
+              let: { postId: "$_id" },
+              pipeline: [
+                { $match: { $expr: { $eq: ["$post", "$$postId"] } } },
+                {
+                  $group: {
+                    _id: null,
+                    count: { $sum: 1 },
+                    likedBy: { $push: "$likedBy" },
+                  },
+                },
+              ],
+              as: "likes",
+            },
+          },
+          {
+            $lookup: {
+              from: "polls",
+              localField: "poll",
+              foreignField: "_id",
+              as: "poll",
+            },
+          },
+          {
+            $addFields: {
+              owner: { $first: "$owner" },
+              poll: { $first: "$poll" },
+              likesCount: {
+                $cond: {
+                  if: { $gt: [{ $size: "$likes" }, 0] },
+                  then: { $arrayElemAt: ["$likes.count", 0] },
+                  else: 0,
+                },
+              },
+              isLiked: {
+                $cond: {
+                  if: { $gt: [{ $size: "$likes" }, 0] },
+                  then: { $in: [req.user?._id, { $arrayElemAt: ["$likes.likedBy", 0] }] },
+                  else: false,
+                },
+              },
+            },
+          },
           {
             $project: {
-              fullName: 1,
-              username: 1,
-              avatar: 1,
+              content: 1,
+              image: 1,
+              createdAt: 1,
+              owner: 1,
+              poll: 1,
+              likesCount: 1,
+              commentsCount: 1,
+              isLiked: 1,
             },
           },
         ],
       },
     },
-    {
-      $lookup: {
-        from: "postlikes",
-        localField: "_id",
-        foreignField: "post",
-        as: "likes",
-      },
-    },
-    {
-      $addFields: {
-        owner: { $first: "$owner" },
-        likesCount: { $size: "$likes" },
-        isLiked: {
-          $cond: {
-            if: { $in: [req.user?._id, "$likes.likedBy"] },
-            then: true,
-            else: false,
-          },
-        },
-      },
-    },
-    {
-      $project: {
-        content: 1,
-        image: 1,
-        createdAt: 1,
-        owner: 1,
-        likesCount: 1,
-        commentsCount: 1,
-        isLiked: 1,
-      },
-    },
-    {
-      $sort: { createdAt: -1 },
-    },
-    {
-      $skip: (parseInt(page) - 1) * parseInt(limit),
-    },
-    {
-      $limit: parseInt(limit),
-    },
   ]);
 
   return res
     .status(200)
-    .json(new ApiResponse(200, posts, "Posts fetched successfully"));
+    .json(new ApiResponse(200, { docs: data, total: metadata[0]?.total || 0, page, limit, totalPages: Math.ceil((metadata[0]?.total || 0) / limit) }, "Posts fetched successfully"));
 });
 
 const getChannelPosts = asyncHandler(async (req, res) => {
   const { username } = req.params;
-  const { page = 1, limit = 10 } = req.query;
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
 
   if (!username?.trim()) {
     throw new ApiError(400, "Username is required");
@@ -131,76 +191,95 @@ const getChannelPosts = asyncHandler(async (req, res) => {
   }
 
   const channelId = userAggregation[0]._id;
+  const skip = (page - 1) * limit;
 
-  const posts = await CommunityPost.aggregate([
+  const [{ data, metadata } = { data: [], metadata: [{ total: 0 }] }] = await CommunityPost.aggregate([
     {
       $match: {
         owner: new mongoose.Types.ObjectId(channelId),
       },
     },
     {
-      $lookup: {
-        from: "users",
-        localField: "owner",
-        foreignField: "_id",
-        as: "owner",
-        pipeline: [
+      $facet: {
+        metadata: [{ $count: "total" }],
+        data: [
+          { $sort: { createdAt: -1 } },
+          { $skip: skip },
+          { $limit: limit },
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [{ $project: { fullName: 1, username: 1, avatar: 1 } }],
+            },
+          },
+          {
+            $lookup: {
+              from: "postlikes",
+              let: { postId: "$_id" },
+              pipeline: [
+                { $match: { $expr: { $eq: ["$post", "$$postId"] } } },
+                {
+                  $group: {
+                    _id: null,
+                    count: { $sum: 1 },
+                    likedBy: { $push: "$likedBy" },
+                  },
+                },
+              ],
+              as: "likes",
+            },
+          },
+          {
+            $lookup: {
+              from: "polls",
+              localField: "poll",
+              foreignField: "_id",
+              as: "poll",
+            },
+          },
+          {
+            $addFields: {
+              owner: { $first: "$owner" },
+              poll: { $first: "$poll" },
+              likesCount: {
+                $cond: {
+                  if: { $gt: [{ $size: "$likes" }, 0] },
+                  then: { $arrayElemAt: ["$likes.count", 0] },
+                  else: 0,
+                },
+              },
+              isLiked: {
+                $cond: {
+                  if: { $gt: [{ $size: "$likes" }, 0] },
+                  then: { $in: [req.user?._id, { $arrayElemAt: ["$likes.likedBy", 0] }] },
+                  else: false,
+                },
+              },
+            },
+          },
           {
             $project: {
-              fullName: 1,
-              username: 1,
-              avatar: 1,
+              content: 1,
+              image: 1,
+              createdAt: 1,
+              owner: 1,
+              poll: 1,
+              likesCount: 1,
+              commentsCount: 1,
+              isLiked: 1,
             },
           },
         ],
       },
     },
-    {
-      $lookup: {
-        from: "postlikes",
-        localField: "_id",
-        foreignField: "post",
-        as: "likes",
-      },
-    },
-    {
-      $addFields: {
-        owner: { $first: "$owner" },
-        likesCount: { $size: "$likes" },
-        isLiked: {
-          $cond: {
-            if: { $in: [req.user?._id, "$likes.likedBy"] },
-            then: true,
-            else: false,
-          },
-        },
-      },
-    },
-    {
-      $project: {
-        content: 1,
-        image: 1,
-        createdAt: 1,
-        owner: 1,
-        likesCount: 1,
-        commentsCount: 1,
-        isLiked: 1,
-      },
-    },
-    {
-      $sort: { createdAt: -1 },
-    },
-    {
-      $skip: (parseInt(page) - 1) * parseInt(limit),
-    },
-    {
-      $limit: parseInt(limit),
-    },
   ]);
 
   return res
     .status(200)
-    .json(new ApiResponse(200, posts, "Channel posts fetched successfully"));
+    .json(new ApiResponse(200, { docs: data, total: metadata[0]?.total || 0, page, limit, totalPages: Math.ceil((metadata[0]?.total || 0) / limit) }, "Channel posts fetched successfully"));
 });
 
 const updateCommunityPost = asyncHandler(async (req, res) => {
@@ -267,6 +346,11 @@ const deleteCommunityPost = asyncHandler(async (req, res) => {
     await deleteFromCloudinary(post.imagePublicId, "image");
   }
 
+  // Delete linked poll if exists
+  if (post.poll) {
+    await Poll.findByIdAndDelete(post.poll);
+  }
+
   await CommunityPost.findByIdAndDelete(postId);
 
   // Cleanup related post likes
@@ -290,15 +374,15 @@ const togglePostLike = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Post not found");
   }
 
-  const existingLike = await PostLike.findOne({
+  const deleted = await PostLike.findOneAndDelete({
     post: postId,
     likedBy: req.user._id,
   });
 
-  if (existingLike) {
-    await PostLike.findByIdAndDelete(existingLike._id);
-    post.likesCount = Math.max(0, post.likesCount - 1);
-    await post.save();
+  if (deleted) {
+    await CommunityPost.findByIdAndUpdate(postId, [
+      { $set: { likesCount: { $max: [0, { $subtract: ["$likesCount", 1] }] } } },
+    ]);
 
     return res
       .status(200)
@@ -310,8 +394,7 @@ const togglePostLike = asyncHandler(async (req, res) => {
     likedBy: req.user._id,
   });
 
-  post.likesCount += 1;
-  await post.save();
+  await CommunityPost.findByIdAndUpdate(postId, { $inc: { likesCount: 1 } });
 
   return res
     .status(200)

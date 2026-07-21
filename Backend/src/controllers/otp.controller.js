@@ -5,6 +5,7 @@ import { otpService } from "../services/otp.service.js";
 import { sendEmail } from "../utils/email.js";
 import { User } from "../models/user.model.js";
 import { OTP } from "../models/otp.model.js";
+import logger from "../utils/logger.js";
 
 const sendOtp = asyncHandler(async (req, res) => {
   const { identifier, purpose, channel = "email", userId } = req.body;
@@ -43,11 +44,19 @@ const sendOtp = asyncHandler(async (req, res) => {
       purpose,
       userName: user?.fullName,
     });
+  } else if (channel === "whatsapp") {
+    logger.warn(`WhatsApp OTP delivery not implemented, falling back to email for ${identifier}`);
+    await otpService.sendOtpEmail({
+      identifier: identifier.toLowerCase(),
+      otp,
+      purpose,
+      userName: user?.fullName,
+    });
   }
 
   return res.status(200).json(
     new ApiResponse(200, {
-      message: `OTP sent via ${channel}.`,
+      message: `OTP sent via ${channel === "whatsapp" ? "email (WhatsApp unavailable)" : channel}.`,
       expiresIn: otpService.OTP_CONSTANTS.OTP_EXPIRY_MINUTES * 60,
       remainingGlobal,
       remainingUser,
@@ -69,7 +78,9 @@ const verifyOtp = asyncHandler(async (req, res) => {
   });
 
   if (!result.valid) {
-    throw new ApiError(400, result.message, null, { attemptsRemaining: result.attemptsRemaining });
+    const err = new ApiError(400, result.message);
+    err.attemptsRemaining = result.attemptsRemaining;
+    throw err;
   }
 
   return res.status(200).json(

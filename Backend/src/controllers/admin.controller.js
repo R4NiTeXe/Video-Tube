@@ -7,10 +7,13 @@ import { escapeRegex } from "../utils/sanitizer.js";
 import { Like } from "../models/like.model.js";
 import { Playlist } from "../models/playlist.model.js";
 import { Report } from "../models/report.model.js";
+import { Notification } from "../models/notification.model.js";
+import { Session } from "../models/session.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { deleteFromCloudinary } from "../utils/cloudinary.js";
+import logger from "../utils/logger.js";
 
 const getPlatformStats = asyncHandler(async (req, res) => {
   const [totalUsers, totalVideos, totalComments, totalSubscriptions, totalLikes, totalPlaylists, totalReports] =
@@ -118,23 +121,20 @@ const banUser = asyncHandler(async (req, res) => {
 
   const user = await User.findById(userId);
   if (!user) throw new ApiError(404, "User not found");
+  if (user.banned) throw new ApiError(400, "User is already banned");
+  if (user.role === "admin") throw new ApiError(403, "Cannot ban an admin");
 
-  // Unpublish all user's videos and clean up Cloudinary
-  const videos = await Video.find({ owner: userId }).select("videoFile thumbnail");
-  for (const video of videos) {
-    if (video.videoFile) await deleteFromCloudinary(video.videoFile, "video").catch(() => {});
-    if (video.thumbnail) await deleteFromCloudinary(video.thumbnail, "image").catch(() => {});
-  }
+  // Unpublish all user's videos
   await Video.updateMany({ owner: userId }, { $set: { isPublished: false } });
 
-  // Clean up user avatar and cover from Cloudinary
-  if (user.avatarPublicId) await deleteFromCloudinary(user.avatarPublicId, "image").catch(() => {});
-  if (user.coverImagePublicId) await deleteFromCloudinary(user.coverImagePublicId, "image").catch(() => {});
+  // Invalidate all sessions
+  await Session.updateMany({ user: userId }, { isActive: false });
 
-  // Delete user
-  await User.findByIdAndDelete(userId);
+  // Set banned flag
+  user.banned = true;
+  await user.save({ validateBeforeSave: false });
 
-  return res.status(200).json(new ApiResponse(200, {}, "User banned and deleted"));
+  return res.status(200).json(new ApiResponse(200, {}, "User banned successfully"));
 });
 
 const adminDeleteVideo = asyncHandler(async (req, res) => {
@@ -154,6 +154,18 @@ const adminDeleteVideo = asyncHandler(async (req, res) => {
   // Cleanup related data
   await Comment.deleteMany({ video: videoId });
   await Like.deleteMany({ video: videoId });
+  await Playlist.updateMany({}, { $pull: { videos: videoId } });
+
+  // Notify the video owner
+  try {
+    await Notification.create({
+      recipient: video.owner,
+      sender: req.user._id,
+      type: "system",
+      video: videoId,
+      message: `Your video "${video.title || "Untitled"}" has been removed for violating our community guidelines`,
+    });
+  } catch { logger.warn("Failed to notify video owner about admin deletion", { videoId }); }
 
   return res.status(200).json(new ApiResponse(200, {}, "Video deleted by admin"));
 });
@@ -194,16 +206,23 @@ const getAllReports = asyncHandler(async (req, res) => {
 });
 
 const getRecentActivity = asyncHandler(async (req, res) => {
-  const { limit = 10 } = req.query;
-  const limitNum = Math.min(parseInt(limit, 10) || 10, 50);
+  let { page = 1, limit = 10 } = req.query;
+  page = Math.max(1, parseInt(page, 10) || 1);
+  limit = Math.min(50, Math.max(1, parseInt(limit, 10) || 10));
+  const skip = (page - 1) * limit;
 
-  const [recentUsers, recentVideos] = await Promise.all([
-    User.find().select("fullName avatar createdAt").sort({ createdAt: -1 }).limit(limitNum).lean(),
-    Video.find({ isPublished: true }).select("title thumbnail views createdAt").sort({ createdAt: -1 }).limit(limitNum).lean(),
+  const [recentUsers, totalUsers, recentVideos, totalVideos] = await Promise.all([
+    User.find().select("fullName avatar createdAt").sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    User.countDocuments(),
+    Video.find({ isPublished: true }).select("title thumbnail views createdAt").sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    Video.countDocuments({ isPublished: true }),
   ]);
 
   return res.status(200).json(
-    new ApiResponse(200, { recentUsers, recentVideos }, "Recent activity fetched")
+    new ApiResponse(200, {
+      users: { docs: recentUsers, total: totalUsers, page, limit },
+      videos: { docs: recentVideos, total: totalVideos, page, limit },
+    }, "Recent activity fetched")
   );
 });
 

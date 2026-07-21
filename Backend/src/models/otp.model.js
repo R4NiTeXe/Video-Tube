@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import crypto from "crypto";
+import logger from "../utils/logger.js";
 
 const otpSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true },
@@ -70,9 +71,9 @@ OTP.init().then(async () => {
     const hasOldIndex = indexes.some((idx) => idx.name === "email_1_purpose_1");
     if (hasOldIndex) {
       await collection.dropIndex("email_1_purpose_1");
-      console.log("[OTP Model] Dropped old index: email_1_purpose_1");
+      logger.info("[OTP Model] Dropped old index: email_1_purpose_1");
     }
   } catch (error) {
-    // Ignore errors during index migration
+    logger.warn("OTP index migration failed", { error: error.message });
   }
 });

@@ -91,11 +91,12 @@ configurePassport();
 app.use(passport.initialize());
 
 // ── Security headers (helmet) ──
+const isDev = process.env.NODE_ENV !== "production";
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://res.cloudinary.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://res.cloudinary.com", ...(isDev ? ["'unsafe-eval'"] : [])],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],

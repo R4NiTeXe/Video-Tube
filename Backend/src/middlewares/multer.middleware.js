@@ -18,6 +18,14 @@ export const MAX_THUMBNAIL_SIZE = (parseInt(process.env.MAX_THUMBNAIL_SIZE_MB) |
 
 const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/x-msvideo", "video/x-matroska", "video/webm"];
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const DANGEROUS_EXTENSIONS = new Set([
+  ".exe", ".bat", ".cmd", ".com", ".msi",
+  ".scr", ".pif", ".vb", ".vbs", ".vbe",
+  ".js", ".jse", ".ws", ".wsf", ".wsh",
+  ".ps1", ".psm1", ".psd1", ".dll", ".ocx",
+  ".sh", ".bash", ".py", ".pl", ".rb",
+  ".jar", ".class", ".swf",
+]);
 
 // Magic bytes for file signature validation
 const MAGIC_BYTES = {
@@ -51,6 +59,11 @@ const validateMagicBytes = (filePath, mimetype) => {
 };
 
 const fileFilter = (req, file, cb) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (DANGEROUS_EXTENSIONS.has(ext)) {
+    return cb(new ApiError(400, `File type "${ext}" is not allowed for upload`), false);
+  }
+
   const isVideo = file.fieldname === "videoFile";
   const allowedTypes = isVideo ? ALLOWED_VIDEO_TYPES : ALLOWED_IMAGE_TYPES;
 

@@ -93,9 +93,11 @@ const checkUserLimit = async (userId) => {
 
 const incrementUserDailyCount = async (userId) => {
   const today = OTP.getStartOfDay();
+  const user = await User.findById(userId).select("otpDailyCount otpDailyCountDate").lean();
+  const date = user?.otpDailyCountDate ? new Date(user.otpDailyCountDate) : null;
+  const count = (date && date.getTime() === today.getTime()) ? (user.otpDailyCount || 0) + 1 : 1;
   await User.findByIdAndUpdate(userId, {
-    $inc: { otpDailyCount: 1 },
-    $set: { otpDailyCountDate: today },
+    $set: { otpDailyCount: count, otpDailyCountDate: today },
   });
 };
 
@@ -135,31 +137,31 @@ const storeOtp = async ({ identifier, userId, purpose, channel = "email" }) => {
     }
   }
 
-  const existing = await OTP.findOne({ identifier, purpose });
-  const prevOtpHash = existing?.otpHash;
-  if (existing) {
-    await existing.deleteOne();
-  }
-
   const otp = generateOtp();
   const otpHash = hashOtp(otp);
   const expiresAt = new Date(Date.now() + OTP_CONSTANTS.OTP_EXPIRY_MINUTES * 60 * 1000);
 
-  const otpDoc = await OTP.create({
-    user: userId,
-    identifier,
-    otpHash,
-    purpose,
-    channel,
-    expiresAt,
-    attempts: 0,
-    maxAttempts: OTP_CONSTANTS.MAX_ATTEMPTS,
-    verified: false,
-    prevOtpHash,
-    prevOtpInvalidatedAt: prevOtpHash ? new Date() : null,
-    dailyCount: 0,
-    dailyCountDate: OTP.getStartOfDay(),
-  });
+  const existing = await OTP.findOne({ identifier, purpose }).select("otpHash").lean();
+
+  const otpDoc = await OTP.findOneAndReplace(
+    { identifier, purpose },
+    {
+      user: userId,
+      identifier,
+      otpHash,
+      purpose,
+      channel,
+      expiresAt,
+      attempts: 0,
+      maxAttempts: OTP_CONSTANTS.MAX_ATTEMPTS,
+      verified: false,
+      prevOtpHash: existing?.otpHash,
+      prevOtpInvalidatedAt: existing?.otpHash ? new Date() : null,
+      dailyCount: 0,
+      dailyCountDate: OTP.getStartOfDay(),
+    },
+    { upsert: true, returnDocument: "after" }
+  );
 
   incrementGlobalDailyCount();
   if (userId) {
@@ -167,7 +169,7 @@ const storeOtp = async ({ identifier, userId, purpose, channel = "email" }) => {
   }
 
   logger.info(`OTP generated`, {
-    identifier: identifier.replace(/(.{2}).+(@.+)/, "$1***$2"),
+    identifier: identifier.replace(/^(.{1,2}).*(@.+)/, "$1***$2"),
     purpose,
     channel,
     userId,

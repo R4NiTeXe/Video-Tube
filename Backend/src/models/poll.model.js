@@ -16,11 +16,14 @@ const pollSchema = new Schema({
   },
   createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   video: { type: Schema.Types.ObjectId, ref: "Video" },
+  communityPost: { type: Schema.Types.ObjectId, ref: "CommunityPost" },
   isActive: { type: Boolean, default: true },
   endsAt: { type: Date },
 }, { timestamps: true });
 
 pollSchema.index({ video: 1 });
+pollSchema.index({ communityPost: 1 });
 pollSchema.index({ createdBy: 1 });
+pollSchema.index({ isActive: 1, endsAt: 1 });
 
 export const Poll = mongoose.model("Poll", pollSchema);

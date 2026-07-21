@@ -1,11 +1,13 @@
 import mongoose from "mongoose";
 import { Comment } from "../models/comment.model.js";
 import { Video } from "../models/video.model.js";
+import { Like } from "../models/like.model.js";
 import { Notification } from "../models/notification.model.js";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import logger from "../utils/logger.js";
 
 const getVideoComments = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -57,19 +59,34 @@ const getVideoComments = asyncHandler(async (req, res) => {
     {
       $lookup: {
         from: "likes",
-        localField: "_id",
-        foreignField: "comment",
+        let: { commentId: "$_id" },
+        pipeline: [
+          { $match: { $expr: { $eq: ["$comment", "$$commentId"] } } },
+          {
+            $group: {
+              _id: null,
+              count: { $sum: 1 },
+              likedBy: { $push: "$likedBy" },
+            },
+          },
+        ],
         as: "likes",
       },
     },
     {
       $addFields: {
         owner: { $first: "$owner" },
-        likesCount: { $size: "$likes" },
+        likesCount: {
+          $cond: {
+            if: { $gt: [{ $size: "$likes" }, 0] },
+            then: { $arrayElemAt: ["$likes.count", 0] },
+            else: 0,
+          },
+        },
         isLiked: {
           $cond: {
-            if: { $in: [req.user?._id, "$likes.likedBy"] },
-            then: true,
+            if: { $gt: [{ $size: "$likes" }, 0] },
+            then: { $in: [req.user?._id, { $arrayElemAt: ["$likes.likedBy", 0] }] },
             else: false,
           },
         },
@@ -124,9 +141,11 @@ const addComment = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while adding the comment");
   }
 
+  await Video.findByIdAndUpdate(videoId, { $inc: { commentsCount: 1 } });
+
   // Create notification for video owner
   try {
-    const video = await Video.findById(videoId).select("owner title");
+    const video = await Video.findById(videoId).select("owner title").lean();
     if (video && video.owner.toString() !== req.user._id.toString()) {
       const recipient = await User.findById(video.owner).select("notificationPrefs").lean();
       if (recipient?.notificationPrefs?.comments !== false) {
@@ -140,7 +159,7 @@ const addComment = asyncHandler(async (req, res) => {
         });
       }
     }
-  } catch { /* notification failure should not block the comment */ }
+  } catch (err) { logger.warn("Comment notification failed", { error: err.message }); }
 
   return res
     .status(201)
@@ -184,22 +203,20 @@ const deleteComment = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid comment id");
   }
 
-  const comment = await Comment.findById(commentId);
+  const comment = await Comment.findById(commentId).select("owner video").lean();
 
   if (!comment) {
     throw new ApiError(404, "Comment not found");
   }
 
-  if (comment.owner.toString() !== req.user._id.toString()) {
+  if (comment.owner.toString() !== req.user._id.toString() && req.user.role !== "admin") {
     throw new ApiError(403, "You are not authorized to delete this comment");
   }
 
+  await Comment.deleteMany({ parentComment: commentId });
+  await Like.deleteMany({ comment: commentId });
+  await Video.findByIdAndUpdate(comment.video, { $inc: { commentsCount: -1 } });
   await Comment.findByIdAndDelete(commentId);
-
-  // clean up likes related to this comment
-  if (mongoose.modelNames().includes("Like")) {
-    await mongoose.model("Like").deleteMany({ comment: commentId });
-  }
 
   return res
     .status(200)
@@ -218,7 +235,7 @@ const addReply = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Reply content is required");
   }
 
-  const parentComment = await Comment.findById(commentId);
+  const parentComment = await Comment.findById(commentId).select("video").lean();
 
   if (!parentComment) {
     throw new ApiError(404, "Comment not found");
@@ -250,7 +267,7 @@ const addReply = asyncHandler(async (req, res) => {
         });
       }
     }
-  } catch { /* notification failure should not block the reply */ }
+  } catch (err) { logger.warn("Reply notification failed", { error: err.message }); }
 
   return res
     .status(201)

@@ -1,4 +1,5 @@
 import { otpService } from "../services/otp.service.js";
+import logger from "./logger.js";
 
 // Send OTP via Meta WhatsApp Business API (uses unified OTP service)
 export const sendWhatsAppOTP = async (mobile, otp) => {
@@ -11,10 +12,11 @@ export const sendWhatsAppOTP = async (mobile, otp) => {
 
   // Dev mode: console.log fallback
   if (!API_URL || !PHONE_NUMBER_ID || !ACCESS_TOKEN) {
-    console.log("--- Development WhatsApp OTP ---");
-    console.log(`Mobile: ${mobile}`);
-    console.log(`OTP: ${otp}`);
-    console.log("-------------------------------");
+    if (process.env.NODE_ENV === "production") return { success: false, mode: "unconfigured", delivered: false, message: "WhatsApp not configured" };
+    logger.debug("--- Development WhatsApp OTP (masked) ---");
+    logger.debug(`Mobile: ${mobile.slice(0, 4)}****${mobile.slice(-2)}`);
+    logger.debug("OTP: [REDACTED]");
+    logger.debug("----------------------------------------");
     return { success: true, mode: "console", delivered: false, message: "OTP logged to console (dev mode)" };
   }
 
@@ -78,25 +80,25 @@ export const sendWhatsAppOTP = async (mobile, otp) => {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("WhatsApp API error:", data);
-      // Fallback: log OTP to console so dev workflow isn't broken
-      console.log("--- WhatsApp API failed, fallback OTP ---");
-      console.log(`Mobile: ${mobile}`);
-      console.log(`OTP: ${otp}`);
-      console.log(`Error: ${data.error?.message || "Unknown"}`);
-      console.log("------------------------------------------");
+      logger.error("WhatsApp API error", { error: data.error?.message || response.statusText });
+      if (process.env.NODE_ENV === "production") return { success: false, mode: "error", delivered: false, message: `WhatsApp API error: ${data.error?.message || "Unknown"}` };
+      logger.debug("--- WhatsApp API failed, fallback OTP (masked) ---");
+      logger.debug(`Mobile: ${mobile.slice(0, 4)}****${mobile.slice(-2)}`);
+      logger.debug("OTP: [REDACTED]");
+      logger.debug(`Error: ${data.error?.message || "Unknown"}`);
+      logger.debug("-------------------------------------------------");
       return { success: false, mode: "console-fallback", delivered: false, message: `WhatsApp API error: ${data.error?.message || "Unknown"}` };
     }
 
     return { success: true, data };
   } catch (error) {
-    console.error("WhatsApp send error:", error.message);
-    // Fallback: log OTP to console so dev workflow isn't broken
-    console.log("--- WhatsApp API unreachable, fallback OTP ---");
-    console.log(`Mobile: ${mobile}`);
-    console.log(`OTP: ${otp}`);
-    console.log(`Error: ${error.message}`);
-    console.log("----------------------------------------------");
+    logger.error("WhatsApp send error", { error: error.message });
+    if (process.env.NODE_ENV === "production") return { success: false, mode: "error", delivered: false, message: `WhatsApp unreachable: ${error.message}` };
+    logger.debug("--- WhatsApp API unreachable, fallback OTP (masked) ---");
+    logger.debug(`Mobile: ${mobile.slice(0, 4)}****${mobile.slice(-2)}`);
+    logger.debug("OTP: [REDACTED]");
+    logger.debug(`Error: ${error.message}`);
+    logger.debug("-------------------------------------------------------");
     return { success: false, mode: "console-fallback", delivered: false, message: `WhatsApp unreachable: ${error.message}` };
   }
 };

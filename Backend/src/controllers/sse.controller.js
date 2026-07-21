@@ -18,13 +18,23 @@ export const streamNotifications = asyncHandler(async (req, res) => {
   }
   sseClients.get(userId).add(res);
 
-  req.on("close", () => {
+  const cleanup = () => {
     const clients = sseClients.get(userId);
     if (clients) {
       clients.delete(res);
       if (clients.size === 0) sseClients.delete(userId);
     }
-  });
+  };
+
+  req.on("close", cleanup);
+
+  // Auto-disconnect zombie connections after 5 minutes
+  const timeout = setTimeout(() => {
+    cleanup();
+    try { res.end(); } catch {}
+  }, 300000);
+
+  req.on("close", () => clearTimeout(timeout));
 
   const heartbeat = setInterval(() => {
     try {

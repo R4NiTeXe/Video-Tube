@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { Resend } from "resend";
+import logger from "./logger.js";
 
 // Brevo SMTP transporter
 const transporter = nodemailer.createTransport({
@@ -26,6 +27,8 @@ if (isResendConfigured) {
   resend = new Resend(process.env.RESEND_API_KEY);
 }
 
+const maskEmail = (e) => { const at = e.indexOf("@"); return at > 0 ? `${e.slice(0, 2)}***${e.slice(at)}` : `${e.slice(0, 2)}***`; };
+
 const sendEmail = async ({ to, subject, html }) => {
   // 1. Try Brevo SMTP first
   if (isSmtpConfigured) {
@@ -40,10 +43,10 @@ const sendEmail = async ({ to, subject, html }) => {
         replyTo: fromAddress,
       });
 
-      console.log(`✅ Email sent via Brevo SMTP to ${to}`);
+      logger.info(`Email sent via Brevo SMTP to ${maskEmail(to)}`);
       return { success: true, messageId: info.messageId, provider: "brevo" };
     } catch (error) {
-      console.error("Brevo SMTP failed, trying Resend:", error.message);
+      logger.error("Brevo SMTP failed, trying Resend:", { error: error.message });
     }
   }
 
@@ -58,23 +61,24 @@ const sendEmail = async ({ to, subject, html }) => {
       });
 
       if (result.error) {
-        console.error("Resend API error:", result.error);
+        logger.error("Resend API error:", { error: result.error });
         throw new Error(result.error.message || "Resend failed");
       }
 
-      console.log(`✅ Email sent via Resend to ${to}`);
+      logger.info(`Email sent via Resend to ${maskEmail(to)}`);
       return { success: true, messageId: result.data?.id, provider: "resend" };
     } catch (error) {
-      console.error("Resend failed:", error.message);
+      logger.error("Resend failed:", { error: error.message });
     }
   }
 
   // 3. Console fallback (dev mode)
-  console.log("--- Development Email (No provider configured) ---");
-  console.log(`To: ${to}`);
-  console.log(`Subject: ${subject}`);
-  console.log(`Body: ${html}`);
-  console.log("-----------------------------------------------");
+  if (process.env.NODE_ENV === "production") return { success: false, mode: "unconfigured", message: "No email provider configured" };
+  logger.debug("--- Development Email (No provider configured) ---");
+  logger.debug(`To: ${maskEmail(to)}`);
+  logger.debug(`Subject: ${subject}`);
+  logger.debug(`Body length: ${Buffer.byteLength(html, "utf8")} bytes`);
+  logger.debug("-------------------------------------------------");
   return { success: true, mode: "console" };
 };
 

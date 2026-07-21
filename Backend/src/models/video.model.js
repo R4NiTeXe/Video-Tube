@@ -28,6 +28,7 @@ const videoSchema = new Schema(
     description:{
         type:String,
         required:true,
+        maxlength: 5000,
     },
     duration:{
         type:Number,
@@ -48,9 +49,14 @@ const videoSchema = new Schema(
     tags:{
         type:[String],
         default:[],
+        validate: {
+            validator: (v) => !v || v.every((t) => t.length <= 50),
+            message: "Each tag must be 50 characters or less",
+        },
     },
     category:{
         type:String,
+        enum: ["General", "Gaming", "Music", "Education", "Entertainment", "Sports", "News", "Technology", "Science", "Travel", "Food", "Fashion", "Art", "Podcasts"],
         default:"General",
     },
     chapters:[{
@@ -72,14 +78,6 @@ const videoSchema = new Schema(
         type:Boolean,
         default:false,
     },
-    isPaid:{
-        type:Boolean,
-        default:false,
-    },
-    price:{
-        type:Number,
-        default:0,
-    },
     hlsUrl:{
         type:String,
         default:"",
@@ -90,11 +88,28 @@ const videoSchema = new Schema(
         enum:["pending","processing","completed","failed"],
         default:"pending",
     },
+    trendingScore:{
+        type:Number,
+        default:0,
+    },
   },
   {
     timestamps: true,
   }
 );
+
+videoSchema.index({ owner: 1, createdAt: -1 });
+videoSchema.index({ category: 1, isPublished: 1, createdAt: -1 });
+videoSchema.index({ tags: 1 });
+videoSchema.index({ views: -1 });
+videoSchema.index({ isPublished: 1, createdAt: -1 });
+videoSchema.index({ isPublished: 1, scheduledAt: 1 });
+videoSchema.index({ owner: 1, isPublished: 1, createdAt: -1 });
+videoSchema.index({ trendingScore: -1, isPublished: 1 });
+videoSchema.index({ scheduledAt: 1 });
+videoSchema.index({ transcodingStatus: 1 });
+videoSchema.index({ title: "text", description: "text" });
+videoSchema.index({ duration: 1 });
 
 videoSchema.plugin(mongooseAggregatePaginate);
 

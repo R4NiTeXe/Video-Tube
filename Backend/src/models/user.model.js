@@ -1,6 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 
 const userSchema = new Schema(
   {
@@ -37,7 +38,7 @@ const userSchema = new Schema(
     },
     avatar: {
       type: String,
-      required: true,
+      default: "",
     },
     avatarPublicId: {
       type: String,
@@ -75,8 +76,13 @@ const userSchema = new Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    banned: {
+      type: Boolean,
+      default: false,
+    },
     emailVerificationToken: {
       type: String,
+      select: false,
     },
     emailVerificationExpires: {
       type: Date,
@@ -84,6 +90,13 @@ const userSchema = new Schema(
     isEmailVerified: {
       type: Boolean,
       default: false,
+    },
+    loginAttempts: {
+      type: Number,
+      default: 0,
+    },
+    lockUntil: {
+      type: Date,
     },
     notificationPrefs: {
       likes: { type: Boolean, default: true },
@@ -96,37 +109,56 @@ const userSchema = new Schema(
       type: Boolean,
       default: false,
     },
-    blockedUsers: [
-      {
+    blockedUsers: {
+      type: [{
         type: Schema.Types.ObjectId,
         ref: "User",
+      }],
+      validate: {
+        validator: (v) => !v || v.length <= 1000,
+        message: "Blocked users list cannot exceed 1000 entries",
       },
-    ],
-    mutedUsers: [
-      {
+    },
+    mutedUsers: {
+      type: [{
         type: Schema.Types.ObjectId,
         ref: "User",
+      }],
+      validate: {
+        validator: (v) => !v || v.length <= 1000,
+        message: "Muted users list cannot exceed 1000 entries",
       },
-    ],
-    mutedChannels: [
-      {
+    },
+    mutedChannels: {
+      type: [{
         type: Schema.Types.ObjectId,
         ref: "User",
+      }],
+      validate: {
+        validator: (v) => !v || v.length <= 1000,
+        message: "Muted channels list cannot exceed 1000 entries",
       },
-    ],
-    watchLater: [
-      {
+    },
+    watchLater: {
+      type: [{
         type: Schema.Types.ObjectId,
         ref: "Video",
+      }],
+      validate: {
+        validator: (v) => !v || v.length <= 200,
+        message: "Watch later list cannot exceed 200 entries",
       },
-    ],
-    searchHistory: [
-      {
-        type: String,
+    },
+    searchHistory: {
+      type: [String],
+      validate: {
+        validator: (v) => !v || v.length <= 50,
+        message: "Search history cannot exceed 50 entries",
       },
-    ],
+    },
     passwordResetToken: {
       type: String,
+      select: false,
     },
     passwordResetExpires: {
       type: Date,
@@ -138,23 +170,24 @@ const userSchema = new Schema(
     otpDailyCountDate: {
       type: Date,
     },
-    watchHistory: [
-      {
+    watchHistory: {
+      type: [{
         type: Schema.Types.ObjectId,
         ref: "Video",
+      }],
+      validate: {
+        validator: (v) => !v || v.length <= 500,
+        message: "Watch history cannot exceed 500 entries",
       },
-    ],
+    },
     password: {
       type: String,
       required: [true, "Password is required"],
+      select: false,
     },
     refreshToken: {
       type: String,
-    },
-    socialAccounts: {
-      type: Map,
-      of: String,
-      default: {},
+      select: false,
     },
   },
   {
@@ -162,11 +195,22 @@ const userSchema = new Schema(
   }
 );
 
-// using the pre function to encrypt the password
-userSchema.pre("save", async function () {
-  if (!this.isModified("password")) return;
+userSchema.index({ role: 1 });
+userSchema.index({ role: 1, banned: 1 });
+userSchema.index({ createdAt: -1 });
+userSchema.index({ username: "text", fullName: "text" });
+userSchema.index({ passwordResetToken: 1, passwordResetExpires: 1 });
+userSchema.index({ emailVerificationToken: 1 });
 
-  this.password = await bcrypt.hash(this.password, 10);
+
+// using the pre function to encrypt the password and hash verification tokens
+userSchema.pre("save", async function () {
+  if (this.isModified("password")) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
+  if (this.isModified("emailVerificationToken") && this.emailVerificationToken) {
+    this.emailVerificationToken = crypto.createHash("sha256").update(this.emailVerificationToken).digest("hex");
+  }
 });
 
 // this method is used to compare the password

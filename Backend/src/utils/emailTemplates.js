@@ -269,7 +269,7 @@ export const passwordChangedEmailTemplate = (userName) => {
     title: "Password Changed Successfully",
     message: "Your VideoTube account password has been changed.",
     userName,
-    actionUrl: "https://videotube.app/settings/security",
+    actionUrl: `${process.env.FRONTEND_URL || "http://localhost:3000"}/settings/security`,
     actionText: "View Security Settings",
     details: [
       { label: "Time", value: new Date().toLocaleString() },

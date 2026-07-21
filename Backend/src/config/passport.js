@@ -43,9 +43,17 @@ const findOrCreateUser = async (provider, providerId, email, name, avatar) => {
     password: randomPassword,
     avatar: avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || "User")}&background=6366f1&color=fff`,
     socialAccounts: socialMap,
+    isEmailVerified: true,
   });
 
   return { user, isNew: true };
+};
+
+const sanitizeUser = (user, isNew) => {
+  const obj = user.toObject({ virtuals: true });
+  delete obj.password;
+  delete obj.refreshToken;
+  return { ...obj, _isNew: isNew };
 };
 
 export const configurePassport = () => {
@@ -78,7 +86,7 @@ export const configurePassport = () => {
               profile.displayName,
               profile.photos?.[0]?.value
             );
-            done(null, { ...user.toObject(), _isNew: isNew });
+            done(null, sanitizeUser(user, isNew));
           } catch (err) {
             done(err, null);
           }
@@ -107,7 +115,7 @@ export const configurePassport = () => {
               profile.displayName || profile.username,
               profile.photos?.[0]?.value
             );
-            done(null, { ...user.toObject(), _isNew: isNew });
+            done(null, sanitizeUser(user, isNew));
           } catch (err) {
             done(err, null);
           }
@@ -124,7 +132,7 @@ export const configurePassport = () => {
           clientID: process.env.FACEBOOK_APP_ID,
           clientSecret: process.env.FACEBOOK_APP_SECRET,
           callbackURL: `${CALLBACK_URL}/facebook/callback`,
-          profileFields: ["id", "displayName", "photos"],
+          profileFields: ["id", "displayName", "photos", "email"],
         },
         async (accessToken, refreshToken, profile, done) => {
           try {
@@ -136,7 +144,7 @@ export const configurePassport = () => {
               profile.displayName,
               profile.photos?.[0]?.value
             );
-            done(null, { ...user.toObject(), _isNew: isNew });
+            done(null, sanitizeUser(user, isNew));
           } catch (err) {
             done(err, null);
           }
@@ -167,7 +175,7 @@ export const configurePassport = () => {
                 ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png`
                 : null
             );
-            done(null, { ...user.toObject(), _isNew: isNew });
+            done(null, sanitizeUser(user, isNew));
           } catch (err) {
             done(err, null);
           }

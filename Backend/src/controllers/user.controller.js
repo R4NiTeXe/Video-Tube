@@ -3,14 +3,21 @@ import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { Video } from "../models/video.model.js";
 import { Subscription } from "../models/subscription.model.js";
+import { cacheGet, cacheSet } from "../utils/redis.js";
 import { Comment } from "../models/comment.model.js";
 import { Like } from "../models/like.model.js";
 import { Playlist } from "../models/playlist.model.js";
+import { Notification } from "../models/notification.model.js";
+import { CommunityPost } from "../models/communityPost.model.js";
+import { Poll } from "../models/poll.model.js";
+import { PostLike } from "../models/postLike.model.js";
+import { Session } from "../models/session.model.js";
 import {
   uploadOnCloudinary,
   deleteFromCloudinary,
 } from "../utils/cloudinary.js";
 import { escapeRegex } from "../utils/sanitizer.js";
+import { verifyOAuthToken } from "../utils/verifyOAuthToken.js";
 import { sendEmail } from "../utils/email.js";
 import { storeOTP, verifyOTP } from "../utils/otp.js";
 import { OTP } from "../models/otp.model.js";
@@ -20,15 +27,22 @@ import mongoose from "mongoose";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import validator from "validator";
+import { validatePasswordStrength, assertPasswordStrength } from "../utils/passwordValidation.js";
+import logger from "../utils/logger.js";
 import { createSession, deactivateSession } from "./session.controller.js";
 
+// Cookie relies on trust proxy being correctly configured in app.js.
+// In production the reverse proxy terminates HTTPS; Express receives HTTP but
+// the cookie is marked Secure because the outer channel is HTTPS.
+// sameSite: "none" allows cross-origin cookie flow (frontend + backend on different domains).
 const getCookieOptions = () => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
 });
 
-const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const isValidEmail = (email) => validator.isEmail(email);
 
 const generateAccessAndRefreshToken = async (userId) => {
   try {
@@ -40,9 +54,6 @@ const generateAccessAndRefreshToken = async (userId) => {
 
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
-
-    user.refreshToken = refreshToken;
-    await user.save({ validateBeforeSave: false });
 
     return {
       accessToken,
@@ -95,10 +106,16 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Please provide a valid email");
   }
 
+  // Password strength validation
+  const passwordErrors = validatePasswordStrength(password);
+  if (passwordErrors.length > 0) {
+    throw new ApiError(400, `Password must contain ${passwordErrors.join(", ")}`);
+  }
+
   // check if user already exists: email, username
   const existingUser = await User.findOne({
     $or: [{ email: normalizedEmail }, { username: normalizedUsername }],
-  });
+  }).select("_id").lean();
 
   if (existingUser) {
     throw new ApiError(409, "User already exists with this email or username");
@@ -127,11 +144,12 @@ const registerUser = asyncHandler(async (req, res) => {
     email: normalizedEmail,
     password,
     username: normalizedUsername,
+    isEmailVerified: true,
   });
 
   const createdUser = await User.findById(user._id).select(
     "-password -refreshToken"
-  );
+  ).lean();
 
   if (!createdUser) {
     throw new ApiError(500, "Something went wrong while registering the user");
@@ -150,10 +168,10 @@ const loginUser = asyncHandler(async (req, res) => {
   // access token and refresh token
   // send cookie
 
-  const { email, username, password } = req.body;
+  const { email, username, mobile, password } = req.body;
 
-  if (!username && !email) {
-    throw new ApiError(400, "Username or email is required");
+  if (!username && !email && !mobile) {
+    throw new ApiError(400, "Username, email, or mobile number is required");
   }
 
   if (!password) {
@@ -164,17 +182,47 @@ const loginUser = asyncHandler(async (req, res) => {
     $or: [
       ...(username ? [{ username: username.toLowerCase() }] : []),
       ...(email ? [{ email: email.toLowerCase() }] : []),
+      ...(mobile ? [{ mobile: mobile.trim() }] : []),
     ],
-  });
+  }).select("+password");
 
   if (!user) {
     throw new ApiError(404, "User does not exist");
   }
 
+  // Account lockout check
+  if (user.lockUntil && user.lockUntil > new Date()) {
+    const remainingMinutes = Math.ceil((user.lockUntil - new Date()) / 60000);
+    throw new ApiError(429, `Account temporarily locked. Try again in ${remainingMinutes} minute(s)`);
+  }
+
   const isPasswordValid = await user.isPasswordCorrect(password);
 
   if (!isPasswordValid) {
+    // Increment failed login attempts
+    const MAX_ATTEMPTS = 5;
+    const LOCK_DURATION_MINUTES = 15;
+    user.loginAttempts = (user.loginAttempts || 0) + 1;
+    if (user.loginAttempts >= MAX_ATTEMPTS) {
+      user.lockUntil = new Date(Date.now() + LOCK_DURATION_MINUTES * 60 * 1000);
+      user.loginAttempts = 0;
+      await user.save({ validateBeforeSave: false });
+      throw new ApiError(429, `Account locked due to ${MAX_ATTEMPTS} failed attempts. Try again in ${LOCK_DURATION_MINUTES} minutes`);
+    }
+    await user.save({ validateBeforeSave: false });
     throw new ApiError(401, "Invalid user credentials");
+  }
+
+  // Email verification check
+  if (!user.isEmailVerified) {
+    throw new ApiError(403, "Please verify your email before logging in");
+  }
+
+  // Reset login attempts on successful login
+  if (user.loginAttempts > 0 || user.lockUntil) {
+    user.loginAttempts = 0;
+    user.lockUntil = undefined;
+    await user.save({ validateBeforeSave: false });
   }
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
@@ -183,7 +231,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const loggedInUser = await User.findById(user._id).select(
     "-password -refreshToken"
-  );
+  ).lean();
 
   const options = getCookieOptions();
 
@@ -196,11 +244,7 @@ const loginUser = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        {
-          user: loggedInUser,
-          accessToken,
-          refreshToken,
-        },
+        { user: loggedInUser },
         "User logged in successfully"
       )
     );
@@ -212,17 +256,12 @@ const logoutUser = asyncHandler(async (req, res) => {
     await deactivateSession(incomingRefreshToken);
   }
 
-  await User.findByIdAndUpdate(
-    req.user._id,
-    {
-      $unset: {
-        refreshToken: 1,
-      },
-    },
-    {
-      returnDocument: "after",
-    }
-  );
+  // Blacklist access token so it can't be reused after logout
+  const accessToken = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
+  if (accessToken) {
+    const { blacklistToken } = await import("../utils/redis.js");
+    await blacklistToken(accessToken, 86400);
+  }
 
   const options = getCookieOptions();
 
@@ -258,8 +297,14 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid refresh token");
   }
 
-  if (incomingRefreshToken !== user.refreshToken) {
-    throw new ApiError(401, "Refresh token is expired or used");
+  // Validate refresh token against Session model (supports multiple devices)
+  const session = await Session.findOne({
+    refreshToken: incomingRefreshToken,
+    isActive: true,
+  });
+
+  if (!session) {
+    throw new ApiError(401, "Refresh token is expired or revoked");
   }
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
@@ -268,6 +313,8 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
   await deactivateSession(incomingRefreshToken);
   await createSession(user._id, refreshToken, req);
+
+  const freshUser = await User.findById(user._id).select("-password -refreshToken").lean();
 
   const options = getCookieOptions();
 
@@ -278,8 +325,8 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        { accessToken, refreshToken },
-        "Access token refreshed successfully"
+        { user: freshUser },
+        "Token refreshed successfully"
       )
     );
 });
@@ -301,11 +348,9 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Old password and new password are required");
   }
 
-  if (newPassword.length < 8) {
-    throw new ApiError(400, "New password must be at least 8 characters");
-  }
+  assertPasswordStrength(newPassword);
 
-  const user = await User.findById(req.user?._id);
+  const user = await User.findById(req.user?._id).select("+password");
 
   if (!user) {
     throw new ApiError(404, "User not found");
@@ -324,8 +369,10 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
   }
 
   user.password = newPassword;
-  user.refreshToken = undefined;
   await user.save();
+
+  // Deactivate all sessions for this user (logout everywhere)
+  await Session.updateMany({ user: req.user._id }, { isActive: false });
 
   const options = getCookieOptions();
 
@@ -417,7 +464,7 @@ const updateUserImage = async ({
 
   const user = await User.findById(userId).select(
     `${urlField} ${publicIdField}`
-  );
+  ).lean();
 
   if (!user) {
     throw new ApiError(404, "User not found");
@@ -446,7 +493,7 @@ const updateUserImage = async ({
         returnDocument: "after",
         runValidators: true,
       }
-    ).select("-password -refreshToken");
+    ).select("-password -refreshToken").lean();
   } catch (error) {
     await deleteFromCloudinary(uploadedImage.public_id);
     throw error;
@@ -520,70 +567,99 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Username is missing");
   }
 
-  const channel = await User.aggregate([
-    {
-      $match: {
-        username: username.toLowerCase(),
-      },
-    },
-    {
-      $lookup: {
-        from: "subscriptions",
-        localField: "_id",
-        foreignField: "channel",
-        as: "subscribers",
-      },
-    },
-    {
-      $lookup: {
-        from: "subscriptions",
-        localField: "_id",
-        foreignField: "subscriber",
-        as: "subscribedTo",
-      },
-    },
-    {
-      $addFields: {
-        subscribersCount: { $size: "$subscribers" },
-        channelsSubscribedToCount: { $size: "$subscribedTo" },
-        isSubscribed: {
-          $cond: {
-            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
-            then: true,
-            else: false,
-          },
+  const cacheKey = `channel:${username.toLowerCase()}`;
+  let channelData = await cacheGet(cacheKey);
+
+  if (!channelData) {
+    const channel = await User.aggregate([
+      {
+        $match: {
+          username: username.toLowerCase(),
         },
       },
-    },
-    {
-      $project: {
-        fullName: 1,
-        username: 1,
-        subscribersCount: 1,
-        channelsSubscribedToCount: 1,
-        isSubscribed: 1,
-        avatar: 1,
-        coverImage: 1,
+      {
+        $lookup: {
+          from: "subscriptions",
+          let: { channelId: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$channel", "$$channelId"] } } },
+            { $count: "count" },
+          ],
+          as: "subscribers",
+        },
       },
-    },
-  ]);
+      {
+        $lookup: {
+          from: "subscriptions",
+          let: { subscriberId: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$subscriber", "$$subscriberId"] } } },
+            { $count: "count" },
+          ],
+          as: "subscribedTo",
+        },
+      },
+      {
+        $addFields: {
+          subscribersCount: { $ifNull: [{ $arrayElemAt: ["$subscribers.count", 0] }, 0] },
+          channelsSubscribedToCount: { $ifNull: [{ $arrayElemAt: ["$subscribedTo.count", 0] }, 0] },
+        },
+      },
+      {
+        $project: {
+          fullName: 1,
+          username: 1,
+          subscribersCount: 1,
+          channelsSubscribedToCount: 1,
+          avatar: 1,
+          coverImage: 1,
+        },
+      },
+    ]);
 
-  if (!channel?.length) {
-    throw new ApiError(404, "Channel does not exist");
+    if (!channel?.length) {
+      throw new ApiError(404, "Channel does not exist");
+    }
+
+    channelData = channel[0];
+
+    // Cache non-user-specific data for 1 minute
+    await cacheSet(cacheKey, channelData, 60);
+  }
+
+  // Compute isSubscribed separately — never cached per user
+  if (req.user?._id) {
+    const sub = await Subscription.findOne({
+      channel: channelData._id,
+      subscriber: req.user._id,
+    }).lean();
+    channelData.isSubscribed = !!sub;
+  } else {
+    channelData.isSubscribed = false;
   }
 
   return res
     .status(200)
     .json(
-      new ApiResponse(200, channel[0], "User channel fetched successfully")
+      new ApiResponse(200, channelData, "User channel fetched successfully")
     );
 });
 
 const getWatchHistory = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 20 } = req.query;
+  const pageNumber = Math.max(parseInt(page, 10) || 1, 1);
+  const limitNumber = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+  const skip = (pageNumber - 1) * limitNumber;
+
   const user = await User.aggregate([
     {
       $match: {
         _id: new mongoose.Types.ObjectId(req.user._id),
+      },
+    },
+    {
+      $addFields: {
+        totalCount: { $size: { $ifNull: ["$watchHistory", []] } },
       },
     },
     {
@@ -615,6 +691,8 @@ const getWatchHistory = asyncHandler(async (req, res) => {
               owner: { $first: "$owner" },
             },
           },
+          { $skip: skip },
+          { $limit: limitNumber },
         ],
       },
     },
@@ -625,7 +703,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        user[0]?.watchHistory || [],
+        { docs: user[0]?.watchHistory || [], total: user[0]?.totalCount || 0, page: pageNumber, limit: limitNumber },
         "Watch history fetched successfully"
       )
     );
@@ -638,7 +716,7 @@ const deleteCurrentUser = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Unauthorized request");
   }
 
-  const user = await User.findById(userId);
+  const user = await User.findById(userId).select("_id avatarPublicId coverImagePublicId").lean();
 
   if (!user) {
     throw new ApiError(404, "User not found");
@@ -682,6 +760,38 @@ const deleteCurrentUser = asyncHandler(async (req, res) => {
 
   // delete playlists
   await Playlist.deleteMany({ owner: userId });
+
+  // delete notifications (as recipient or sender)
+  await Notification.deleteMany({
+    $or: [{ recipient: userId }, { sender: userId }],
+  });
+
+  // delete community posts
+  await CommunityPost.deleteMany({ owner: userId });
+
+  // delete polls created by user
+  await Poll.deleteMany({ createdBy: userId });
+  // remove user from poll voters
+  await Poll.updateMany(
+    { voters: userId },
+    { $pull: { voters: userId } }
+  );
+
+  // delete post likes
+  await PostLike.deleteMany({ likedBy: userId });
+
+  // delete OTP records
+  await OTP.deleteMany({ user: userId });
+
+  // remove user reference from other users' blocked/muted/watchLater/watchHistory arrays
+  await User.updateMany({ blockedUsers: userId }, { $pull: { blockedUsers: userId } });
+  await User.updateMany({ mutedUsers: userId }, { $pull: { mutedUsers: userId } });
+  await User.updateMany({ mutedChannels: userId }, { $pull: { mutedChannels: userId } });
+  await User.updateMany({ watchLater: userId }, { $pull: { watchLater: userId } });
+  await User.updateMany({ watchHistory: userId }, { $pull: { watchHistory: userId } });
+
+  // delete active sessions
+  await Session.deleteMany({ user: userId });
 
   // delete user
   await User.findByIdAndDelete(userId);
@@ -774,24 +884,36 @@ const getUserProfile = asyncHandler(async (req, res) => {
     {
       $lookup: {
         from: "subscriptions",
-        localField: "_id",
-        foreignField: "channel",
+        let: { channelId: "$_id" },
+        pipeline: [
+          { $match: { $expr: { $eq: ["$channel", "$$channelId"] } } },
+          { $count: "count" },
+        ],
         as: "subscribers",
       },
     },
     {
       $lookup: {
         from: "videos",
-        localField: "_id",
-        foreignField: "owner",
+        let: { ownerId: "$_id" },
+        pipeline: [
+          { $match: { $expr: { $eq: ["$owner", "$$ownerId"] } } },
+          {
+            $group: {
+              _id: null,
+              videoCount: { $sum: 1 },
+              totalViews: { $sum: "$views" },
+            },
+          },
+        ],
         as: "videos",
       },
     },
     {
       $addFields: {
-        subscriberCount: { $size: "$subscribers" },
-        videoCount: { $size: "$videos" },
-        totalViews: { $sum: "$videos.views" },
+        subscriberCount: { $ifNull: [{ $arrayElemAt: ["$subscribers.count", 0] }, 0] },
+        videoCount: { $ifNull: [{ $arrayElemAt: ["$videos.videoCount", 0] }, 0] },
+        totalViews: { $ifNull: [{ $arrayElemAt: ["$videos.totalViews", 0] }, 0] },
       },
     },
     {
@@ -846,8 +968,10 @@ const forgotPassword = asyncHandler(async (req, res) => {
   }
 
   const user = await User.findOne({ email: email.toLowerCase().trim() });
+
+  // Constant-time response to prevent email enumeration
   if (!user) {
-    // Don't reveal if user exists
+    await new Promise((resolve) => setTimeout(resolve, 100));
     return res.status(200).json(new ApiResponse(200, {}, "If the email exists, a reset link has been sent"));
   }
 
@@ -866,7 +990,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     // In production, SMTP credentials should be set in .env (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS)
-    console.error("Failed to send reset email:", error.message);
+    logger.error("Failed to send reset email:", error.message);
   }
 
   return res.status(200).json(
@@ -880,16 +1004,14 @@ const resetPassword = asyncHandler(async (req, res) => {
   if (!token || !newPassword) {
     throw new ApiError(400, "Token and new password are required");
   }
-  if (newPassword.length < 8) {
-    throw new ApiError(400, "Password must be at least 8 characters");
-  }
+  assertPasswordStrength(newPassword);
 
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
   const user = await User.findOne({
     passwordResetToken: hashedToken,
     passwordResetExpires: { $gt: Date.now() },
-  });
+  }).select("+passwordResetToken");
 
   if (!user) {
     throw new ApiError(400, "Invalid or expired reset token");
@@ -899,6 +1021,9 @@ const resetPassword = asyncHandler(async (req, res) => {
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
   await user.save();
+
+  // Deactivate all sessions for this user (logout everywhere)
+  await Session.updateMany({ user: user._id }, { isActive: false });
 
   return res.status(200).json(new ApiResponse(200, {}, "Password reset successfully"));
 });
@@ -913,7 +1038,7 @@ const blockUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Cannot block yourself");
   }
 
-  const targetUser = await User.findById(userId);
+  const targetUser = await User.findById(userId).select("_id").lean();
   if (!targetUser) throw new ApiError(404, "User not found");
 
   const user = await User.findById(req.user._id);
@@ -962,6 +1087,7 @@ const addToWatchLater = asyncHandler(async (req, res) => {
   }
 
   const user = await User.findById(req.user._id);
+  if (!user) throw new ApiError(404, "User not found");
   const exists = user.watchLater.includes(videoId);
 
   if (exists) {
@@ -970,22 +1096,39 @@ const addToWatchLater = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, { watchLater: false }, "Removed from watch later"));
   } else {
     user.watchLater.push(videoId);
+    // Cap at 200 to prevent unbounded array growth
+    if (user.watchLater.length > 200) {
+      user.watchLater = user.watchLater.slice(-200);
+    }
     await user.save({ validateBeforeSave: false });
     return res.status(200).json(new ApiResponse(200, { watchLater: true }, "Added to watch later"));
   }
 });
 
 const getWatchLater = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id)
-    .populate({
-      path: "watchLater",
-      match: { isPublished: true },
-      select: "title thumbnail views duration createdAt",
-      populate: { path: "owner", select: "fullName username avatar" },
-    })
-    .select("watchLater");
+  let { page = 1, limit = 20 } = req.query;
+  page = Math.max(1, parseInt(page, 10) || 1);
+  limit = Math.min(50, Math.max(1, parseInt(limit, 10) || 20));
 
-  return res.status(200).json(new ApiResponse(200, user.watchLater, "Watch later fetched"));
+  const user = await User.findById(req.user._id).select("watchLater").lean();
+  const total = user?.watchLater?.length || 0;
+  const totalPages = Math.ceil(total / limit);
+  const skip = (page - 1) * limit;
+
+  const watchLaterIds = user?.watchLater?.slice(skip, skip + limit) || [];
+
+  const videos = await Video.find({ _id: { $in: watchLaterIds }, isPublished: true })
+    .select("title thumbnail views duration createdAt")
+    .populate("owner", "fullName username avatar")
+    .sort({ createdAt: -1 })
+    .lean();
+
+  // Preserve original order from watchLater array
+  const ordered = watchLaterIds.map((id) => videos.find((v) => v._id.toString() === id.toString())).filter(Boolean);
+
+  return res.status(200).json(
+    new ApiResponse(200, { docs: ordered, total, page, limit, totalPages }, "Watch later fetched")
+  );
 });
 
 const addSearchHistory = asyncHandler(async (req, res) => {
@@ -996,6 +1139,7 @@ const addSearchHistory = asyncHandler(async (req, res) => {
   }
 
   const user = await User.findById(req.user._id);
+  if (!user) throw new ApiError(404, "User not found");
   // Remove duplicate and add to front
   user.searchHistory = user.searchHistory.filter((q) => q !== query.trim());
   user.searchHistory.unshift(query.trim());
@@ -1009,8 +1153,19 @@ const addSearchHistory = asyncHandler(async (req, res) => {
 });
 
 const getSearchHistory = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id).select("searchHistory");
-  return res.status(200).json(new ApiResponse(200, user.searchHistory || [], "Search history fetched"));
+  let { page = 1, limit = 20 } = req.query;
+  page = Math.max(1, parseInt(page, 10) || 1);
+  limit = Math.min(50, Math.max(1, parseInt(limit, 10) || 20));
+
+  const user = await User.findById(req.user._id).select("searchHistory").lean();
+  const total = user?.searchHistory?.length || 0;
+  const totalPages = Math.ceil(total / limit);
+  const skip = (page - 1) * limit;
+  const docs = user?.searchHistory?.slice(skip, skip + limit) || [];
+
+  return res.status(200).json(
+    new ApiResponse(200, { docs, total, page, limit, totalPages }, "Search history fetched")
+  );
 });
 
 const clearSearchHistory = asyncHandler(async (req, res) => {
@@ -1067,50 +1222,30 @@ const updatePrivacySettings = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, user, "Privacy settings updated"));
 });
 
-const exportUserData = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id)
-    .select("-password -refreshToken -passwordResetToken")
-    .lean();
-
-  const videos = await Video.find({ owner: req.user._id }).lean();
-  const comments = await Comment.find({ owner: req.user._id }).lean();
-  const playlists = await Playlist.find({ owner: req.user._id }).lean();
-
-  const exportData = {
-    profile: user,
-    videos,
-    comments,
-    playlists,
-    exportedAt: new Date().toISOString(),
-  };
-
-  return res.status(200).json(new ApiResponse(200, exportData, "User data exported"));
-});
-
 const forgotPasswordOTP = asyncHandler(async (req, res) => {
-  const { email } = req.body;
+  const { identifier, email } = req.body;
+  const id = (identifier || email || "").trim().toLowerCase();
 
-  if (!email?.trim()) {
+  if (!id) {
     throw new ApiError(400, "Email is required");
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
-  const user = await User.findOne({ email: normalizedEmail });
+  const user = await User.findOne({ email: id });
 
   if (!user) {
     return res.status(200).json(new ApiResponse(200, {}, "If the email exists, an OTP has been sent"));
   }
 
-  const otp = await storeOTP(normalizedEmail, "forgot-password");
+  const otp = await storeOTP(id, "forgot-password", "email", user._id);
 
   try {
     await sendEmail({
-      to: normalizedEmail,
+      to: id,
       subject: "Your VideoTube Account Recovery Code",
       html: otpEmailTemplate(otp, "forgot-password"),
     });
   } catch (error) {
-    console.error("Failed to send OTP email:", error.message);
+    logger.error("Failed to send OTP email:", error.message);
   }
 
   return res.status(200).json(
@@ -1119,22 +1254,22 @@ const forgotPasswordOTP = asyncHandler(async (req, res) => {
 });
 
 const verifyResetOTP = asyncHandler(async (req, res) => {
-  const { email, otp } = req.body;
+  const { identifier, email, otp } = req.body;
+  const id = (identifier || email || "").trim().toLowerCase();
 
-  if (!email || !otp) {
+  if (!id || !otp) {
     throw new ApiError(400, "Email and OTP are required");
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
-  const result = await verifyOTP(normalizedEmail, otp, "forgot-password");
+  const result = await verifyOTP(id, otp, "forgot-password");
 
   if (!result.valid) {
     throw new ApiError(400, result.message);
   }
 
   const resetToken = jwt.sign(
-    { email: normalizedEmail, purpose: "reset" },
-    process.env.ACCESS_TOKEN_SECRET,
+    { email: id, purpose: "reset" },
+    process.env.REFRESH_TOKEN_SECRET,
     { expiresIn: "5m" }
   );
 
@@ -1150,13 +1285,11 @@ const resetPasswordWithOTP = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Reset token and new password are required");
   }
 
-  if (newPassword.length < 8) {
-    throw new ApiError(400, "Password must be at least 8 characters");
-  }
+  assertPasswordStrength(newPassword);
 
   let decoded;
   try {
-    decoded = jwt.verify(resetToken, process.env.ACCESS_TOKEN_SECRET);
+    decoded = jwt.verify(resetToken, process.env.REFRESH_TOKEN_SECRET);
   } catch (error) {
     throw new ApiError(400, "Invalid or expired reset token");
   }
@@ -1171,8 +1304,10 @@ const resetPasswordWithOTP = asyncHandler(async (req, res) => {
   }
 
   user.password = newPassword;
-  user.refreshToken = undefined;
   await user.save();
+
+  // Deactivate all sessions for this user (logout everywhere)
+  await Session.updateMany({ user: user._id }, { isActive: false });
 
   try {
     await sendEmail({
@@ -1181,12 +1316,47 @@ const resetPasswordWithOTP = asyncHandler(async (req, res) => {
       html: passwordChangedEmailTemplate(),
     });
   } catch (error) {
-    console.error("Failed to send password changed email:", error.message);
+    logger.error("Failed to send password changed email:", error.message);
   }
 
   return res.status(200).json(
     new ApiResponse(200, {}, "Password reset successfully")
   );
+});
+
+const skipAndLogin = asyncHandler(async (req, res) => {
+  const { resetToken } = req.body;
+
+  if (!resetToken) {
+    throw new ApiError(400, "Reset token is required");
+  }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(resetToken, process.env.REFRESH_TOKEN_SECRET);
+  } catch (error) {
+    throw new ApiError(400, "Invalid or expired reset token");
+  }
+
+  if (decoded.purpose !== "reset") {
+    throw new ApiError(400, "Invalid reset token");
+  }
+
+  const user = await User.findOne({ email: decoded.email });
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
+  const loggedInUser = await User.findById(user._id).select("-password -refreshToken").lean();
+  const options = getCookieOptions();
+  await createSession(user._id, refreshToken, req);
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(new ApiResponse(200, { user: loggedInUser }, "Logged in successfully"));
 });
 
 const sendChangePasswordOTP = asyncHandler(async (req, res) => {
@@ -1199,17 +1369,17 @@ const sendChangePasswordOTP = asyncHandler(async (req, res) => {
     if (!mobile) {
       throw new ApiError(400, "No mobile number linked. Please add one in your profile first.");
     }
-    const otp = await storeOTP(mobile, "change-password", "whatsapp");
+    const otp = await storeOTP(mobile, "change-password", "whatsapp", req.user._id);
     try {
       await sendWhatsAppOTP(mobile, otp);
     } catch (error) {
-      console.error("Failed to send OTP WhatsApp:", error.message);
+      logger.error("Failed to send OTP WhatsApp:", error.message);
     }
     return res.status(200).json(
       new ApiResponse(200, { channel: "whatsapp" }, "OTP sent to your WhatsApp")
     );
   } else {
-    const otp = await storeOTP(email, "change-password", "email");
+    const otp = await storeOTP(email, "change-password", "email", req.user._id);
     try {
       await sendEmail({
         to: email,
@@ -1217,7 +1387,7 @@ const sendChangePasswordOTP = asyncHandler(async (req, res) => {
         html: otpEmailTemplate(otp, "change-password"),
       });
     } catch (error) {
-      console.error("Failed to send OTP email:", error.message);
+      logger.error("Failed to send OTP email:", error.message);
     }
     return res.status(200).json(
       new ApiResponse(200, { channel: "email" }, "OTP sent to your email")
@@ -1232,11 +1402,9 @@ const verifyAndChangePassword = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Old password, new password, and OTP are required");
   }
 
-  if (newPassword.length < 8) {
-    throw new ApiError(400, "New password must be at least 8 characters");
-  }
+  assertPasswordStrength(newPassword);
 
-  const user = await User.findById(req.user._id);
+  const user = await User.findById(req.user._id).select("+password");
   if (!user) {
     throw new ApiError(404, "User not found");
   }
@@ -1257,8 +1425,10 @@ const verifyAndChangePassword = asyncHandler(async (req, res) => {
   }
 
   user.password = newPassword;
-  user.refreshToken = undefined;
   await user.save();
+
+  // Deactivate all sessions for this user (logout everywhere)
+  await Session.updateMany({ user: req.user._id }, { isActive: false });
 
   try {
     await sendEmail({
@@ -1267,7 +1437,7 @@ const verifyAndChangePassword = asyncHandler(async (req, res) => {
       html: passwordChangedEmailTemplate(),
     });
   } catch (error) {
-    console.error("Failed to send password changed email:", error.message);
+    logger.error("Failed to send password changed email:", error.message);
   }
 
   const options = getCookieOptions();
@@ -1286,32 +1456,34 @@ const verifyAndChangePassword = asyncHandler(async (req, res) => {
 });
 
 const socialLogin = asyncHandler(async (req, res) => {
-  const { provider, providerId, email, name, avatar } = req.body;
+  const { provider, token } = req.body;
 
-  if (!provider || !providerId || !email || !name) {
-    throw new ApiError(400, "Provider, providerId, email, and name are required");
+  if (!provider || !token) {
+    throw new ApiError(400, "Provider and OAuth access token are required");
   }
 
-  const allowedProviders = ["google", "github", "facebook", "microsoft", "apple", "x"];
+  const allowedProviders = ["google", "github"];
   if (!allowedProviders.includes(provider)) {
-    throw new ApiError(400, `Invalid provider. Allowed: ${allowedProviders.join(", ")}`);
+    throw new ApiError(400, `Server-side OAuth token verification only supports: ${allowedProviders.join(", ")}. For other providers, use the server-side OAuth flow at /api/v1/auth/${provider}.`);
   }
 
-  if (!isValidEmail(email)) {
-    throw new ApiError(400, "Invalid email address");
-  }
+  const verifiedData = await verifyOAuthToken(provider, token);
+  const { email: verifiedEmail, name: verifiedName, avatar: verifiedAvatar, providerId } = verifiedData;
 
-  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedEmail = verifiedEmail.trim().toLowerCase();
   let user = await User.findOne({ email: normalizedEmail });
+
+  let isNewUser = false;
 
   if (user) {
     user.socialAccounts = user.socialAccounts || new Map();
     user.socialAccounts.set(provider, providerId);
-    if (avatar && (!user.avatar || user.avatar === "")) {
-      user.avatar = avatar;
+    if (verifiedAvatar && (!user.avatar || user.avatar === "")) {
+      user.avatar = verifiedAvatar;
     }
     await user.save({ validateBeforeSave: false });
   } else {
+    isNewUser = true;
     const randomPassword = crypto.randomBytes(32).toString("hex");
     const socialMap = new Map();
     socialMap.set(provider, providerId);
@@ -1319,19 +1491,26 @@ const socialLogin = asyncHandler(async (req, res) => {
     const usernameBase = normalizedEmail.split("@")[0].replace(/[^a-z0-9]/g, "");
     let username = usernameBase;
     let suffix = 1;
-    while (await User.findOne({ username })) {
-      username = `${usernameBase}${suffix}`;
-      suffix++;
-    }
-
-    user = await User.create({
-      username,
-      fullName: name.trim(),
+    for (let attempts = 0; attempts < 10; attempts++) {
+      try {
+        user = await User.create({
+          username,
+      fullName: verifiedName.trim(),
       email: normalizedEmail,
       password: randomPassword,
-      avatar: avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366f1&color=fff`,
+      avatar: verifiedAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(verifiedName)}&background=6366f1&color=fff`,
       socialAccounts: socialMap,
-    });
+        });
+        break;
+      } catch (err) {
+        if (err.code === 11000 && attempts < 9) {
+          username = `${usernameBase}${suffix}`;
+          suffix++;
+          continue;
+        }
+        throw err;
+      }
+    }
   }
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
@@ -1342,45 +1521,19 @@ const socialLogin = asyncHandler(async (req, res) => {
   await createSession(user._id, refreshToken, req);
 
   return res
-    .status(200)
+    .status(isNewUser ? 201 : 200)
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
     .json(
       new ApiResponse(
-        200,
-        { user: loggedInUser, accessToken, refreshToken },
-        "Logged in via social account"
+        isNewUser ? 201 : 200,
+        { user: loggedInUser },
+        isNewUser ? "User registered via social login" : "User logged in successfully"
       )
     );
 });
 
-const linkSocialAccount = asyncHandler(async (req, res) => {
-  const { provider, providerId } = req.body;
-
-  if (!provider || !providerId) {
-    throw new ApiError(400, "Provider and providerId are required");
-  }
-
-  const allowedProviders = ["google", "github", "facebook", "microsoft", "apple", "x"];
-  if (!allowedProviders.includes(provider)) {
-    throw new ApiError(400, `Invalid provider. Allowed: ${allowedProviders.join(", ")}`);
-  }
-
-  const user = await User.findById(req.user._id);
-  if (!user) {
-    throw new ApiError(404, "User not found");
-  }
-
-  user.socialAccounts = user.socialAccounts || new Map();
-  user.socialAccounts.set(provider, providerId);
-  await user.save({ validateBeforeSave: false });
-
-  return res.status(200).json(
-    new ApiResponse(200, {}, `${provider} account linked successfully`)
-  );
-});
-
-// ── WhatsApp OTP + Unified Auth ──
+// -- WhatsApp OTP + Unified Auth --
 const isValidMobile = (mobile) => /^\+?[1-9]\d{9,14}$/.test(mobile);
 
 // Determine channel for a given identifier
@@ -1389,10 +1542,10 @@ const detectChannel = (identifier) => {
   return "email";
 };
 
-// ── Unified Registration Flow ──
+// -- Unified Registration Flow --
 // Step 1: Send OTPs to both email and mobile
 const sendRegistrationOTP = asyncHandler(async (req, res) => {
-  const { email, mobile, channel } = req.body;
+  const { email, mobile } = req.body;
 
   if (!email?.trim() || !mobile?.trim()) {
     throw new ApiError(400, "Email and mobile number are required");
@@ -1417,31 +1570,27 @@ const sendRegistrationOTP = asyncHandler(async (req, res) => {
     throw new ApiError(409, `${field} already registered. Please login.`);
   }
 
-  const sendChannel = channel === "whatsapp" ? "whatsapp" : "email";
+  // Send OTP to BOTH email and mobile (user can verify either)
+  const [emailOtp, mobileOtp] = await Promise.all([
+    storeOTP(normalizedEmail, "registration", "email"),
+    storeOTP(normalizedMobile, "registration", "whatsapp"),
+  ]);
 
-  // Send OTP via the chosen channel only
-  if (sendChannel === "email") {
-    const emailOtp = await storeOTP(normalizedEmail, "registration", "email");
-    try {
-      await sendEmail({
-        to: normalizedEmail,
-        subject: "Welcome to VideoTube — Verify Your Email",
-        html: otpEmailTemplate(emailOtp, "registration"),
+  await Promise.allSettled([
+    sendEmail({
+      to: normalizedEmail,
+      subject: "Welcome to VideoTube — Verify Your Email",
+      html: otpEmailTemplate(emailOtp, "registration"),
+    }),
+    sendWhatsAppOTP(normalizedMobile, mobileOtp).catch((err) => {
+      logger.warn("WhatsApp OTP send failed, falling back to email-only", {
+        error: err.message,
       });
-    } catch (error) {
-      console.error("Failed to send registration OTP email:", error.message);
-    }
-  } else {
-    const mobileOtp = await storeOTP(normalizedMobile, "registration", "whatsapp");
-    try {
-      await sendWhatsAppOTP(normalizedMobile, mobileOtp);
-    } catch (error) {
-      console.error("Failed to send registration OTP WhatsApp:", error.message);
-    }
-  }
+    }),
+  ]);
 
   return res.status(200).json(
-    new ApiResponse(200, { email: normalizedEmail, mobile: normalizedMobile, channel: sendChannel }, `OTP sent to your ${sendChannel === "email" ? "email" : "mobile number"}`)
+    new ApiResponse(200, { email: normalizedEmail, mobile: normalizedMobile }, "OTPs sent to both email and mobile number")
   );
 });
 
@@ -1568,146 +1717,13 @@ const registerUnified = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         201,
-        { user: loggedInUser, accessToken, refreshToken },
+        { user: loggedInUser },
         "User registered successfully"
       )
     );
 });
 
-// ── Mobile Registration Flow ──
-// Step 1: Send mobile registration OTP
-const sendMobileRegistrationOTP = asyncHandler(async (req, res) => {
-  const { mobile } = req.body;
-
-  if (!mobile?.trim()) {
-    throw new ApiError(400, "Mobile number is required");
-  }
-
-  const normalizedMobile = mobile.trim().replace(/\s/g, "");
-
-  if (!isValidMobile(normalizedMobile)) {
-    throw new ApiError(400, "Invalid mobile number format. Use +91XXXXXXXXXX format");
-  }
-
-  // Check if mobile already registered
-  const existingUser = await User.findOne({ mobile: normalizedMobile });
-  if (existingUser) {
-    throw new ApiError(409, "Mobile number already registered. Please login.");
-  }
-
-  const otp = await storeOTP(normalizedMobile, "registration", "whatsapp");
-
-  try {
-    await sendWhatsAppOTP(normalizedMobile, otp);
-  } catch (error) {
-    console.error("Failed to send mobile registration OTP WhatsApp:", error.message);
-  }
-
-  return res.status(200).json(
-    new ApiResponse(200, { mobile: normalizedMobile }, "OTP sent to your mobile number")
-  );
-});
-
-// Step 2: Verify mobile registration OTP
-const verifyMobileRegistrationOTP = asyncHandler(async (req, res) => {
-  const { mobile, otp: otpValue } = req.body;
-
-  if (!mobile || !otpValue) {
-    throw new ApiError(400, "Mobile number and OTP are required");
-  }
-
-  const normalizedMobile = mobile.trim().replace(/\s/g, "");
-  const purpose = "registration";
-
-  const result = await verifyOTP(normalizedMobile, otpValue, purpose);
-
-  if (!result.valid) {
-    throw new ApiError(400, result.message);
-  }
-
-  return res.status(200).json(
-    new ApiResponse(200, { verified: true, mobile: normalizedMobile }, "Mobile number verified successfully")
-  );
-});
-
-// Step 3: Complete mobile registration
-const registerWithMobileOTP = asyncHandler(async (req, res) => {
-  const { mobile, otp, fullName, username, password } = req.body;
-
-  if (!mobile || !otp || !fullName || !username || !password) {
-    throw new ApiError(400, "All fields are required: mobile, otp, fullName, username, password");
-  }
-
-  const normalizedMobile = mobile.trim().replace(/\s/g, "");
-
-  if (!isValidMobile(normalizedMobile)) {
-    throw new ApiError(400, "Invalid mobile number format");
-  }
-  if (password.length < 8 || password.length > 16) {
-    throw new ApiError(400, "Password must be 8-16 characters");
-  }
-  if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
-    throw new ApiError(400, "Password must contain uppercase, lowercase, number, and special character");
-  }
-
-  // Verify OTP
-  const result = await verifyOTP(normalizedMobile, otp, "registration");
-  if (!result.valid) {
-    throw new ApiError(400, result.message);
-  }
-
-  // Check uniqueness
-  const existingMobile = await User.findOne({ mobile: normalizedMobile });
-  if (existingMobile) throw new ApiError(409, "Mobile number already registered");
-
-  const existingUsername = await User.findOne({ username: username.toLowerCase() });
-  if (existingUsername) throw new ApiError(409, "Username already taken");
-
-  // Upload avatar to Cloudinary
-  let avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=6366f1&color=fff`;
-  let coverUrl = "";
-
-  const avatarLocalPath = req.files?.avatar?.[0]?.path;
-  if (avatarLocalPath) {
-    const uploaded = await uploadOnCloudinary(avatarLocalPath);
-    if (uploaded?.url) avatarUrl = uploaded.url;
-  }
-
-  const coverLocalPath = req.files?.coverImage?.[0]?.path;
-  if (coverLocalPath) {
-    const uploaded = await uploadOnCloudinary(coverLocalPath);
-    if (uploaded?.url) coverUrl = uploaded.url;
-  }
-
-  const user = await User.create({
-    username: username.toLowerCase(),
-    fullName: fullName.trim(),
-    mobile: normalizedMobile,
-    isMobileVerified: true,
-    password,
-    avatar: avatarUrl,
-    ...(coverUrl && { coverImage: coverUrl }),
-  });
-
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
-  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
-
-  const options = getCookieOptions();
-
-  return res
-    .status(201)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
-    .json(
-      new ApiResponse(
-        201,
-        { user: loggedInUser, accessToken, refreshToken },
-        "User registered successfully"
-      )
-    );
-});
-
-// ── OTP Login (Passwordless) ──
+// -- OTP Login (Passwordless) --
 // Step 1: Send login OTP
 const sendLoginOTP = asyncHandler(async (req, res) => {
   const { identifier } = req.body;
@@ -1734,7 +1750,7 @@ const sendLoginOTP = asyncHandler(async (req, res) => {
 
   // Send OTP via appropriate channel
   if (channel === "email") {
-    const otp = await storeOTP(normalizedIdentifier, "login", "email");
+    const otp = await storeOTP(normalizedIdentifier, "login", "email", user._id);
     try {
       await sendEmail({
         to: normalizedIdentifier,
@@ -1742,14 +1758,14 @@ const sendLoginOTP = asyncHandler(async (req, res) => {
         html: otpEmailTemplate(otp, "login"),
       });
     } catch (error) {
-      console.error("Failed to send login OTP email:", error.message);
+      logger.error("Failed to send login OTP email:", error.message);
     }
   } else {
-    const otp = await storeOTP(normalizedIdentifier, "login", "whatsapp");
+    const otp = await storeOTP(normalizedIdentifier, "login", "whatsapp", user._id);
     try {
       await sendWhatsAppOTP(normalizedIdentifier, otp);
     } catch (error) {
-      console.error("Failed to send login OTP WhatsApp:", error.message);
+      logger.error("Failed to send login OTP WhatsApp:", error.message);
     }
   }
 
@@ -1800,322 +1816,13 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        { user: loggedInUser, accessToken, refreshToken },
-        "Logged in via OTP"
+        { user: loggedInUser },
+        "User logged in successfully"
       )
     );
 });
 
-// ── Forgot Password ──
-// Step 1: Send forgot password OTP (auto-detect channel from identifier)
-const sendForgotPasswordOTP = asyncHandler(async (req, res) => {
-  const { identifier } = req.body;
-
-  if (!identifier?.trim()) {
-    throw new ApiError(400, "Email or mobile number is required");
-  }
-
-  const normalizedIdentifier = identifier.trim().toLowerCase();
-  const detectedChannel = detectChannel(normalizedIdentifier);
-
-  // Find user
-  let user;
-  if (detectedChannel === "email") {
-    user = await User.findOne({ email: normalizedIdentifier });
-  } else {
-    user = await User.findOne({ mobile: normalizedIdentifier });
-  }
-
-  if (!user) {
-    return res.status(200).json(new ApiResponse(200, {}, "If the account exists, an OTP has been sent"));
-  }
-
-  // Send OTP via auto-detected channel
-  const purpose = "forgot-password";
-  if (detectedChannel === "email") {
-    const targetEmail = user.email;
-    const otp = await storeOTP(targetEmail, purpose, "email");
-    try {
-      await sendEmail({
-        to: targetEmail,
-        subject: "Your VideoTube Account Recovery Code",
-        html: otpEmailTemplate(otp, "forgot-password"),
-      });
-    } catch (error) {
-      console.error("Failed to send forgot password OTP email:", error.message);
-    }
-  } else {
-    const targetMobile = user.mobile;
-    if (!targetMobile) {
-      throw new ApiError(400, "No mobile number linked to this account. Please use email.");
-    }
-    const otp = await storeOTP(targetMobile, purpose, "whatsapp");
-    try {
-      await sendWhatsAppOTP(targetMobile, otp);
-    } catch (error) {
-      console.error("Failed to send forgot password OTP WhatsApp:", error.message);
-    }
-  }
-
-  return res.status(200).json(
-    new ApiResponse(200, {}, "If the account exists, an OTP has been sent")
-  );
-});
-
-// Step 2: Verify forgot password OTP
-const verifyForgotPasswordOTP = asyncHandler(async (req, res) => {
-  const { identifier, otp: otpValue } = req.body;
-
-  if (!identifier || !otpValue) {
-    throw new ApiError(400, "Identifier and OTP are required");
-  }
-
-  const normalizedIdentifier = identifier.trim().toLowerCase();
-
-  const result = await verifyOTP(normalizedIdentifier, otpValue, "forgot-password");
-  if (!result.valid) {
-    throw new ApiError(400, result.message);
-  }
-
-  // Generate a short-lived reset token
-  const resetToken = jwt.sign(
-    { identifier: normalizedIdentifier, purpose: "reset" },
-    process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "10m" }
-  );
-
-  return res.status(200).json(
-    new ApiResponse(200, { resetToken }, "OTP verified. Use the reset token to set a new password or skip to login.")
-  );
-});
-
-// Step 3a: Reset password with reset token
-const resetPasswordWithResetToken = asyncHandler(async (req, res) => {
-  const { resetToken, newPassword } = req.body;
-
-  if (!resetToken || !newPassword) {
-    throw new ApiError(400, "Reset token and new password are required");
-  }
-  if (newPassword.length < 8) {
-    throw new ApiError(400, "Password must be at least 8 characters");
-  }
-
-  let decoded;
-  try {
-    decoded = jwt.verify(resetToken, process.env.ACCESS_TOKEN_SECRET);
-  } catch (error) {
-    throw new ApiError(400, "Invalid or expired reset token");
-  }
-
-  if (decoded.purpose !== "reset") {
-    throw new ApiError(400, "Invalid reset token");
-  }
-
-  // Find user by identifier (email or mobile)
-  const normalizedIdentifier = decoded.identifier;
-  const channel = detectChannel(normalizedIdentifier);
-
-  let user;
-  if (channel === "email") {
-    user = await User.findOne({ email: normalizedIdentifier });
-  } else {
-    user = await User.findOne({ mobile: normalizedIdentifier });
-  }
-
-  if (!user) {
-    throw new ApiError(404, "User not found");
-  }
-
-  user.password = newPassword;
-  user.refreshToken = undefined;
-  await user.save();
-
-  // Send password changed email
-  try {
-    await sendEmail({
-      to: user.email,
-      subject: "Password Changed",
-      html: passwordChangedEmailTemplate(),
-    });
-  } catch (error) {
-    console.error("Failed to send password changed email:", error.message);
-  }
-
-  return res.status(200).json(
-    new ApiResponse(200, {}, "Password reset successfully")
-  );
-});
-
-// Step 3b: Skip password reset and just login
-const skipAndLogin = asyncHandler(async (req, res) => {
-  const { resetToken } = req.body;
-
-  if (!resetToken) {
-    throw new ApiError(400, "Reset token is required");
-  }
-
-  let decoded;
-  try {
-    decoded = jwt.verify(resetToken, process.env.ACCESS_TOKEN_SECRET);
-  } catch (error) {
-    throw new ApiError(400, "Invalid or expired reset token");
-  }
-
-  if (decoded.purpose !== "reset") {
-    throw new ApiError(400, "Invalid reset token");
-  }
-
-  const normalizedIdentifier = decoded.identifier;
-  const channel = detectChannel(normalizedIdentifier);
-
-  let user;
-  if (channel === "email") {
-    user = await User.findOne({ email: normalizedIdentifier });
-  } else {
-    user = await User.findOne({ mobile: normalizedIdentifier });
-  }
-
-  if (!user) {
-    throw new ApiError(404, "User not found");
-  }
-
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
-  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
-
-  const options = getCookieOptions();
-
-  await createSession(user._id, refreshToken, req);
-
-  return res
-    .status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
-    .json(
-      new ApiResponse(
-        200,
-        { user: loggedInUser, accessToken, refreshToken },
-        "Logged in successfully"
-      )
-    );
-});
-
-// Keep old email registration for backward compatibility
-const sendEmailRegistrationOTP = asyncHandler(async (req, res) => {
-  const { email } = req.body;
-
-  if (!email?.trim()) {
-    throw new ApiError(400, "Email is required");
-  }
-
-  const normalizedEmail = email.trim().toLowerCase();
-
-  if (!isValidEmail(normalizedEmail)) {
-    throw new ApiError(400, "Invalid email address");
-  }
-
-  const existingUser = await User.findOne({ email: normalizedEmail });
-  if (existingUser) {
-    throw new ApiError(409, "Email already registered. Please login.");
-  }
-
-  const otp = await storeOTP(normalizedEmail, "email-registration", "email");
-
-  try {
-    await sendEmail({
-      to: normalizedEmail,
-      subject: "Welcome to VideoTube — Verify Your Email",
-      html: otpEmailTemplate(otp, "email-registration"),
-    });
-  } catch (error) {
-    console.error("Failed to send registration OTP email:", error.message);
-  }
-
-  return res.status(200).json(
-    new ApiResponse(200, { email: normalizedEmail }, "OTP sent to your email")
-  );
-});
-
-const verifyEmailRegistrationOTP = asyncHandler(async (req, res) => {
-  const { email, otp } = req.body;
-
-  if (!email || !otp) {
-    throw new ApiError(400, "Email and OTP are required");
-  }
-
-  const normalizedEmail = email.trim().toLowerCase();
-  const result = await verifyOTP(normalizedEmail, otp, "email-registration");
-
-  if (!result.valid) {
-    throw new ApiError(400, result.message);
-  }
-
-  return res.status(200).json(
-    new ApiResponse(200, { verified: true, email: normalizedEmail }, "Email verified successfully")
-  );
-});
-
-const registerWithEmailOTP = asyncHandler(async (req, res) => {
-  const { email, otp, fullName, username, password } = req.body;
-
-  if (!email || !otp || !fullName || !username || !password) {
-    throw new ApiError(400, "All fields are required: email, otp, fullName, username, password");
-  }
-
-  const normalizedEmail = email.trim().toLowerCase();
-
-  if (!isValidEmail(normalizedEmail)) {
-    throw new ApiError(400, "Invalid email address");
-  }
-
-  if (password.length < 8 || password.length > 16) {
-    throw new ApiError(400, "Password must be 8-16 characters");
-  }
-  if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
-    throw new ApiError(400, "Password must contain uppercase, lowercase, number, and special character");
-  }
-
-  const result = await verifyOTP(normalizedEmail, otp, "email-registration");
-  if (!result.valid) {
-    throw new ApiError(400, result.message);
-  }
-
-  const existingEmail = await User.findOne({ email: normalizedEmail });
-  if (existingEmail) {
-    throw new ApiError(409, "Email already registered");
-  }
-
-  const existingUsername = await User.findOne({ username: username.toLowerCase() });
-  if (existingUsername) {
-    throw new ApiError(409, "Username already taken");
-  }
-
-  const user = await User.create({
-    username: username.toLowerCase(),
-    fullName: fullName.trim(),
-    email: normalizedEmail,
-    password,
-    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=6366f1&color=fff`,
-  });
-
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
-  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
-
-  const options = getCookieOptions();
-
-  return res
-    .status(201)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
-    .json(
-      new ApiResponse(
-        201,
-        { user: loggedInUser, accessToken, refreshToken },
-        "User registered successfully"
-      )
-    );
-});
-
-// ── Delete Account OTP ──
+// -- Delete Account OTP --
 const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
   const { password, channel = "email" } = req.body;
 
@@ -2123,7 +1830,7 @@ const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Password is required to send delete OTP");
   }
 
-  const user = await User.findById(req.user._id);
+  const user = await User.findById(req.user._id).select("+password");
   if (!user) {
     throw new ApiError(404, "User not found");
   }
@@ -2137,17 +1844,17 @@ const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
     if (!user.mobile) {
       throw new ApiError(400, "No mobile number linked. Please add one in your profile first.");
     }
-    const otp = await storeOTP(user.mobile, "delete-account", "whatsapp");
+    const otp = await storeOTP(user.mobile, "delete-account", "whatsapp", req.user._id);
     try {
       await sendWhatsAppOTP(user.mobile, otp);
     } catch (error) {
-      console.error("Failed to send delete OTP WhatsApp:", error.message);
+      logger.error("Failed to send delete OTP WhatsApp:", error.message);
     }
     return res.status(200).json(
       new ApiResponse(200, { channel: "whatsapp" }, "OTP sent to your WhatsApp for account deletion")
     );
   } else {
-    const otp = await storeOTP(user.email, "delete-account", "email");
+    const otp = await storeOTP(user.email, "delete-account", "email", req.user._id);
     try {
       await sendEmail({
         to: user.email,
@@ -2155,7 +1862,7 @@ const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
         html: otpEmailTemplate(otp, "delete-account"),
       });
     } catch (error) {
-      console.error("Failed to send delete account OTP email:", error.message);
+      logger.error("Failed to send delete account OTP email:", error.message);
     }
     return res.status(200).json(
       new ApiResponse(200, { channel: "email" }, "OTP sent to your email for account deletion")
@@ -2170,7 +1877,7 @@ const verifyAndDeleteAccount = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Password and OTP are required");
   }
 
-  const user = await User.findById(req.user._id);
+  const user = await User.findById(req.user._id).select("+password");
   if (!user) {
     throw new ApiError(404, "User not found");
   }
@@ -2192,21 +1899,46 @@ const verifyAndDeleteAccount = asyncHandler(async (req, res) => {
 
   const userId = user._id;
 
-  const userVideos = await Video.find({ owner: userId }).select("videoFile thumbnail");
-  for (const video of userVideos) {
-    if (video.videoFile) await deleteFromCloudinary(video.videoFile);
-    if (video.thumbnail) await deleteFromCloudinary(video.thumbnail);
+  const dbSession = await mongoose.startSession();
+  try {
+    dbSession.startTransaction();
+
+    const userVideos = await Video.find({ owner: userId }).select("videoFile thumbnail").session(dbSession).lean();
+    for (const video of userVideos) {
+      if (video.videoFile) await deleteFromCloudinary(video.videoFile);
+      if (video.thumbnail) await deleteFromCloudinary(video.thumbnail);
+    }
+
+    if (user.avatarPublicId) await deleteFromCloudinary(user.avatarPublicId);
+    if (user.coverImagePublicId) await deleteFromCloudinary(user.coverImagePublicId);
+
+    await Subscription.deleteMany({ $or: [{ subscriber: userId }, { channel: userId }] }).session(dbSession);
+    await Video.deleteMany({ owner: userId }).session(dbSession);
+    await Comment.deleteMany({ owner: userId }).session(dbSession);
+    await Like.deleteMany({ likedBy: userId }).session(dbSession);
+    await Playlist.deleteMany({ owner: userId }).session(dbSession);
+    await Notification.deleteMany({ $or: [{ recipient: userId }, { sender: userId }] }).session(dbSession);
+    await CommunityPost.deleteMany({ owner: userId }).session(dbSession);
+    await Poll.deleteMany({ createdBy: userId }).session(dbSession);
+    await Poll.updateMany({ voters: userId }, { $pull: { voters: userId } }).session(dbSession);
+    await PostLike.deleteMany({ likedBy: userId }).session(dbSession);
+    await OTP.deleteMany({ user: userId }).session(dbSession);
+    await Session.deleteMany({ user: userId }).session(dbSession);
+    await User.updateMany({ blockedUsers: userId }, { $pull: { blockedUsers: userId } }).session(dbSession);
+    await User.updateMany({ mutedUsers: userId }, { $pull: { mutedUsers: userId } }).session(dbSession);
+    await User.updateMany({ mutedChannels: userId }, { $pull: { mutedChannels: userId } }).session(dbSession);
+    await User.updateMany({ watchLater: userId }, { $pull: { watchLater: userId } }).session(dbSession);
+    await User.updateMany({ watchHistory: userId }, { $pull: { watchHistory: userId } }).session(dbSession);
+    await User.findByIdAndDelete(userId).session(dbSession);
+
+    await dbSession.commitTransaction();
+  } catch (err) {
+    await dbSession.abortTransaction();
+    logger.error("Account deletion failed — transaction rolled back", { error: err.message });
+    throw new ApiError(500, "Failed to delete account. Please try again.");
+  } finally {
+    dbSession.endSession();
   }
-
-  if (user.avatarPublicId) await deleteFromCloudinary(user.avatarPublicId);
-  if (user.coverImagePublicId) await deleteFromCloudinary(user.coverImagePublicId);
-
-  await Subscription.deleteMany({ $or: [{ subscriber: userId }, { channel: userId }] });
-  await Video.deleteMany({ owner: userId });
-  await Comment.deleteMany({ owner: userId });
-  await Like.deleteMany({ likedBy: userId });
-  await Playlist.deleteMany({ owner: userId });
-  await User.findByIdAndDelete(userId);
 
   const options = getCookieOptions();
 
@@ -2217,7 +1949,7 @@ const verifyAndDeleteAccount = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Account deleted successfully"));
 });
 
-// ── Forgot Password from Settings (no old password needed) ──
+// -- Forgot Password from Settings (no old password needed) --
 const sendForgotPasswordChangeOTP = asyncHandler(async (req, res) => {
   const { channel = "email" } = req.body;
   const user = await User.findById(req.user._id);
@@ -2228,17 +1960,17 @@ const sendForgotPasswordChangeOTP = asyncHandler(async (req, res) => {
     if (!mobile) {
       throw new ApiError(400, "No mobile number linked. Please add one in your profile first.");
     }
-    const otp = await storeOTP(mobile, "forgot-password-change", "whatsapp");
+    const otp = await storeOTP(mobile, "forgot-password-change", "whatsapp", req.user._id);
     try {
       await sendWhatsAppOTP(mobile, otp);
     } catch (error) {
-      console.error("Failed to send forgot password change OTP WhatsApp:", error.message);
+      logger.error("Failed to send forgot password change OTP WhatsApp:", error.message);
     }
     return res.status(200).json(
       new ApiResponse(200, { channel: "whatsapp" }, "OTP sent to your WhatsApp")
     );
   } else {
-    const otp = await storeOTP(email, "forgot-password-change", "email");
+    const otp = await storeOTP(email, "forgot-password-change", "email", req.user._id);
     try {
       await sendEmail({
         to: email,
@@ -2246,7 +1978,7 @@ const sendForgotPasswordChangeOTP = asyncHandler(async (req, res) => {
         html: otpEmailTemplate(otp, "forgot-password-change"),
       });
     } catch (error) {
-      console.error("Failed to send forgot password change OTP:", error.message);
+      logger.error("Failed to send forgot password change OTP:", error.message);
     }
     return res.status(200).json(
       new ApiResponse(200, { channel: "email" }, "OTP sent to your email")
@@ -2261,9 +1993,7 @@ const verifyAndResetPasswordViaOTP = asyncHandler(async (req, res) => {
     throw new ApiError(400, "New password and OTP are required");
   }
 
-  if (newPassword.length < 8) {
-    throw new ApiError(400, "New password must be at least 8 characters");
-  }
+  assertPasswordStrength(newPassword);
 
   const user = await User.findById(req.user._id);
   if (!user) {
@@ -2281,8 +2011,10 @@ const verifyAndResetPasswordViaOTP = asyncHandler(async (req, res) => {
   }
 
   user.password = newPassword;
-  user.refreshToken = undefined;
   await user.save();
+
+  // Deactivate all sessions for this user (logout everywhere)
+  await Session.updateMany({ user: user._id }, { isActive: false });
 
   try {
     await sendEmail({
@@ -2291,7 +2023,7 @@ const verifyAndResetPasswordViaOTP = asyncHandler(async (req, res) => {
       html: passwordChangedEmailTemplate(),
     });
   } catch (error) {
-    console.error("Failed to send password changed email:", error.message);
+    logger.error("Failed to send password changed email:", error.message);
   }
 
   const options = getCookieOptions();
@@ -2304,12 +2036,16 @@ const verifyAndResetPasswordViaOTP = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         {},
-        "Password reset successfully. Please login again"
+        "Password changed successfully. Please login again"
       )
     );
 });
 
 export {
+  generateAccessAndRefreshToken,
+  getCookieOptions,
+  isValidEmail,
+  isValidMobile,
   registerUser,
   loginUser,
   logoutUser,
@@ -2338,35 +2074,22 @@ export {
   updateNotificationPrefs,
   getNotificationPrefs,
   updatePrivacySettings,
-  exportUserData,
   updateUserBanner,
   forgotPasswordOTP,
   verifyResetOTP,
   resetPasswordWithOTP,
+  skipAndLogin,
   sendChangePasswordOTP,
   verifyAndChangePassword,
   socialLogin,
-  linkSocialAccount,
   sendDeleteAccountOTP,
   verifyAndDeleteAccount,
   sendForgotPasswordChangeOTP,
   verifyAndResetPasswordViaOTP,
-  // New unified auth flows
+  // Unified auth flows
   sendRegistrationOTP,
   verifyRegistrationOTP,
   registerUnified,
   sendLoginOTP,
   verifyLoginOTP,
-  sendForgotPasswordOTP,
-  verifyForgotPasswordOTP,
-  resetPasswordWithResetToken,
-  skipAndLogin,
-  // Mobile registration
-  sendMobileRegistrationOTP,
-  verifyMobileRegistrationOTP,
-  registerWithMobileOTP,
-  // Keep old exports for backward compatibility
-  sendEmailRegistrationOTP,
-  verifyEmailRegistrationOTP,
-  registerWithEmailOTP,
 };
