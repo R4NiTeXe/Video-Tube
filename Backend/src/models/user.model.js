@@ -67,6 +67,26 @@ const userSchema = new Schema(
       github: { type: String, default: "" },
       website: { type: String, default: "" },
     },
+    socialAccounts: {
+      type: Map,
+      of: String,
+      default: () => new Map(),
+    },
+    language: {
+      type: String,
+      default: "en",
+      trim: true,
+    },
+    defaultVisibility: {
+      type: String,
+      enum: ["public", "unlisted", "private"],
+      default: "public",
+    },
+    defaultCategory: {
+      type: String,
+      default: "General",
+      trim: true,
+    },
     isVerified: {
       type: Boolean,
       default: false,

@@ -21,12 +21,26 @@ if (process.env.LOG_LEVEL && !["error", "warn", "info", "debug"].includes(proces
 }
 
 // ── Validate critical secrets at startup ──
-const REQUIRED_SECRETS = [
+const REQUIRED_SECRET_KEYS = [
   { key: "ACCESS_TOKEN_SECRET", label: "Access Token Secret" },
   { key: "REFRESH_TOKEN_SECRET", label: "Refresh Token Secret" },
 ];
 
 const MIN_SECRET_LENGTH = 32;
+const REQUIRED_PRODUCTION_URLS = [
+  { key: "CORS_ORIGIN", label: "CORS Origin", allowList: true },
+  { key: "FRONTEND_URL", label: "Frontend URL" },
+  { key: "BACKEND_URL", label: "Backend URL" },
+];
+
+const parseHttpsUrl = (value) => {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
 
 if (!process.env.MONGODB_URI && process.env.NODE_ENV !== "test") {
   logger.error("Missing MONGODB_URI. Server cannot start.");
@@ -37,15 +51,24 @@ const isProduction = process.env.NODE_ENV === "production";
 
 // In production, CORS_ORIGIN is required (no fallback to localhost)
 if (isProduction) {
-  REQUIRED_SECRETS.push({ key: "CORS_ORIGIN", label: "CORS Origin" });
-  REQUIRED_SECRETS.push({ key: "FRONTEND_URL", label: "Frontend URL" });
-  REQUIRED_SECRETS.push({ key: "BACKEND_URL", label: "Backend URL" });
+  for (const { key, label, allowList } of REQUIRED_PRODUCTION_URLS) {
+    const value = process.env[key];
+    if (!value) {
+      logger.error(`Missing ${label} (${key}). Server cannot start.`);
+      process.exit(1);
+    }
+    const values = allowList ? value.split(",").map((item) => item.trim()).filter(Boolean) : [value.trim()];
+    if (values.length === 0 || values.some((item) => !parseHttpsUrl(item))) {
+      logger.error(`${label} (${key}) must contain valid HTTPS URL${allowList ? "s" : ""} in production. Server cannot start.`);
+      process.exit(1);
+    }
+  }
   if (!process.env.SENTRY_DSN) {
     logger.warn("SENTRY_DSN not set — error monitoring is disabled. Recommended for production.");
   }
 }
 
-for (const { key, label } of REQUIRED_SECRETS) {
+for (const { key, label } of REQUIRED_SECRET_KEYS) {
   if (!process.env[key]) {
     logger.error(`Missing ${label} (${key}). Server cannot start.`);
     process.exit(1);
@@ -127,41 +150,50 @@ connectDB()
     process.exit(1);
 });
 
-const gracefulShutdown = async (signal) => {
-    logger.info(`${signal} received. Shutting down gracefully...`);
-    cronJobs.forEach((job) => job.stop());
-    closeWebSocket();
-    if (server) {
-        await new Promise((resolve) => {
-            const forceClose = setTimeout(() => {
-                logger.warn("Forced server close after timeout");
-                resolve();
-            }, 10000);
-            server.close(() => {
-                clearTimeout(forceClose);
-                logger.info("HTTP server closed");
-                resolve();
-            });
-        });
-    }
+const gracefulShutdown = async (signal, exitCode = 0) => {
+  logger.info(`${signal} received. Shutting down gracefully...`);
+  cronJobs.forEach((job) => job.stop());
+  closeWebSocket();
+  if (server) {
+    await new Promise((resolve) => {
+      const forceClose = setTimeout(() => {
+        logger.warn("Forced server close after timeout");
+        resolve();
+      }, 10000);
+      server.close(() => {
+        clearTimeout(forceClose);
+        logger.info("HTTP server closed");
+        resolve();
+      });
+    });
+  }
+  try {
     if (mongoose.connection.readyState !== 0) {
-      await mongoose.connection.close();
-      logger.info("MongoDB connection closed");
+    await mongoose.connection.close();
+    logger.info("MongoDB connection closed");
     }
+  } catch (err) {
+    logger.warn("Error closing MongoDB connection", { error: err.message });
+  }
+  try {
     await closeRedis();
-    process.exit(0);
+  } catch (err) {
+    logger.warn("Error closing Redis", { error: err.message });
+  }
+  logger.info(`Shutdown complete (exitCode=${exitCode})`);
+  return exitCode;
 };
 
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM", 0).then((code) => process.exit(code)));
+process.on("SIGINT", () => gracefulShutdown("SIGINT", 0).then((code) => process.exit(code)));
 
 process.on("uncaughtException", (err) => {
-    logger.error("Uncaught exception", { error: err.message, stack: err.stack });
-    gracefulShutdown("uncaughtException").then(() => process.exit(1));
+  logger.error("Uncaught exception", { error: err.message, stack: err.stack });
+  gracefulShutdown("uncaughtException", 1).then((code) => process.exit(code));
 });
 
 process.on("unhandledRejection", (reason) => {
-    const message = reason?.message || String(reason);
-    logger.error("Unhandled rejection", { error: message });
-    gracefulShutdown("unhandledRejection").then(() => process.exit(1));
+  const message = reason?.message || String(reason);
+  logger.error("Unhandled rejection", { error: message });
+  gracefulShutdown("unhandledRejection", 1).then((code) => process.exit(code));
 });

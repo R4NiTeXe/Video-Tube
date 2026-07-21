@@ -209,7 +209,7 @@ export const userSchemas = {
 
   searchUsers: {
     query: pagination.extend({
-      q: z.string().min(1),
+      query: z.string().min(1),
     }),
   },
 
@@ -807,8 +807,8 @@ export const sseSchemas = {
 };
 
 export const searchSchemas = {
-  searchUsers: { query: pagination.extend({ q: z.string().min(1) }) },
-  searchChannels: { query: pagination.extend({ q: z.string().min(1) }) },
+  searchUsers: { query: pagination.extend({ query: z.string().min(1) }) },
+  searchChannels: { query: pagination.extend({ query: z.string().min(1) }) },
 };
 
 export const settingsSchemas = {

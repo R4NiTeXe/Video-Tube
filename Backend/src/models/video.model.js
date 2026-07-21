@@ -33,14 +33,17 @@ const videoSchema = new Schema(
     duration:{
         type:Number,
         required:true,
+        min:0,
     },
     views:{
         type:Number,
         default:0,
+        min:0,
     },
     owner:{
         type:Schema.Types.ObjectId,
-        ref:"User"
+        ref:"User",
+        required:true,
     },
     isPublished:{
         type:Boolean,
@@ -69,10 +72,12 @@ const videoSchema = new Schema(
     likesCount:{
         type:Number,
         default:0,
+        min:0,
     },
     commentsCount:{
         type:Number,
         default:0,
+        min:0,
     },
     isShort:{
         type:Boolean,
@@ -91,6 +96,7 @@ const videoSchema = new Schema(
     trendingScore:{
         type:Number,
         default:0,
+        min:0,
     },
   },
   {

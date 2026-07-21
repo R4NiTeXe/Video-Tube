@@ -30,6 +30,7 @@ import {
 } from "../controllers/video/cron.controller.js";
 
 import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyAdmin } from "../middlewares/admin.middleware.js";
 import { upload, validateFileSize } from "../middlewares/multer.middleware.js";
 import { uploadLimiter, searchLimiter, viewLimiter } from "../middlewares/rateLimiter.middleware.js";
 import { contentModerator } from "../middlewares/contentModeration.middleware.js";
@@ -41,7 +42,7 @@ const router = Router();
 // public routes
 router.route("/trending").get(verifyJWT, validateQuery(videoSchemas.getTrendingVideos.query), getTrendingVideos);
 router.route("/categories").get(verifyJWT, getVideoCategories);
-router.route("/scheduled/publish").post(verifyJWT, publishScheduledVideos);
+router.route("/scheduled/publish").post(verifyJWT, verifyAdmin, publishScheduledVideos);
 router.route("/search/channels").get(verifyJWT, searchLimiter, validateQuery(videoSchemas.searchChannels.query), searchChannels);
 router.route("/shorts/feed").get(verifyJWT, validateQuery(videoSchemas.getShortsFeed.query), getShortsFeed);
 router.route("/channel/:username/about").get(verifyJWT, validateParams(videoSchemas.getChannelAbout.params), getChannelAbout);

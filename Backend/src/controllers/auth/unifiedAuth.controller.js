@@ -7,9 +7,8 @@ import { storeOTP, verifyOTP } from "../../utils/otp.js";
 import { sendEmail } from "../../utils/email.js";
 import { sendWhatsAppOTP } from "../../utils/whatsappOtp.js";
 import { otpEmailTemplate, passwordChangedEmailTemplate } from "../../utils/emailTemplates.js";
-import { generateAccessAndRefreshToken } from "../user.controller.js";
+import { generateAccessAndRefreshToken, getCookieOptions } from "../user.controller.js";
 import { createSession } from "../session.controller.js";
-import { getCookieOptions } from "../user.controller.js";
 import { uploadOnCloudinary, deleteFromCloudinary } from "../../utils/cloudinary.js";
 import { isValidEmail, isValidMobile, detectChannel } from "../../utils/validators.js";
 import jwt from "jsonwebtoken";
@@ -141,6 +140,7 @@ const registerUnified = asyncHandler(async (req, res) => {
   if (existingUsername) throw new ApiError(409, "Username already taken");
 
   let avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=6366f1&color=fff`;
+  let coverUrl = "";
   let uploadedAvatar = null;
   let uploadedCover = null;
 

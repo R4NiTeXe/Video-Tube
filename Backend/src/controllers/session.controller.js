@@ -7,7 +7,7 @@ import logger from "../utils/logger.js";
 
 function parseUserAgent(ua) {
   if (!ua) return { deviceName: "Unknown Device", browser: "", os: "" };
-  let device = "Unknown Device";
+  let device;
   let browser = "";
   let os = "";
 

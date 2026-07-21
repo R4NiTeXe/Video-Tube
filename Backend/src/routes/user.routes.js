@@ -16,6 +16,8 @@ import {
   verifyResetOTP,
   resetPasswordWithOTP,
   skipAndLogin,
+  generateAccessAndRefreshToken,
+  getCookieOptions,
 } from "../controllers/user.controller.js";
 
 import {
@@ -79,7 +81,6 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
 import { verifyOTP } from "../utils/otp.js";
-import { generateAccessAndRefreshToken, getCookieOptions } from "../controllers/user.controller.js";
 import { createSession } from "../controllers/session.controller.js";
 
 const router = Router();

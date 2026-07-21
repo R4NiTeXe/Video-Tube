@@ -3,14 +3,12 @@ import { ApiError } from "../../utils/ApiError.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { User } from "../../models/user.model.js";
 import { createSession, deactivateSession } from "../session.controller.js";
-import { generateAccessAndRefreshToken } from "../user.controller.js";
-import { getCookieOptions } from "../user.controller.js";
+import { generateAccessAndRefreshToken, getCookieOptions, isValidEmail, isValidMobile } from "../user.controller.js";
 import { sendEmail } from "../../utils/email.js";
 import { storeOTP, verifyOTP } from "../../utils/otp.js";
 import { otpEmailTemplate } from "../../utils/emailTemplates.js";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
-import { isValidEmail, isValidMobile } from "../user.controller.js";
 import { assertPasswordStrength } from "../../utils/passwordValidation.js";
 import { uploadOnCloudinary, deleteFromCloudinary } from "../../utils/cloudinary.js";
 import logger from "../../utils/logger.js";
@@ -109,7 +107,7 @@ const loginUser = asyncHandler(async (req, res) => {
   }).select("+password");
 
   if (!user) {
-    throw new ApiError(404, "User does not exist");
+    throw new ApiError(401, "Invalid user credentials");
   }
 
   if (user.lockUntil && user.lockUntil > new Date()) {
@@ -196,7 +194,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
   try {
     decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
-  } catch (error) {
+  } catch {
     throw new ApiError(401, "Invalid refresh token");
   }
 

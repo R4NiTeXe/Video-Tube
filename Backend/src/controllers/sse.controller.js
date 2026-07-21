@@ -31,7 +31,9 @@ export const streamNotifications = asyncHandler(async (req, res) => {
   // Auto-disconnect zombie connections after 5 minutes
   const timeout = setTimeout(() => {
     cleanup();
-    try { res.end(); } catch {}
+    try { res.end(); } catch {
+      // The response may already be closed by the client.
+    }
   }, 300000);
 
   req.on("close", () => clearTimeout(timeout));

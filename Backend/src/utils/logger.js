@@ -27,10 +27,13 @@ const format = (level, message, meta, correlationId) => {
 };
 
 export const runWithCorrelationId = (correlationId, fn) => {
-  correlationIdStorage.run(correlationId, fn);
+  correlationIdStorage.run({ correlationId }, fn);
 };
 
-export const getCorrelationId = () => correlationIdStorage.getStore() || generateCorrelationId();
+export const getCorrelationId = () => {
+  const store = correlationIdStorage.getStore();
+  return store?.correlationId || generateCorrelationId();
+};
 
 const logMethod = (level, levelName, message, meta) => {
   if (currentLevel < level) return;

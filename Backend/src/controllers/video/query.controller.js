@@ -141,7 +141,6 @@ const getShortsFeed = asyncHandler(async (req, res) => {
       $project: {
         videoFile: 1, title: 1, thumbnail: 1, views: 1, duration: 1,
         createdAt: 1, owner: 1, likesCount: 1, isLiked: 1,
-        likeInfo: 0,
       },
     },
   ];

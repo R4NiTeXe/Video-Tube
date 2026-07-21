@@ -51,7 +51,9 @@ if (process.env.SENTRY_DSN) {
       }
       if (event.request?.data) {
         if (typeof event.request.data === "string") {
-          try { event.request.data = JSON.parse(event.request.data); } catch {}
+          try { event.request.data = JSON.parse(event.request.data); } catch {
+            // Keep the original payload if it is not JSON.
+          }
         }
         if (event.request.data?.password) event.request.data.password = "[REDACTED]";
         if (event.request.data?.token) event.request.data.token = "[REDACTED]";
@@ -182,10 +184,10 @@ app.use(
 );
 
 // ── Body parsing ──
+app.use(cookieParser());
 app.use(express.json({ limit: "16kb", depth: 10 }));
 app.use(express.urlencoded({ extended: true, limit: "16kb", parameterLimit: 1000 }));
 app.use(express.static("public"));
-app.use(cookieParser());
 
 // ── CSRF Protection ──
 app.use(csrfMiddleware);
@@ -289,7 +291,10 @@ app.post("/api/v1/webhooks/cloudinary", async (req, res) => {
     const webhookSecret = process.env.WEBHOOK_SECRET;
     if (webhookSecret) {
       const token = req.query?.token || req.headers["x-webhook-token"];
-      if (!token || !crypto.timingSafeEqual(Buffer.from(token), Buffer.from(webhookSecret))) {
+      const tokenValue = Array.isArray(token) ? token[0] : token;
+      const tokenBuffer = Buffer.from(String(tokenValue || ""));
+      const secretBuffer = Buffer.from(webhookSecret);
+      if (!tokenValue || tokenBuffer.length !== secretBuffer.length || !crypto.timingSafeEqual(tokenBuffer, secretBuffer)) {
         return res.status(401).json({ error: "Unauthorized" });
       }
     }

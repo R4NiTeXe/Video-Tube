@@ -25,4 +25,12 @@ export default [
       "no-duplicate-imports": "error",
     },
   },
+  {
+    files: ["tests/**/*.js"],
+    languageOptions: {
+      globals: {
+        ...globals.jest,
+      },
+    },
+  },
 ];

@@ -15,6 +15,7 @@ if (!isTest && !fs.existsSync(TEMP_UPLOAD_PATH)) {
 
 export const MAX_VIDEO_SIZE = (parseInt(process.env.MAX_VIDEO_SIZE_MB) || 20) * 1024 * 1024;
 export const MAX_THUMBNAIL_SIZE = (parseInt(process.env.MAX_THUMBNAIL_SIZE_MB) || 2) * 1024 * 1024;
+export const MAX_IMAGE_SIZE = (parseInt(process.env.MAX_IMAGE_SIZE_MB) || 5) * 1024 * 1024;
 
 const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/x-msvideo", "video/x-matroska", "video/webm"];
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -97,15 +98,15 @@ const storage = multer.diskStorage({
   },
 });
 
+const GLOBAL_MAX_FILE_SIZE = Math.max(MAX_VIDEO_SIZE, MAX_THUMBNAIL_SIZE, MAX_IMAGE_SIZE);
+
 export const upload = multer({
   storage,
   limits: {
-    fileSize: 100 * 1024 * 1024,
+    fileSize: GLOBAL_MAX_FILE_SIZE,
   },
   fileFilter,
 });
-
-export const MAX_IMAGE_SIZE = (parseInt(process.env.MAX_IMAGE_SIZE_MB) || 5) * 1024 * 1024;
 
 const FIELD_SIZE_LIMITS = {
   videoFile: MAX_VIDEO_SIZE,
@@ -133,22 +134,33 @@ export const validateFileSize = (req, res, next) => {
     const maxBytes = FIELD_SIZE_LIMITS[fieldName];
     if (!maxBytes) continue;
 
-    const { size } = fs.statSync(file.path);
+    try {
+      const stats = fs.statSync(file.path);
+      const size = stats.size;
 
-    if (size > maxBytes) {
-      fs.unlinkSync(file.path);
-      const sizeMB = maxBytes / 1024 / 1024;
-      const fieldLabels = { videoFile: "Video", thumbnail: "Thumbnail", avatar: "Avatar", coverImage: "Cover Image", banner: "Banner", image: "Image" };
-      const fieldLabel = fieldLabels[fieldName] || fieldName;
-      throw new ApiError(413, `${fieldLabel} size must be ${sizeMB} MB or less`);
-    }
+      if (size > maxBytes) {
+        try { fs.unlinkSync(file.path); } catch {
+          // Best-effort temp file cleanup.
+        }
+        const sizeMB = maxBytes / 1024 / 1024;
+        const fieldLabels = { videoFile: "Video", thumbnail: "Thumbnail", avatar: "Avatar", coverImage: "Cover Image", banner: "Banner", image: "Image" };
+        const fieldLabel = fieldLabels[fieldName] || fieldName;
+        throw new ApiError(413, `${fieldLabel} size must be ${sizeMB} MB or less`);
+      }
 
-    // Validate file magic bytes against declared mime type (skipped in tests)
-    if (!isTest && !validateMagicBytes(file.path, file.mimetype)) {
-      fs.unlinkSync(file.path);
-      const fieldLabels = { videoFile: "Video", thumbnail: "Thumbnail", avatar: "Avatar", coverImage: "Cover Image", banner: "Banner", image: "Image" };
-      const fieldLabel = fieldLabels[fieldName] || fieldName;
-      throw new ApiError(400, `${fieldLabel} file content does not match declared type`);
+      // Validate file magic bytes against declared mime type (skipped in tests)
+      if (!isTest && !validateMagicBytes(file.path, file.mimetype)) {
+        try { fs.unlinkSync(file.path); } catch {
+          // Best-effort temp file cleanup.
+        }
+        const fieldLabels = { videoFile: "Video", thumbnail: "Thumbnail", avatar: "Avatar", coverImage: "Cover Image", banner: "Banner", image: "Image" };
+        const fieldLabel = fieldLabels[fieldName] || fieldName;
+        throw new ApiError(400, `${fieldLabel} file content does not match declared type`);
+      }
+    } catch (err) {
+      // If file was removed or missing, ignore ENOENT; otherwise rethrow
+      if (err.code && err.code === "ENOENT") continue;
+      throw err;
     }
   }
 

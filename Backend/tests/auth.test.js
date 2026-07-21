@@ -122,7 +122,7 @@ describe("Auth Flow", () => {
           password: "Test@1234",
         });
 
-      expectError(res, 404);
+      expectError(res, 401);
     });
   });
 
