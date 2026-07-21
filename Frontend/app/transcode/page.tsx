@@ -2,10 +2,13 @@
 
 
 import { motion } from "framer-motion";
+import { PageMeta } from "@/src/components/PageMeta";
 
 export default function TranscodePage() {
   return (
-    <main style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
+    <>
+      <PageMeta title="Video Transcoding" description="Video transcoding and adaptive streaming is coming soon." noIndex />
+      <main style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 60px)", padding: "2rem" }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -26,5 +29,6 @@ export default function TranscodePage() {
         </motion.div>
       </div>
     </main>
+    </>
   );
 }

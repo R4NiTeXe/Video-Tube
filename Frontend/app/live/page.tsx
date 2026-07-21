@@ -3,10 +3,13 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { PageMeta } from "@/src/components/PageMeta";
 
 export default function LiveStreamingPage() {
   return (
-    <main style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <>
+      <PageMeta title="Live Streaming" description="Go live on VideoTube with HLS & DASH adaptive bitrate streaming." noIndex />
+      <main style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
@@ -59,5 +62,6 @@ export default function LiveStreamingPage() {
         </div>
       </motion.div>
     </main>
+    </>
   );
 }

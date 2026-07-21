@@ -1,14 +1,13 @@
 "use client";
 
 import React from "react";
+import { API_BASE_URL } from "@/src/services/config";
 
 interface Provider {
   name: string;
   slug: string;
   icon: React.ReactNode;
 }
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
 
 const providers: Provider[] = [
   {
@@ -55,7 +54,7 @@ const providers: Provider[] = [
 export default function SocialLoginButtons() {
   const handleOAuthLogin = (slug: string) => {
     // eslint-disable-next-line react-hooks/immutability
-    window.location.href = `${API_BASE}/auth/${slug}`;
+    window.location.href = `${API_BASE_URL}/auth/${slug}`;
   };
 
   return (

@@ -7,6 +7,7 @@ import { api, getApiErrorMessage } from "@/src/services/api";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { COUNTRIES, FlagImg } from "@/src/lib/countries";
+import { PageMeta } from "@/src/components/PageMeta";
 
 const PlayLogo = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
@@ -124,17 +125,22 @@ export default function MobileRegisterPage() {
 
   if (authLoading) {
     return (
-      <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
-        <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ color: "var(--text-muted)", fontWeight: 500 }}>
-          Checking session...
-        </motion.div>
-      </div>
+      <>
+        <PageMeta title="Mobile Registration" description="Register your VideoTube account using mobile verification." noIndex />
+        <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
+          <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ color: "var(--text-muted)", fontWeight: 500 }}>
+            Checking session...
+          </motion.div>
+        </div>
+      </>
     );
   }
   if (isAuthenticated) return null;
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
+    <>
+      <PageMeta title="Mobile Registration" description="Register your VideoTube account using mobile verification." noIndex />
+      <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ width: "100%", maxWidth: "420px" }}>
         {/* Header */}
         <header style={{ marginBottom: "2rem", textAlign: "center" }}>
@@ -257,5 +263,6 @@ export default function MobileRegisterPage() {
         </div>
       </motion.div>
     </div>
+      </>
   );
 }

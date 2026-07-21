@@ -1,14 +1,5 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
-
-if (process.env.NODE_ENV === "production" && !process.env.NEXT_PUBLIC_API_BASE_URL) {
-  console.warn(
-    "[SECURITY WARNING] NEXT_PUBLIC_API_BASE_URL is not set. Falling back to HTTP localhost. " +
-    "Set NEXT_PUBLIC_API_BASE_URL to your production HTTPS API URL in production environment."
-  );
-}
+import { API_BASE_URL } from "@/src/services/config";
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;

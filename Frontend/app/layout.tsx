@@ -8,6 +8,7 @@ import BottomNav from "@/src/components/BottomNav";
 import ShortcutsDialog from "@/src/components/ShortcutsDialog";
 import { ErrorBoundary } from "@/src/components/ErrorBoundary";
 import AppShell from "@/src/components/AppShell";
+import { SITE_URL } from "@/src/services/siteConfig";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -15,10 +16,6 @@ const inter = Inter({
   display: "swap",
   preload: false,
 });
-
-const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
-  ? new URL(process.env.NEXT_PUBLIC_API_BASE_URL).origin
-  : "https://videotube.app";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -34,7 +31,7 @@ export const metadata: Metadata = {
   },
   description: "Discover, watch, and share videos on VideoTube — a premium video sharing platform with high-quality streaming, community features, and creator tools.",
   keywords: ["video sharing", "streaming", "VideoTube", "watch videos", "upload videos", "video platform"],
-  metadataBase: new URL(baseUrl),
+  metadataBase: new URL(SITE_URL),
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -54,7 +51,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   alternates: {
-    canonical: baseUrl,
+    canonical: SITE_URL,
   },
 };
 
