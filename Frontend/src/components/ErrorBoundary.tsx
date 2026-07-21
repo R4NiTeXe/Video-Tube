@@ -1,6 +1,8 @@
 "use client";
 
-import React, { Component, type ReactNode } from "react";
+import { Component, type ReactNode } from "react";
+
+const isProduction = process.env.NODE_ENV === "production";
 
 interface Props {
   children: ReactNode;
@@ -20,6 +22,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, info: { componentStack?: string }) {
+    console.error("ErrorBoundary caught:", error, info?.componentStack);
   }
 
   render() {
@@ -42,7 +48,7 @@ export class ErrorBoundary extends Component<Props, State> {
             Something went wrong
           </h2>
           <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1.5rem", maxWidth: 400 }}>
-            {this.state.error?.message || "An unexpected error occurred."}
+            {isProduction ? "An unexpected error occurred." : (this.state.error?.message || "An unexpected error occurred.")}
           </p>
           <button
             onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }}

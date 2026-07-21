@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { PageMeta } from "@/src/components/PageMeta";
 
 interface Playlist {
   _id: string;
@@ -79,6 +80,7 @@ export default function PlaylistsPage() {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
+      <PageMeta title="Playlists" description="Manage your VideoTube playlists." noIndex />
       <header
         className="glass"
         style={{
@@ -122,7 +124,7 @@ export default function PlaylistsPage() {
               style={{ overflow: "hidden", marginBottom: "2rem" }}
             >
               <div className="form-card" style={{ padding: "1.5rem" }}>
-                <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "1rem" }}>Create New Playlist</h3>
+                <h2 style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "1rem" }}>Create New Playlist</h2>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                     <label style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-secondary)" }}>Name</label>
@@ -232,14 +234,17 @@ export default function PlaylistsPage() {
                         backgroundColor: "var(--elevated)",
                         position: "relative", overflow: "hidden",
                       }}>
-                        {pl.videos.length > 0 && pl.videos[0].thumbnail ? (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img src={pl.videos[0].thumbnail} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                        ) : (
-                          <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)" }}>
-                            <PlaylistIcon />
-                          </div>
-                        )}
+                        {(() => {
+                          const video = pl.videos[0];
+                          return video?.thumbnail ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img src={video.thumbnail} alt={pl.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          ) : (
+                            <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)" }}>
+                              <PlaylistIcon />
+                            </div>
+                          );
+                        })()}
                         <div style={{
                           position: "absolute", bottom: 0, right: 0,
                           background: "rgba(0,0,0,0.75)", color: "#fff",
@@ -252,14 +257,14 @@ export default function PlaylistsPage() {
 
                       {/* Info */}
                       <div style={{ padding: "1rem 1.15rem" }}>
-                        <h3 style={{
+                        <h2 style={{
                           fontSize: "0.98rem", fontWeight: 700,
                           color: "var(--text-primary)",
                           marginBottom: "0.3rem",
                           display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden",
                         }}>
                           {pl.name}
-                        </h3>
+                        </h2>
                         {pl.description && (
                           <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "0.5rem", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                             {pl.description}

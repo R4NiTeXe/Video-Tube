@@ -11,14 +11,14 @@ interface ThemeState {
 }
 
 export const useThemeStore = create<ThemeState>((set) => ({
-  theme: "light",
+  theme: "dark",
   hydrated: false,
 
   hydrate: () => {
     if (typeof window === "undefined") return;
     try {
       const stored = localStorage.getItem("vt-theme") as Theme | null;
-      const theme = stored || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      const theme = stored || "dark";
       document.documentElement.setAttribute("data-theme", theme);
       set({ theme, hydrated: true });
     } catch {

@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { PageMeta } from "@/src/components/PageMeta";
 import { formatViews, formatDuration } from "@/src/lib/utils";
 
 const STORAGE_KEY = "vt-recent-searches";
@@ -105,7 +106,6 @@ export default function SearchPage() {
   const [activeTab, setActiveTab] = useState<Tab>("videos");
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -173,6 +173,12 @@ export default function SearchPage() {
   const showSuggestions = !debouncedQuery.trim();
 
   return (
+    <>
+      <PageMeta
+        title={debouncedQuery ? `Search: ${debouncedQuery}` : "Search"}
+        description={debouncedQuery ? `Search results for "${debouncedQuery}" on VideoTube.` : "Search for videos, channels, and users on VideoTube."}
+        noIndex
+      />
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
       {/* ── HEADER ── */}
       <div style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--glass-bg)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid var(--glass-border)" }}>
@@ -229,7 +235,7 @@ export default function SearchPage() {
             {recentSearches.length > 0 && (
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.85rem" }}>
-                  <h3 style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>Recent Searches</h3>
+                  <h1 style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>Recent Searches</h1>
                   <button onClick={clearRecent} style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--accent)", background: "none", border: "none", cursor: "pointer" }}>Clear all</button>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
@@ -313,7 +319,7 @@ export default function SearchPage() {
                               <span className="duration-badge">{formatDuration(v.duration)}</span>
                             </div>
                             <div className="card-info">
-                              <h3 className="card-title">{v.title}</h3>
+                              <h2 className="card-title">{v.title}</h2>
                               <div className="card-meta">
                                 <span className="channel-name">{v.owner?.fullName}</span>
                                 <span>&middot;</span>
@@ -434,5 +440,6 @@ export default function SearchPage() {
         )}
       </div>
     </div>
+    </>
   );
 }

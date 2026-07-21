@@ -1,12 +1,9 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 export default function QueryProvider({ children }: { children: React.ReactNode }) {
-  // We use useState to ensure a new QueryClient is created for each user session
-  // This is a best practice for Next.js App Router to avoid data leaking between users
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -20,11 +17,22 @@ export default function QueryProvider({ children }: { children: React.ReactNode 
       })
   );
 
+  const [showDevtools, setShowDevtools] = useState(false);
+  const [Devtools, setDevtools] = useState<React.ComponentType<{ initialIsOpen?: boolean }> | null>(null);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      import("@tanstack/react-query-devtools").then((mod) => {
+        setDevtools(() => mod.ReactQueryDevtools);
+        setShowDevtools(true);
+      });
+    }
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      {/* Devtools will only be visible in development mode */}
-      <ReactQueryDevtools initialIsOpen={false} />
+      {showDevtools && Devtools && <Devtools initialIsOpen={false} />}
     </QueryClientProvider>
   );
 }

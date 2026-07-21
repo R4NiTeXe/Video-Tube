@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import Link from "next/link";
+import { PageMeta } from "@/src/components/PageMeta";
 import { motion } from "framer-motion";
 
 function isValidUrl(str: string): boolean {
@@ -148,6 +149,7 @@ export default function EditProfilePage() {
 
   return (
     <main style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
+      <PageMeta title="Edit Profile" description="Update your VideoTube profile." noIndex />
       <div style={{ width: "100%", padding: "2rem" }}>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ display: "block" }}>
           <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.25rem" }}>Edit Profile</h1>
@@ -169,11 +171,7 @@ export default function EditProfilePage() {
           )}
 
           <form onSubmit={handleSave}>
-            <style dangerouslySetInnerHTML={{__html: `
-              .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
-              .edit-grid .card-full { grid-column: 1 / -1; }
-              @media (max-width: 768px) { .edit-grid { grid-template-columns: 1fr; } }
-            `}} />
+            
 
             <div className="edit-grid">
               {/* Profile Images — Full Width */}
@@ -205,7 +203,7 @@ export default function EditProfilePage() {
                     <div
                       onClick={() => coverInputRef.current?.click()}
                       className="upload-zone"
-                      style={{ width: "100%", height: 120, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden", position: "relative" }}
+                      style={{ width: "100%", aspectRatio: "4 / 1", maxHeight: 200, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden", position: "relative" }}
                       onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "var(--accent)")}
                       onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "")}
                     >

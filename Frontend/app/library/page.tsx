@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { formatViews, formatDuration } from "@/src/lib/utils";
+import { PageMeta } from "@/src/components/PageMeta";
 
 interface VideoOwner {
   fullName: string;
@@ -34,12 +35,6 @@ interface Playlist {
 }
 
 // ── Icons ──
-const PlayLogo = ({ size = 22 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-);
-const BackIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-);
 const HistoryIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
 );
@@ -138,13 +133,19 @@ export default function LibraryPage() {
     );
   }
 
-  const rawHistory: any[] = historyRes?.data || [];
-  const rawLiked: any[] = likedRes?.data || [];
-  const rawWatchLater: any[] = watchLaterRes?.data || [];
+  const getDocs = <T,>(res: unknown): T[] => {
+    if (Array.isArray(res)) return res as T[];
+    if (res && typeof res === "object" && "docs" in res) return (res as { docs: T[] }).docs;
+    return [];
+  };
+  type LikedItem = { likedVideo?: Video };
+  const rawHistory: Video[] = getDocs<Video>(historyRes?.data);
+  const rawLiked: LikedItem[] = getDocs<LikedItem>(likedRes?.data);
+  const rawWatchLater: Video[] = getDocs<Video>(watchLaterRes?.data);
 
-  const dedupById = (arr: any[]) => {
+  const dedupById = (arr: Video[]) => {
     const seen = new Set<string>();
-    return arr.filter((v: any) => {
+    return arr.filter((v: Video) => {
       const key = v?._id?.toString();
       if (!key || seen.has(key)) return false;
       seen.add(key);
@@ -153,7 +154,7 @@ export default function LibraryPage() {
   };
 
   const historyVideos: Video[] = dedupById(rawHistory);
-  const likedVideos: Video[] = dedupById(rawLiked.map((item: any) => item.likedVideo || item).filter(Boolean));
+  const likedVideos: Video[] = dedupById(rawLiked.map((item: { likedVideo?: Video }) => (item.likedVideo || item) as Video).filter(Boolean));
   const watchLaterVideos: Video[] = dedupById(rawWatchLater);
 
   const videos: Video[] = activeTab === "history"
@@ -175,6 +176,7 @@ export default function LibraryPage() {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
+      <PageMeta title="Library" description="Your watch history, liked videos, and playlists on VideoTube." noIndex />
       {/* ── AMBIENT BACKGROUND ── */}
       <div style={{ position: "fixed", top: "5%", left: "30%", width: "50vw", height: "50vw", background: "var(--accent)", filter: "blur(250px)", opacity: 0.035, borderRadius: "50%", pointerEvents: "none", zIndex: 0 }} />
 

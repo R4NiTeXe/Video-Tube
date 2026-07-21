@@ -1,671 +1,272 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
+import { PageMeta } from "@/src/components/PageMeta";
 
-// ── Types ──
-interface Report {
-  _id: string;
-  reporter: { _id: string; fullName: string; avatar: string } | null;
-  reportedUser?: { _id: string; fullName: string; avatar: string } | null;
-  reportedVideo?: { _id: string; title: string; thumbnail: string } | null;
-  targetType: string;
-  targetId: string;
-  reason: string;
-  status: "pending" | "reviewed" | "resolved";
-  createdAt: string;
+
+interface PlatformStats {
+  totalUsers: number;
+  totalVideos: number;
+  publishedVideos: number;
+  totalComments: number;
+  totalSubscriptions: number;
+  totalLikes: number;
+  totalPlaylists: number;
+  totalReports: number;
+  totalViews: number;
 }
 
-interface UserResult {
+interface AdminUser {
   _id: string;
   fullName: string;
   username: string;
   email: string;
   avatar: string;
+  role: string;
   createdAt: string;
 }
 
-// ── SVG Icons ──
-const PlayLogo = ({ size = 22 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-);
-const BackIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-);
-const ShieldIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-);
-const UsersIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-);
-const VideoIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-);
-const FlagIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-);
-const SearchIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-);
-const ChevronDownIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-);
-const CheckIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-);
-const XIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-);
-const EyeIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-);
-
-// ── Stat Card ──
-function StatCard({ label, value, icon, color }: { label: string; value: number; icon: React.ReactNode; color: string }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      style={{
-        padding: "1.5rem",
-        borderRadius: "var(--radius-lg)",
-        backgroundColor: "var(--card)",
-        border: "1px solid var(--border)",
-        display: "flex",
-        alignItems: "center",
-        gap: "1rem",
-      }}
-    >
-      <div style={{
-        width: 44,
-        height: 44,
-        borderRadius: "50%",
-        backgroundColor: color,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-      }}>
-        {icon}
-      </div>
-      <div>
-        <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</p>
-        <p style={{ fontSize: "1.8rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>{value}</p>
-      </div>
-    </motion.div>
-  );
+interface AdminReport {
+  _id: string;
+  reporter: { _id: string; fullName: string; avatar: string; username: string };
+  targetType: string;
+  target: string;
+  reason: string;
+  description?: string;
+  status: string;
+  createdAt: string;
 }
 
-// ── Status Badge ──
-function StatusBadge({ status }: { status: string }) {
-  const config: Record<string, { bg: string; color: string; label: string }> = {
-    pending: { bg: "var(--accent-warm-light)", color: "var(--accent-warm)", label: "Pending" },
-    reviewed: { bg: "var(--accent-subtle)", color: "var(--accent)", label: "Reviewed" },
-    resolved: { bg: "var(--success-subtle)", color: "var(--success, #16a34a)", label: "Resolved" },
-  };
-  const c = config[status] || config.pending;
-  return (
-    <span style={{
-      padding: "0.2rem 0.6rem",
-      borderRadius: "2rem",
-      fontSize: "0.72rem",
-      fontWeight: 600,
-      backgroundColor: c.bg,
-      color: c.color,
-    }}>
-      {c.label}
-    </span>
-  );
+const statCards = [
+  { key: "totalUsers", label: "Users", color: "var(--accent)" },
+  { key: "totalVideos", label: "Videos", color: "var(--success)" },
+  { key: "publishedVideos", label: "Published", color: "#3B82F6" },
+  { key: "totalComments", label: "Comments", color: "#F59E0B" },
+  { key: "totalSubscriptions", label: "Subscriptions", color: "#8B5CF6" },
+  { key: "totalLikes", label: "Likes", color: "#EC4899" },
+  { key: "totalPlaylists", label: "Playlists", color: "#14B8A6" },
+  { key: "totalReports", label: "Reports", color: "var(--accent-warm)" },
+  { key: "totalViews", label: "Views", format: true },
+];
+
+function formatCount(n: number): string {
+  if (n >= 1e9) return (n / 1e9).toFixed(1) + "B";
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + "K";
+  return n.toString();
 }
 
-// ── Main Page ──
 export default function AdminPage() {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const router = useRouter();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const queryClient = useQueryClient();
 
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [tab, setTab] = useState<"stats" | "users" | "reports" | "activity">("stats");
+  const [userQuery, setUserQuery] = useState("");
+  const [userPage, setUserPage] = useState(1);
+  const [reportFilter, setReportFilter] = useState("pending");
+  const [reportPage, setReportPage] = useState(1);
+  const [actionMsg, setActionMsg] = useState("");
 
-  // Auth guard
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) router.push("/login");
-  }, [isAuthenticated, authLoading, router]);
+    if (!authLoading && (!isAuthenticated || user?.role !== "admin")) router.push("/");
+  }, [authLoading, isAuthenticated, user, router]);
 
-  // Fetch users count
-  const { data: usersRes, isLoading: usersLoading } = useQuery({
-    queryKey: ["admin-users"],
-    queryFn: async () => {
-      const res = await api.get("/users/search?query=");
-      return res.data;
-    },
-    enabled: isAuthenticated,
+  const { data: statsRes } = useQuery({
+    queryKey: ["admin-stats"],
+    queryFn: async () => { const res = await api.get("/admin/stats"); return res.data.data; },
+    enabled: isAuthenticated && user?.role === "admin",
   });
 
-  // Fetch videos count
-  const { data: videosRes, isLoading: videosLoading } = useQuery({
-    queryKey: ["admin-videos"],
-    queryFn: async () => {
-      const res = await api.get("/videos?limit=1&sortBy=createdAt&sortType=desc");
-      return res.data;
-    },
-    enabled: isAuthenticated,
+  const { data: usersRes } = useQuery({
+    queryKey: ["admin-users", userQuery, userPage],
+    queryFn: async () => { const res = await api.get(`/admin/users?page=${userPage}&limit=15${userQuery ? `&query=${userQuery}` : ""}`); return res.data.data; },
+    enabled: isAuthenticated && user?.role === "admin" && tab === "users",
   });
 
-  // Fetch reports
-  const { data: reportsRes, isLoading: reportsLoading } = useQuery({
-    queryKey: ["admin-reports"],
-    queryFn: async () => {
-      const res = await api.get("/reports");
-      return res.data;
-    },
-    enabled: isAuthenticated,
+  const { data: reportsRes } = useQuery({
+    queryKey: ["admin-reports", reportFilter, reportPage],
+    queryFn: async () => { const res = await api.get(`/admin/reports?page=${reportPage}&limit=15&status=${reportFilter}`); return res.data.data; },
+    enabled: isAuthenticated && user?.role === "admin" && tab === "reports",
   });
 
-  // Update report status
-  const updateReportMutation = useMutation({
-    mutationFn: async ({ reportId, status }: { reportId: string; status: string }) => {
-      await api.patch(`/reports/${reportId}`, { status });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-reports"] });
-    },
+  const { data: activityRes } = useQuery({
+    queryKey: ["admin-activity"],
+    queryFn: async () => { const res = await api.get("/admin/activity?limit=10"); return res.data.data; },
+    enabled: isAuthenticated && user?.role === "admin" && tab === "activity",
   });
 
-  // Search users
-  const { data: searchUsersRes, isLoading: searchUsersLoading } = useQuery({
-    queryKey: ["admin-search-users", searchQuery],
-    queryFn: async () => {
-      const res = await api.get(`/users/search?query=${encodeURIComponent(searchQuery)}`);
-      return res.data;
-    },
-    enabled: isAuthenticated && searchQuery.length > 0,
+  const banMutation = useMutation({
+    mutationFn: async (userId: string) => { await api.delete(`/admin/users/${userId}/ban`); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-users"] }); setActionMsg("User banned"); setTimeout(() => setActionMsg(""), 3000); },
   });
 
-  // Loading / Auth states
-  if (authLoading || !isAuthenticated) {
-    return (
-      <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
-        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}
-          style={{ color: "var(--text-secondary)", fontWeight: 500, display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            style={{ width: 36, height: 36, border: "3px solid var(--border)", borderTopColor: "var(--accent)", borderRadius: "50%" }} />
-          {authLoading ? "Checking session..." : "Redirecting to login..."}
-        </motion.div>
-      </div>
-    );
-  }
+  const roleMutation = useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: string }) => { await api.patch(`/admin/users/${userId}/role`, { role }); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-users"] }); setActionMsg("Role updated"); setTimeout(() => setActionMsg(""), 3000); },
+  });
 
-  // Admin check
-  if (user?.role !== "admin") {
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)", padding: "2rem" }}>
-        <div style={{ width: 80, height: 80, borderRadius: "50%", backgroundColor: "var(--accent-warm-light)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1.5rem", color: "var(--accent-warm)" }}>
-          <ShieldIcon />
-        </div>
-        <p style={{ fontSize: "1.3rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.5rem" }}>Access Denied</p>
-        <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem", fontSize: "0.9rem", textAlign: "center", maxWidth: 400 }}>You do not have admin privileges to access this page. Contact an administrator if you believe this is an error.</p>
-        <Link href="/" className="btn btn-primary" style={{ borderRadius: 99, padding: "0.7rem 1.75rem" }}>Go Home</Link>
-      </div>
-    );
-  }
+  const deleteVideoMutation = useMutation({
+    mutationFn: async (videoId: string) => { await api.delete(`/admin/videos/${videoId}`); },
+    onSuccess: () => { setActionMsg("Video deleted"); setTimeout(() => setActionMsg(""), 3000); },
+  });
 
-  const totalUsers = usersRes?.data?.length ?? 0;
-  const totalVideos = videosRes?.data?.total ?? 0;
-  const reports: Report[] = reportsRes?.data || [];
-  const filteredReports = statusFilter === "all" ? reports : reports.filter((r) => r.status === statusFilter);
-  const searchedUsers: UserResult[] = searchUsersRes?.data || [];
+  const stats = statsRes as PlatformStats | undefined;
+  const users = usersRes as { docs: AdminUser[]; totalDocs: number } | undefined;
+  const reports = reportsRes as { docs: AdminReport[]; totalDocs: number } | undefined;
+
+  if (authLoading) return <div style={{ display: "flex", justifyContent: "center", padding: "4rem", color: "var(--text-muted)" }}>Loading...</div>;
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
-      {/* Sticky Header */}
-      <header
-        className="glass"
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-          padding: "0.75rem 2rem",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          borderTop: "none",
-          borderLeft: "none",
-          borderRight: "none",
-          borderRadius: 0,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <button onClick={() => router.back()} style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--text-secondary)", fontSize: "0.88rem", fontWeight: 500, background: "none", border: "none", cursor: "pointer" }}>
-            <BackIcon /> Back
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "2rem" }}>
+      <PageMeta title="Admin Dashboard" description="VideoTube administration panel." noIndex />
+      <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.3rem" }}>Admin Panel</h1>
+      <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1.5rem" }}>Platform management & moderation</p>
+
+      {actionMsg && (
+        <div style={{ padding: "0.6rem 1rem", backgroundColor: "var(--success-subtle)", color: "var(--success)", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem" }}>{actionMsg}</div>
+      )}
+
+      <div className="responsive-tabs" style={{ gap: "0.3rem", marginBottom: "1.5rem", borderBottom: "1px solid var(--border)", paddingBottom: "0.5rem" }}>
+        {(["stats", "users", "reports", "activity"] as const).map((t) => (
+          <button key={t} onClick={() => { setTab(t); setActionMsg(""); }}
+            style={{ padding: "0.5rem 1.2rem", fontWeight: 600, fontSize: "0.85rem", color: tab === t ? "var(--accent)" : "var(--text-secondary)", background: "none", border: "none", borderBottom: tab === t ? "2px solid var(--accent)" : "2px solid transparent", cursor: "pointer", textTransform: "capitalize" }}>
+            {t}
           </button>
-          <span style={{ color: "var(--border)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--accent-warm)", fontWeight: 600, fontSize: "0.9rem" }}>
-            <ShieldIcon /> Admin Panel
-          </div>
-        </div>
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>
-            <PlayLogo size={14} />
-          </div>
-          <span style={{ fontWeight: 800, fontSize: "1rem" }}>
-            Video<span style={{ color: "var(--accent)" }}>Tube</span>
-          </span>
-        </Link>
-      </header>
-
-      <div style={{ width: "100%", padding: "2rem" }}>
-        {/* Page Title */}
-        <div style={{ marginBottom: "2rem" }}>
-          <h1 style={{ fontSize: "1.8rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.25rem" }}>
-            Admin Panel
-          </h1>
-          <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Manage users, videos, and reports</p>
-        </div>
-
-        {/* Stats Cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem", marginBottom: "2.5rem" }}>
-          <StatCard
-            label="Total Users"
-            value={usersLoading ? 0 : totalUsers}
-            color="var(--accent-subtle)"
-            icon={<UsersIcon />}
-          />
-          <StatCard
-            label="Total Videos"
-            value={videosLoading ? 0 : totalVideos}
-            color="var(--accent-warm-light)"
-            icon={<VideoIcon />}
-          />
-          <StatCard
-            label="Total Reports"
-            value={reports.length}
-            color="var(--accent-warm-light)"
-            icon={<FlagIcon />}
-          />
-        </div>
-
-        {/* Reports Management */}
-        <div style={{ marginBottom: "3rem" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem", flexWrap: "wrap", gap: "0.75rem" }}>
-            <h2 style={{ fontSize: "1.3rem", fontWeight: 700, color: "var(--text-primary)" }}>Reports Management</h2>
-
-            {/* Status Filter Dropdown */}
-            <div style={{ position: "relative" }}>
-              <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="btn btn-ghost"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.4rem",
-                  padding: "0.5rem 1rem",
-                  fontSize: "0.85rem",
-                  borderRadius: 99,
-                }}
-              >
-                {statusFilter === "all" ? "All Reports" : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}
-                <ChevronDownIcon />
-              </button>
-              <AnimatePresence>
-                {dropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                    transition={{ duration: 0.18 }}
-                    style={{
-                      position: "absolute",
-                      top: "calc(100% + 8px)",
-                      right: 0,
-                      zIndex: 100,
-                      width: 180,
-                      backgroundColor: "var(--card)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "var(--radius-lg)",
-                      boxShadow: "var(--shadow-lg)",
-                      padding: "0.35rem",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {["all", "pending", "reviewed", "resolved"].map((s) => (
-                      <button
-                        key={s}
-                        onClick={() => { setStatusFilter(s); setDropdownOpen(false); }}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.5rem",
-                          width: "100%",
-                          padding: "0.55rem 0.75rem",
-                          borderRadius: "var(--radius-sm)",
-                          textAlign: "left",
-                          fontSize: "0.85rem",
-                          fontWeight: statusFilter === s ? 600 : 400,
-                          color: statusFilter === s ? "var(--accent)" : "var(--text-primary)",
-                          backgroundColor: statusFilter === s ? "var(--accent-subtle)" : "transparent",
-                          transition: "background-color 0.15s",
-                          border: "none",
-                          cursor: "pointer",
-                        }}
-                        onMouseEnter={(e) => { if (statusFilter !== s) e.currentTarget.style.backgroundColor = "var(--elevated)"; }}
-                        onMouseLeave={(e) => { if (statusFilter !== s) e.currentTarget.style.backgroundColor = "transparent"; }}
-                      >
-                        {s === "all" ? "All Reports" : s.charAt(0).toUpperCase() + s.slice(1)}
-                        {statusFilter === s && <CheckIcon />}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-
-          {/* Reports Table */}
-          <div style={{
-            borderRadius: "var(--radius-lg)",
-            overflow: "hidden",
-            backgroundColor: "var(--card)",
-            border: "1px solid var(--border)",
-          }}>
-            {reportsLoading ? (
-              <div style={{ padding: "4rem 2rem", textAlign: "center" }}>
-                <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ color: "var(--text-muted)" }}>
-                  Loading reports...
-                </motion.div>
-              </div>
-            ) : filteredReports.length === 0 ? (
-              <div style={{ padding: "4rem 2rem", textAlign: "center" }}>
-                <div style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: "50%",
-                  backgroundColor: "var(--accent-subtle)",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: "1rem",
-                  color: "var(--accent)",
-                }}>
-                  <FlagIcon />
-                </div>
-                <p style={{ fontWeight: 600, color: "var(--text-secondary)", marginBottom: "0.4rem" }}>
-                  {statusFilter === "all" ? "No reports yet" : `No ${statusFilter} reports`}
-                </p>
-                <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
-                  {statusFilter === "all" ? "When users report content, it will appear here." : "Try a different filter."}
-                </p>
-              </div>
-            ) : (
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-                  <thead>
-                    <tr style={{ borderBottom: "1px solid var(--border)", backgroundColor: "var(--elevated)" }}>
-                      <th style={{ padding: "0.85rem 1rem", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Reporter</th>
-                      <th style={{ padding: "0.85rem 1rem", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Target</th>
-                      <th style={{ padding: "0.85rem 1rem", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Reason</th>
-                      <th style={{ padding: "0.85rem 1rem", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Status</th>
-                      <th style={{ padding: "0.85rem 1rem", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Date</th>
-                      <th style={{ padding: "0.85rem 1rem", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredReports.map((report) => (
-                      <tr
-                        key={report._id}
-                        style={{ borderBottom: "1px solid var(--border)", transition: "background-color 0.15s" }}
-                        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "var(--elevated)")}
-                        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "transparent")}
-                      >
-                        {/* Reporter */}
-                        <td style={{ padding: "0.85rem 1rem" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={report.reporter?.avatar || ""}
-                              alt={report.reporter?.fullName || "User"}
-                              style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }}
-                            />
-                            <span style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--text-primary)" }}>
-                              {report.reporter?.fullName || "Unknown"}
-                            </span>
-                          </div>
-                        </td>
-
-                        {/* Target */}
-                        <td style={{ padding: "0.85rem 1rem" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                            {report.targetType === "video" && report.reportedVideo ? (
-                              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                  src={report.reportedVideo.thumbnail}
-                                  alt={report.reportedVideo.title}
-                                  style={{ width: 48, height: 28, objectFit: "cover", borderRadius: "var(--radius-sm)" }}
-                                />
-                                <span style={{ fontSize: "0.82rem", color: "var(--text-secondary)", maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                  {report.reportedVideo.title}
-                                </span>
-                              </div>
-                            ) : report.targetType === "user" && report.reportedUser ? (
-                              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                  src={report.reportedUser.avatar}
-                                  alt={report.reportedUser.fullName}
-                                  style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }}
-                                />
-                                <span style={{ fontSize: "0.82rem", color: "var(--text-secondary)" }}>{report.reportedUser.fullName}</span>
-                              </div>
-                            ) : (
-                              <span style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>{report.targetType}: {report.targetId.slice(0, 8)}...</span>
-                            )}
-                          </div>
-                        </td>
-
-                        {/* Reason */}
-                        <td style={{ padding: "0.85rem 1rem" }}>
-                          <span style={{ fontSize: "0.85rem", color: "var(--text-primary)", textTransform: "capitalize" }}>{report.reason}</span>
-                        </td>
-
-                        {/* Status */}
-                        <td style={{ padding: "0.85rem 1rem" }}>
-                          <StatusBadge status={report.status} />
-                        </td>
-
-                        {/* Date */}
-                        <td style={{ padding: "0.85rem 1rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
-                          {new Date(report.createdAt).toLocaleDateString()}
-                        </td>
-
-                        {/* Actions */}
-                        <td style={{ padding: "0.85rem 1rem" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-                            {report.targetType === "video" && report.reportedVideo && (
-                              <Link
-                                href={`/videos/${report.targetId}`}
-                                style={{
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  width: 32,
-                                  height: 32,
-                                  borderRadius: "var(--radius-sm)",
-                                  color: "var(--text-muted)",
-                                  transition: "all 0.15s",
-                                }}
-                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--elevated)"; e.currentTarget.style.color = "var(--text-primary)"; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--text-muted)"; }}
-                                title="View video"
-                              >
-                                <EyeIcon />
-                              </Link>
-                            )}
-                            {report.status !== "reviewed" && (
-                              <button
-                                onClick={() => updateReportMutation.mutate({ reportId: report._id, status: "reviewed" })}
-                                disabled={updateReportMutation.isPending}
-                                style={{
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  width: 32,
-                                  height: 32,
-                                  borderRadius: "var(--radius-sm)",
-                                  color: "var(--accent)",
-                                  background: "none",
-                                  border: "none",
-                                  cursor: "pointer",
-                                  transition: "all 0.15s",
-                                }}
-                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--accent-subtle)"; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
-                                title="Mark as reviewed"
-                              >
-                                <CheckIcon />
-                              </button>
-                            )}
-                            {report.status !== "resolved" && (
-                              <button
-                                onClick={() => updateReportMutation.mutate({ reportId: report._id, status: "resolved" })}
-                                disabled={updateReportMutation.isPending}
-                                style={{
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  width: 32,
-                                  height: 32,
-                                  borderRadius: "var(--radius-sm)",
-                                  color: "var(--success, #16a34a)",
-                                  background: "none",
-                                  border: "none",
-                                  cursor: "pointer",
-                                  transition: "all 0.15s",
-                                }}
-                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--success-subtle)"; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
-                                title="Mark as resolved"
-                              >
-                                <XIcon />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* User Management */}
-        <div>
-          <h2 style={{ fontSize: "1.3rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "1rem" }}>User Management</h2>
-
-          <div
-            className="glass"
-            style={{
-              borderRadius: "var(--radius-lg)",
-              padding: "1.5rem",
-            }}
-          >
-            {/* Search Bar */}
-            <div style={{ position: "relative", marginBottom: "1.25rem" }}>
-              <div style={{
-                position: "absolute",
-                left: "1rem",
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "var(--text-muted)",
-                display: "flex",
-                alignItems: "center",
-              }}>
-                <SearchIcon />
-              </div>
-              <input
-                type="text"
-                placeholder="Search..."
-                className="input"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  paddingLeft: "2.75rem",
-                  width: "100%",
-                }}
-              />
-            </div>
-
-            {/* Users List */}
-            {searchQuery.length === 0 ? (
-              <div style={{ padding: "3rem 2rem", textAlign: "center", color: "var(--text-muted)" }}>
-                <UsersIcon />
-                <p style={{ marginTop: "0.75rem", fontSize: "0.9rem" }}>Type a name or username to search for users.</p>
-              </div>
-            ) : searchUsersLoading ? (
-              <div style={{ padding: "2rem", textAlign: "center" }}>
-                <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ color: "var(--text-muted)" }}>
-                  Searching...
-                </motion.div>
-              </div>
-            ) : searchedUsers.length === 0 ? (
-              <div style={{ padding: "3rem 2rem", textAlign: "center", color: "var(--text-muted)" }}>
-                <p style={{ fontSize: "0.9rem" }}>No users found matching &quot;{searchQuery}&quot;</p>
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                <AnimatePresence mode="popLayout">
-                  {searchedUsers.map((u) => (
-                    <motion.div
-                      key={u._id}
-                      layout
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "1rem",
-                        padding: "0.85rem 1rem",
-                        borderRadius: "var(--radius-md)",
-                        border: "1px solid var(--border)",
-                        transition: "background-color 0.15s",
-                      }}
-                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "var(--elevated)")}
-                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "transparent")}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={u.avatar}
-                        alt={u.fullName}
-                        style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border)" }}
-                      />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontWeight: 600, fontSize: "0.9rem", color: "var(--text-primary)" }}>{u.fullName}</p>
-                        <p style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>@{u.username}</p>
-                      </div>
-                      <Link
-                        href={`/channel/${u.username}`}
-                        className="btn btn-ghost"
-                        style={{ padding: "0.4rem 0.85rem", fontSize: "0.78rem", borderRadius: 99 }}
-                      >
-                        View Channel
-                      </Link>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-            )}
-          </div>
-        </div>
+        ))}
       </div>
+
+      {/* STATS */}
+      {tab === "stats" && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: "0.75rem" }}>
+          {statCards.map((s) => {
+            const val = stats ? (stats as any)[s.key] : null;
+            return (
+              <div key={s.key} className="form-card" style={{ padding: "1.25rem" }}>
+                <p style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.4rem" }}>{s.label}</p>
+                <p style={{ fontSize: "1.6rem", fontWeight: 800, color: s.color || "var(--text-primary)" }}>
+                  {val !== null ? (s.format ? formatCount(val) : val.toLocaleString()) : "—"}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* USERS */}
+      {tab === "users" && (
+        <div>
+          <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+            <input value={userQuery} onChange={(e) => { setUserQuery(e.target.value); setUserPage(1); }} placeholder="Search users by name, email or username..." className="input" style={{ flex: 1 }} />
+            <button onClick={() => queryClient.invalidateQueries({ queryKey: ["admin-users"] })} className="btn btn-primary" style={{ borderRadius: "var(--radius-md)", padding: "0.5rem 1rem" }}>Search</button>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            {users?.docs.map((u) => (
+              <div key={u._id} className="form-card" style={{ padding: "0.75rem 1rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                <img src={u.avatar} alt={u.fullName} style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover" }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>{u.fullName} <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>@{u.username}</span></p>
+                  <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{u.email} · Role: {u.role} · Joined {new Date(u.createdAt).toLocaleDateString("en-GB")}</p>
+                </div>
+                <div style={{ display: "flex", gap: "0.4rem", flexShrink: 0 }}>
+                  {u.role === "user" ? (
+                    <button onClick={() => roleMutation.mutate({ userId: u._id, role: "admin" })} style={{ fontSize: "0.75rem", padding: "0.35rem 0.7rem", borderRadius: "var(--radius-sm)", backgroundColor: "var(--accent-subtle)", color: "var(--accent)", border: "none", cursor: "pointer" }}>
+                      Make Admin
+                    </button>
+                  ) : (
+                    <button onClick={() => roleMutation.mutate({ userId: u._id, role: "user" })} style={{ fontSize: "0.75rem", padding: "0.35rem 0.7rem", borderRadius: "var(--radius-sm)", backgroundColor: "var(--bg-secondary)", color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer" }}>
+                      Remove Admin
+                    </button>
+                  )}
+                  <button onClick={() => { if (confirm(`Ban ${u.fullName}? This will delete all their content.`)) banMutation.mutate(u._id); }} style={{ fontSize: "0.75rem", padding: "0.35rem 0.7rem", borderRadius: "var(--radius-sm)", backgroundColor: "var(--accent-warm-light)", color: "var(--accent-warm)", border: "none", cursor: "pointer" }}>
+                    Ban
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          {users && users.totalDocs > 15 && (
+            <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem", marginTop: "1rem" }}>
+              <button disabled={userPage <= 1} onClick={() => setUserPage((p) => p - 1)} style={{ padding: "0.4rem 1rem", borderRadius: "var(--radius-md)", backgroundColor: "var(--elevated)", color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: userPage <= 1 ? "not-allowed" : "pointer" }}>Previous</button>
+              <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", alignSelf: "center" }}>Page {userPage}</span>
+              <button disabled={!users || userPage * 15 >= users.totalDocs} onClick={() => setUserPage((p) => p + 1)} style={{ padding: "0.4rem 1rem", borderRadius: "var(--radius-md)", backgroundColor: "var(--elevated)", color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: !users || userPage * 15 >= users.totalDocs ? "not-allowed" : "pointer" }}>Next</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* REPORTS */}
+      {tab === "reports" && (
+        <div>
+          <div style={{ display: "flex", gap: "0.3rem", marginBottom: "1rem" }}>
+            {["pending", "reviewed", "resolved", "dismissed"].map((s) => (
+              <button key={s} onClick={() => { setReportFilter(s); setReportPage(1); }} style={{ padding: "0.4rem 0.9rem", fontSize: "0.78rem", fontWeight: 600, borderRadius: "var(--radius-sm)", backgroundColor: reportFilter === s ? "var(--accent)" : "var(--elevated)", color: reportFilter === s ? "#fff" : "var(--text-secondary)", border: "none", cursor: "pointer", textTransform: "capitalize" }}>
+                {s}
+              </button>
+            ))}
+          </div>
+          {reports?.docs.length === 0 ? (
+            <p style={{ color: "var(--text-muted)", padding: "2rem", textAlign: "center" }}>No {reportFilter} reports</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              {reports?.docs.map((r) => (
+                <div key={r._id} className="form-card" style={{ padding: "0.75rem 1rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.3rem" }}>
+                    <img src={r.reporter.avatar} alt={r.reporter.fullName} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} />
+                    <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)" }}>{r.reporter.fullName}</span>
+                    <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>reported a {r.targetType}</span>
+                    <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginLeft: "auto" }}>{new Date(r.createdAt).toLocaleDateString("en-GB")}</span>
+                  </div>
+                  <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", marginBottom: "0.2rem" }}><strong>Reason:</strong> {r.reason.replace(/_/g, " ")}</p>
+                  {r.description && <p style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>{r.description}</p>}
+                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.3rem" }}>Status: <span style={{ fontWeight: 600, color: r.status === "pending" ? "var(--accent-warm)" : r.status === "resolved" ? "var(--success)" : "var(--text-secondary)" }}>{r.status}</span></div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ACTIVITY */}
+      {tab === "activity" && (
+        <div className="responsive-grid-2" style={{ gap: "1.5rem" }}>
+          <div>
+            <h2 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.75rem" }}>Recent Users</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+              {activityRes?.recentUsers?.map((u: any) => (
+                <div key={u._id} style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.4rem 0.6rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-sm)" }}>
+                  <img src={u.avatar} alt={u.fullName} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} />
+                  <span style={{ fontSize: "0.82rem", color: "var(--text-primary)", fontWeight: 500 }}>{u.fullName}</span>
+                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginLeft: "auto" }}>{new Date(u.createdAt).toLocaleDateString("en-GB")}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h2 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.75rem" }}>Recent Videos</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+              {activityRes?.recentVideos?.map((v: any) => (
+                <div key={v._id} style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.4rem 0.6rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-sm)" }}>
+                  <div style={{ width: 40, height: 24, borderRadius: 4, overflow: "hidden", flexShrink: 0, backgroundColor: "var(--elevated)" }}>
+                    {v.thumbnail && <img src={v.thumbnail} alt={v.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontSize: "0.78rem", fontWeight: 500, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v.title}</p>
+                    <p style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>{formatCount(v.views || 0)} views · {new Date(v.createdAt).toLocaleDateString("en-GB")}</p>
+                  </div>
+                  <button onClick={() => { if (confirm("Delete this video?")) deleteVideoMutation.mutate(v._id); }} style={{ marginLeft: "auto", fontSize: "0.7rem", padding: "0.2rem 0.5rem", borderRadius: "var(--radius-sm)", backgroundColor: "var(--accent-warm-light)", color: "var(--accent-warm)", border: "none", cursor: "pointer", flexShrink: 0 }}>
+                    Delete
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

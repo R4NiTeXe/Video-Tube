@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { timeAgo } from "@/src/lib/utils";
+import { PageMeta } from "@/src/components/PageMeta";
 
 interface Notification {
   _id: string;
@@ -18,16 +19,8 @@ interface Notification {
   createdAt: string;
 }
 
-const BackIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-);
-
 const BellIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-);
-
-const CheckAllIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
 );
 
 
@@ -84,10 +77,10 @@ export default function NotificationsPage() {
   }
 
   const notifications: Notification[] = response?.data?.notifications || [];
-  const hasUnread = notifications.some((n) => !n.isRead);
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
+      <PageMeta title="Notifications" description="Your VideoTube notifications." noIndex />
       <div style={{ width: "100%", padding: "1.5rem 2rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem" }}>
           <div style={{
@@ -155,7 +148,7 @@ export default function NotificationsPage() {
                   <div style={{ position: "relative", flexShrink: 0 }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={n.sender?.avatar || ""}
+                      src={n.sender?.avatar || undefined}
                       alt={n.sender?.fullName || "User"}
                       style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border)" }}
                     />

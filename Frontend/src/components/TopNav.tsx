@@ -17,9 +17,6 @@ import {
    LogoutIcon,
    StudioIcon,
    ChevronDownIcon,
-   HistoryIcon,
-   ClockIcon,
-   HeartIcon,
 } from "@/src/components/icons";
 
 export default function TopNav() {
@@ -37,7 +34,8 @@ export default function TopNav() {
       const res = await api.get("/notifications/unread-count");
       return res.data.data;
     },
-    refetchInterval: 30000,
+    enabled: !!user,
+    refetchInterval: 300000,
   });
 
   const unreadCount: number = unreadData?.unreadCount ?? 0;
@@ -57,13 +55,17 @@ export default function TopNav() {
   ]);
 
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
+    function handleClickOutside(e: Event) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsDropdownOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
   }, []);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -103,24 +105,25 @@ export default function TopNav() {
   }
 
   return (
-    <nav className="topnav">
-      <Link href="/" className="topnav-logo">
-        <div className="topnav-logo-icon">
+    <nav className="topnav" aria-label="Main navigation">
+      <Link href="/" className="topnav-logo" aria-label="VideoTube Home">
+        <div className="topnav-logo-icon" aria-hidden="true">
           <PlayIcon size={16} />
         </div>
         <span className="topnav-logo-text">VideoTube</span>
       </Link>
 
-      <form className="topnav-search" onSubmit={handleSearchSubmit}>
-        <SearchIcon size={16} />
+      <form className="topnav-search" onSubmit={handleSearchSubmit} role="search">
+        <SearchIcon size={16} aria-hidden="true" />
         <input
           ref={searchInputRef}
           type="text"
           placeholder="Search videos, channels, creators..."
+          aria-label="Search videos, channels, creators"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        <kbd className="topnav-search-kbd">&#8984;K</kbd>
+        <kbd className="topnav-search-kbd" aria-hidden="true">&#8984;K</kbd>
       </form>
 
       <div className="topnav-actions">
@@ -129,10 +132,10 @@ export default function TopNav() {
           <span>Upload</span>
         </Link>
 
-        <Link href="/notifications" className="btn-icon" style={{ position: "relative" }}>
-          <BellIcon size={20} />
+        <Link href="/notifications" className="btn-icon" aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount > 99 ? "99+" : unreadCount} unread)` : ""}`} style={{ position: "relative" }}>
+          <BellIcon size={20} aria-hidden="true" />
           {unreadCount > 0 && (
-            <span className="badge" style={{ position: "absolute", top: 2, right: 2 }}>
+            <span className="badge" aria-hidden="true" style={{ position: "absolute", top: 2, right: 2 }}>
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
@@ -143,9 +146,11 @@ export default function TopNav() {
             className="topnav-avatar"
             onClick={() => setIsDropdownOpen((prev) => !prev)}
             aria-label="User menu"
+            aria-expanded={isDropdownOpen}
+            aria-haspopup="true"
           >
             <img src={user.avatar} alt={user.fullName} />
-            <ChevronDownIcon size={14} />
+            <ChevronDownIcon size={14} aria-hidden="true" />
           </button>
 
           <div className={`dropdown${isDropdownOpen ? " open" : ""}`}>
@@ -183,23 +188,6 @@ export default function TopNav() {
             <Link href="/settings" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
               <SettingsIcon size={16} />
               Settings
-            </Link>
-
-            <div className="dropdown-divider" />
-
-            <Link href="/history" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
-              <HistoryIcon size={16} />
-              History
-            </Link>
-
-            <Link href="/library" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
-              <ClockIcon size={16} />
-              Watch Later
-            </Link>
-
-            <Link href="/liked" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
-              <HeartIcon size={16} />
-              Liked Videos
             </Link>
 
             <div className="dropdown-divider" />

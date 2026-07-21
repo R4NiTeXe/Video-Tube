@@ -8,6 +8,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDuration, formatViews } from "@/src/lib/utils";
+import { PageMeta } from "@/src/components/PageMeta";
 
 interface Video {
   _id: string;
@@ -136,6 +137,7 @@ export default function PlaylistDetailPage() {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
+      <PageMeta title={playlist?.name || "Playlist"} description="View playlist on VideoTube." noIndex />
       <header
         className="glass"
         style={{
@@ -225,12 +227,15 @@ export default function PlaylistDetailPage() {
                 display: "flex", alignItems: "center", justifyContent: "center",
                 border: "1px solid var(--border)",
               }}>
-                {videos.length > 0 && videos[0].thumbnail ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={videos[0].thumbnail} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                ) : (
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                )}
+                {(() => {
+                  const firstVideo = videos[0];
+                  return firstVideo?.thumbnail ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={firstVideo.thumbnail} alt={firstVideo.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                  );
+                })()}
               </div>
               <div style={{ flex: 1, minWidth: 200 }}>
                 <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.3rem" }}>
@@ -299,13 +304,13 @@ export default function PlaylistDetailPage() {
 
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <Link href={`/videos/${video._id}`} style={{ textDecoration: "none" }}>
-                        <h3 style={{
+                        <h2 style={{
                           fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)",
                           display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
                           marginBottom: "0.3rem",
                         }}>
                           {video.title}
-                        </h3>
+                        </h2>
                       </Link>
                       <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>
                         <span>{formatViews(video.views)} views</span>

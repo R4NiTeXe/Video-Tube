@@ -54,6 +54,7 @@ const providers: Provider[] = [
 
 export default function SocialLoginButtons() {
   const handleOAuthLogin = (slug: string) => {
+    // eslint-disable-next-line react-hooks/immutability
     window.location.href = `${API_BASE}/auth/${slug}`;
   };
 

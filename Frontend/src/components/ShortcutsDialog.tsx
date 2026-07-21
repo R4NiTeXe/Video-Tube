@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { DEFAULT_SHORTCUTS } from "@/src/hooks/useKeyboardShortcuts";
 
 export default function ShortcutsDialog() {
@@ -48,7 +48,7 @@ export default function ShortcutsDialog() {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          backgroundColor: "var(--bg-elevated)",
+          backgroundColor: "var(--elevated)",
           borderRadius: "var(--radius-lg)",
           border: "1px solid var(--border-light)",
           padding: "1.5rem",

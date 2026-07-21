@@ -6,6 +6,7 @@ import { useAuthStore } from "@/src/store/useAuthStore";
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { timeAgo } from "@/src/lib/utils";
+import { PageMeta } from "@/src/components/PageMeta";
 
 interface PostOwner {
   _id: string;
@@ -153,6 +154,7 @@ export default function CommunityPage() {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
+      <PageMeta title="Community" description="Community posts from channels you follow on VideoTube." noIndex />
       {/* ── AMBIENT BACKGROUND ── */}
       <div style={{ position: "fixed", top: "5%", left: "30%", width: "50vw", height: "50vw", background: "var(--accent)", filter: "blur(250px)", opacity: 0.035, borderRadius: "50%", pointerEvents: "none", zIndex: 0 }} />
 

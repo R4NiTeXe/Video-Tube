@@ -15,7 +15,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const isLandingPage = pathname === "/" && !isAuthenticated;
 
   if (isAuthPage || isLandingPage) {
-    return <>{children}</>;
+    return <main id="main-content">{children}</main>;
   }
 
   return (
@@ -23,7 +23,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <TopNav />
       <div className="page-layout">
         <PremiumSidebar />
-        <main className="page-content">{children}</main>
+        <main id="main-content" className="page-content">{children}</main>
       </div>
     </div>
   );

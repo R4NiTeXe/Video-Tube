@@ -1,17 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
-import MascotAnimation from "@/src/components/MascotAnimation";
+import { PageMeta } from "@/src/components/PageMeta";
 import { PlayIcon, EyeIcon, EyeOffIcon, CloseIcon } from "@/src/components/icons";
+
+const MascotAnimation = dynamic(() => import("@/src/components/MascotAnimation"), { ssr: false });
 
 export default function LoginPage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const { isAuthenticated, isLoading: authLoading, login } = useAuthStore();
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -48,7 +51,6 @@ export default function LoginPage() {
           : { email: trimmed, password };
       const response = await api.post("/users/login", payload);
       const { user } = response.data.data;
-      const { login } = useAuthStore.getState();
       login(user);
       router.push("/");
     } catch (err: unknown) {
@@ -70,6 +72,8 @@ export default function LoginPage() {
   if (isAuthenticated) return null;
 
   return (
+    <>
+      <PageMeta title="Sign In" description="Sign in to your VideoTube account to access your videos, playlists, and subscriptions." noIndex />
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)", display: "flex", overflow: "hidden" }}>
       {/* LEFT: FORM */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", zIndex: 10, backgroundColor: "var(--bg-primary)", overflowY: "auto" }}>
@@ -101,7 +105,7 @@ export default function LoginPage() {
             {/* Error */}
             <AnimatePresence>
               {error && (
-                <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+                <motion.div role="alert" aria-live="polite" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
                   className="card"
                   style={{
                     padding: "var(--sp-3) var(--sp-4)", backgroundColor: "var(--error-subtle)", color: "var(--error)",
@@ -116,12 +120,14 @@ export default function LoginPage() {
             {/* Form */}
             <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-2)" }}>
-                <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Email or Mobile</label>
+                <label htmlFor="login-email" className="text-caption" style={{ color: "var(--text-secondary)" }}>Email or Mobile</label>
                 <div className="input-wrapper" onMouseEnter={() => {}} onMouseLeave={() => {}}>
                   <input
                     type="text" required
                     placeholder="Email or mobile"
                     className="input"
+                    id="login-email"
+                    autoComplete="email"
                     value={identifier}
                     onChange={e => setIdentifier(e.target.value)}
                     onFocus={() => setActiveField("email")}
@@ -132,7 +138,7 @@ export default function LoginPage() {
 
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-2)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Password</label>
+                  <label htmlFor="login-password" className="text-caption" style={{ color: "var(--text-secondary)" }}>Password</label>
                   <Link href="/forgot-password" className="text-caption" style={{ color: "var(--text-muted)", textDecoration: "none" }}>
                     Forgot Password?
                   </Link>
@@ -143,6 +149,8 @@ export default function LoginPage() {
                     required
                     placeholder="Password"
                     className="input"
+                    id="login-password"
+                    autoComplete="current-password"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     onFocus={() => setActiveField("password")}
@@ -193,10 +201,8 @@ export default function LoginPage() {
         />
       </div>
 
-      <style dangerouslySetInnerHTML={{__html:`
-        @media (max-width:900px)  { .mascot-panel { display:none !important; } }
-        @media (min-width:901px)  { .mascot-panel { display:flex !important; } }
-      `}}/>
+      
     </div>
+    </>
   );
 }

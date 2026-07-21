@@ -43,11 +43,11 @@ export default function BottomNav() {
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
-    return pathname.startsWith(href.split("?")[0]);
+    return pathname.startsWith(href.split("?")[0] ?? href);
   };
 
   return (
-    <nav className="bottom-nav">
+    <nav className="bottom-nav" aria-label="Bottom navigation">
       {navItems.map((item) => {
         const active = isActive(item.href);
         return (
@@ -55,8 +55,10 @@ export default function BottomNav() {
             key={item.label}
             href={item.href}
             className={`bottom-nav-item${active ? " active" : ""}`}
+            aria-label={item.label}
+            aria-current={active ? "page" : undefined}
           >
-            <item.icon active={active} />
+            <item.icon active={active} aria-hidden="true" />
             <span className="bottom-nav-label">{item.label}</span>
           </Link>
         );

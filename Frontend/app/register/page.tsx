@@ -1,13 +1,17 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
-import MascotAnimation from "@/src/components/MascotAnimation";
+import { PageMeta } from "@/src/components/PageMeta";
+import { COUNTRIES, FlagImg } from "@/src/lib/countries";
 import SocialLoginButtons from "@/src/components/SocialLoginButtons";
+
+const MascotAnimation = dynamic(() => import("@/src/components/MascotAnimation"), { ssr: false });
 
 const PlayLogo = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
@@ -44,11 +48,6 @@ const XIcon = () => (
     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
   </svg>
 );
-const SendIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-  </svg>
-);
 const MailIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 4L12 13 2 4"/>
@@ -76,48 +75,7 @@ type ActiveField = "name" | "username" | "email" | "password" | "confirmPassword
 const OTP_LENGTH = 6;
 const COOLDOWN_SECONDS = 60;
 
-const COUNTRIES = [
-  { code: "+91", iso: "in", name: "India" },
-  { code: "+1", iso: "us", name: "United States" },
-  { code: "+44", iso: "gb", name: "United Kingdom" },
-  { code: "+61", iso: "au", name: "Australia" },
-  { code: "+81", iso: "jp", name: "Japan" },
-  { code: "+82", iso: "kr", name: "South Korea" },
-  { code: "+86", iso: "cn", name: "China" },
-  { code: "+49", iso: "de", name: "Germany" },
-  { code: "+33", iso: "fr", name: "France" },
-  { code: "+39", iso: "it", name: "Italy" },
-  { code: "+34", iso: "es", name: "Spain" },
-  { code: "+55", iso: "br", name: "Brazil" },
-  { code: "+7", iso: "ru", name: "Russia" },
-  { code: "+971", iso: "ae", name: "UAE" },
-  { code: "+966", iso: "sa", name: "Saudi Arabia" },
-  { code: "+65", iso: "sg", name: "Singapore" },
-  { code: "+60", iso: "my", name: "Malaysia" },
-  { code: "+66", iso: "th", name: "Thailand" },
-  { code: "+62", iso: "id", name: "Indonesia" },
-  { code: "+63", iso: "ph", name: "Philippines" },
-  { code: "+84", iso: "vn", name: "Vietnam" },
-  { code: "+880", iso: "bd", name: "Bangladesh" },
-  { code: "+94", iso: "lk", name: "Sri Lanka" },
-  { code: "+977", iso: "np", name: "Nepal" },
-  { code: "+92", iso: "pk", name: "Pakistan" },
-  { code: "+234", iso: "ng", name: "Nigeria" },
-  { code: "+27", iso: "za", name: "South Africa" },
-  { code: "+52", iso: "mx", name: "Mexico" },
-  { code: "+1", iso: "ca", name: "Canada" },
-  { code: "+64", iso: "nz", name: "New Zealand" },
-];
 
-const FlagImg = ({ iso, size = 20 }: { iso: string; size?: number }) => (
-  <img
-    src={`https://flagcdn.com/w${Math.max(20, size * 2)}/${iso.toLowerCase()}.png`}
-    alt=""
-    width={size}
-    height={Math.round(size * 0.75)}
-    style={{ borderRadius: 2, objectFit: "cover", flexShrink: 0 }}
-  />
-);
 
 function PasswordStrengthBar({ password }: { password: string }) {
   let score = 0;
@@ -261,7 +219,7 @@ export default function RegisterPage() {
   const handleOtpKeyDown = (
     index: number,
     e: React.KeyboardEvent<HTMLInputElement>,
-    setter: React.Dispatch<React.SetStateAction<string[]>>,
+    _setter: React.Dispatch<React.SetStateAction<string[]>>,
     refs: React.MutableRefObject<(HTMLInputElement | null)[]>,
     isEmail: boolean,
   ) => {
@@ -334,7 +292,7 @@ export default function RegisterPage() {
   };
 
   // ── Step 1 → Step 2 ────────────────────────────────────────────────────
-  const handleDetailsSubmit = async (e: React.FormEvent) => {
+  const handleDetailsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -422,6 +380,7 @@ export default function RegisterPage() {
       const t = setTimeout(() => router.push("/"), 2500);
       return () => clearTimeout(t);
     }
+    return;
   }, [step, router]);
 
   // ── Loading guard ───────────────────────────────────────────────────────
@@ -456,6 +415,8 @@ export default function RegisterPage() {
       : "Your account is ready. Redirecting...";
 
   return (
+    <>
+      <PageMeta title="Create Account" description="Join VideoTube today — create your account and start sharing videos." noIndex />
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)", display: "flex", overflow: "hidden" }}>
 
       {/* LEFT: FORM */}
@@ -528,7 +489,7 @@ export default function RegisterPage() {
 
             <AnimatePresence>
               {error && (
-                <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+                <motion.div role="alert" aria-live="polite" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
                   style={{ padding: "0.7rem 1rem", backgroundColor: "var(--error-subtle)", color: "var(--error)", borderRadius: "var(--radius-md)", marginBottom: "1.25rem", fontSize: "0.85rem", border: "1px solid var(--error)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
                   <XIcon /> {error}
                 </motion.div>
@@ -558,20 +519,20 @@ export default function RegisterPage() {
                   <form onSubmit={handleDetailsSubmit} style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
 
                     {/* Row 1: Full Name + Username */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--sp-3)" }}>
+                    <div className="responsive-grid-2" style={{ gap: "var(--sp-3)" }}>
                       <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                        <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Full Name</label>
+                        <label htmlFor="reg-name" className="text-caption" style={{ color: "var(--text-secondary)" }}>Full Name</label>
                         <div className="input-wrapper">
-                          <input type="text" required placeholder="Your name" className="input"
+                          <input type="text" required placeholder="Your name" className="input" id="reg-name" autoComplete="name"
                             value={formData.fullName}
                             onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                             onFocus={() => setActiveField("name")} onBlur={() => setActiveField("none")} />
                         </div>
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                        <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Username</label>
+                        <label htmlFor="reg-username" className="text-caption" style={{ color: "var(--text-secondary)" }}>Username</label>
                         <div className="input-wrapper">
-                          <input type="text" required placeholder="Your username" className="input"
+                          <input type="text" required placeholder="Your username" className="input" id="reg-username" autoComplete="username"
                             value={formData.username}
                             onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/\s/g, "") })}
                             onFocus={() => setActiveField("username")} onBlur={() => setActiveField("none")} />
@@ -581,9 +542,9 @@ export default function RegisterPage() {
 
                     {/* Row 2: Email */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                      <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Email</label>
+                      <label htmlFor="reg-email" className="text-caption" style={{ color: "var(--text-secondary)" }}>Email</label>
                       <div className="input-wrapper">
-                        <input type="email" required placeholder="Your email" className="input"
+                        <input type="email" required placeholder="Your email" className="input" id="reg-email" autoComplete="email"
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                           onFocus={() => setActiveField("email")} onBlur={() => setActiveField("none")} />
@@ -592,7 +553,7 @@ export default function RegisterPage() {
 
                     {/* Row 3: Mobile */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                      <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Mobile Number</label>
+                      <label htmlFor="reg-mobile" className="text-caption" style={{ color: "var(--text-secondary)" }}>Mobile Number</label>
                       <div style={{ display: "flex", gap: 0 }}>
                         <div style={{ position: "relative" }}>
                           <select
@@ -607,6 +568,7 @@ export default function RegisterPage() {
                               fontWeight: 600,
                               fontSize: 13,
                             }}
+                            aria-label="Country code"
                           >
                             {COUNTRIES.map((c) => (
                               <option key={c.iso + c.code} value={c.code}>{c.iso.toUpperCase()} {c.code}</option>
@@ -623,6 +585,8 @@ export default function RegisterPage() {
                           <input
                             type="tel" required placeholder="Your number"
                             className="input"
+                            id="reg-mobile"
+                            autoComplete="tel"
                             value={formData.mobile}
                             onChange={(e) => setFormData({ ...formData, mobile: e.target.value.replace(/\D/g, "") })}
                             onFocus={() => setActiveField("email")} onBlur={() => setActiveField("none")}
@@ -639,9 +603,9 @@ export default function RegisterPage() {
 
 {/* Row 4: Password */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                      <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Password</label>
+                      <label htmlFor="reg-password" className="text-caption" style={{ color: "var(--text-secondary)" }}>Password</label>
                       <div className="password-field" style={{ position: "relative" }}>
-                        <input type={showPassword ? "text" : "password"} required placeholder="Password" className="input"
+                        <input type={showPassword ? "text" : "password"} required placeholder="Password" className="input" id="reg-password" autoComplete="new-password"
                           value={formData.password}
                           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                           onFocus={() => setActiveField("password")} onBlur={() => setActiveField("none")}
@@ -656,9 +620,9 @@ export default function RegisterPage() {
 
                     {/* Row 5: Confirm Password */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                      <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Confirm Password</label>
+                      <label htmlFor="reg-confirm" className="text-caption" style={{ color: "var(--text-secondary)" }}>Confirm Password</label>
                       <div className="password-field" style={{ position: "relative" }}>
-                        <input type={showConfirmPassword ? "text" : "password"} required placeholder="Password"
+                        <input type={showConfirmPassword ? "text" : "password"} required placeholder="Password" id="reg-confirm" autoComplete="new-password"
                           className={confirmBorderClass}
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
@@ -693,7 +657,7 @@ export default function RegisterPage() {
                       <div className={`upload-zone ${avatarPreview ? "has-file" : ""}`}
                         onMouseEnter={() => setActiveField("avatar")} onMouseLeave={() => setActiveField("none")}
                         style={{ flexDirection: "row", gap: "var(--sp-3)", padding: "var(--sp-3)", justifyContent: "flex-start", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1.5px dashed var(--border)", cursor: "pointer", transition: "all 0.2s" }}>
-                        <input type="file" accept="image/*" ref={avatarRef} onChange={handleAvatarChange} />
+                        <input type="file" accept="image/*" ref={avatarRef} onChange={handleAvatarChange} aria-label="Profile photo upload" />
                         {avatarPreview
                           /* eslint-disable-next-line @next/next/no-img-element */
                           ? <img src={avatarPreview} alt="Avatar" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--accent)", flexShrink: 0 }} />
@@ -714,7 +678,7 @@ export default function RegisterPage() {
                       <div className={`upload-zone ${coverPreview ? "has-file" : ""}`}
                         onMouseEnter={() => setActiveField("cover")} onMouseLeave={() => setActiveField("none")}
                         style={{ padding: 0, height: 56, backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1.5px dashed var(--border)", cursor: "pointer", overflow: "hidden", transition: "all 0.2s" }}>
-                        <input type="file" accept="image/*" ref={coverRef} onChange={handleCoverChange} />
+                        <input type="file" accept="image/*" ref={coverRef} onChange={handleCoverChange} aria-label="Channel banner upload" />
                         {coverPreview
                           /* eslint-disable-next-line @next/next/no-img-element */
                           ? <img src={coverPreview} alt="Cover" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "var(--radius-md)" }} />
@@ -753,7 +717,7 @@ export default function RegisterPage() {
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                  <form onSubmit={(e) => e.preventDefault()} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
 
                     {/* ── Channel Picker (show when no channel selected and not verified) ── */}
                     {!verifyChannel && !emailVerified && !mobileVerified && (
@@ -839,6 +803,7 @@ export default function RegisterPage() {
                           {emailOtp.map((digit, i) => (
                             <input key={i} ref={(el) => { emailOtpRefs.current[i] = el; }}
                               type="text" inputMode="numeric" maxLength={1} value={digit}
+                              aria-label={`OTP digit ${i + 1}`}
                               onChange={(e) => handleOtpChange(i, e.target.value, setEmailOtp, emailOtpRefs, true)}
                               onKeyDown={(e) => handleOtpKeyDown(i, e, setEmailOtp, emailOtpRefs, true)}
                               onPaste={(e) => handleOtpPaste(e, setEmailOtp, emailOtpRefs)}
@@ -888,6 +853,7 @@ export default function RegisterPage() {
                           {mobileOtp.map((digit, i) => (
                             <input key={i} ref={(el) => { mobileOtpRefs.current[i] = el; }}
                               type="text" inputMode="numeric" maxLength={1} value={digit}
+                              aria-label={`OTP digit ${i + 1}`}
                               onChange={(e) => handleOtpChange(i, e.target.value, setMobileOtp, mobileOtpRefs, false)}
                               onKeyDown={(e) => handleOtpKeyDown(i, e, setMobileOtp, mobileOtpRefs, false)}
                               onPaste={(e) => handleOtpPaste(e, setMobileOtp, mobileOtpRefs)}
@@ -941,7 +907,7 @@ export default function RegisterPage() {
                       style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.82rem", cursor: "pointer", textAlign: "center", width: "100%" }}>
                       ← Back to details
                     </button>
-                  </div>
+                  </form>
                 </motion.div>
               )}
 
@@ -1004,10 +970,8 @@ export default function RegisterPage() {
         />
       </div>
 
-      <style dangerouslySetInnerHTML={{__html:`
-        @media (max-width:900px)  { .mascot-panel { display:none !important; } }
-        @media (min-width:901px)  { .mascot-panel { display:flex !important; } }
-      `}}/>
+      
     </div>
+    </>
   );
 }

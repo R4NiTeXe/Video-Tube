@@ -31,11 +31,11 @@ export default function PremiumSidebar() {
 
   const isActive = (item: typeof navItems[0]) => {
     if (item.href === "/") return pathname === "/";
-    return pathname === item.href || pathname.startsWith(item.href + "/");
+    return pathname === item.href || pathname.startsWith(`${item.href}/`);
   };
 
   return (
-    <nav className="sidebar">
+    <nav className="sidebar" aria-label="Sidebar navigation">
       <div className="sidebar-nav-items">
         {navItems.map((item) => (
           <Link
@@ -43,8 +43,9 @@ export default function PremiumSidebar() {
             href={item.href}
             className={`sidebar-btn${isActive(item) ? " active" : ""}`}
             title={item.label}
+            aria-current={isActive(item) ? "page" : undefined}
           >
-            <item.icon active={isActive(item)} />
+            <item.icon active={isActive(item)} aria-hidden="true" />
             <span className="sidebar-btn-label">{item.label}</span>
           </Link>
         ))}
@@ -52,22 +53,22 @@ export default function PremiumSidebar() {
 
       {user && (
         <div className="sidebar-bottom">
-          <button className="sidebar-profile-card" onClick={() => router.push(`/channel/${user.username}`)}>
+          <button className="sidebar-profile-card" onClick={() => router.push(`/channel/${user.username}`)} aria-label={`Your profile: ${user.fullName}`}>
             <div style={{ position: "relative", flexShrink: 0 }}>
-              <img src={user.avatar} alt={user.fullName} className="sidebar-profile-avatar" />
-              <span className="online-dot" />
+              <img src={user.avatar} alt="" className="sidebar-profile-avatar" />
+              <span className="online-dot" aria-hidden="true" />
             </div>
             <div className="sidebar-profile-info">
               <span className="sidebar-profile-name">{user.fullName}</span>
               <span className="sidebar-profile-handle">@{user.username}</span>
             </div>
-            <ChevronRightIcon size={14} />
+            <ChevronRightIcon size={14} aria-hidden="true" />
           </button>
 
-          <button className="sidebar-theme-btn" onClick={toggleTheme}>
-            {theme === "dark" ? <SunIcon size={16} /> : <MoonIcon size={16} />}
+          <button className="sidebar-theme-btn" onClick={toggleTheme} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
+            {theme === "dark" ? <SunIcon size={16} aria-hidden="true" /> : <MoonIcon size={16} aria-hidden="true" />}
             <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
-            <span className="sidebar-theme-toggle-track">
+            <span className="sidebar-theme-toggle-track" aria-hidden="true">
               <span className={`sidebar-theme-toggle-thumb${theme === "dark" ? " on" : ""}`} />
             </span>
           </button>

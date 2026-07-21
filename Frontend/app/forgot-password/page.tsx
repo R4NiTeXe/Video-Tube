@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
-import MascotAnimation from "@/src/components/MascotAnimation";
 import { useAuthStore } from "@/src/store/useAuthStore";
+import { PageMeta } from "@/src/components/PageMeta";
+
+const MascotAnimation = dynamic(() => import("@/src/components/MascotAnimation"), { ssr: false });
 
 const PlayLogo = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -131,7 +134,7 @@ export default function ForgotPasswordPage() {
     boxSizing: "border-box",
   };
 
-  const inputFocusStyle = (field: typeof activeField, target: typeof activeField): React.CSSProperties =>
+  const inputFocusStyle = (target: typeof activeField): React.CSSProperties =>
     activeField === target
       ? { borderColor: "var(--accent)", boxShadow: "0 0 0 3px var(--accent-glow, rgba(99,102,241,0.15))" }
       : {};
@@ -159,6 +162,7 @@ export default function ForgotPasswordPage() {
         overflow: "hidden",
       }}
     >
+      <PageMeta title="Forgot Password" description="Reset your VideoTube account password." noIndex />
       {/* LEFT SIDE: FORM */}
       <div
         style={{
@@ -323,7 +327,7 @@ export default function ForgotPasswordPage() {
                     onBlur={() => setActiveField("none")}
                     style={{
                       ...inputFieldStyle,
-                      ...inputFocusStyle(activeField, "identifier"),
+                      ...inputFocusStyle("identifier"),
                     }}
                   />
                 </div>
@@ -384,7 +388,7 @@ export default function ForgotPasswordPage() {
                       textAlign: "center",
                       fontSize: "1.25rem",
                       fontWeight: 700,
-                      ...inputFocusStyle(activeField, "otp"),
+                      ...inputFocusStyle("otp"),
                     }}
                   />
                 </div>
@@ -462,7 +466,7 @@ export default function ForgotPasswordPage() {
                   onClick={handleSkipAndLogin}
                   style={{
                     ...buttonStyle,
-                    backgroundColor: "var(--bg-elevated, #f1f5f9)",
+                    backgroundColor: "var(--elevated)",
                     color: "var(--text-primary)",
                     border: "1.5px solid var(--border)",
                     marginTop: 0,
@@ -513,7 +517,7 @@ export default function ForgotPasswordPage() {
                       style={{
                         ...inputFieldStyle,
                         paddingRight: "3.5rem",
-                        ...inputFocusStyle(activeField, "password"),
+                        ...inputFocusStyle("password"),
                       }}
                     />
                     <button
@@ -687,14 +691,7 @@ export default function ForgotPasswordPage() {
         />
       </div>
 
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-          @media (max-width: 900px) { .mascot-panel { display: none !important; } }
-          @media (min-width: 901px) { .mascot-panel { display: flex !important; } }
-        `,
-        }}
-      />
+      
     </div>
   );
 }

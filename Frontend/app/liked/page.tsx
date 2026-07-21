@@ -4,10 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { formatViews, formatDuration } from "@/src/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { PageMeta } from "@/src/components/PageMeta";
 
 interface VideoOwner {
   fullName: string;
@@ -25,12 +26,6 @@ interface Video {
   createdAt: string;
 }
 
-const PlayLogo = ({ size = 22 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-);
-const BackIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-);
 const HeartIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
 );
@@ -55,19 +50,46 @@ const SkeletonCard = () => (
 export default function LikedPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const [page, setPage] = useState(1);
+  const [allVideos, setAllVideos] = useState<Video[]>([]);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
   }, [authLoading, isAuthenticated, router]);
 
   const { data: response, isLoading } = useQuery({
-    queryKey: ["liked-videos"],
+    queryKey: ["liked-videos", page],
     queryFn: async () => {
-      const res = await api.get("/likes/videos");
+      const res = await api.get(`/likes/videos?page=${page}&limit=12`);
       return res.data;
     },
     enabled: isAuthenticated,
   });
+
+  useEffect(() => {
+    if (response?.data) {
+      const rawVideos: { likedVideo?: Video }[] = response.data.docs || response.data || [];
+      const mapped = rawVideos.map((item) => (item.likedVideo || item) as Video).filter(Boolean);
+      const dedupById = (arr: Video[]) => {
+        const seen = new Set<string>();
+        return arr.filter((v: Video) => {
+          const key = v._id?.toString();
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      };
+      if (page === 1) {
+        setAllVideos(dedupById(mapped));
+      } else {
+        setAllVideos(prev => dedupById([...prev, ...mapped]));
+      }
+      setTotal(response.data.total || 0);
+    }
+  }, [response, page]);
+
+  const hasMore = allVideos.length < total;
 
   if (authLoading || !isAuthenticated) {
     return (
@@ -84,22 +106,10 @@ export default function LikedPage() {
     );
   }
 
-  const rawVideos: any[] = response?.data || [];
-  const dedupById = (arr: any[]) => {
-    const seen = new Set<string>();
-    return arr.filter((v: any) => {
-      const key = v?._id?.toString();
-      if (!key || seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  };
-  const videos: Video[] = dedupById(rawVideos.map((item: any) => item.likedVideo || item).filter(Boolean));
-
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
+      <PageMeta title="Liked Videos" description="Videos you've liked on VideoTube." noIndex />
       <div style={{ width: "100%", padding: "2rem" }}>
-        {/* ── PAGE TITLE ── */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} style={{ marginBottom: "2rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
           <div style={{ width: 44, height: 44, borderRadius: "50%", backgroundColor: "var(--accent-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)" }}>
             <HeartIcon />
@@ -108,18 +118,17 @@ export default function LikedPage() {
             <h1 style={{ fontSize: "1.8rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.1rem" }}>
               Liked Videos
             </h1>
-            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>{videos.length} videos</p>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>{total} videos</p>
           </div>
         </motion.div>
 
-        {/* ── VIDEO GRID ── */}
-        {isLoading ? (
+        {isLoading && page === 1 ? (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "2rem 1.25rem" }}>
             {Array.from({ length: 8 }).map((_, i) => (
               <SkeletonCard key={i} />
             ))}
           </div>
-        ) : videos.length === 0 ? (
+        ) : allVideos.length === 0 ? (
           <div className="empty-state" style={{ padding: "4rem 2rem", textAlign: "center" }}>
             <div className="empty-icon">
               <HeartIcon />
@@ -135,49 +144,55 @@ export default function LikedPage() {
             </Link>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "2rem 1.25rem" }}>
-            <AnimatePresence>
-              {videos.map((video, idx) => (
-                <motion.div
-                  key={video._id}
-                  initial={{ opacity: 0, y: 24 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ delay: Math.min(idx * 0.06, 0.5), duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <Link
-                    href={`/videos/${video._id}`}
-                    className="video-card-premium"
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "2rem 1.25rem" }}>
+              <AnimatePresence>
+                {allVideos.map((video, idx) => (
+                  <motion.div
+                    key={video._id}
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ delay: Math.min(idx * 0.06, 0.5), duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    <div className="thumb-wrapper">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={video.thumbnail} alt={video.title} loading="lazy" />
-                      <div className="thumb-overlay">
-                        <div className="play-circle">
-                          <PlaySmall />
+                    <Link href={`/videos/${video._id}`} className="video-card-premium">
+                      <div className="thumb-wrapper">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={video.thumbnail} alt={video.title} loading="lazy" />
+                        <div className="thumb-overlay">
+                          <div className="play-circle">
+                            <PlaySmall />
+                          </div>
+                        </div>
+                        <span className="duration-badge">
+                          {formatDuration(video.duration)}
+                        </span>
+                        <div className="avatar-badge">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={video.owner?.avatar} alt={video.owner?.fullName} />
                         </div>
                       </div>
-                      <span className="duration-badge">
-                        {formatDuration(video.duration)}
-                      </span>
-                      <div className="avatar-badge">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={video.owner?.avatar} alt={video.owner?.fullName} />
+                      <div className="card-info">
+                        <h3 className="card-title">{video.title}</h3>
+                        <div className="card-meta">
+                          <span className="channel-name">{video.owner?.fullName}</span>
+                          <span>·</span>
+                          <span>{formatViews(video.views)} views</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="card-info">
-                      <h3 className="card-title">{video.title}</h3>
-                      <div className="card-meta">
-                        <span className="channel-name">{video.owner?.fullName}</span>
-                        <span>·</span>
-                        <span>{formatViews(video.views)} views</span>
-                      </div>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
+                    </Link>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+            {hasMore && (
+              <div style={{ textAlign: "center", marginTop: "2rem" }}>
+                <button className="btn btn-secondary" onClick={() => setPage(p => p + 1)} disabled={isLoading}>
+                  {isLoading ? "Loading..." : "Load More"}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

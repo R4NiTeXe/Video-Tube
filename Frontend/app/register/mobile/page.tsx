@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { COUNTRIES, FlagImg } from "@/src/lib/countries";
 
 const PlayLogo = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
@@ -18,6 +19,7 @@ export default function MobileRegisterPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
 
   const [step, setStep] = useState<Step>("mobile");
+  const [countryCode, setCountryCode] = useState("+91");
   const [mobile, setMobile] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [fullName, setFullName] = useState("");
@@ -36,16 +38,19 @@ export default function MobileRegisterPage() {
       const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
       return () => clearTimeout(timer);
     }
+    return;
   }, [cooldown]);
 
   const handleSendOTP = async () => {
     setError("");
-    if (!mobile.trim()) return setError("Mobile number is required");
-    if (!/^\+?[1-9]\d{9,14}$/.test(mobile.trim())) return setError("Invalid mobile number format. Use +91XXXXXXXXXX");
+    const digits = mobile.replace(/\D/g, "");
+    if (!digits) return setError("Mobile number is required");
+    if (digits.length < 7 || digits.length > 15) return setError("Please enter a valid mobile number");
 
+    const fullMobile = `${countryCode}${digits}`;
     setIsLoading(true);
     try {
-      await api.post("/users/mobile/send-registration-otp", { mobile: mobile.trim() });
+      await api.post("/users/mobile/send-registration-otp", { mobile: fullMobile });
       setStep("otp");
       setCooldown(60);
     } catch (err: unknown) {
@@ -55,6 +60,8 @@ export default function MobileRegisterPage() {
     }
   };
 
+  const getFullMobile = () => `${countryCode}${mobile.replace(/\D/g, "")}`;
+
   const handleVerifyOTP = async () => {
     setError("");
     const otpString = otp.join("");
@@ -62,7 +69,7 @@ export default function MobileRegisterPage() {
 
     setIsLoading(true);
     try {
-      await api.post("/users/mobile/verify-registration-otp", { mobile: mobile.trim(), otp: otpString });
+      await api.post("/users/mobile/verify-registration-otp", { mobile: getFullMobile(), otp: otpString });
       setStep("details");
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, "OTP verification failed"));
@@ -80,7 +87,7 @@ export default function MobileRegisterPage() {
     setIsLoading(true);
     try {
       const response = await api.post("/users/mobile/register", {
-        mobile: mobile.trim(),
+        mobile: getFullMobile(),
         otp: otp.join(""),
         fullName: fullName.trim(),
         username: username.trim().toLowerCase(),
@@ -143,7 +150,7 @@ export default function MobileRegisterPage() {
             {step === "mobile" ? "Register with Mobile" : step === "otp" ? "Enter OTP" : "Create Account"}
           </h1>
           <p style={{ color: "var(--text-secondary)", fontSize: "0.88rem" }}>
-            {step === "mobile" ? "We'll send you a verification code" : step === "otp" ? `Code sent to ${mobile}` : "Set up your profile"}
+            {step === "mobile" ? "We'll send you a verification code" : step === "otp" ? `Code sent to ${getFullMobile?.() || `${countryCode}${mobile}`}` : "Set up your profile"}
           </p>
         </header>
 
@@ -162,8 +169,30 @@ export default function MobileRegisterPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
               <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Mobile Number</label>
-              <input type="tel" placeholder="Phone number" className="input-field" value={mobile}
-                onChange={e => setMobile(e.target.value)} autoFocus />
+              <div style={{ display: "flex", gap: 0 }}>
+                <div style={{ position: "relative" }}>
+                  <select value={countryCode} onChange={e => setCountryCode(e.target.value)}
+                    className="input-field"
+                    style={{ width: "auto", borderRadius: "var(--radius-md) 0 0 var(--radius-md)", borderRight: "none", padding: "0 var(--sp-8) 0 var(--sp-3)", fontWeight: 600, fontSize: 13 }}
+                    aria-label="Country code">
+                    {COUNTRIES.map((c) => (
+                      <option key={c.iso + c.code} value={c.code}>{c.iso.toUpperCase()} {c.code}</option>
+                    ))}
+                  </select>
+                  <div style={{ position: "absolute", right: "0.5rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-muted)" }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div>
+                </div>
+                <div style={{ position: "relative", flex: 1 }}>
+                  <div style={{ position: "absolute", left: "var(--sp-3)", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+                    <FlagImg iso={COUNTRIES.find(c => c.code === countryCode)?.iso || "in"} size={16} />
+                  </div>
+                  <input type="tel" placeholder="Phone number" className="input-field"
+                    value={mobile} onChange={e => setMobile(e.target.value.replace(/\D/g, ""))}
+                    autoFocus
+                    style={{ paddingLeft: "var(--sp-8)", borderRadius: "0 var(--radius-md) var(--radius-md) 0", letterSpacing: "0.03em", fontSize: 13 }} />
+                </div>
+              </div>
             </div>
             <button onClick={handleSendOTP} disabled={isLoading} className="btn-primary" style={{ width: "100%", padding: "0.85rem" }}>
               {isLoading ? "Sending..." : "Send OTP"}

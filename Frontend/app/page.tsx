@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { PageMeta } from "@/src/components/PageMeta";
 import SocialLoginButtons from "@/src/components/SocialLoginButtons";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { api } from "@/src/services/api";
@@ -27,6 +28,7 @@ function VideoCard({ video }: { video: VideoResult }) {
   const [previewReady, setPreviewReady] = useState(false);
   const [remaining, setRemaining] = useState(0);
   const [previewProgress, setPreviewProgress] = useState(0);
+  const [avatarError, setAvatarError] = useState(false);
   const hoverTimer = useRef<ReturnType<typeof setTimeout>>(null);
   const timeInterval = useRef<ReturnType<typeof setInterval>>(null);
   const isTouchDevice = useRef(false);
@@ -79,7 +81,7 @@ function VideoCard({ video }: { video: VideoResult }) {
   }, [stopPreview]);
 
   // Mobile: tap to toggle preview
-  const handleTap = useCallback((e: React.TouchEvent) => {
+  const handleTap = useCallback((_e: React.TouchEvent) => {
     isTouchDevice.current = true;
     if (previewing) {
       stopPreview();
@@ -278,15 +280,20 @@ function VideoCard({ video }: { video: VideoResult }) {
 
       <div className="card-info">
         <div style={{ display: "flex", gap: "var(--sp-3)", alignItems: "flex-start" }}>
-          {video.owner?.avatar && (
+          {video.owner?.avatar && !avatarError ? (
             <img
               src={video.owner.avatar}
               alt={video.owner.fullName}
+              onError={() => setAvatarError(true)}
               style={{ width: 36, height: 36, borderRadius: "var(--radius-full)", flexShrink: 0, objectFit: "cover" }}
             />
+          ) : (
+            <div style={{ width: 36, height: 36, borderRadius: "var(--radius-full)", flexShrink: 0, backgroundColor: "var(--accent-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)", fontSize: 14, fontWeight: 600 }}>
+              {video.owner?.fullName?.charAt(0)?.toUpperCase() || "?"}
+            </div>
           )}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h3 className="card-title">{video.title}</h3>
+            <h2 className="card-title">{video.title}</h2>
             <div className="card-meta">
               <span className="channel-name">{video.owner?.fullName}</span>
             </div>
@@ -302,10 +309,6 @@ function VideoCard({ video }: { video: VideoResult }) {
   );
 }
 
-const PlaySmall = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-);
-
 export default function Home() {
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
   const [welcomeMsg, setWelcomeMsg] = useState("");
@@ -319,27 +322,7 @@ export default function Home() {
     enabled: isAuthenticated,
   });
 
-  const { data: historyResp } = useQuery({
-    queryKey: ["watch-history"],
-    queryFn: async () => {
-      const res = await api.get("/users/history");
-      return res.data;
-    },
-    enabled: isAuthenticated,
-  });
-
-  const { data: watchLaterResp } = useQuery({
-    queryKey: ["watch-later-home"],
-    queryFn: async () => {
-      const res = await api.get("/users/watch-later");
-      return res.data;
-    },
-    enabled: isAuthenticated,
-  });
-
   const videos: VideoResult[] = videosResp?.data?.docs || [];
-  const historyVideos: VideoResult[] = (historyResp?.data || []).slice(0, 12);
-  const watchLaterVideos: VideoResult[] = (watchLaterResp?.data || []).slice(0, 12);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -355,11 +338,13 @@ export default function Home() {
         return () => clearTimeout(timer);
       }
     }
+    return;
   }, [authLoading, isAuthenticated]);
 
   if (authLoading) {
     return (
       <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
+        <PageMeta title="Home" description="Discover, watch, and share videos on VideoTube." />
         Loading...
       </div>
     );
@@ -536,6 +521,8 @@ export default function Home() {
         )}
       </AnimatePresence>
 
+      <PageMeta title="Home" description="Discover, watch, and share videos on VideoTube." />
+
       {videosLoading ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1.5rem", padding: "2rem" }}>
           {Array.from({ length: 12 }).map((_, i) => (
@@ -552,40 +539,14 @@ export default function Home() {
           <p style={{ fontSize: "0.88rem", color: "var(--text-muted)" }}>Upload your first video to get started</p>
         </div>
       ) : (
-        <div style={{ padding: "1.5rem 2rem" }}>
-          {historyVideos.length > 0 && (
-            <div style={{ marginBottom: "2rem" }}>
-              <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "1rem" }}>Continue Watching</h2>
-              <div style={{ display: "flex", gap: "1rem", overflowX: "auto", paddingBottom: "0.5rem" }}>
-                {historyVideos.map((v) => (
-                  <div key={v._id} style={{ minWidth: 260, maxWidth: 260, flexShrink: 0 }}>
-                    <VideoCard video={v} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {watchLaterVideos.length > 0 && (
-            <div style={{ marginBottom: "2rem" }}>
-              <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "1rem" }}>Watch Later</h2>
-              <div style={{ display: "flex", gap: "1rem", overflowX: "auto", paddingBottom: "0.5rem" }}>
-                {watchLaterVideos.map((v) => (
-                  <div key={v._id} style={{ minWidth: 260, maxWidth: 260, flexShrink: 0 }}>
-                    <VideoCard video={v} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.5rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.5rem", padding: "1.5rem 2rem" }}>
             {videos.map((v, idx) => (
               <motion.div key={v._id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(idx * 0.03, 0.4) }}>
                 <VideoCard video={v} />
               </motion.div>
             ))}
           </div>
-        </div>
-      )}
+        )}
     </>
   );
 }

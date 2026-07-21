@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { api, getApiErrorMessage } from "@/src/services/api";
@@ -31,6 +31,7 @@ export default function MobileLoginPage() {
       const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
       return () => clearTimeout(timer);
     }
+    return;
   }, [cooldown]);
 
   const handleSendOTP = async () => {

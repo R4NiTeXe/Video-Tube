@@ -8,6 +8,7 @@ import Link from "next/link";
 import { formatViews, formatDuration, timeAgo } from "@/src/lib/utils";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { PageMeta } from "@/src/components/PageMeta";
 
 interface LatestVideo {
   _id: string;
@@ -52,7 +53,10 @@ const SkeletonChannelPill = () => (
 );
 
 function VideoCard({ video, channel }: { video: LatestVideo; channel: SubscribedChannel }) {
-  const isNew = Date.now() - new Date(video.createdAt).getTime() < 86400000 * 2;
+  const [isNew, setIsNew] = useState(false);
+  useEffect(() => {
+    setIsNew(Date.now() - new Date(video.createdAt).getTime() < 86400000 * 2);
+  }, [video.createdAt]);
 
   return (
     <Link href={`/videos/${video._id}`} style={{ textDecoration: "none" }}>
@@ -190,6 +194,7 @@ export default function SubscriptionsPage() {
   if (subscriptions.length === 0 && !isLoading) {
     return (
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "var(--sp-8)" }}>
+        <PageMeta title="Subscriptions" description="Latest videos from channels you subscribe to on VideoTube." noIndex />
         <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)", marginBottom: "var(--sp-8)" }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-secondary)" }}>
             <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -218,6 +223,7 @@ export default function SubscriptionsPage() {
 
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", padding: "var(--sp-4) var(--sp-6) var(--sp-8)" }}>
+      <PageMeta title="Subscriptions" description="Latest videos from channels you subscribe to on VideoTube." noIndex />
       {/* Page header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--sp-4)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)" }}>

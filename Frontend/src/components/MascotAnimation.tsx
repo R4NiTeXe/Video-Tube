@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import { motion, useSpring, useAnimationControls, AnimatePresence } from "framer-motion";
+import { motion, useSpring, useAnimationControls, AnimatePresence, type MotionValue } from "framer-motion";
 
 interface MascotProps {
   isPasswordFocused?: boolean;
@@ -125,7 +125,7 @@ export default function RobotMascot({
     const amp   = cfg.headBob * 8;
     const vals  = [0, -amp, 0, amp * 0.5, 0];
     let i = 0;
-    floatRef.current = setInterval(() => { bodyY.set(vals[i++ % vals.length]); }, 800);
+    floatRef.current = setInterval(() => { bodyY.set(vals[i++ % vals.length] ?? 0); }, 800);
     return () => { if (floatRef.current) clearInterval(floatRef.current); };
   }, [mood, bodyY, cfg.headBob]);
 
@@ -142,7 +142,7 @@ export default function RobotMascot({
       const seq = [0, -3, 0, 3, 0, -2, 0, 2, 0];
       let wi = 0;
       wiggleRef.current = setInterval(() => {
-        nervousX.set(seq[wi % seq.length]);
+        nervousX.set(seq[wi % seq.length] ?? 0);
         wi++;
       }, 220);
     } else {
@@ -299,7 +299,6 @@ export default function RobotMascot({
                     eyeShape={cfg.eyeShape}
                     pupilX={pupilX}
                     pupilY={pupilY}
-                    eyeClose={eyeClose}
                     mood={mood}
                   />
                 ))}
@@ -425,16 +424,14 @@ export default function RobotMascot({
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-import type { MotionValue } from "framer-motion";
-
 // Eye: renders open (with pupil) OR closed (smooth lid arc) based on eyeClose spring
 function Eye({
-  ctrl, eyeW, eyeH, eyeShape, pupilX, pupilY, eyeClose, mood,
+  ctrl, eyeW, eyeH, eyeShape, pupilX, pupilY, mood,
 }: {
   ctrl: ReturnType<typeof useAnimationControls>;
   eyeW: number; eyeH: number; eyeShape: number;
   pupilX: MotionValue<number>; pupilY: MotionValue<number>;
-  eyeClose: MotionValue<number>; mood: Mood;
+  mood: Mood;
 }) {
   // Lid slides down from top: height goes from 0 → eyeH driven by eyeClose
   const lidH = useSpring(0, { damping: 11, stiffness: 85, mass: 0.6 });
@@ -529,8 +526,8 @@ function Eye({
   );
 }
 
-function MouthShape({ type, accent }: { type: MascotProps["activeField"] extends never ? never : string; accent: string }) {
-  const t = type as Mood extends never ? never : string;
+function MouthShape({ type, accent }: { type: string; accent: string }) {
+  const t = type;
 
   if (t === "smile") return (
     <svg width="34" height="18" viewBox="0 0 34 18" fill="none">
