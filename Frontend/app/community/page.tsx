@@ -3,7 +3,8 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { timeAgo } from "@/src/lib/utils";
 import { PageMeta } from "@/src/components/PageMeta";
@@ -26,7 +27,7 @@ interface CommunityPost {
   createdAt: string;
 }
 
-// ── Icons ──
+
 const ThumbsUpIcon = ({ filled }: { filled?: boolean }) => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
@@ -66,11 +67,16 @@ const SkeletonPost = () => (
 
 export default function CommunityPage() {
   const { isAuthenticated, isLoading: authLoading, user } = useAuthStore();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [newPostContent, setNewPostContent] = useState("");
   const [newPostImage, setNewPostImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) router.push("/login");
+  }, [isAuthenticated, authLoading, router]);
 
   const {
     data,
@@ -155,12 +161,12 @@ export default function CommunityPage() {
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
       <PageMeta title="Community" description="Community posts from channels you follow on VideoTube." noIndex />
-      {/* ── AMBIENT BACKGROUND ── */}
+      
       <div style={{ position: "fixed", top: "5%", left: "30%", width: "50vw", height: "50vw", background: "var(--accent)", filter: "blur(250px)", opacity: 0.035, borderRadius: "50%", pointerEvents: "none", zIndex: 0 }} />
 
-      {/* ── HEADER ── */}
+      
       <div style={{ width: "100%", maxWidth: 680, margin: "0 auto", padding: "2rem 1rem" }}>
-        {/* ── PAGE TITLE ── */}
+        
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} style={{ marginBottom: "2rem" }}>
           <h1 style={{ fontSize: "1.8rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.25rem" }}>
             Community
@@ -168,7 +174,7 @@ export default function CommunityPage() {
           <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Share updates, images, and connect with your audience</p>
         </motion.div>
 
-        {/* ── CREATE POST FORM ── */}
+        
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -177,119 +183,7 @@ export default function CommunityPage() {
           style={{ marginBottom: "2rem" }}
         >
           <div style={{ display: "flex", gap: "0.75rem" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={user?.avatar}
-              alt={user?.fullName}
-              style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
-            />
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              <textarea
-                value={newPostContent}
-                onChange={(e) => setNewPostContent(e.target.value)}
-                placeholder="Share something..."
-                rows={3}
-                style={{
-                  width: "100%",
-                  resize: "vertical",
-                  padding: "0.75rem 1rem",
-                  borderRadius: "var(--radius-md)",
-                  border: "1px solid var(--border)",
-                  backgroundColor: "var(--elevated)",
-                  color: "var(--text-primary)",
-                  fontSize: "0.9rem",
-                  fontFamily: "inherit",
-                  lineHeight: 1.5,
-                  outline: "none",
-                  transition: "border-color 0.2s",
-                }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
-              />
-
-              {imagePreview && (
-                <div style={{ position: "relative" }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    style={{ width: "100%", borderRadius: "var(--radius-md)", maxHeight: 300, objectFit: "cover" }}
-                  />
-                  <button
-                    onClick={() => { setNewPostImage(null); setImagePreview(null); }}
-                    style={{
-                      position: "absolute", top: 8, right: 8,
-                      width: 28, height: 28, borderRadius: "50%",
-                      background: "rgba(0,0,0,0.6)", color: "#fff",
-                      border: "none", cursor: "pointer",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: "0.85rem",
-                    }}
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
-
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", gap: "0.5rem" }}>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    style={{ display: "none" }}
-                  />
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    style={{
-                      display: "flex", alignItems: "center", gap: "0.4rem",
-                      padding: "0.45rem 0.85rem", borderRadius: 99,
-                      border: "1px solid var(--border)",
-                      background: "transparent",
-                      color: "var(--text-secondary)",
-                      cursor: "pointer",
-                      fontSize: "0.82rem",
-                      fontWeight: 500,
-                      transition: "all 0.2s",
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.color = "var(--accent)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
-                  >
-                    <ImageIcon /> Image
-                  </button>
-                </div>
-
-                <button
-                  onClick={handleCreatePost}
-                  disabled={createPostMutation.isPending || (!newPostContent.trim() && !newPostImage)}
-                  className="btn btn-primary"
-                  style={{
-                    display: "flex", alignItems: "center", gap: "0.4rem",
-                    padding: "0.55rem 1.25rem", borderRadius: 99,
-                    fontSize: "0.85rem", fontWeight: 600,
-                    opacity: (!newPostContent.trim() && !newPostImage) ? 0.5 : 1,
-                    cursor: (!newPostContent.trim() && !newPostImage) ? "not-allowed" : "pointer",
-                  }}
-                >
-                  {createPostMutation.isPending ? (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%" }}
-                    />
-                  ) : (
-                    <>
-                      <SendIcon /> Post
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* ── POSTS FEED ── */}
+            
         {isLoading ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
             {Array.from({ length: 3 }).map((_, i) => <SkeletonPost key={i} />)}
@@ -324,45 +218,19 @@ export default function CommunityPage() {
                   className="form-card"
                   style={{ padding: "1.25rem 1.5rem" }}
                 >
-                  {/* ── Post Header ── */}
+                  
                   <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.85rem" }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={post.owner?.avatar}
-                      alt={post.owner?.fullName}
-                      style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
-                    />
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "var(--text-primary)" }}>
-                        {post.owner?.fullName}
-                      </div>
-                      <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                        @{post.owner?.username} · {timeAgo(post.createdAt)}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* ── Post Content ── */}
+                    
                   {post.content && (
                     <p style={{ fontSize: "0.92rem", color: "var(--text-primary)", lineHeight: 1.6, marginBottom: post.image ? "0.85rem" : "1rem", whiteSpace: "pre-wrap" }}>
                       {post.content}
                     </p>
                   )}
 
-                  {/* ── Post Image ── */}
+                  
                   {post.image && (
                     <div style={{ marginBottom: "1rem", borderRadius: "var(--radius-md)", overflow: "hidden" }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={post.image}
-                        alt="Post image"
-                        style={{ width: "100%", maxHeight: 500, objectFit: "cover", display: "block" }}
-                        loading="lazy"
-                      />
-                    </div>
-                  )}
-
-                  {/* ── Post Actions ── */}
+                      
                   <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", paddingTop: "0.5rem", borderTop: "1px solid var(--border)" }}>
                     <button
                       onClick={() => likeMutation.mutate(post._id)}
@@ -396,7 +264,7 @@ export default function CommunityPage() {
               ))}
             </AnimatePresence>
 
-            {/* ── Load More ── */}
+            
             {hasNextPage && (
               <motion.div
                 initial={{ opacity: 0 }}

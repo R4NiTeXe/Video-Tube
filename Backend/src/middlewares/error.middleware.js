@@ -10,7 +10,7 @@ const errorHandler = (err, req, res, next) => {
   let message = err.message || "Internal Server Error";
   let errors = err.errors || [];
 
-  // ── Zod ValidationError ──
+  
   if (err instanceof ZodError) {
     statusCode = 400;
     message = "Validation failed";
@@ -22,7 +22,7 @@ const errorHandler = (err, req, res, next) => {
     }));
   }
 
-  // ── Mongoose ValidationError ──
+  
   else if (err instanceof mongoose.Error.ValidationError) {
     statusCode = 400;
     message = "Validation failed";
@@ -33,14 +33,14 @@ const errorHandler = (err, req, res, next) => {
     }));
   }
 
-  // ── Mongoose CastError (e.g. invalid ObjectId) ──
+  
   else if (err instanceof mongoose.Error.CastError) {
     statusCode = 400;
     message = "Invalid resource identifier";
     errors = [{ field: err.path, message: "Invalid format", code: "invalid_id" }];
   }
 
-  // ── MongoDB duplicate key ──
+  
   else if (err.code === 11000) {
     statusCode = 409;
     const field = Object.keys(err.keyPattern || {})[0] || "field";
@@ -48,7 +48,7 @@ const errorHandler = (err, req, res, next) => {
     errors = [{ field, message, code: "duplicate" }];
   }
 
-  // ── JWT errors ──
+  
   else if (err.name === "JsonWebTokenError") {
     statusCode = 401;
     message = "Invalid token";
@@ -57,13 +57,13 @@ const errorHandler = (err, req, res, next) => {
     message = "Token expired";
   }
 
-  // ── JSON parse error (body-parser) ──
+  
   else if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
     statusCode = 400;
     message = "Invalid JSON in request body";
   }
 
-  // ── Multer file size error ──
+  
   else if (err instanceof multer.MulterError) {
     if (err.code === "LIMIT_FILE_SIZE") {
       statusCode = 413;
@@ -74,20 +74,20 @@ const errorHandler = (err, req, res, next) => {
     }
   }
 
-  // ── Custom ApiError ──
+  
   else if (err.statusCode) {
     statusCode = err.statusCode;
     message = err.message;
     errors = err.errors || [];
   }
 
-  // ── PayloadTooLarge (body-parser limit exceeded) ──
+  
   else if (err.type === "entity.too.large") {
     statusCode = 413;
     message = "Request body too large";
   }
 
-  // ── Logging ──
+  
   if (statusCode >= 500) {
     logger.error(`${req.method} ${req.originalUrl}`, {
       statusCode,

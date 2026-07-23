@@ -45,7 +45,7 @@ const securityHeaders = [
   {
     key: "Content-Security-Policy",
     value:
-       `default-src 'self'; script-src ${scriptSrc.join(" ")}; style-src 'self' 'unsafe-inline'; img-src 'self' res.cloudinary.com *.cloudinary.com lh3.googleusercontent.com avatars.githubusercontent.com platform-lookaside.fbsbx.com cdn.discordapp.com flagcdn.com data: blob:; connect-src ${connectSrc.join(" ")}; font-src 'self' data:; frame-ancestors 'none';`,
+      `default-src 'self'; script-src ${scriptSrc.join(" ")}; style-src 'self' 'unsafe-inline'; img-src 'self' res.cloudinary.com *.cloudinary.com lh3.googleusercontent.com avatars.githubusercontent.com platform-lookaside.fbsbx.com cdn.discordapp.com flagcdn.com images.unsplash.com ui-avatars.com data: blob: https: http:; media-src 'self' res.cloudinary.com *.cloudinary.com blob: data: http: https:; connect-src ${connectSrc.join(" ")}; font-src 'self' data:; frame-ancestors 'none';`,
   },
 ];
 

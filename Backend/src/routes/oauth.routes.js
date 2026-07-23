@@ -65,19 +65,19 @@ const oauthCallback = (provider) => (req, res, next) => {
 };
 
 // Google
-router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+router.get("/google", passport.authenticate("google", { scope: ["profile", "email"], session: false }));
 router.get("/google/callback", oauthCallback("google"));
 
 // GitHub
-router.get("/github", passport.authenticate("github", { scope: ["user:email"] }));
+router.get("/github", passport.authenticate("github", { scope: ["user:email"], session: false }));
 router.get("/github/callback", oauthCallback("github"));
 
 // Facebook
-router.get("/facebook", passport.authenticate("facebook", { scope: ["public_profile"] }));
+router.get("/facebook", passport.authenticate("facebook", { scope: ["public_profile"], session: false }));
 router.get("/facebook/callback", oauthCallback("facebook"));
 
 // Discord
-router.get("/discord", passport.authenticate("discord", { scope: ["identify", "email"] }));
+router.get("/discord", passport.authenticate("discord", { scope: ["identify", "email"], session: false }));
 router.get("/discord/callback", oauthCallback("discord"));
 
 export default router;

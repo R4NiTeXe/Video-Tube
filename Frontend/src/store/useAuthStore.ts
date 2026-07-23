@@ -48,7 +48,15 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "auth-storage",
       storage: createJSONStorage(() => sessionStorage),
-      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }), // Only persist user data, not loading state
+      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
+      // When persisted state is rehydrated, if user is already logged in, mark loading as done
+      // This prevents pages from showing "checking auth..." on every client-side navigation
+      onRehydrateStorage: () => (state) => {
+        if (state?.isAuthenticated && state?.user) {
+          state.isLoading = false;
+        }
+      },
     }
   )
 );
+

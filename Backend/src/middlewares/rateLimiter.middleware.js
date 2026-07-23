@@ -12,7 +12,7 @@ const createLimiter = (options) => {
     return (req, res, next) => next();
   }
   
-  if (isRedisAvailable()) {
+  if (process.env.REDIS_URL) {
     options.store = new RedisStore({
       sendCommand: (...args) => getRedis().call(...args),
     });
@@ -26,7 +26,7 @@ const createLimiter = (options) => {
 
 export const apiLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 500,
   message: {
     statusCode: 429,
     message: "Too many requests, please try again later.",
@@ -38,7 +38,7 @@ export const apiLimiter = createLimiter({
 
 export const authLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 200,
   message: {
     statusCode: 429,
     message: "Too many authentication attempts, please try again later.",
@@ -50,7 +50,7 @@ export const authLimiter = createLimiter({
 
 export const otpLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 100,
   message: {
     statusCode: 429,
     message: "Too many OTP requests, please try again later.",
@@ -74,7 +74,7 @@ export const uploadLimiter = createLimiter({
 
 export const searchLimiter = createLimiter({
   windowMs: 60 * 1000,
-  max: 20,
+  max: 100,
   message: {
     statusCode: 429,
     message: "Too many search requests, please slow down.",
@@ -86,7 +86,7 @@ export const searchLimiter = createLimiter({
 
 export const viewLimiter = createLimiter({
   windowMs: 60 * 1000,
-  max: 15,
+  max: 100,
   message: {
     statusCode: 429,
     message: "Too many requests, please slow down.",

@@ -156,24 +156,7 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {/* STATS */}
-      {tab === "stats" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: "0.75rem" }}>
-          {statCards.map((s) => {
-            const val = stats ? stats[s.key] : null;
-            return (
-              <div key={s.key} className="form-card" style={{ padding: "1.25rem" }}>
-                <p style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.4rem" }}>{s.label}</p>
-                <p style={{ fontSize: "1.6rem", fontWeight: 800, color: s.color || "var(--text-primary)" }}>
-                  {val !== null ? (s.format ? formatCount(val) : val.toLocaleString()) : "—"}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* USERS */}
+      
       {tab === "users" && (
         <div>
           <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
@@ -215,39 +198,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* REPORTS */}
-      {tab === "reports" && (
-        <div>
-          <div style={{ display: "flex", gap: "0.3rem", marginBottom: "1rem" }}>
-            {["pending", "reviewed", "resolved", "dismissed"].map((s) => (
-              <button key={s} onClick={() => { setReportFilter(s); setReportPage(1); }} style={{ padding: "0.4rem 0.9rem", fontSize: "0.78rem", fontWeight: 600, borderRadius: "var(--radius-sm)", backgroundColor: reportFilter === s ? "var(--accent)" : "var(--elevated)", color: reportFilter === s ? "#fff" : "var(--text-secondary)", border: "none", cursor: "pointer", textTransform: "capitalize" }}>
-                {s}
-              </button>
-            ))}
-          </div>
-          {reports?.docs.length === 0 ? (
-            <p style={{ color: "var(--text-muted)", padding: "2rem", textAlign: "center" }}>No {reportFilter} reports</p>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              {reports?.docs.map((r) => (
-                <div key={r._id} className="form-card" style={{ padding: "0.75rem 1rem" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.3rem" }}>
-                    <img src={r.reporter.avatar} alt={r.reporter.fullName} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} />
-                    <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)" }}>{r.reporter.fullName}</span>
-                    <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>reported a {r.targetType}</span>
-                    <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginLeft: "auto" }}>{new Date(r.createdAt).toLocaleDateString("en-GB")}</span>
-                  </div>
-                  <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", marginBottom: "0.2rem" }}><strong>Reason:</strong> {r.reason.replace(/_/g, " ")}</p>
-                  {r.description && <p style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>{r.description}</p>}
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.3rem" }}>Status: <span style={{ fontWeight: 600, color: r.status === "pending" ? "var(--accent-warm)" : r.status === "resolved" ? "var(--success)" : "var(--text-secondary)" }}>{r.status}</span></div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ACTIVITY */}
+      
       {tab === "activity" && (
         <div className="responsive-grid-2" style={{ gap: "1.5rem" }}>
           <div>

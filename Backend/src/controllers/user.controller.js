@@ -1355,7 +1355,7 @@ const socialLogin = asyncHandler(async (req, res) => {
     );
 });
 
-// -- WhatsApp OTP + Unified Auth --
+
 const isValidMobile = (mobile) => /^\+?[1-9]\d{9,14}$/.test(mobile);
 
 // Determine channel for a given identifier
@@ -1364,7 +1364,7 @@ const detectChannel = (identifier) => {
   return "email";
 };
 
-// -- Unified Registration Flow --
+
 // Step 1: Send OTPs to both email and mobile
 const sendRegistrationOTP = asyncHandler(async (req, res) => {
   const { email, mobile } = req.body;
@@ -1545,7 +1545,7 @@ const registerUnified = asyncHandler(async (req, res) => {
     );
 });
 
-// -- OTP Login (Passwordless) --
+
 // Step 1: Send login OTP
 const sendLoginOTP = asyncHandler(async (req, res) => {
   const { identifier } = req.body;
@@ -1644,7 +1644,7 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
     );
 });
 
-// -- Delete Account OTP --
+
 const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
   const { password, channel = "email" } = req.body;
 
@@ -1771,7 +1771,7 @@ const verifyAndDeleteAccount = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Account deleted successfully"));
 });
 
-// -- Forgot Password from Settings (no old password needed) --
+
 const sendForgotPasswordChangeOTP = asyncHandler(async (req, res) => {
   const { channel = "email" } = req.body;
   const user = await User.findById(req.user._id);

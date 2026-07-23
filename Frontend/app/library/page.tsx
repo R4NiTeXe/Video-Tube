@@ -34,7 +34,7 @@ interface Playlist {
   owner?: VideoOwner;
 }
 
-// ── Icons ──
+
 const HistoryIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
 );
@@ -48,7 +48,7 @@ const PlaySmall = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
 );
 
-// ── Skeleton Components ──
+
 const SkeletonCard = () => (
   <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
     <div className="skeleton" style={{ width: "100%", paddingTop: "56.25%", borderRadius: "var(--radius-lg)" }} />
@@ -177,12 +177,12 @@ export default function LibraryPage() {
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
       <PageMeta title="Library" description="Your watch history, liked videos, and playlists on VideoTube." noIndex />
-      {/* ── AMBIENT BACKGROUND ── */}
+      
       <div style={{ position: "fixed", top: "5%", left: "30%", width: "50vw", height: "50vw", background: "var(--accent)", filter: "blur(250px)", opacity: 0.035, borderRadius: "50%", pointerEvents: "none", zIndex: 0 }} />
 
-      {/* ── HEADER ── */}
+      
       <div style={{ width: "100%", padding: "2rem" }}>
-        {/* ── PAGE TITLE ── */}
+        
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} style={{ marginBottom: "2rem" }}>
           <h1 style={{ fontSize: "1.8rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.25rem" }}>
             Library
@@ -190,7 +190,7 @@ export default function LibraryPage() {
           <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Your watch history, liked videos, and playlists</p>
         </motion.div>
 
-        {/* ── TAB BUTTONS ── */}
+        
         <div style={{ display: "flex", gap: "0.5rem", marginBottom: "2rem", flexWrap: "wrap" }}>
           {tabs.map((tab) => (
             <button
@@ -205,7 +205,7 @@ export default function LibraryPage() {
           ))}
         </div>
 
-        {/* ── CONTENT ── */}
+        
         <AnimatePresence mode="wait">
           {isLoading ? (
             <motion.div

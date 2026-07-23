@@ -4,27 +4,34 @@ import { trackCacheHit } from "./metrics.js";
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
-let redis = null;
+// Instantiate synchronously. ioredis automatically queues commands until connected.
+const redis = new Redis(REDIS_URL, {
+  maxRetriesPerRequest: 3,
+  retryStrategy(times) {
+    if (times > 3) return null;
+    return Math.min(times * 200, 2000);
+  },
+  lazyConnect: true,
+});
+
 let isAvailable = false;
 
 const initRedis = async () => {
-  if (redis) return redis;
+  if (isAvailable) return redis;
   try {
-    redis = new Redis(REDIS_URL, {
-      maxRetriesPerRequest: 3,
-      retryStrategy(times) {
-        if (times > 3) return null;
-        return Math.min(times * 200, 2000);
-      },
-      lazyConnect: true,
-    });
-    await redis.connect();
+    if (redis.status === "wait" || redis.status === "close") {
+      await redis.connect();
+    }
     isAvailable = true;
     logger.info("Redis connected");
   } catch (err) {
-    logger.warn("Redis unavailable — caching disabled", { error: err.message });
-    redis = null;
-    isAvailable = false;
+    if (err.message === "Redis is already connecting/connected") {
+      isAvailable = true;
+      logger.info("Redis connected");
+    } else {
+      logger.warn("Redis unavailable — caching disabled", { error: err.message });
+      isAvailable = false;
+    }
   }
   return redis;
 };
@@ -89,7 +96,7 @@ const isTokenBlacklisted = async (token) => {
   }
 };
 
-// ── Distributed lock (SET NX + EX) ──
+
 const acquireLock = async (lockKey, ttlSeconds = 10) => {
   if (!isRedisAvailable()) return null;
   try {

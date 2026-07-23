@@ -30,6 +30,7 @@ export default function PremiumSidebar() {
   const { user } = useAuthStore();
 
   const isActive = (item: typeof navItems[0]) => {
+    if (!pathname) return false;
     if (item.href === "/") return pathname === "/";
     return pathname === item.href || pathname.startsWith(`${item.href}/`);
   };

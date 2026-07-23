@@ -8,7 +8,7 @@ import mongoose from 'mongoose';
 import { initRedis, closeRedis } from './utils/redis.js';
 import { initWebSocket, closeWebSocket } from './utils/websocket.js';
 
-// ── Warn if NODE_ENV is not explicitly set ──
+
 if (!process.env.NODE_ENV) {
   logger.warn("NODE_ENV is not set. Defaulting to 'development'. Set NODE_ENV=production in production.");
 } else if (process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") {
@@ -20,7 +20,7 @@ if (process.env.LOG_LEVEL && !["error", "warn", "info", "debug"].includes(proces
   logger.warn(`Invalid LOG_LEVEL "${process.env.LOG_LEVEL}". Falling back to "info".`);
 }
 
-// ── Validate critical secrets at startup ──
+
 const REQUIRED_SECRET_KEYS = [
   { key: "ACCESS_TOKEN_SECRET", label: "Access Token Secret" },
   { key: "REFRESH_TOKEN_SECRET", label: "Refresh Token Secret" },
@@ -87,12 +87,12 @@ if (cloudinarySet.length > 0 && cloudinarySet.length < 3) {
   process.exit(1);
 }
 
-// ── Warn about missing PROXY_TRUST_COUNT in production ──
+
 if (isProduction && !process.env.PROXY_TRUST_COUNT) {
   logger.warn("PROXY_TRUST_COUNT not set. Defaulting to 1 (single reverse proxy). Set to 2 if behind CDN + nginx.");
 }
 
-// ── Warn about missing optional dev config using fallback URLs ──
+
 if (!isProduction) {
   const OPTIONAL_CONFIG = [
     { key: "FRONTEND_URL", fallback: "http://localhost:3000" },
@@ -112,7 +112,7 @@ connectDB()
 .then(async () => {
     await initRedis();
 
-    // ── Cron: publish scheduled videos every minute ──
+    
     const { runPublishScheduledVideos, runUpdateTrendingScores } = await import("./controllers/video/cron.controller.js");
     const publishJob = cron.schedule("* * * * *", async () => {
       try {
@@ -123,7 +123,7 @@ connectDB()
     });
     logger.info("Scheduled video publishing cron initialized (every minute)");
 
-    // ── Cron: recalculate trending scores every hour ──
+    
     const trendingJob = cron.schedule("0 * * * *", async () => {
       try {
         await runUpdateTrendingScores();

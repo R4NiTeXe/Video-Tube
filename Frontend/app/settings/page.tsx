@@ -187,7 +187,7 @@ export default function SettingsPage() {
     );
   }
 
-  // ── Change Password (with password) ──
+  
   const handleSendChangePasswordOtp = async () => {
     setPasswordError(""); setPasswordSuccess("");
     if (!oldPassword) { setPasswordError("Please enter your current password first."); return; }
@@ -221,7 +221,7 @@ export default function SettingsPage() {
     finally { setPasswordSaving(false); }
   };
 
-  // ── Forgot Password (no old password) ──
+  
   const handleSendForgotOtp = async () => {
     setPasswordError(""); setPasswordSuccess("");
     setForgotOtpSending(true);
@@ -254,7 +254,7 @@ export default function SettingsPage() {
     finally { setPasswordSaving(false); }
   };
 
-  // ── Delete Account ──
+  
   const handleDeleteStep1 = () => {
     setDeleteError("");
     if (!deletePassword) { setDeleteError("Please enter your password."); return; }
@@ -290,7 +290,7 @@ export default function SettingsPage() {
     }
   };
 
-  // ── Notification Preferences ──
+  
   const handleSaveNotificationPrefs = async () => {
     setNotifSaving(true);
     try {
@@ -308,28 +308,28 @@ export default function SettingsPage() {
     }
   };
 
-  // ── Privacy ──
+  
   const handleSavePrivacy = async () => {
     setPrivacyMsg(""); setPrivacySaving(true);
     try { await api.patch("/users/privacy", { privateSubs, showSubsList }); setPrivacyMsg("Saved"); } catch (err) { console.error("Failed to save privacy", err); setPrivacyMsg("Failed to save"); }
     finally { setPrivacySaving(false); setTimeout(() => setPrivacyMsg(""), 3000); }
   };
 
-  // ── Language ──
+  
   const handleSaveLanguage = async () => {
     setLangMsg(""); setLangSaving(true);
     try { await api.patch("/users/language", { language }); setLangMsg("Saved"); } catch (err) { console.error("Failed to save language", err); setLangMsg("Failed to save"); }
     finally { setLangSaving(false); setTimeout(() => setLangMsg(""), 3000); }
   };
 
-  // ── Content Defaults ──
+  
   const handleSaveDefaults = async () => {
     setDefaultsMsg(""); setDefaultsSaving(true);
     try { await api.patch("/users/content-defaults", { defaultVisibility, defaultCategory }); setDefaultsMsg("Saved"); } catch (err) { console.error("Failed to save defaults", err); setDefaultsMsg("Failed to save"); }
     finally { setDefaultsSaving(false); setTimeout(() => setDefaultsMsg(""), 3000); }
   };
 
-  // ── Sessions ──
+  
   const handleRevokeSession = async (sessionId: string) => {
     setSessionError("");
     try {
@@ -377,133 +377,7 @@ export default function SettingsPage() {
 
             <div className="settings-grid">
 
-          {/* 1. Change Password */}
-          <div className="form-card" style={{ padding: "1.5rem" }}>
-            <SectionHeader
-              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
-              title="Change Password"
-              description="Keep your account secure with a strong password"
-            />
-            {passwordError && <div role="alert" style={{ padding: "0.7rem 1rem", backgroundColor: "var(--accent-warm-light)", color: "var(--accent-warm)", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem", border: "1px solid rgba(244,63,94,0.15)" }}>{passwordError}</div>}
-            {passwordSuccess && <div role="alert" style={{ padding: "0.7rem 1rem", backgroundColor: "var(--accent-subtle)", color: "var(--accent)", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem", border: "1px solid var(--border-focus)" }}>{passwordSuccess}</div>}
-
-            {forgotPasswordMode ? (
-              <form onSubmit={handleForgotPasswordReset} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <div style={{ padding: "0.6rem 0.8rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
-                  <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>We&apos;ll send an OTP to your email. No current password needed.</p>
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                  <label htmlFor="settings-new-pw" style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>New Password</label>
-                  <PasswordInput id="settings-new-pw" autoComplete="new-password" value={newPassword} onChange={setNewPassword} placeholder="New password" />
-                  <PasswordStrength password={newPassword} />
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                  <label htmlFor="settings-confirm-pw" style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Confirm New Password</label>
-                  <PasswordInput id="settings-confirm-pw" autoComplete="new-password" value={confirmPassword} onChange={setConfirmPassword} placeholder="••••••••" blockPaste />
-                  {confirmPassword && newPassword !== confirmPassword && <span style={{ fontSize: "0.72rem", color: "var(--accent-warm)" }}>Passwords do not match</span>}
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                  <label htmlFor="settings-otp" style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Verification OTP</label>
-                  {!forgotOtpSent ? (
-                    <>
-                      <div style={{ display: "flex", gap: "0.5rem" }}>
-                        <button type="button" onClick={() => setForgotChannel("email")}
-                          style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: forgotChannel === "email" ? "var(--accent)" : "var(--bg-secondary)", color: forgotChannel === "email" ? "#fff" : "var(--text-muted)", border: `1px solid ${forgotChannel === "email" ? "var(--accent)" : "var(--border)"}`, cursor: "pointer", transition: "all 0.2s" }}>
-                          📧 Email
-                        </button>
-                        <button type="button" onClick={() => setForgotChannel("whatsapp")}
-                          style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: forgotChannel === "whatsapp" ? "#25D366" : "var(--bg-secondary)", color: forgotChannel === "whatsapp" ? "#fff" : "var(--text-muted)", border: `1px solid ${forgotChannel === "whatsapp" ? "#25D366" : "var(--border)"}`, cursor: "pointer", transition: "all 0.2s" }}>
-                          💬 WhatsApp
-                        </button>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleSendForgotOtp}
-                        disabled={forgotOtpSending}
-                        style={{
-                          padding: "0.65rem 1rem",
-                          borderRadius: "var(--radius-md)",
-                          fontSize: "0.85rem",
-                          fontWeight: 600,
-                          backgroundColor: "var(--bg-secondary)",
-                          color: "var(--accent)",
-                          border: "1px solid var(--accent)",
-                          cursor: !forgotOtpSending ? "pointer" : "not-allowed",
-                          transition: "all 0.2s",
-                        }}
-                      >
-                        {forgotOtpSending ? "Sending OTP..." : `Send OTP via ${forgotChannel === "whatsapp" ? "WhatsApp" : "Email"}`}
-                      </button>
-                    </>
-                  ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                      <input
-                        type="text"
-                        className="input"
-                        placeholder="000000"
-                        maxLength={6}
-                        pattern="[0-9]{6}"
-                        inputMode="numeric"
-                        id="settings-otp"
-                        autoComplete="one-time-code"
-                        value={changePasswordOtp}
-                        onChange={(e) => setChangePasswordOtp(e.target.value.replace(/\D/g, ""))}
-                        style={{ letterSpacing: "0.4em", textAlign: "center", fontSize: "1rem", fontWeight: 600 }}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleSendForgotOtp}
-                        disabled={forgotOtpSending}
-                        style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.78rem", cursor: "pointer", textDecoration: "underline", textAlign: "left", padding: 0 }}
-                      >
-                        {forgotOtpSending ? "Sending..." : "Resend OTP"}
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
-                  <button type="button" onClick={() => { setForgotPasswordMode(false); setForgotOtpSent(false); setChangePasswordOtp(""); setNewPassword(""); setConfirmPassword(""); setPasswordError(""); setPasswordSuccess(""); }}
-                    style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: "var(--elevated)", color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer" }}>
-                    Back to Password
-                  </button>
-                  <button type="submit" className="btn btn-primary"
-                    disabled={passwordSaving || !forgotOtpSent || changePasswordOtp.length !== 6}
-                    style={{
-                      padding: "0.65rem 1.5rem",
-                      borderRadius: "var(--radius-md)",
-                      fontSize: "0.9rem",
-                      opacity: passwordSaving || !forgotOtpSent || changePasswordOtp.length !== 6 ? 0.6 : 1,
-                      cursor: passwordSaving || !forgotOtpSent || changePasswordOtp.length !== 6 ? "not-allowed" : "pointer",
-                    }}>
-                    {passwordSaving ? "Resetting..." : "Reset Password"}
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={handleChangePassword} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                  <label htmlFor="settings-current-pw" style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Current Password</label>
-                  <PasswordInput id="settings-current-pw" autoComplete="current-password" value={oldPassword} onChange={setOldPassword} placeholder="••••••••" />
-                  <button type="button" onClick={() => { setForgotPasswordMode(true); setPasswordError(""); setPasswordSuccess(""); setOldPassword(""); }}
-                    style={{ background: "none", border: "none", color: "var(--accent)", fontSize: "0.78rem", cursor: "pointer", textDecoration: "underline", textAlign: "left", padding: 0, marginTop: "-0.2rem" }}>
-                    Forgot your password?
-                  </button>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                  <label htmlFor="settings-new-pw" style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>New Password</label>
-                  <PasswordInput id="settings-new-pw" autoComplete="new-password" value={newPassword} onChange={setNewPassword} placeholder="New password" />
-                  <PasswordStrength password={newPassword} />
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                  <label htmlFor="settings-confirm-pw" style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Confirm New Password</label>
-                  <PasswordInput id="settings-confirm-pw" autoComplete="new-password" value={confirmPassword} onChange={setConfirmPassword} placeholder="••••••••" blockPaste />
-                  {confirmPassword && newPassword !== confirmPassword && <span style={{ fontSize: "0.72rem", color: "var(--accent-warm)" }}>Passwords do not match</span>}
-                </div>
-
-              {/* OTP Section */}
+          
               <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                 <label htmlFor="settings-otp" style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Verification OTP</label>
                 {!otpSent ? (
@@ -584,27 +458,7 @@ export default function SettingsPage() {
             )}
           </div>
 
-          {/* 2. Appearance */}
-          <div className="form-card" style={{ padding: "1.5rem" }}>
-            <SectionHeader
-              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>}
-              title="Appearance"
-              description="Customize how VideoTube looks on your device"
-            />
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.5rem 0" }}>
-              <div>
-                <p style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-primary)" }}>Dark Mode</p>
-                <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Currently using {theme} mode</p>
-              </div>
-              <button onClick={toggleTheme}
-                style={{ width: 52, height: 28, borderRadius: 99, backgroundColor: theme === "dark" ? "var(--accent)" : "var(--elevated)", border: `2px solid ${theme === "dark" ? "var(--accent)" : "var(--border)"}`, cursor: "pointer", position: "relative", transition: "all 0.3s", flexShrink: 0 }}>
-                <motion.div animate={{ x: theme === "dark" ? 24 : 2 }} transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                  style={{ width: 20, height: 20, borderRadius: "50%", backgroundColor: "#fff", position: "absolute", top: 2, boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
-              </button>
-            </div>
-          </div>
-
-          {/* 3. Notifications */}
+          
           <div className="form-card" style={{ padding: "1.5rem" }}>
             <SectionHeader
               icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>}
@@ -644,44 +498,7 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* 4. Privacy */}
-          <div className="form-card" style={{ padding: "1.5rem" }}>
-            <SectionHeader
-              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
-              title="Privacy"
-              description="Control who can see your activity and subscriptions"
-            />
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              {[
-                { label: "Keep subscriptions private", desc: "Others won't see which channels you subscribe to", checked: privateSubs, onChange: setPrivateSubs },
-                { label: "Show subscriptions list on channel", desc: "Display your subscriptions on your channel page", checked: showSubsList, onChange: setShowSubsList },
-              ].map((item) => (
-                <label key={item.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.6rem 0", cursor: "pointer", borderBottom: "1px solid var(--border)" }}>
-                  <div>
-                    <p style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--text-primary)" }}>{item.label}</p>
-                    <p style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>{item.desc}</p>
-                  </div>
-                  <button
-                    onClick={() => item.onChange(!item.checked)}
-                    role="switch"
-                    aria-checked={item.checked}
-                    aria-label={`Toggle ${item.label.toLowerCase()}`}
-                    style={{ width: 40, height: 22, borderRadius: 99, backgroundColor: item.checked ? "var(--accent)" : "var(--elevated)", border: `2px solid ${item.checked ? "var(--accent)" : "var(--border)"}`, cursor: "pointer", position: "relative", transition: "all 0.2s" }}>
-                    <motion.div animate={{ x: item.checked ? 18 : 2 }} transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                      style={{ width: 14, height: 14, borderRadius: "50%", backgroundColor: "#fff", position: "absolute", top: 3, boxShadow: "0 1px 2px rgba(0,0,0,0.15)" }} />
-                  </button>
-                </label>
-              ))}
-            </div>
-            {privacyMsg && <p role="alert" style={{ fontSize: "0.78rem", color: privacyMsg === "Saved" ? "var(--accent)" : "var(--accent-warm)", marginTop: "0.5rem" }}>{privacyMsg}</p>}
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "0.75rem" }}>
-              <button onClick={handleSavePrivacy} disabled={privacySaving} style={{ padding: "0.55rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.85rem", fontWeight: 600, backgroundColor: "var(--elevated)", color: "var(--accent)", border: "1px solid var(--accent)", cursor: privacySaving ? "not-allowed" : "pointer" }}>
-                {privacySaving ? "Saving..." : "Save Privacy"}
-              </button>
-            </div>
-          </div>
-
-          {/* 5. Language */}
+          
           <div className="form-card" style={{ padding: "1.5rem" }}>
             <SectionHeader
               icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>}
@@ -700,39 +517,7 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* 6. Content Defaults */}
-          <div className="form-card" style={{ padding: "1.5rem" }}>
-            <SectionHeader
-              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" /></svg>}
-              title="Content Defaults"
-              description="Set default options for new uploads"
-            />
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Default Upload Visibility</label>
-                <select value={defaultVisibility} onChange={(e) => setDefaultVisibility(e.target.value)}
-                  className="input" style={{ width: "100%", boxSizing: "border-box", cursor: "pointer" }}>
-                  <option value="public">Public</option>
-                  <option value="private">Private</option>
-                </select>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Default Category</label>
-                <select value={defaultCategory} onChange={(e) => setDefaultCategory(e.target.value)}
-                  className="input" style={{ width: "100%", boxSizing: "border-box", cursor: "pointer" }}>
-                  {["General", "Gaming", "Music", "Education", "Entertainment", "Sports", "News", "Technology", "Science", "Travel", "Food", "Fashion", "Art", "Podcasts"].map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-            </div>
-            {defaultsMsg && <p role="alert" style={{ fontSize: "0.78rem", color: defaultsMsg === "Saved" ? "var(--accent)" : "var(--accent-warm)", marginTop: "0.5rem" }}>{defaultsMsg}</p>}
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "0.75rem" }}>
-              <button onClick={handleSaveDefaults} disabled={defaultsSaving} style={{ padding: "0.55rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.85rem", fontWeight: 600, backgroundColor: "var(--elevated)", color: "var(--accent)", border: "1px solid var(--accent)", cursor: defaultsSaving ? "not-allowed" : "pointer" }}>
-                {defaultsSaving ? "Saving..." : "Save Defaults"}
-              </button>
-            </div>
-          </div>
-
-          {/* 7. Session Management */}
+          
           <div className="form-card" style={{ padding: "1.5rem" }}>
             <SectionHeader
               icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>}
@@ -792,37 +577,7 @@ export default function SettingsPage() {
             )}
           </div>
 
-          {/* 8. Delete Account */}
-          <div className="form-card card-full" style={{ padding: "1.5rem", border: "1px solid rgba(244,63,94,0.25)" }}>
-            <SectionHeader
-              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-warm)" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>}
-              title="Delete Account"
-              description="Permanently delete your account and all data"
-            />
-            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1rem", lineHeight: 1.5 }}>
-              This action is <strong style={{ color: "var(--accent-warm)" }}>permanent and irreversible</strong>. All your data, videos, subscribers, and settings will be permanently deleted.
-            </p>
-
-            {deleteError && <div role="alert" style={{ padding: "0.7rem 1rem", backgroundColor: "var(--accent-warm-light)", color: "var(--accent-warm)", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem", border: "1px solid rgba(244,63,94,0.15)" }}>{deleteError}</div>}
-
-            {/* Step 1: Password */}
-            {deleteStep === 1 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.25rem" }}>
-                  <span style={{ width: 24, height: 24, borderRadius: "50%", backgroundColor: "var(--accent-warm)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", fontWeight: 700 }}>1</span>
-                  <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--accent-warm)" }}>Enter your password</span>
-                </div>
-                <PasswordInput value={deletePassword} onChange={setDeletePassword} placeholder="Password" />
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  <button onClick={handleDeleteStep1} disabled={!deletePassword}
-                    style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: "var(--elevated)", color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: deletePassword ? "pointer" : "not-allowed" }}>
-                    Continue
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: OTP Verification */}
+          
             {deleteStep === 2 && (
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                 <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.25rem" }}>
@@ -890,29 +645,7 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* Step 3: Type DELETE */}
-            {deleteStep === 3 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.25rem" }}>
-                  <span style={{ width: 24, height: 24, borderRadius: "50%", backgroundColor: "var(--accent-warm)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", fontWeight: 700 }}>3</span>
-                  <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--accent-warm)" }}>Type DELETE to confirm</span>
-                </div>
-                <input type="text" className="input" value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} placeholder='Type DELETE' id="settings-delete-confirm" autoComplete="off"
-                  style={{ borderColor: deleteConfirm === "DELETE" ? "var(--accent-warm)" : undefined }} />
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
-                  <button onClick={() => { setDeleteStep(2); setDeleteConfirm(""); }} style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: "var(--elevated)", color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer" }}>
-                    Back
-                  </button>
-                  <button onClick={handleDeleteAccount} disabled={deleteConfirm !== "DELETE" || deleting}
-                    style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: deleteConfirm === "DELETE" ? "var(--accent-warm)" : "var(--elevated)", color: deleteConfirm === "DELETE" ? "#fff" : "var(--text-muted)", border: `1px solid ${deleteConfirm === "DELETE" ? "var(--accent-warm)" : "var(--border)"}`, cursor: deleteConfirm === "DELETE" && !deleting ? "pointer" : "not-allowed", opacity: deleting ? 0.7 : 1, transition: "all 0.2s" }}>
-                    {deleting ? "Deleting..." : "Delete Account Permanently"}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* OTP Usage */}
+            
           <div className="form-card card-full" style={{ padding: "1.5rem" }}>
             <SectionHeader
               icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}

@@ -11,7 +11,7 @@ interface MascotProps {
   passwordMatch?: "idle" | "match" | "mismatch"; // confirm-password validation state
 }
 
-// ── Emotion map ───────────────────────────────────────────────────────────────
+
 type Mood = "idle" | "typing" | "secret" | "peeking" | "excited" | "shy" | "happy" | "thinking" | "loading" | "matched" | "mismatched";
 
 function getMood(
@@ -43,7 +43,7 @@ function getMood(
   return "idle";
 }
 
-// ── Mood config ───────────────────────────────────────────────────────────────
+
 const moodConfig: Record<Mood, {
   label: string; sub: string;
   eyeScale: number; eyeShape: number;
@@ -80,7 +80,7 @@ export default function RobotMascot({
   const mood = getMood(activeField, isPasswordFocused, isPasswordVisible, isLoading, passwordMatch);
   const cfg  = moodConfig[mood];
 
-  // ── Springs ─────────────────────────────────────────────────────────────
+  
   const soft   = { damping: 14, stiffness: 90,  mass: 0.7 };
   const bouncy = { damping: 10, stiffness: 120, mass: 0.5 };
   const snappy = { damping: 20, stiffness: 260, mass: 0.35 };
@@ -107,7 +107,7 @@ export default function RobotMascot({
   const wiggleRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevMood  = useRef<Mood>("idle");
 
-  // ── Mouse tracking ───────────────────────────────────────────────────────
+  
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       if (mood === "secret") { pupilX.set(0); pupilY.set(0); return; }
@@ -120,7 +120,7 @@ export default function RobotMascot({
     return () => window.removeEventListener("mousemove", onMove);
   }, [mood, pupilX, pupilY]);
 
-  // ── Float animation ──────────────────────────────────────────────────────
+  
   useEffect(() => {
     const amp   = cfg.headBob * 8;
     const vals  = [0, -amp, 0, amp * 0.5, 0];
@@ -129,12 +129,12 @@ export default function RobotMascot({
     return () => { if (floatRef.current) clearInterval(floatRef.current); };
   }, [mood, bodyY, cfg.headBob]);
 
-  // ── Eye close (password hidden) ──────────────────────────────────────────
+  
   useEffect(() => {
     eyeClose.set(mood === "secret" ? 1 : 0);
   }, [mood, eyeClose]);
 
-  // ── Happy bounce when eyes closed (password hidden) ─────────────────────
+  
   useEffect(() => {
     if (wiggleRef.current) clearInterval(wiggleRef.current);
     if (mood === "secret") {
@@ -151,7 +151,7 @@ export default function RobotMascot({
     return () => { if (wiggleRef.current) clearInterval(wiggleRef.current); };
   }, [mood, nervousX]);
 
-  // ── Blink ────────────────────────────────────────────────────────────────
+  
   const doBlink = () => {
     // Don't blink when eyes are already closed or not mounted
     if (mood === "secret" || !isMounted.current) return;
@@ -170,7 +170,7 @@ export default function RobotMascot({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mood]);
 
-  // ── Mood change squish ───────────────────────────────────────────────────
+  
   useEffect(() => {
     if (prevMood.current !== mood) {
       prevMood.current = mood;
@@ -185,7 +185,7 @@ export default function RobotMascot({
     }
   }, [mood, cfg, bodyScaleX, bodyScaleY, headTilt, eyeScaleY, pupilX, pupilY]);
 
-  // ── Colours ──────────────────────────────────────────────────────────────
+  
   const C = {
     body:   "#111118",
     mid:    "#1a1a24",
@@ -205,90 +205,13 @@ export default function RobotMascot({
       overflow:"hidden",
       background:"radial-gradient(ellipse at 50% 38%, #1c1c2e 0%, #0d0d14 58%, #000 100%)",
     }}>
-      {/* Ambient glow */}
-      <motion.div
-        animate={{ scale:[1,1.18,1], opacity:[0.14,0.24,0.14] }}
-        transition={{ duration:4.5, repeat:Infinity, ease:"easeInOut" }}
-        style={{ position:"absolute", width:"55%", height:"55%",
-          background:`radial-gradient(circle, ${C.glow} 0%, transparent 70%)`,
-          borderRadius:"50%", filter:"blur(60px)", pointerEvents:"none" }}
-      />
-
-      {/* ══════════════ ROBOT ══════════════ */}
-      <motion.div style={{ y:bodyY, display:"flex", flexDirection:"column", alignItems:"center", position:"relative" }}>
-
-        {/* Antennas */}
-        <div style={{ position:"relative", width:150, height:42, marginBottom:-4, zIndex:5 }}>
-          {[{side:"left",lx:38,rx:0},{side:"right",lx:0,rx:38}].map(({side,lx,rx})=>(
-            <React.Fragment key={side}>
-              <div style={{ position:"absolute", [side==="left"?"left":"right"]:lx, bottom:0, width:4, height:34,
-                background:`linear-gradient(to bottom, ${C.border}, ${C.body})`, borderRadius:2 }} />
-              <motion.div
-                animate={ cfg.antennaBlink
-                  ? { scale:[1,1.45,1], opacity:[0.8,1,0.8] }
-                  : { scale:1, opacity:0.85 }
-                }
-                transition={{ duration:0.9, repeat:cfg.antennaBlink?Infinity:0, ease:"easeInOut",
-                  delay:side==="right"?0.45:0 }}
-                style={{ position:"absolute", [side==="left"?"left":"right"]:side==="left"?lx-8:rx-8,
-                  top:0, width:18, height:18, borderRadius:"50%",
-                  background:"radial-gradient(circle at 35% 35%, #ff8080, #dc2626)",
-                  boxShadow:`0 0 14px ${C.glow}, 0 0 30px rgba(220,38,38,0.25)` }}
-              />
-            </React.Fragment>
-          ))}
-        </div>
-
-        {/* ── HEAD ── */}
+      
         <motion.div style={{ rotate:headTilt, scaleX:bodyScaleX, scaleY:bodyScaleY, x:nervousX }}>
-          {/* Outer casing */}
-          <div style={{
-            width:160, height:144,
-            borderRadius:44,
-            background:`linear-gradient(145deg, ${C.light} 0%, ${C.mid} 52%, ${C.body} 100%)`,
-            border:`2.5px solid ${C.border}`,
-            boxShadow:`inset 0 2px 5px rgba(255,255,255,0.05), inset 0 -5px 12px rgba(0,0,0,0.7), 0 18px 42px rgba(0,0,0,0.55)`,
-            display:"flex", alignItems:"center", justifyContent:"center",
-            position:"relative",
-          }}>
-            {/* Screen inset */}
-            <div style={{
-              width:126, height:112,
-              borderRadius:28,
-              background:"radial-gradient(ellipse at 50% 28%, #14141e 0%, #050508 100%)",
-              boxShadow:"inset 0 4px 14px rgba(0,0,0,0.92), 0 1px 0 rgba(255,255,255,0.04)",
-              overflow:"hidden",
-              display:"flex", flexDirection:"column", alignItems:"center",
-              position:"relative",
-            }}>
-              {/* Screen shine */}
-              <div style={{ position:"absolute", top:6, left:14, right:14, height:28,
-                background:"linear-gradient(to bottom, rgba(255,255,255,0.035), transparent)",
-                borderRadius:14, pointerEvents:"none" }} />
-
-              {/* ── Eyebrows ── */}
+          
               <div style={{ display:"flex", gap:26, marginTop:14, position:"relative", zIndex:5 }}>
                 {[0,1].map(i=>(
                   mood === "secret"
-                  /* happy curved eyebrows — tilted inward like a pleased squint */
-                  ? <motion.div key={i}
-                      animate={{ y: -1, rotate: i === 0 ? -8 : 8 }}
-                      transition={{ duration: 0.35 }}
-                      style={{ width:26, height:4, borderRadius:2,
-                        background:"rgba(255,255,255,0.6)",
-                        boxShadow:"0 1px 3px rgba(0,0,0,0.5)" }}
-                    />
-                  : <motion.div key={i}
-                      animate={{ y: cfg.eyebrowY, rotate: i===0 ? cfg.headTilt*-0.4 : cfg.headTilt*0.4 }}
-                      transition={{ duration:0.35 }}
-                      style={{ width:28, height:4, borderRadius:2,
-                        background:"rgba(255,255,255,0.55)",
-                        boxShadow:"0 1px 3px rgba(0,0,0,0.5)" }}
-                    />
-                ))}
-              </div>
-
-              {/* ── Eyes row ── */}
+                  
               <div style={{ display:"flex", gap:24, marginTop:6, position:"relative", zIndex:4 }}>
                 {[leftEye, rightEye].map((ctrl, i) => (
                   <Eye
@@ -304,7 +227,7 @@ export default function RobotMascot({
                 ))}
               </div>
 
-              {/* ── Blush cheeks ── */}
+              
               <motion.div animate={{ opacity: cfg.blushOpacity }} transition={{ duration:0.4 }}
                 style={{ display:"flex", gap:52, marginTop:4 }}>
                 {[0,1].map(i=>(
@@ -314,26 +237,13 @@ export default function RobotMascot({
                 ))}
               </motion.div>
 
-              {/* ── Mouth ── */}
+              
               <div style={{ marginTop:4, display:"flex", alignItems:"center", justifyContent:"center", height:22, position:"relative" }}>
                 <MouthShape type={cfg.mouthType} accent={C.accent} />
               </div>
             </div>
 
-            {/* Ear bumps */}
-            {[{s:"left",x:-18},{s:"right",x:155}].map(({s,x})=>(
-              <div key={s} style={{ position:"absolute", top:"50%", left:x,
-                transform:"translateY(-50%)", width:16, height:48, borderRadius:8,
-                background:`linear-gradient(${s==="left"?"to right":"to left"}, ${C.border}, ${C.body})`,
-                border:`1.5px solid ${C.border}`,
-                boxShadow:`inset 0 0 6px ${C.glow}` }}>
-                <div style={{ position:"absolute", top:"50%", left:"50%",
-                  transform:"translate(-50%,-50%)", width:6, height:6, borderRadius:"50%",
-                  background:C.accent, boxShadow:`0 0 8px ${C.glow}` }} />
-              </div>
-            ))}
-
-            {/* Sweat drop */}
+            
             {cfg.sweat && (
               <motion.div
                 initial={{ opacity:0, y:-4 }} animate={{ opacity:1, y:10 }}
@@ -344,16 +254,11 @@ export default function RobotMascot({
                   opacity:0.85 }} />
             )}
 
-            {/* Sparkles */}
-            {cfg.sparkles && <Sparkles />}
-          </div>
-        </motion.div>
-
-        {/* ── NECK ── */}
+            
         <div style={{ width:28, height:10, background:`linear-gradient(to bottom,${C.border},${C.mid})`,
           borderRadius:"0 0 6px 6px", margin:"-2px 0", zIndex:6 }} />
 
-        {/* ── BODY ── */}
+        
         <motion.div
           animate={{ scaleY:[1,0.985,1] }}
           transition={{ duration:2.4, repeat:Infinity, ease:"easeInOut" }}
@@ -366,34 +271,7 @@ export default function RobotMascot({
             display:"flex", alignItems:"center", justifyContent:"center",
             position:"relative",
           }}>
-          {/* Play badge */}
-          <motion.div
-            animate={ isLoading
-              ? { rotate:[0,360] }
-              : mood === "excited"
-                ? { scale:[1,1.2,1] }
-                : { scale:1 }
-            }
-            transition={ isLoading
-              ? { duration:1.2, repeat:Infinity, ease:"linear" }
-              : { duration:0.6, repeat:mood==="excited"?Infinity:0, ease:"easeInOut" }
-            }
-            style={{
-              width:40, height:40, borderRadius:11,
-              background:"radial-gradient(circle at 40% 38%, #ff5555, #dc2626)",
-              boxShadow:`0 0 18px rgba(220,38,38,0.5),inset 0 2px 4px rgba(255,255,255,0.18)`,
-              display:"flex", alignItems:"center", justifyContent:"center",
-            }}>
-            { isLoading
-              ? <div style={{ width:14, height:14, borderRadius:"50%",
-                  border:"2.5px solid rgba(255,255,255,0.9)", borderTopColor:"transparent" }} />
-              : <div style={{ width:0, height:0, borderLeft:"12px solid rgba(255,255,255,0.96)",
-                  borderTop:"8px solid transparent", borderBottom:"8px solid transparent", marginLeft:3 }} />
-            }
-          </motion.div>
-        </motion.div>
-
-        {/* Drop shadow */}
+          
         <motion.div
           animate={{ scaleX:[1,1.07,1], opacity:[0.3,0.16,0.3] }}
           transition={{ duration:2.6, repeat:Infinity, ease:"easeInOut" }}
@@ -402,7 +280,7 @@ export default function RobotMascot({
         />
       </motion.div>
 
-{/* ── Caption ── */}
+
       <AnimatePresence mode="wait">
         <motion.div key={mood}
           initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-8 }}
@@ -422,7 +300,7 @@ export default function RobotMascot({
   );
 }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
+
 
 // Eye: renders open (with pupil) OR closed (smooth lid arc) based on eyeClose spring
 function Eye({
@@ -453,38 +331,7 @@ function Eye({
         position: "relative",
       }}
     >
-      {/* Pupil — hidden under lid when closed */}
-      <motion.div style={{
-        width: 18, height: 22, borderRadius: "50%",
-        background: "radial-gradient(circle at 34% 30%, #38384a, #030306)",
-        x: pupilX, y: pupilY,
-        boxShadow: "inset 0 2px 4px rgba(255,255,255,0.2)",
-        position: "relative",
-      }}>
-        <div style={{ position: "absolute", top: 4, left: 5, width: 6, height: 6,
-          borderRadius: "50%", background: "rgba(255,255,255,0.9)" }} />
-      </motion.div>
-
-      {/* Eyelid — slides down over the eyeball */}
-      <motion.div style={{
-        position: "absolute",
-        top: 0, left: 0, right: 0,
-        height: lidH,
-        /* same dark colour as the screen background so it blends in */
-        background: "linear-gradient(to bottom, #0d0d14 0%, #111118 100%)",
-        borderRadius: `${eyeShape}px ${eyeShape}px 2px 2px`,
-        zIndex: 5,
-      }} />
-
-      {/* Happy squint arc — curves UPWARD like a ^ so it looks like a smile-squint */}
-      {mood === "secret" && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.6 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.14, duration: 0.2, type: "spring", stiffness: 200 }}
-          style={{
-            position: "absolute",
-            /* sit right in the vertical middle of the eye socket */
+      
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
@@ -493,69 +340,7 @@ function Eye({
           }}
         >
           <svg width={eyeW - 2} height={16} viewBox={`0 0 ${eyeW - 2} 16`} fill="none">
-            {/* Main arc curving UP — happy squint */}
-            <path
-              d={`M2 12 Q${(eyeW - 2) / 2} 2 ${eyeW - 4} 12`}
-              stroke="rgba(255,255,255,0.85)"
-              strokeWidth="3"
-              strokeLinecap="round"
-              fill="none"
-            />
-            {/* Tiny lashes on the arc for cuteness */}
-            <line x1="2"  y1="12" x2="1"  y2="15" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
-            <line x1={eyeW - 4} y1="12" x2={eyeW - 3} y2="15" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-        </motion.div>
-      )}
-
-      {/* Half-peek lash line (peeking state) */}
-      {mood === "peeking" && (
-        <motion.div
-          style={{ position: "absolute", top: eyeH * 0.3, left: "50%", transform: "translateX(-50%)", zIndex: 6, pointerEvents: "none" }}
-        >
-          <svg width={eyeW - 4} height={8} viewBox={`0 0 ${eyeW - 4} 8`} fill="none">
-            <path
-              d={`M2 6 Q${(eyeW - 4) / 2} 0 ${eyeW - 6} 6`}
-              stroke="rgba(255,255,255,0.5)" strokeWidth="2"
-              strokeLinecap="round" fill="none"
-            />
-          </svg>
-        </motion.div>
-      )}
-    </motion.div>
-  );
-}
-
-function MouthShape({ type, accent }: { type: string; accent: string }) {
-  const t = type;
-
-  if (t === "smile") return (
-    <svg width="34" height="18" viewBox="0 0 34 18" fill="none">
-      <path d="M4 4 Q17 18 30 4" stroke="rgba(220,38,38,0.88)" strokeWidth="3" strokeLinecap="round" fill="none"/>
-    </svg>
-  );
-  if (t === "grin") return (
-    <svg width="38" height="20" viewBox="0 0 38 20" fill="none">
-      <path d="M3 5 Q19 20 35 5" stroke={accent} strokeWidth="3.5" strokeLinecap="round" fill="none"/>
-      <line x1="9" y1="14" x2="29" y2="14" stroke={accent} strokeWidth="2" opacity="0.3"/>
-    </svg>
-  );
-  if (t === "oh") return (
-    <div style={{ width:18, height:20, borderRadius:"50%",
-      border:`2.5px solid ${accent}`,
-      boxShadow:`0 0 8px rgba(220,38,38,0.5)` }} />
-  );
-  if (t === "flat") return (
-    <div style={{ width:26, height:3, borderRadius:2,
-      background:"rgba(255,255,255,0.35)" }} />
-  );
-  if (t === "uwu") return (
-    <svg width="30" height="16" viewBox="0 0 30 16" fill="none">
-      <path d="M3 8 Q8 14 15 8 Q22 14 27 8" stroke="rgba(255,150,150,0.9)" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
-    </svg>
-  );
-  if (t === "giggle") return (
-    /* Wide happy grin with a little tooth gap — the classic "eyes-closed laughing" face */
+            
     <svg width="40" height="22" viewBox="0 0 40 22" fill="none">
       {/* Main wide smile curve */}
       <path d="M3 6 Q20 22 37 6" stroke={accent} strokeWidth="3" strokeLinecap="round" fill="none"/>

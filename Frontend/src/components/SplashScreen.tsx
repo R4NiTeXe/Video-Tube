@@ -195,13 +195,13 @@ export default function SplashScreen({ onDone }: Props) {
             overflow: "hidden",
           }}
         >
-          {/* ── Ambient floating orbs (60% dominant bg atmosphere) ── */}
+          
           <AmbientOrb color="#FF3B30" size={500} x="15%" y="10%" delay={0} />
           <AmbientOrb color="#FF6B6B" size={350} x="60%" y="55%" delay={0.5} />
           <AmbientOrb color="#E63529" size={280} x="70%" y="5%" delay={1.0} />
           <AmbientOrb color="#FF3B30" size={200} x="5%" y="65%" delay={1.5} />
 
-          {/* ── Central logo area ── */}
+          
           <div
             style={{
               position: "relative",
@@ -212,116 +212,7 @@ export default function SplashScreen({ onDone }: Props) {
               height: 200,
             }}
           >
-            {/* Orbiting dots */}
-            <OrbitalDot index={0} total={3} radius={80} size={5} color="#FF6B6B" duration={4} delay={T.orbitalStart} />
-            <OrbitalDot index={1} total={3} radius={80} size={4} color="#FF3B30" duration={4} delay={T.orbitalStart + 0.3} />
-            <OrbitalDot index={2} total={3} radius={80} size={3} color="#E63529" duration={5} delay={T.orbitalStart + 0.6} />
-
-            {/* Pulsing glow ring 1 */}
-            <motion.div
-              initial={{ scale: 0.7, opacity: 0 }}
-              animate={{ scale: [0.7, 2.0], opacity: [0.5, 0] }}
-              transition={{
-                delay: T.iconEntry + 0.6,
-                duration: 2.0,
-                ease: "easeOut",
-                repeat: Infinity,
-                repeatDelay: 1.0,
-              }}
-              style={{
-                position: "absolute",
-                width: 100,
-                height: 100,
-                borderRadius: "28px",
-                border: "2px solid var(--accent)",
-                pointerEvents: "none",
-              }}
-            />
-            {/* Pulsing glow ring 2 (offset) */}
-            <motion.div
-              initial={{ scale: 0.7, opacity: 0 }}
-              animate={{ scale: [0.7, 2.0], opacity: [0.4, 0] }}
-              transition={{
-                delay: T.iconEntry + 1.3,
-                duration: 2.0,
-                ease: "easeOut",
-                repeat: Infinity,
-                repeatDelay: 1.0,
-              }}
-              style={{
-                position: "absolute",
-                width: 100,
-                height: 100,
-                borderRadius: "28px",
-                border: "1.5px solid var(--accent-warm)",
-                pointerEvents: "none",
-              }}
-            />
-
-            {/* Logo icon box */}
-            <motion.div
-              initial={{ scale: 0, rotate: -40, opacity: 0 }}
-              animate={{ scale: 1, rotate: 0, opacity: 1 }}
-              transition={{
-                delay: T.iconEntry,
-                type: "spring",
-                stiffness: 180,
-                damping: 14,
-                mass: 1.4,
-              }}
-              style={{
-                width: 104,
-                height: 104,
-                borderRadius: "30px",
-                background: "linear-gradient(135deg, #FF3B30 0%, #FF6B6B 100%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow:
-                  "0 0 60px rgba(255, 59, 48, 0.5), 0 20px 40px rgba(255, 59, 48, 0.3), inset 0 1px 0 rgba(255,255,255,0.15)",
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              {/* Shimmer sweep across icon */}
-              <motion.div
-                initial={{ x: "-120%" }}
-                animate={{ x: "120%" }}
-                transition={{
-                  delay: T.shimmer,
-                  duration: 0.8,
-                  ease: [0.25, 0.46, 0.45, 0.94],
-                }}
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  background:
-                    "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.35) 50%, transparent 70%)",
-                  pointerEvents: "none",
-                }}
-              />
-
-              {/* Play triangle — draws itself */}
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
-                <motion.path
-                  d="M8 5v14l11-7z"
-                  stroke="rgba(255,255,255,0.9)"
-                  strokeWidth="1"
-                  strokeLinejoin="round"
-                  fill="white"
-                  initial={{ pathLength: 0, fillOpacity: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, fillOpacity: 1, opacity: 1 }}
-                  transition={{
-                    pathLength: { delay: T.iconDraw, duration: 1.0, ease: "easeInOut" },
-                    fillOpacity: { delay: T.iconDraw + 0.6, duration: 0.4 },
-                    opacity: { delay: T.iconDraw, duration: 0.2 },
-                  }}
-                />
-              </svg>
-            </motion.div>
-          </div>
-
-          {/* ── VideoTube — staggered 3D letters ── */}
+            
           <div
             style={{
               display: "flex",
@@ -342,7 +233,7 @@ export default function SplashScreen({ onDone }: Props) {
             ))}
           </div>
 
-          {/* ── Tagline ── */}
+          
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -362,7 +253,7 @@ export default function SplashScreen({ onDone }: Props) {
             </p>
           </motion.div>
 
-          {/* ── Subtle bottom divider line that grows ── */}
+          
           <motion.div
             initial={{ scaleX: 0, opacity: 0 }}
             animate={{ scaleX: 1, opacity: 0.15 }}

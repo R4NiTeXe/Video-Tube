@@ -104,13 +104,12 @@ export default function EditModal({ videoId, onClose, onSuccess }: { videoId: st
   }
 
   return (
-    <AnimatePresence>
-      <motion.div
-        className="modal-overlay"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    <motion.div
+      className="modal-overlay"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       >
         <motion.div
           className="modal-content"
@@ -218,8 +217,7 @@ export default function EditModal({ videoId, onClose, onSuccess }: { videoId: st
               </motion.div>
             </motion.div>
           )}
-          </motion.div>
-      </motion.div>
-    </AnimatePresence>
+        </motion.div>
+    </motion.div>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import TopNav from "./TopNav";
 import PremiumSidebar from "./PremiumSidebar";
@@ -11,7 +12,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { isAuthenticated } = useAuthStore();
 
-  const isAuthPage = authPages.includes(pathname) || pathname.startsWith("/embed");
+  useEffect(() => {
+    // Explicitly scroll to top on route change to fix any Next.js scroll restoration bugs
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  const isAuthPage =
+    pathname ? (authPages.includes(pathname) || pathname.startsWith("/embed")) : false;
   const isLandingPage = pathname === "/" && !isAuthenticated;
 
   if (isAuthPage || isLandingPage) {
@@ -23,7 +30,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <TopNav />
       <div className="page-layout">
         <PremiumSidebar />
-        <main id="main-content" className="page-content">{children}</main>
+        <main id="main-content" className="page-content">
+          {children}
+        </main>
       </div>
     </div>
   );

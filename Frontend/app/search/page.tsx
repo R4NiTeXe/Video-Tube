@@ -136,7 +136,7 @@ export default function SearchPage() {
     setRecentSearches([]);
   };
 
-  // ── Videos ──
+  
   const { data: videosResp, isLoading: videosLoading } = useQuery({
     queryKey: ["search-videos", debouncedQuery],
     queryFn: async () => {
@@ -146,7 +146,7 @@ export default function SearchPage() {
     enabled: activeTab === "videos" && !!debouncedQuery.trim(),
   });
 
-  // ── Channels ──
+  
   const { data: channelsResp, isLoading: channelsLoading } = useQuery({
     queryKey: ["search-channels", debouncedQuery],
     queryFn: async () => {
@@ -156,7 +156,7 @@ export default function SearchPage() {
     enabled: activeTab === "channels" && !!debouncedQuery.trim(),
   });
 
-  // ── Users ──
+  
   const { data: usersResp, isLoading: usersLoading } = useQuery({
     queryKey: ["search-users", debouncedQuery],
     queryFn: async () => {
@@ -180,7 +180,7 @@ export default function SearchPage() {
         noIndex
       />
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
-      {/* ── HEADER ── */}
+      
       <div style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--glass-bg)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid var(--glass-border)" }}>
         <form onSubmit={handleSubmit} style={{ maxWidth: 1400, margin: "0 auto", padding: "1rem 2rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
           <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "0.5rem", background: "var(--bg-secondary)", border: "1.5px solid var(--border-medium)", borderRadius: "var(--radius-md)", padding: "0 0.85rem", transition: "border-color 0.2s, box-shadow 0.2s" }}>
@@ -201,35 +201,10 @@ export default function SearchPage() {
           </div>
         </form>
 
-        {/* Tab bar */}
-        <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", gap: 0, padding: "0 2rem" }}>
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              style={{
-                flex: 1,
-                padding: "0.65rem 0",
-                background: "none",
-                border: "none",
-                borderBottom: `2.5px solid ${activeTab === tab.key ? "var(--accent)" : "transparent"}`,
-                color: activeTab === tab.key ? "var(--accent)" : "var(--text-secondary)",
-                fontWeight: activeTab === tab.key ? 700 : 500,
-                fontSize: "0.88rem",
-                cursor: "pointer",
-                transition: "all 0.2s",
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── CONTENT ── */}
+        
       <div style={{ maxWidth: 1400, margin: "0 auto", padding: "1.5rem 2rem" }}>
 
-        {/* ── Suggestions (empty query) ── */}
+        
         {showSuggestions && (
           <div>
             {recentSearches.length > 0 && (
@@ -265,7 +240,7 @@ export default function SearchPage() {
           </div>
         )}
 
-        {/* ── Results ── */}
+        
         {!showSuggestions && (
           <AnimatePresence mode="wait">
             <motion.div
@@ -275,43 +250,7 @@ export default function SearchPage() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
-              {/* Videos tab */}
-              {activeTab === "videos" && (
-                <div>
-                  {videosLoading && (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1.5rem" }}>
-                      {Array.from({ length: 6 }).map((_, i) => (
-                        <div key={i}>
-                          <div className="skeleton" style={{ width: "100%", paddingTop: "56.25%", borderRadius: "var(--radius-md)" }} />
-                          <div style={{ display: "flex", gap: "0.6rem", marginTop: "0.7rem" }}>
-                            <div className="skeleton" style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0 }} />
-                            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                              <div className="skeleton" style={{ width: "85%", height: 14, borderRadius: 6 }} />
-                              <div className="skeleton" style={{ width: "55%", height: 12, borderRadius: 6 }} />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {!videosLoading && videos.length === 0 && (
-                    <div className="empty-state" style={{ padding: "4rem 1rem" }}>
-                      <div className="empty-icon">
-                        <SearchIcon size={28} />
-                      </div>
-                      <p style={{ fontSize: "1.05rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.4rem" }}>No videos found</p>
-                      <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Try a different search term</p>
-                    </div>
-                  )}
-
-                  {!videosLoading && videos.length > 0 && (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1.5rem" }}>
-                      {videos.map((v, idx) => (
-                        <motion.div key={v._id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(idx * 0.05, 0.4) }}>
-                          <Link href={`/videos/${v._id}`} className="video-card-premium">
-                            <div className="thumb-wrapper">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
+              
                               <img src={v.thumbnail} alt={v.title} loading="lazy" />
                               <div className="thumb-overlay">
                                 <div className="play-circle"><PlaySmall /></div>
@@ -334,44 +273,7 @@ export default function SearchPage() {
                 </div>
               )}
 
-              {/* Channels tab */}
-              {activeTab === "channels" && (
-                <div>
-                  {channelsLoading && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                      {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "0.85rem 1rem", background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
-                          <div className="skeleton" style={{ width: 48, height: 48, borderRadius: "50%", flexShrink: 0 }} />
-                          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                            <div className="skeleton" style={{ width: "40%", height: 14, borderRadius: 6 }} />
-                            <div className="skeleton" style={{ width: "25%", height: 12, borderRadius: 6 }} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {!channelsLoading && channels.length === 0 && (
-                    <div className="empty-state" style={{ padding: "4rem 1rem" }}>
-                      <div className="empty-icon">
-                        <SearchIcon size={28} />
-                      </div>
-                      <p style={{ fontSize: "1.05rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.4rem" }}>No channels found</p>
-                      <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Try a different search term</p>
-                    </div>
-                  )}
-
-                  {!channelsLoading && channels.length > 0 && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                      {channels.map((ch, idx) => (
-                        <motion.div key={ch._id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(idx * 0.06, 0.4) }}>
-                          <Link
-                            href={`/channel/${ch.username || ch._id}`}
-                            style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "0.85rem 1rem", background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", transition: "border-color 0.2s, box-shadow 0.2s", textDecoration: "none" }}
-                            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-glow)"; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.boxShadow = "none"; }}
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
+              
                             <img src={ch.avatar} alt={ch.fullName} style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border)" }} />
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <p style={{ fontWeight: 700, fontSize: "0.92rem", color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ch.fullName}</p>
@@ -385,44 +287,7 @@ export default function SearchPage() {
                 </div>
               )}
 
-              {/* Users tab */}
-              {activeTab === "users" && (
-                <div>
-                  {usersLoading && (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "0.75rem" }}>
-                      {Array.from({ length: 6 }).map((_, i) => (
-                        <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.85rem 1rem", background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
-                          <div className="skeleton" style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0 }} />
-                          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.3rem" }}>
-                            <div className="skeleton" style={{ width: "60%", height: 13, borderRadius: 6 }} />
-                            <div className="skeleton" style={{ width: "40%", height: 11, borderRadius: 6 }} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {!usersLoading && users.length === 0 && (
-                    <div className="empty-state" style={{ padding: "4rem 1rem" }}>
-                      <div className="empty-icon">
-                        <SearchIcon size={28} />
-                      </div>
-                      <p style={{ fontSize: "1.05rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.4rem" }}>No users found</p>
-                      <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Try a different search term</p>
-                    </div>
-                  )}
-
-                  {!usersLoading && users.length > 0 && (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "0.75rem" }}>
-                      {users.map((u, idx) => (
-                        <motion.div key={u._id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(idx * 0.05, 0.4) }}>
-                          <Link
-                            href={`/channel/${u.username || u._id}`}
-                            style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.85rem 1rem", background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", textDecoration: "none", transition: "border-color 0.2s, box-shadow 0.2s" }}
-                            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-glow)"; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.boxShadow = "none"; }}
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
+              
                             <img src={u.avatar} alt={u.fullName} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border)", flexShrink: 0 }} />
                             <div style={{ minWidth: 0 }}>
                               <p style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{u.fullName}</p>

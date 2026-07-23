@@ -460,10 +460,10 @@ const getVideoById = asyncHandler(async (req, res) => {
   videoData.likesCount = likesCount;
   if (videoData.owner) videoData.owner.subscribersCount = subscribersCount;
 
-// increment views atomically — use findOneAndUpdate with $addToSet + $cond to check if added
+  // increment views atomically ONLY if recordView=true is passed
   const ownerId = videoData.owner?._id?.toString();
   const isOwner = ownerId === req.user?._id?.toString();
-  if (!isOwner && req.user?._id) {
+  if (req.query.recordView === "true" && !isOwner && req.user?._id) {
     const userModel = mongoose.model("User");
     const videoModel = mongoose.model("Video");
     

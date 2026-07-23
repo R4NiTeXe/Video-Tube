@@ -142,25 +142,7 @@ export default function MobileRegisterPage() {
       <PageMeta title="Mobile Registration" description="Register your VideoTube account using mobile verification." noIndex />
       <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ width: "100%", maxWidth: "420px" }}>
-        {/* Header */}
-        <header style={{ marginBottom: "2rem", textAlign: "center" }}>
-          <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: "0.55rem", marginBottom: "1rem" }}>
-            <div style={{ width: 32, height: 32, borderRadius: "8px", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
-              <PlayLogo />
-            </div>
-            <span style={{ fontWeight: 800, fontSize: "1.15rem", letterSpacing: "-0.04em", color: "var(--text-primary)" }}>
-              Video<span style={{ color: "var(--text-muted)" }}>Tube</span>
-            </span>
-          </Link>
-          <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.3rem" }}>
-            {step === "mobile" ? "Register with Mobile" : step === "otp" ? "Enter OTP" : "Create Account"}
-          </h1>
-          <p style={{ color: "var(--text-secondary)", fontSize: "0.88rem" }}>
-            {step === "mobile" ? "We'll send you a verification code" : step === "otp" ? `Code sent to ${getFullMobile?.() || `${countryCode}${mobile}`}` : "Set up your profile"}
-          </p>
-        </header>
-
-        {/* Error */}
+        
         <AnimatePresence>
           {error && (
             <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
@@ -170,43 +152,7 @@ export default function MobileRegisterPage() {
           )}
         </AnimatePresence>
 
-        {/* Step 1: Mobile */}
-        {step === "mobile" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-              <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Mobile Number</label>
-              <div style={{ display: "flex", gap: 0 }}>
-                <div style={{ position: "relative" }}>
-                  <select value={countryCode} onChange={e => setCountryCode(e.target.value)}
-                    className="input-field"
-                    style={{ width: "auto", borderRadius: "var(--radius-md) 0 0 var(--radius-md)", borderRight: "none", padding: "0 var(--sp-8) 0 var(--sp-3)", fontWeight: 600, fontSize: 13 }}
-                    aria-label="Country code">
-                    {COUNTRIES.map((c) => (
-                      <option key={c.iso + c.code} value={c.code}>{c.iso.toUpperCase()} {c.code}</option>
-                    ))}
-                  </select>
-                  <div style={{ position: "absolute", right: "0.5rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-muted)" }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-                  </div>
-                </div>
-                <div style={{ position: "relative", flex: 1 }}>
-                  <div style={{ position: "absolute", left: "var(--sp-3)", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
-                    <FlagImg iso={COUNTRIES.find(c => c.code === countryCode)?.iso || "in"} size={16} />
-                  </div>
-                  <input type="tel" placeholder="Phone number" className="input-field"
-                    value={mobile} onChange={e => setMobile(e.target.value.replace(/\D/g, ""))}
-                    autoFocus
-                    style={{ paddingLeft: "var(--sp-8)", borderRadius: "0 var(--radius-md) var(--radius-md) 0", letterSpacing: "0.03em", fontSize: 13 }} />
-                </div>
-              </div>
-            </div>
-            <button onClick={handleSendOTP} disabled={isLoading} className="btn-primary" style={{ width: "100%", padding: "0.85rem" }}>
-              {isLoading ? "Sending..." : "Send OTP"}
-            </button>
-          </div>
-        )}
-
-        {/* Step 2: OTP */}
+        
         {step === "otp" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center" }}>
@@ -227,31 +173,7 @@ export default function MobileRegisterPage() {
           </div>
         )}
 
-        {/* Step 3: Details */}
-        {step === "details" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-              <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Full Name</label>
-              <input type="text" placeholder="Full name" className="input-field" value={fullName}
-                onChange={e => setFullName(e.target.value)} autoFocus />
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-              <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Username</label>
-              <input type="text" placeholder="Username" className="input-field" value={username}
-                onChange={e => setUsername(e.target.value.toLowerCase().replace(/\s/g, ""))} />
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-              <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Password</label>
-              <input type="password" placeholder="Password" className="input-field" value={password}
-                onChange={e => setPassword(e.target.value)} />
-            </div>
-            <button onClick={handleRegister} disabled={isLoading} className="btn-primary" style={{ width: "100%", padding: "0.85rem" }}>
-              {isLoading ? "Creating Account..." : "Create Account"}
-            </button>
-          </div>
-        )}
-
-        {/* Footer */}
+        
         <div style={{ marginTop: "1.5rem", textAlign: "center" }}>
           <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
             Already have an account?{" "}

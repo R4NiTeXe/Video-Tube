@@ -35,7 +35,7 @@ app.set("trust proxy", proxyTrustCount);
 
 initMetrics();
 
-// ── Sentry (conditional — only if SENTRY_DSN is set) ──
+
 if (process.env.SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
@@ -68,7 +68,7 @@ if (process.env.SENTRY_DSN) {
   logger.info("Sentry not configured — set SENTRY_DSN to enable error monitoring");
 }
 
-// ── Correlation ID middleware ──
+
 app.use((req, res, next) => {
   const correlationId = req.headers["x-correlation-id"] || req.headers["x-request-id"] || crypto.randomUUID();
   req.correlationId = correlationId;
@@ -76,7 +76,7 @@ app.use((req, res, next) => {
   runWithCorrelationId(correlationId, next);
 });
 
-// ── Prometheus metrics tracking middleware ──
+
 app.use((req, res, next) => {
   if (req.path === "/metrics") return next();
   const start = Date.now();
@@ -88,11 +88,11 @@ app.use((req, res, next) => {
   next();
 });
 
-// ── Passport ──
+
 configurePassport();
 app.use(passport.initialize());
 
-// ── Security headers (helmet) ──
+
 const isDev = process.env.NODE_ENV !== "production";
 app.use(helmet({
   contentSecurityPolicy: {
@@ -103,7 +103,7 @@ app.use(helmet({
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
       connectSrc: ["'self'", "https://res.cloudinary.com", "https://*.cloudinary.com", "https://api.cloudinary.com"],
-      mediaSrc: ["'self'", "https://res.cloudinary.com", "https://*.cloudinary.com"],
+      mediaSrc: ["'self'", "https://res.cloudinary.com", "https://*.cloudinary.com", "blob:", "data:", "http:", "https:"],
       frameSrc: ["'self'"],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
@@ -119,17 +119,17 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
-// ── HTTP request logging ──
+
 app.use(
   morgan("combined", {
     stream: { write: (msg) => logger.info(msg.trim()) },
   })
 );
 
-// ── Response compression ──
+
 app.use(compression({ level: 6, threshold: 1024 }));
 
-// ── CORS ──
+
 
 // Collect allowed origins from CORS_ORIGIN (comma-separated) and FRONTEND_URL
 const rawOrigins = [
@@ -183,17 +183,17 @@ app.use(
   })
 );
 
-// ── Body parsing ──
+
 app.use(cookieParser());
 app.use(express.json({ limit: "16kb", depth: 10 }));
 app.use(express.urlencoded({ extended: true, limit: "16kb", parameterLimit: 1000 }));
 app.use(express.static("public"));
 
-// ── CSRF Protection ──
+
 app.use(csrfMiddleware);
 app.get("/api/v1/csrf-token", csrfTokenHandler);
 
-// ── NoSQL injection sanitization (custom, Express 5 compatible) ──
+
 const sanitizeTarget = (obj, replaceWith = "_") => {
   if (!obj || typeof obj !== "object") return;
   for (const key of Object.keys(obj)) {
@@ -223,10 +223,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// ── Global rate limiter ──
+
 app.use("/api", apiLimiter);
 
-// ── Health check endpoints ──
+
 app.get("/health/live", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
@@ -258,7 +258,6 @@ app.get("/health/ready", async (req, res) => {
   }
 });
 
-// ── Prometheus metrics (token-protected in production) ──
 app.get("/metrics", (req, res, next) => {
   const metricsToken = process.env.METRICS_TOKEN;
   if (metricsToken && process.env.NODE_ENV === "production") {
@@ -270,7 +269,6 @@ app.get("/metrics", (req, res, next) => {
   next();
 }, metricsHandler);
 
-// ── Swagger API Documentation (disabled in production) ──
 if (process.env.NODE_ENV !== "production") {
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     customCss: `
@@ -293,7 +291,6 @@ if (process.env.NODE_ENV !== "production") {
   });
 }
 
-// ── Cloudinary webhook (secured by shared secret) ──
 app.post("/api/v1/webhooks/cloudinary", async (req, res) => {
   try {
     const webhookSecret = process.env.WEBHOOK_SECRET;
@@ -321,7 +318,7 @@ app.post("/api/v1/webhooks/cloudinary", async (req, res) => {
   }
 });
 
-// ── Routes ──
+
 import userRouter from "./routes/user.routes.js";
 import videoRouter from "./routes/video.routes.js";
 import subscriptionRouter from "./routes/subscription.routes.js";
@@ -356,7 +353,7 @@ app.use("/api/v1/sse", sseRouter);
 app.use("/api/v1/reports", reportRouter);
 app.use("/api/v1/polls", pollRouter);
 
-// ── oEmbed endpoint ──
+
 app.get("/api/v1/oembed", async (req, res) => {
   try {
     const { url } = req.query;
@@ -389,7 +386,7 @@ app.get("/api/v1/oembed", async (req, res) => {
   }
 });
 
-// ── Error handlers ──
+
 import { errorHandler, notFoundHandler } from "./middlewares/error.middleware.js";
 
 if (process.env.SENTRY_DSN) {

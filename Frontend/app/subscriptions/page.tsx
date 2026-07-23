@@ -144,10 +144,10 @@ export default function SubscriptionsPage() {
   }, [isAuthenticated, authLoading, router]);
 
   const { data: response, isLoading } = useQuery({
-    queryKey: ["subscribedChannels"],
+    queryKey: ["subscribedChannels", user?._id],
     queryFn: async () => {
       const res = await api.get(`/subscriptions/u/${user?._id}`);
-      return res.data.data as SubscriptionItem[];
+      return res.data.data.docs as SubscriptionItem[];
     },
     enabled: isAuthenticated && !!user?._id,
   });
@@ -224,125 +224,7 @@ export default function SubscriptionsPage() {
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", padding: "var(--sp-4) var(--sp-6) var(--sp-8)" }}>
       <PageMeta title="Subscriptions" description="Latest videos from channels you subscribe to on VideoTube." noIndex />
-      {/* Page header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--sp-4)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)" }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-secondary)" }}>
-            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-            <circle cx="8.5" cy="7" r="4"/>
-            <polyline points="17 11 19 13 23 9"/>
-          </svg>
-          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--text-primary)" }}>Subscriptions</h1>
-        </div>
-        <Link
-          href="/"
-          style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}
-          onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.8"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
-        >
-          Browse
-        </Link>
-      </div>
-
-      {/* Horizontal channel bar */}
-      {isLoading ? (
-        <div style={{ display: "flex", gap: "var(--sp-4)", marginBottom: "var(--sp-6)", paddingBottom: "var(--sp-3)", overflow: "hidden" }}>
-          {Array.from({ length: 8 }).map((_, i) => <SkeletonChannelPill key={i} />)}
-        </div>
-      ) : subscriptions.length > 0 ? (
-        <div style={{ position: "relative", marginBottom: "var(--sp-5)" }}>
-          {canScrollLeft && (
-            <button
-              onClick={() => scrollBy(-1)}
-              style={{
-                position: "absolute", left: 0, top: 0, bottom: 0, zIndex: 2,
-                width: 36, background: "linear-gradient(to right, var(--bg-primary), transparent)",
-                border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "flex-start", paddingLeft: 4,
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-          )}
-          <div
-            ref={channelBarRef}
-            style={{
-              display: "flex", gap: "var(--sp-3)", overflowX: "auto", scrollBehavior: "smooth",
-              paddingBottom: "var(--sp-2)", scrollbarWidth: "none", msOverflowStyle: "none",
-            }}
-          >
-            <button
-              onClick={() => setActiveChannel(null)}
-              style={{
-                display: "flex", flexDirection: "column", alignItems: "center", gap: "0.3rem",
-                flexShrink: 0, width: 72, cursor: "pointer",
-                background: "none", border: "none", padding: 0, opacity: activeChannel === null ? 1 : 0.55,
-                transition: "opacity 0.15s",
-              }}
-              onMouseEnter={(e) => { if (activeChannel !== null) e.currentTarget.style.opacity = "0.8"; }}
-              onMouseLeave={(e) => { if (activeChannel !== null) e.currentTarget.style.opacity = "0.55"; }}
-            >
-              <div
-                style={{
-                  width: 56, height: 56, borderRadius: "50%",
-                  backgroundColor: "var(--elevated)",
-                  border: "2px solid var(--accent)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "var(--accent)", fontWeight: 700, fontSize: "0.95rem",
-                  transition: "background 0.15s",
-                }}
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4v16h18V4H3zm16 14H5V8h14v10z"/></svg>
-              </div>
-              <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", textAlign: "center", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", width: "100%", whiteSpace: "nowrap" }}>
-                All
-              </span>
-            </button>
-            {subscriptions.map((sub) => (
-              <button
-                key={sub.subscribedChannel._id}
-                onClick={() => setActiveChannel(sub.subscribedChannel._id === activeChannel ? null : sub.subscribedChannel._id)}
-                style={{
-                  display: "flex", flexDirection: "column", alignItems: "center", gap: "0.3rem",
-                  flexShrink: 0, width: 72, cursor: "pointer",
-                  background: "none", border: "none", padding: 0,
-                  opacity: activeChannel === null || activeChannel === sub.subscribedChannel._id ? 1 : 0.55,
-                  transition: "opacity 0.15s",
-                  filter: activeChannel && activeChannel !== sub.subscribedChannel._id ? "grayscale(0.6)" : "none",
-                }}
-                onMouseEnter={(e) => { if (activeChannel !== sub.subscribedChannel._id) e.currentTarget.style.opacity = "0.8"; }}
-                onMouseLeave={(e) => { if (activeChannel !== sub.subscribedChannel._id) e.currentTarget.style.opacity = "0.55"; }}
-              >
-                <img
-                  src={sub.subscribedChannel.avatar}
-                  alt={sub.subscribedChannel.fullName}
-                  style={{
-                    width: 56, height: 56, borderRadius: "50%", objectFit: "cover",
-                    border: activeChannel === sub.subscribedChannel._id ? "2px solid var(--accent)" : "2px solid transparent",
-                    transition: "border-color 0.15s",
-                  }}
-                />
-                <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", textAlign: "center", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", width: "100%", whiteSpace: "nowrap" }}>
-                  {sub.subscribedChannel.fullName}
-                </span>
-              </button>
-            ))}
-          </div>
-          {canScrollRight && (
-            <button
-              onClick={() => scrollBy(1)}
-              style={{
-                position: "absolute", right: 0, top: 0, bottom: 0, zIndex: 2,
-                width: 36, background: "linear-gradient(to left, var(--bg-primary), transparent)",
-                border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 4,
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
-          )}
-        </div>
-      ) : null}
-
-      {/* Today label */}
+      
       {filteredVideos.length > 0 && (
         <div style={{ marginBottom: "var(--sp-4)" }}>
           <h2 style={{ fontSize: "1rem", fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 
 interface PageMetaProps {
   title?: string;
@@ -27,142 +27,45 @@ export function PageMeta({
   noIndex,
   jsonLd,
 }: PageMetaProps) {
-  const previousTitle = useRef("");
-  const previousMeta = useRef<Map<string, string | null>>(new Map());
-  const createdMeta = useRef<Set<string>>(new Set());
-  const createdCanonical = useRef(false);
-  const previousCanonicalHref = useRef<string | null>(null);
-  const createdJsonLd = useRef(false);
+  const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
+  const currentDesc = description || DEFAULT_DESCRIPTION;
+  const currentOgImage = ogImage || DEFAULT_OG_IMAGE;
 
+  // We need to reliably grab window.location only on the client
+  const [currentUrl, setCurrentUrl] = useState("");
   useEffect(() => {
-    previousTitle.current = document.title;
-    const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
-    document.title = fullTitle;
+    setCurrentUrl(`${window.location.origin}${window.location.pathname}${window.location.search}`);
+  }, []);
 
-    const currentUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
-    const canonicalUrl = canonical || ogUrl || currentUrl;
+  const canonicalUrl = canonical || ogUrl || currentUrl;
 
-    const setMeta = (name: string, content: string, property = false) => {
-      const attr = property ? "property" : "name";
-      const selector = `${attr}="${name}"`;
-      let el = document.querySelector<HTMLMetaElement>(`meta[${selector}]`);
-      if (!el) {
-        el = document.createElement("meta");
-        el.setAttribute(attr, name);
-        document.head.appendChild(el);
-        createdMeta.current.add(selector);
-      } else if (!previousMeta.current.has(selector)) {
-        previousMeta.current.set(selector, el.getAttribute("content"));
-      }
-      el.setAttribute("content", content);
-    };
+  return (
+    <>
+      <title>{fullTitle}</title>
+      <meta name="description" content={currentDesc} />
 
-    const removeMeta = (name: string, property = false) => {
-      const attr = property ? "property" : "name";
-      const selector = `${attr}="${name}"`;
-      const el = document.querySelector<HTMLMetaElement>(`meta[${selector}]`);
-      if (!el) return;
-      if (createdMeta.current.has(selector)) {
-        el.remove();
-        createdMeta.current.delete(selector);
-      } else if (previousMeta.current.has(selector)) {
-        const previousContent = previousMeta.current.get(selector);
-        if (previousContent) {
-          el.setAttribute("content", previousContent);
-        } else {
-          el.remove();
-        }
-        previousMeta.current.delete(selector);
-      } else {
-        el.remove();
-      }
-    };
+      <meta property="og:title" content={fullTitle} />
+      <meta property="og:description" content={currentDesc} />
+      <meta property="og:type" content={ogType} />
+      <meta property="og:site_name" content={SITE_NAME} />
+      <meta property="og:image" content={currentOgImage} />
+      {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
 
-    setMeta("description", description || DEFAULT_DESCRIPTION);
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={fullTitle} />
+      <meta name="twitter:description" content={currentDesc} />
+      <meta name="twitter:image" content={currentOgImage} />
 
-    setMeta("og:title", fullTitle, true);
-    setMeta("og:description", description || DEFAULT_DESCRIPTION, true);
-    setMeta("og:type", ogType, true);
-    setMeta("og:site_name", SITE_NAME, true);
-    setMeta("og:image", ogImage || DEFAULT_OG_IMAGE, true);
-    setMeta("og:url", ogUrl || currentUrl, true);
+      {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
 
-    setMeta("twitter:card", "summary_large_image");
-    setMeta("twitter:title", fullTitle);
-    setMeta("twitter:description", description || DEFAULT_DESCRIPTION);
-    setMeta("twitter:image", ogImage || DEFAULT_OG_IMAGE);
+      {noIndex && <meta name="robots" content="noindex, nofollow" />}
 
-    let canonicalLink = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
-    if (canonicalLink) {
-      if (previousCanonicalHref.current === null) {
-        previousCanonicalHref.current = canonicalLink.href;
-      }
-    } else {
-      canonicalLink = document.createElement("link");
-      canonicalLink.setAttribute("rel", "canonical");
-      document.head.appendChild(canonicalLink);
-      createdCanonical.current = true;
-    }
-
-    if (canonicalLink && canonicalUrl) {
-      canonicalLink.setAttribute("href", canonicalUrl);
-    }
-
-    if (noIndex) {
-      setMeta("robots", "noindex, nofollow");
-    } else {
-      removeMeta("robots");
-    }
-
-    let jsonLdScript = document.getElementById("json-ld") as HTMLScriptElement | null;
-    if (jsonLd) {
-      if (!jsonLdScript) {
-        jsonLdScript = document.createElement("script");
-        jsonLdScript.id = "json-ld";
-        jsonLdScript.type = "application/ld+json";
-        document.head.appendChild(jsonLdScript);
-        createdJsonLd.current = true;
-      }
-      jsonLdScript.textContent = JSON.stringify(jsonLd);
-    } else if (jsonLdScript && createdJsonLd.current) {
-      jsonLdScript.remove();
-    }
-
-    return () => {
-      document.title = previousTitle.current;
-
-      createdMeta.current.forEach((selector) => {
-        const el = document.querySelector<HTMLMetaElement>(`meta[${selector}]`);
-        if (el) el.remove();
-      });
-      createdMeta.current.clear();
-
-      previousMeta.current.forEach((value, selector) => {
-        const el = document.querySelector<HTMLMetaElement>(`meta[${selector}]`);
-        if (!el) return;
-        if (value) {
-          el.setAttribute("content", value);
-        } else {
-          el.remove();
-        }
-      });
-      previousMeta.current.clear();
-
-      const canonicalLinkCleanup = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
-      if (canonicalLinkCleanup) {
-        if (createdCanonical.current) {
-          canonicalLinkCleanup.remove();
-        } else if (previousCanonicalHref.current) {
-          canonicalLinkCleanup.setAttribute("href", previousCanonicalHref.current);
-        }
-      }
-
-      if (createdJsonLd.current) {
-        const jsonLdScriptCleanup = document.getElementById("json-ld");
-        if (jsonLdScriptCleanup) jsonLdScriptCleanup.remove();
-      }
-    };
-  }, [title, description, ogImage, ogType, ogUrl, canonical, noIndex, jsonLd]);
-
-  return null;
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+    </>
+  );
 }

@@ -228,34 +228,7 @@ export default function PlaylistsPage() {
                       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-4px)"; (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-lg)"; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-md)"; }}
                     >
-                      {/* Cover */}
-                      <div style={{
-                        width: "100%", height: 160,
-                        backgroundColor: "var(--elevated)",
-                        position: "relative", overflow: "hidden",
-                      }}>
-                        {(() => {
-                          const video = pl.videos[0];
-                          return video?.thumbnail ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={video.thumbnail} alt={pl.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                          ) : (
-                            <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)" }}>
-                              <PlaylistIcon />
-                            </div>
-                          );
-                        })()}
-                        <div style={{
-                          position: "absolute", bottom: 0, right: 0,
-                          background: "rgba(0,0,0,0.75)", color: "#fff",
-                          padding: "0.2rem 0.6rem", borderRadius: "6px 0 0 0",
-                          fontSize: "0.75rem", fontWeight: 600,
-                        }}>
-                          {pl.videos.length} video{pl.videos.length !== 1 ? "s" : ""}
-                        </div>
-                      </div>
-
-                      {/* Info */}
+                      
                       <div style={{ padding: "1rem 1.15rem" }}>
                         <h2 style={{
                           fontSize: "0.98rem", fontWeight: 700,

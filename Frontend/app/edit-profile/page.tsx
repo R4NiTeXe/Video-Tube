@@ -150,7 +150,7 @@ export default function EditProfilePage() {
   return (
     <main style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
       <PageMeta title="Edit Profile" description="Update your VideoTube profile." noIndex />
-      <div style={{ width: "100%", padding: "2rem" }}>
+      <div className="edit-profile-wrapper" style={{ width: "100%", padding: "2rem", boxSizing: "border-box" }}>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ display: "block" }}>
           <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.25rem" }}>Edit Profile</h1>
           <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1.5rem" }}>This is how others see you on VideoTube</p>

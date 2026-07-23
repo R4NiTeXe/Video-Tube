@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { PageMeta } from "@/src/components/PageMeta";
 import SocialLoginButtons from "@/src/components/SocialLoginButtons";
 import { useAuthStore } from "@/src/store/useAuthStore";
@@ -22,6 +23,7 @@ interface VideoResult {
 }
 
 function VideoCard({ video }: { video: VideoResult }) {
+  const queryClient = useQueryClient();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [previewing, setPreviewing] = useState(false);
   const [muted, setMuted] = useState(true);
@@ -69,11 +71,15 @@ function VideoCard({ video }: { video: VideoResult }) {
     setPreviewReady(false);
   }, []);
 
-  // Desktop: hover with delay
+  // Desktop: hover with delay & instant query prefetch
   const handleMouseEnter = useCallback(() => {
     if (isTouchDevice.current) return;
+    queryClient.prefetchQuery({
+      queryKey: ["video", video._id],
+      queryFn: async () => (await api.get(`/videos/${video._id}`)).data,
+    });
     hoverTimer.current = setTimeout(startPreview, 500);
-  }, [startPreview]);
+  }, [startPreview, queryClient, video._id]);
 
   const handleMouseLeave = useCallback(() => {
     if (isTouchDevice.current) return;
@@ -119,15 +125,19 @@ function VideoCard({ video }: { video: VideoResult }) {
       onClick={handleClick}
     >
       <div className="thumb-wrapper">
-        {/* Static thumbnail */}
+        
         <img
           src={video.thumbnail}
           alt={video.title}
           loading="lazy"
+          decoding="async"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='450' viewBox='0 0 800 450'%3E%3Crect width='100%25' height='100%25' fill='%231f2937'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%236b7280' font-size='24' font-family='sans-serif'%3EThumbnail Unavailable%3C/text%3E%3C/svg%3E";
+          }}
           style={{ opacity: previewing && previewReady ? 0 : 1, transition: "opacity 0.3s" }}
         />
 
-        {/* Video preview */}
+        
         <video
           ref={videoRef}
           src={video.videoFile}
@@ -148,7 +158,7 @@ function VideoCard({ video }: { video: VideoResult }) {
           }}
         />
 
-        {/* Hover gradient */}
+        
         {/* Buffering spinner for preview */}
         {previewing && !previewReady && (
           <div
@@ -171,7 +181,7 @@ function VideoCard({ video }: { video: VideoResult }) {
           </div>
         )}
 
-        {/* Hover gradient */}
+        
         <div
           style={{
             position: "absolute",
@@ -241,7 +251,7 @@ function VideoCard({ video }: { video: VideoResult }) {
           </button>
         )}
 
-        {/* Progress line during preview */}
+        
         {previewing && previewReady && (
           <div
             onClick={(e) => {
@@ -312,14 +322,21 @@ function VideoCard({ video }: { video: VideoResult }) {
 export default function Home() {
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
   const [welcomeMsg, setWelcomeMsg] = useState("");
+  const searchParams = useSearchParams();
+
+  const sortBy = searchParams.get("sortBy") || "createdAt";
+  const sortType = searchParams.get("sortType") || "desc";
 
   const { data: videosResp, isLoading: videosLoading } = useQuery({
-    queryKey: ["home-videos"],
+    queryKey: ["home-videos", isAuthenticated, sortBy, sortType],
     queryFn: async () => {
-      const res = await api.get("/videos?limit=50&sortBy=createdAt&sortType=desc");
+      const res = await api.get(`/videos?limit=50&sortBy=${sortBy}&sortType=${sortType}`);
       return res.data;
     },
-    enabled: isAuthenticated,
+    enabled: !!isAuthenticated,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 
   const videos: VideoResult[] = videosResp?.data?.docs || [];
@@ -363,7 +380,7 @@ export default function Home() {
         position: "relative",
         overflow: "hidden",
       }}>
-        {/* Ambient Orbs */}
+        
         <motion.div
           initial={{ scale: 0.6, opacity: 0 }}
           animate={{ scale: [0.6, 1.2, 0.9, 1.1, 0.95], opacity: [0, 0.08, 0.05, 0.08, 0.06] }}
@@ -383,7 +400,7 @@ export default function Home() {
           style={{ position: "absolute", width: 400, height: 400, borderRadius: "50%", backgroundColor: "#E63529", filter: "blur(80px)", top: "40%", left: "60%", pointerEvents: "none" }}
         />
 
-        {/* Logo Icon */}
+        
         <motion.div
           initial={{ scale: 0, rotate: -30, opacity: 0 }}
           animate={{ scale: 1, rotate: 0, opacity: 1 }}
@@ -401,7 +418,7 @@ export default function Home() {
           </svg>
         </motion.div>
 
-        {/* Title */}
+        
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -419,7 +436,7 @@ export default function Home() {
           </h1>
         </motion.div>
 
-        {/* Tagline */}
+        
         <motion.p
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -436,7 +453,7 @@ export default function Home() {
           Discover, watch, and share videos.
         </motion.p>
 
-        {/* OAuth + Auth Buttons */}
+        
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -484,7 +501,7 @@ export default function Home() {
           </Link>
         </motion.div>
 
-        {/* Footer */}
+        
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -502,24 +519,26 @@ export default function Home() {
 
   return (
     <>
-      <AnimatePresence>
-        {welcomeMsg && (
-          <motion.div
-            initial={{ opacity: 0, y: -20, x: "-50%" }}
-            animate={{ opacity: 1, y: 0, x: "-50%" }}
-            exit={{ opacity: 0, y: -20, x: "-50%" }}
-            transition={{ duration: 0.3 }}
-            style={{
-              position: "fixed", top: 20, left: "50%", zIndex: 9999,
-              padding: "12px 24px", borderRadius: 12, fontSize: 14, fontWeight: 600,
-              backgroundColor: "var(--accent)", color: "#fff",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.3)", whiteSpace: "nowrap",
-            }}
-          >
-            {welcomeMsg}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div style={{ position: "absolute", zIndex: 9999 }}>
+        <AnimatePresence>
+          {welcomeMsg && (
+            <motion.div
+              initial={{ opacity: 0, y: -20, x: "-50%" }}
+              animate={{ opacity: 1, y: 0, x: "-50%" }}
+              exit={{ opacity: 0, y: -20, x: "-50%" }}
+              transition={{ duration: 0.3 }}
+              style={{
+                position: "fixed", top: 20, left: "50%",
+                padding: "12px 24px", borderRadius: 12, fontSize: 14, fontWeight: 600,
+                backgroundColor: "var(--accent)", color: "#fff",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.3)", whiteSpace: "nowrap",
+              }}
+            >
+              {welcomeMsg}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       <PageMeta title="Home" description="Discover, watch, and share videos on VideoTube." />
 
@@ -540,10 +559,10 @@ export default function Home() {
         </div>
       ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.5rem", padding: "1.5rem 2rem" }}>
-            {videos.map((v, idx) => (
-              <motion.div key={v._id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(idx * 0.03, 0.4) }}>
+            {videos.map((v) => (
+              <div key={v._id}>
                 <VideoCard video={v} />
-              </motion.div>
+              </div>
             ))}
           </div>
         )}

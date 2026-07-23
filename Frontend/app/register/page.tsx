@@ -119,7 +119,7 @@ export default function RegisterPage() {
 
   const [step, setStep] = useState<Step>("details");
 
-  // ── Step 1 state ────────────────────────────────────────────────────────
+  
   const [formData, setFormData] = useState({
     fullName: "",
     username: "",
@@ -138,7 +138,7 @@ export default function RegisterPage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
 
-  // ── Step 2 state ────────────────────────────────────────────────────────
+  
   const [emailOtp, setEmailOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [mobileOtp, setMobileOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [emailVerified, setEmailVerified] = useState(false);
@@ -155,7 +155,7 @@ export default function RegisterPage() {
   const emailOtpRefs = useRef<(HTMLInputElement | null)[]>([]);
   const mobileOtpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // ── Shared ──────────────────────────────────────────────────────────────
+  
   const [activeField, setActiveField] = useState<ActiveField>("none");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -163,12 +163,12 @@ export default function RegisterPage() {
 
   const fullMobile = `${formData.countryCode}${formData.mobile}`;
 
-  // ── Auth redirect ───────────────────────────────────────────────────────
+  
   useEffect(() => {
     if (!authLoading && isAuthenticated) router.push("/");
   }, [isAuthenticated, authLoading, router]);
 
-  // ── Cooldown timers ─────────────────────────────────────────────────────
+  
   useEffect(() => {
     if (emailCooldown <= 0) return;
     const t = setTimeout(() => setEmailCooldown((c) => c - 1), 1000);
@@ -181,7 +181,7 @@ export default function RegisterPage() {
     return () => clearTimeout(t);
   }, [mobileCooldown]);
 
-  // ── Password match ──────────────────────────────────────────────────────
+  
   const passwordMatch: "idle" | "match" | "mismatch" =
     confirmPassword.length === 0
       ? "idle"
@@ -189,7 +189,7 @@ export default function RegisterPage() {
         ? "match"
         : "mismatch";
 
-  // ── File handlers ───────────────────────────────────────────────────────
+  
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) { setAvatarName(file.name); setAvatarPreview(URL.createObjectURL(file)); setAvatarFile(file); }
@@ -199,7 +199,7 @@ export default function RegisterPage() {
     if (file) { setCoverName(file.name); setCoverPreview(URL.createObjectURL(file)); setCoverFile(file); }
   };
 
-  // ── OTP input handler ───────────────────────────────────────────────────
+  
   const handleOtpChange = (
     index: number,
     value: string,
@@ -243,7 +243,7 @@ export default function RegisterPage() {
     }
   };
 
-  // ── Send OTPs ───────────────────────────────────────────────────────────
+  
   const sendOtps = useCallback(async (channel?: "email" | "whatsapp") => {
     setSendingOtp(true);
     setError("");
@@ -269,7 +269,7 @@ export default function RegisterPage() {
     }
   }, [formData.email, fullMobile]);
 
-  // ── Verify OTP ──────────────────────────────────────────────────────────
+  
   const verifyOtp = async (identifier: string, otp: string, isEmail: boolean) => {
     if (isEmail) setEmailVerifying(true);
     else setMobileVerifying(true);
@@ -291,7 +291,7 @@ export default function RegisterPage() {
     }
   };
 
-  // ── Step 1 → Step 2 ────────────────────────────────────────────────────
+  
   const handleDetailsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -332,7 +332,7 @@ export default function RegisterPage() {
     setStep("otp");
   };
 
-  // ── Step 2 → Step 3 ────────────────────────────────────────────────────
+  
   const bothVerified = emailVerified || mobileVerified;
 
   const handleFinalRegister = async () => {
@@ -374,7 +374,7 @@ export default function RegisterPage() {
     }
   };
 
-  // ── Step 3: auto-redirect ──────────────────────────────────────────────
+  
   useEffect(() => {
     if (step === "done") {
       const t = setTimeout(() => router.push("/"), 2500);
@@ -383,7 +383,7 @@ export default function RegisterPage() {
     return;
   }, [step, router]);
 
-  // ── Loading guard ───────────────────────────────────────────────────────
+  
   if (authLoading) {
     return (
       <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
@@ -401,7 +401,7 @@ export default function RegisterPage() {
     passwordMatch === "match" ? "input input-success" :
     passwordMatch === "mismatch" ? "input input-error" : "input";
 
-  // ── Step titles ─────────────────────────────────────────────────────────
+  
   const stepNumber = step === "details" ? 1 : step === "otp" ? 2 : 3;
   const stepTitle = step === "details"
     ? "Create an account"
@@ -419,86 +419,7 @@ export default function RegisterPage() {
       <PageMeta title="Create Account" description="Join VideoTube today — create your account and start sharing videos." noIndex />
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)", display: "flex", overflow: "hidden" }}>
 
-      {/* LEFT: FORM */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", zIndex: 10, backgroundColor: "var(--bg-primary)", overflowY: "auto" }}>
-
-        <header style={{ padding: "1.75rem 2rem", display: "flex", alignItems: "center", flexShrink: 0 }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.55rem" }}>
-            <div style={{ width: 32, height: 32, borderRadius: "8px", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
-              <PlayLogo />
-            </div>
-            <span style={{ fontWeight: 800, fontSize: "1.15rem", letterSpacing: "-0.04em", color: "var(--text-primary)" }}>
-              Video<span style={{ color: "var(--text-muted)" }}>Tube</span>
-            </span>
-          </Link>
-        </header>
-
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem 2rem 4rem" }}>
-          <motion.div
-            initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.45 }}
-            style={{ width: "100%", maxWidth: "460px" }}
-          >
-            {/* Step indicator */}
-            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "1rem" }}>
-              {[1, 2, 3].map((s) => (
-                <div key={s} style={{
-                  width: 28, height: 28, borderRadius: "50%",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "0.75rem", fontWeight: 700,
-                  backgroundColor: stepNumber >= s ? "var(--accent)" : "var(--elevated)",
-                  color: stepNumber >= s ? "#fff" : "var(--text-muted)",
-                  border: stepNumber >= s ? "none" : "1px solid var(--border)",
-                  transition: "all 0.3s",
-                }}>
-                  {stepNumber > s ? <CheckIcon /> : s}
-                </div>
-              ))}
-              <div style={{ flex: 1, height: 2, backgroundColor: "var(--border)", borderRadius: 1, marginLeft: "0.3rem" }}>
-                <motion.div
-                  animate={{ width: `${((stepNumber - 1) / 2) * 100}%` }}
-                  transition={{ duration: 0.4 }}
-                  style={{ height: "100%", backgroundColor: "var(--accent)", borderRadius: 1 }}
-                />
-              </div>
-            </div>
-
-            {/* Back button for OTP step */}
-            {step === "otp" && (
-              <motion.button
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                onClick={() => { setStep("details"); setError(""); setEmailOtpError(""); setMobileOtpError(""); }}
-                type="button"
-                style={{
-                  display: "flex", alignItems: "center", gap: "0.4rem",
-                  background: "none", border: "none", color: "var(--text-muted)",
-                  fontSize: "0.82rem", fontWeight: 500, cursor: "pointer",
-                  marginBottom: "0.75rem", padding: 0,
-                }}
-              >
-                <ArrowLeftIcon /> Back to details
-              </motion.button>
-            )}
-
-            <h1 style={{ fontSize: "1.9rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.4rem", letterSpacing: "-0.03em" }}>
-              {stepTitle}
-            </h1>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", marginBottom: "1.75rem" }}>
-              {stepSub}
-            </p>
-
-            <AnimatePresence>
-              {error && (
-                <motion.div role="alert" aria-live="polite" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                  style={{ padding: "0.7rem 1rem", backgroundColor: "var(--error-subtle)", color: "var(--error)", borderRadius: "var(--radius-md)", marginBottom: "1.25rem", fontSize: "0.85rem", border: "1px solid var(--error)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <XIcon /> {error}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* ══════════════════════════════════════════════════════════════ */}
-            {/* STEP 1: DETAILS                                              */}
-            {/* ══════════════════════════════════════════════════════════════ */}
+      
             <AnimatePresence mode="wait">
               {step === "details" && (
                 <motion.div
@@ -518,90 +439,7 @@ export default function RegisterPage() {
 
                   <form onSubmit={handleDetailsSubmit} style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
 
-                    {/* Row 1: Full Name + Username */}
-                    <div className="responsive-grid-2" style={{ gap: "var(--sp-3)" }}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                        <label htmlFor="reg-name" className="text-caption" style={{ color: "var(--text-secondary)" }}>Full Name</label>
-                        <div className="input-wrapper">
-                          <input type="text" required placeholder="Your name" className="input" id="reg-name" autoComplete="name"
-                            value={formData.fullName}
-                            onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                            onFocus={() => setActiveField("name")} onBlur={() => setActiveField("none")} />
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                        <label htmlFor="reg-username" className="text-caption" style={{ color: "var(--text-secondary)" }}>Username</label>
-                        <div className="input-wrapper">
-                          <input type="text" required placeholder="Your username" className="input" id="reg-username" autoComplete="username"
-                            value={formData.username}
-                            onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/\s/g, "") })}
-                            onFocus={() => setActiveField("username")} onBlur={() => setActiveField("none")} />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Row 2: Email */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                      <label htmlFor="reg-email" className="text-caption" style={{ color: "var(--text-secondary)" }}>Email</label>
-                      <div className="input-wrapper">
-                        <input type="email" required placeholder="Your email" className="input" id="reg-email" autoComplete="email"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          onFocus={() => setActiveField("email")} onBlur={() => setActiveField("none")} />
-                      </div>
-                    </div>
-
-                    {/* Row 3: Mobile */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                      <label htmlFor="reg-mobile" className="text-caption" style={{ color: "var(--text-secondary)" }}>Mobile Number</label>
-                      <div style={{ display: "flex", gap: 0 }}>
-                        <div style={{ position: "relative" }}>
-                          <select
-                            value={formData.countryCode}
-                            onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
-                            className="input select"
-                            style={{
-                              width: "auto",
-                              borderRadius: "var(--radius-md) 0 0 var(--radius-md)",
-                              borderRight: "none",
-                              padding: "0 var(--sp-8) 0 var(--sp-3)",
-                              fontWeight: 600,
-                              fontSize: 13,
-                            }}
-                            aria-label="Country code"
-                          >
-                            {COUNTRIES.map((c) => (
-                              <option key={c.iso + c.code} value={c.code}>{c.iso.toUpperCase()} {c.code}</option>
-                            ))}
-                          </select>
-                          <div style={{ position: "absolute", right: "0.5rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-muted)" }}>
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-                          </div>
-                        </div>
-                        <div style={{ position: "relative", flex: 1 }}>
-                          <div style={{ position: "absolute", left: "var(--sp-3)", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
-                            <FlagImg iso={COUNTRIES.find(c => c.code === formData.countryCode)?.iso || "in"} size={16} />
-                          </div>
-                          <input
-                            type="tel" required placeholder="Your number"
-                            className="input"
-                            id="reg-mobile"
-                            autoComplete="tel"
-                            value={formData.mobile}
-                            onChange={(e) => setFormData({ ...formData, mobile: e.target.value.replace(/\D/g, "") })}
-                            onFocus={() => setActiveField("email")} onBlur={() => setActiveField("none")}
-                            style={{
-                              paddingLeft: "var(--sp-8)",
-                              borderRadius: "0 var(--radius-md) var(--radius-md) 0",
-                              letterSpacing: "0.03em",
-                              fontSize: 13,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-{/* Row 4: Password */}
+                    
                     <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
                       <label htmlFor="reg-password" className="text-caption" style={{ color: "var(--text-secondary)" }}>Password</label>
                       <div className="password-field" style={{ position: "relative" }}>
@@ -618,38 +456,7 @@ export default function RegisterPage() {
                       <PasswordStrengthBar password={formData.password} />
                     </div>
 
-                    {/* Row 5: Confirm Password */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                      <label htmlFor="reg-confirm" className="text-caption" style={{ color: "var(--text-secondary)" }}>Confirm Password</label>
-                      <div className="password-field" style={{ position: "relative" }}>
-                        <input type={showConfirmPassword ? "text" : "password"} required placeholder="Password" id="reg-confirm" autoComplete="new-password"
-                          className={confirmBorderClass}
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          onPaste={(e) => e.preventDefault()}
-                          onCopy={(e) => e.preventDefault()}
-                          onCut={(e) => e.preventDefault()}
-                          onFocus={() => setActiveField("confirmPassword")} onBlur={() => setActiveField("none")}
-                          style={{ paddingRight: "var(--sp-12)" }} />
-                        <button type="button" className="password-toggle" onClick={() => setShowConfirmPassword((p) => !p)} onMouseDown={(e) => e.preventDefault()}
-                          aria-label={showConfirmPassword ? "Hide password" : "Show password"}>
-                          {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
-                        </button>
-                      </div>
-                      <AnimatePresence>
-                        {passwordMatch !== "idle" && (
-                          <motion.p key={passwordMatch} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-                            transition={{ duration: 0.2 }}
-                            className="text-caption"
-                            style={{ color: passwordMatch === "match" ? matchColour : mismatchColour, display: "flex", alignItems: "center", gap: "var(--sp-1)", marginTop: "var(--sp-1)" }}>
-                            {passwordMatch === "match" ? <CheckIcon /> : <XIcon />}
-                            {passwordMatch === "match" ? "Passwords match" : "Passwords do not match"}
-                          </motion.p>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* Row 6: Profile Photo */}
+                    
                     <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
                       <label className="text-caption" style={{ color: "var(--text-secondary)" }}>
                         Profile Photo <span style={{ color: "var(--accent)" }}>*</span>
@@ -657,69 +464,9 @@ export default function RegisterPage() {
                       <div className={`upload-zone ${avatarPreview ? "has-file" : ""}`}
                         onMouseEnter={() => setActiveField("avatar")} onMouseLeave={() => setActiveField("none")}
                         style={{ flexDirection: "row", gap: "var(--sp-3)", padding: "var(--sp-3)", justifyContent: "flex-start", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1.5px dashed var(--border)", cursor: "pointer", transition: "all 0.2s" }}>
-                        <input type="file" accept="image/*" ref={avatarRef} onChange={handleAvatarChange} aria-label="Profile photo upload" />
-                        {avatarPreview
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          ? <img src={avatarPreview} alt="Avatar" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--accent)", flexShrink: 0 }} />
-                          : <div style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "var(--elevated)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", flexShrink: 0 }}><UserCircleIcon /></div>
-                        }
-                        <div style={{ textAlign: "left" }}>
-                          <p style={{ fontSize: 13, fontWeight: 600, color: avatarPreview ? "var(--success)" : "var(--text-primary)" }}>{avatarName || "Upload profile photo"}</p>
-                          <p style={{ fontSize: 11, color: "var(--text-muted)" }}>JPG, PNG, WEBP — max 5 MB</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Row 7: Channel Banner */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                      <label className="text-caption" style={{ color: "var(--text-secondary)" }}>
-                        Channel Banner <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(optional)</span>
-                      </label>
-                      <div className={`upload-zone ${coverPreview ? "has-file" : ""}`}
-                        onMouseEnter={() => setActiveField("cover")} onMouseLeave={() => setActiveField("none")}
-                        style={{ padding: 0, height: 56, backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1.5px dashed var(--border)", cursor: "pointer", overflow: "hidden", transition: "all 0.2s" }}>
-                        <input type="file" accept="image/*" ref={coverRef} onChange={handleCoverChange} aria-label="Channel banner upload" />
-                        {coverPreview
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          ? <img src={coverPreview} alt="Cover" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "var(--radius-md)" }} />
-                          : <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", gap: "var(--sp-2)" }}>
-                            <div style={{ color: "var(--text-muted)" }}><UploadImageIcon /></div>
-                            <p style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 500 }}>{coverName || "Upload channel banner"}</p>
-                          </div>
-                        }
-                      </div>
-                    </div>
-
-                    <button type="submit" className="btn btn-primary" disabled={passwordMatch === "mismatch"}
-                      onMouseEnter={() => setActiveField("submit")} onMouseLeave={() => setActiveField("none")}
-                      style={{ marginTop: "var(--sp-1)", width: "100%" }}>
-                      Continue to Verification
-                    </button>
-                  </form>
-
-                  <p style={{ marginTop: "var(--sp-4)", textAlign: "center", fontSize: 13, color: "var(--text-muted)" }}>
-                    Already have an account?{" "}
-                    <Link href="/login" style={{ color: "var(--text-primary)", fontWeight: 700, textDecoration: "underline" }}>
-                      Sign in
-                    </Link>
-                  </p>
-                </motion.div>
-              )}
-
-              {/* ════════════════════════════════════════════════════════════ */}
-              {/* STEP 2: OTP VERIFICATION                                   */}
-              {/* ════════════════════════════════════════════════════════════ */}
-              {step === "otp" && (
-                <motion.div
-                  key="otp"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <form onSubmit={(e) => e.preventDefault()} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-
-                    {/* ── Channel Picker (show when no channel selected and not verified) ── */}
+                        <input type="file" accept="image
+              
+              
                     {!verifyChannel && !emailVerified && !mobileVerified && (
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
@@ -780,7 +527,7 @@ export default function RegisterPage() {
                       </motion.div>
                     )}
 
-                    {/* ── Email OTP (shown when email channel selected) ── */}
+                    
                     {verifyChannel === "email" && !emailVerified && (
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
@@ -830,7 +577,7 @@ export default function RegisterPage() {
                       </motion.div>
                     )}
 
-                    {/* ── WhatsApp OTP (shown when whatsapp channel selected) ── */}
+                    
                     {verifyChannel === "whatsapp" && !mobileVerified && (
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
@@ -880,7 +627,7 @@ export default function RegisterPage() {
                       </motion.div>
                     )}
 
-                    {/* ── Verified indicator ── */}
+                    
                     <AnimatePresence>
                       {(emailVerified || mobileVerified) && (
                         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
@@ -893,7 +640,7 @@ export default function RegisterPage() {
                       )}
                     </AnimatePresence>
 
-                    {/* ── Create Account button ── */}
+                    
                     <motion.button type="button" disabled={!(emailVerified || mobileVerified) || isLoading}
                       onClick={handleFinalRegister} className="btn btn-primary"
                       whileHover={(emailVerified || mobileVerified) && !isLoading ? { scale: 1.01 } : {}}
@@ -902,7 +649,7 @@ export default function RegisterPage() {
                       {isLoading ? statusText || "Processing..." : "Create Account"}
                     </motion.button>
 
-                    {/* ── Back button ── */}
+                    
                     <button type="button" onClick={() => { setStep("details"); setVerifyChannel(null); }}
                       style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.82rem", cursor: "pointer", textAlign: "center", width: "100%" }}>
                       ← Back to details
@@ -911,56 +658,7 @@ export default function RegisterPage() {
                 </motion.div>
               )}
 
-              {/* ════════════════════════════════════════════════════════════ */}
-              {/* STEP 3: DONE                                                */}
-              {/* ════════════════════════════════════════════════════════════ */}
-              {step === "done" && (
-                <motion.div
-                  key="done"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5, type: "spring" }}
-                  style={{ textAlign: "center", padding: "2rem 0" }}
-                >
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.15, type: "spring", stiffness: 200 }}
-                    style={{
-                      width: 80, height: 80, borderRadius: "50%",
-                      backgroundColor: "rgba(34, 197, 94, 0.1)",
-                      border: "2.5px solid var(--success)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      margin: "0 auto 1.5rem",
-                      color: "var(--success)",
-                    }}
-                  >
-                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                  </motion.div>
-
-                  <h2 style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.5rem" }}>
-                    Account created!
-                  </h2>
-                  <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
-                    Welcome to VideoTube. Redirecting you now...
-                  </p>
-
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: "100%" }}
-                    transition={{ duration: 2.5, ease: "linear" }}
-                    style={{ height: 3, backgroundColor: "var(--accent)", borderRadius: 2, marginTop: "2rem" }}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        </div>
-      </div>
-
-      {/* RIGHT: MASCOT */}
+              
       <div style={{ flex: 1.2, backgroundColor: "var(--elevated)", borderLeft: "1px solid var(--border-medium)" }} className="mascot-panel">
         <MascotAnimation
           activeField={activeField}

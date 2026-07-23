@@ -7,13 +7,18 @@ import { useThemeStore } from "@/src/store/useThemeStore";
 import { useSSE } from "@/src/hooks/useSSE";
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { login, logout, setLoading } = useAuthStore();
+  const { login, logout, setLoading, isAuthenticated } = useAuthStore();
   const hydrateTheme = useThemeStore((s) => s.hydrate);
   useSSE();
 
   useEffect(() => {
     hydrateTheme();
     const checkAuth = async () => {
+      // If already authenticated from persisted session, verify silently in background
+      // without setting isLoading=true (avoids page flash on navigation)
+      if (!isAuthenticated) {
+        setLoading(true);
+      }
       try {
         const response = await api.get("/users/current-user");
         login(response.data.data);
@@ -25,7 +30,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     };
 
     checkAuth();
-  }, [login, logout, setLoading, hydrateTheme]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return <>{children}</>;
 }

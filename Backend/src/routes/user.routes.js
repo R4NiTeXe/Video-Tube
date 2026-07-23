@@ -107,19 +107,16 @@ router.route("/forgot-password").post(authLimiter, validateBody(userSchemas.forg
 router.route("/reset-password").post(authLimiter, validateBody(userSchemas.resetPassword.body), resetPassword);
 router.route("/social-login").post(authLimiter, validateBody(userSchemas.socialLogin.body), socialLogin);
 
-// ── Forgot Password OTP Flow ──
 router.route("/send-forgot-otp").post(authLimiter, validateBody(userSchemas.sendForgotPasswordOTP.body), forgotPasswordOTP);
 router.route("/verify-forgot-otp").post(authLimiter, validateBody(userSchemas.verifyResetOTP.body), verifyResetOTP);
 router.route("/reset-password-token").post(authLimiter, validateBody(userSchemas.resetPasswordWithOTP.body), resetPasswordWithOTP);
 router.route("/skip-and-login").post(authLimiter, validateBody(userSchemas.skipAndLogin.body), skipAndLogin);
 
-// ── OTP Auth (Legacy) ──
 router.route("/otp/send").post(authLimiter, validateBody(otpSchemas.sendOtp.body), sendOtp);
 router.route("/otp/verify").post(authLimiter, validateBody(otpSchemas.verifyOtp.body), verifyOtp);
 router.route("/otp/resend").post(authLimiter, validateBody(otpSchemas.resendOtp.body), resendOtp);
 router.route("/otp/usage").get(verifyJWT, validateQuery(otpSchemas.getOtpUsage.query), getOtpUsage);
 
-// ── Unified Registration Flow ──
 router.route("/send-registration-otp").post(authLimiter, validateBody(userSchemas.sendRegistrationOTP.body), sendRegistrationOTP);
 router.route("/verify-registration-otp").post(authLimiter, validateBody(userSchemas.verifyRegistrationOTP.body), verifyRegistrationOTP);
 router.route("/register-unified").post(
@@ -132,11 +129,9 @@ router.route("/register-unified").post(
   registerUnified
 );
 
-// ── OTP Login (Passwordless) ──
 router.route("/send-login-otp").post(authLimiter, validateBody(userSchemas.sendLoginOTP.body), sendLoginOTP);
 router.route("/verify-login-otp").post(authLimiter, validateBody(userSchemas.verifyLoginOTP.body), verifyLoginOTP);
 
-// ── Mobile Route Aliases ──
 router.route("/mobile/send-login-otp").post(authLimiter, validateBody(userSchemas.mobileSendLoginOTP.body), (req, _, next) => { req.body.identifier = req.body.mobile; next(); }, sendLoginOTP);
 router.route("/mobile/login").post(authLimiter, validateBody(userSchemas.mobileVerifyLoginOTP.body), (req, _, next) => { req.body.identifier = req.body.mobile; next(); }, verifyLoginOTP);
 router.route("/mobile/send-registration-otp").post(authLimiter, validateBody(userSchemas.mobileSendRegistrationOTP.body), (req, _, next) => { req.body.identifier = req.body.mobile; next(); }, sendRegistrationOTP);
