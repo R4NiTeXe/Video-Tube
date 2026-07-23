@@ -200,7 +200,7 @@ export default function SearchPage() {
             )}
           </div>
         </form>
-
+      </div>
         
       <div style={{ maxWidth: 1400, margin: "0 auto", padding: "1.5rem 2rem" }}>
 
@@ -242,66 +242,125 @@ export default function SearchPage() {
 
         
         {!showSuggestions && (
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              
-                              <img src={v.thumbnail} alt={v.title} loading="lazy" />
-                              <div className="thumb-overlay">
-                                <div className="play-circle"><PlaySmall /></div>
-                              </div>
-                              <span className="duration-badge">{formatDuration(v.duration)}</span>
-                            </div>
-                            <div className="card-info">
-                              <h2 className="card-title">{v.title}</h2>
-                              <div className="card-meta">
-                                <span className="channel-name">{v.owner?.fullName}</span>
-                                <span>&middot;</span>
-                                <span>{formatViews(v.views)} views</span>
-                              </div>
-                            </div>
-                          </Link>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+          <>
+            {/* TABS */}
+            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem", borderBottom: "1px solid var(--border)", paddingBottom: "0.5rem" }}>
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    background: activeTab === tab.key ? "var(--accent-subtle)" : "none",
+                    color: activeTab === tab.key ? "var(--accent)" : "var(--text-secondary)",
+                    border: "none",
+                    borderRadius: "var(--radius-md)",
+                    fontWeight: activeTab === tab.key ? 700 : 500,
+                    cursor: "pointer",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
 
-              
-                            <img src={ch.avatar} alt={ch.fullName} style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border)" }} />
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <p style={{ fontWeight: 700, fontSize: "0.92rem", color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ch.fullName}</p>
-                              <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>@{ch.username}{typeof ch.subscribersCount === "number" ? ` · ${formatViews(ch.subscribersCount)} subscribers` : ""}</p>
-                            </div>
-                          </Link>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                
+                {/* VIDEOS TAB */}
+                {activeTab === "videos" && (
+                  <div>
+                    {videosLoading ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>Loading videos...</div>
+                    ) : videos.length === 0 ? (
+                      <p style={{ textAlign: "center", color: "var(--text-muted)", padding: "2rem 0" }}>No videos found.</p>
+                    ) : (
+                      <div className="video-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1.25rem" }}>
+                        {videos.map(v => (
+                          <motion.div key={v._id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                            <Link href={`/videos/${v._id}`} className="video-card" style={{ textDecoration: "none" }}>
+                              <div className="thumb-wrapper" style={{ position: "relative", width: "100%", aspectRatio: "16/9", borderRadius: "var(--radius-lg)", overflow: "hidden", backgroundColor: "var(--bg-secondary)" }}>
+                                <img src={v.thumbnail} alt={v.title} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                <div className="thumb-overlay">
+                                  <div className="play-circle"><PlaySmall /></div>
+                                </div>
+                                <span className="duration-badge" style={{ position: "absolute", bottom: 6, right: 6, background: "rgba(0,0,0,0.8)", color: "#fff", padding: "2px 6px", borderRadius: 4, fontSize: "0.75rem", fontWeight: 600 }}>{formatDuration(v.duration)}</span>
+                              </div>
+                              <div className="card-info" style={{ marginTop: "0.75rem" }}>
+                                <h2 className="card-title" style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.25rem" }}>{v.title}</h2>
+                                <div className="card-meta" style={{ display: "flex", gap: "0.5rem", fontSize: "0.8rem", color: "var(--text-muted)", alignItems: "center" }}>
+                                  <span className="channel-name">{v.owner?.fullName}</span>
+                                  <span>&middot;</span>
+                                  <span>{formatViews(v.views)} views</span>
+                                </div>
+                              </div>
+                            </Link>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-              
-                            <img src={u.avatar} alt={u.fullName} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border)", flexShrink: 0 }} />
-                            <div style={{ minWidth: 0 }}>
-                              <p style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{u.fullName}</p>
-                              <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>@{u.username}</p>
-                            </div>
-                          </Link>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
+                {/* CHANNELS TAB */}
+                {activeTab === "channels" && (
+                  <div>
+                    {channelsLoading ? (
+                      <div>Loading channels...</div>
+                    ) : channels.length === 0 ? (
+                      <p style={{ textAlign: "center", color: "var(--text-muted)", padding: "2rem 0" }}>No channels found.</p>
+                    ) : (
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "1rem" }}>
+                        {channels.map(ch => (
+                          <motion.div key={ch._id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                            <Link href={`/channel/${ch.username}`} style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1rem", borderRadius: "var(--radius-lg)", backgroundColor: "var(--card)", textDecoration: "none", border: "1px solid var(--border)" }}>
+                              <img src={ch.avatar} alt={ch.fullName} style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border)" }} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ fontWeight: 700, fontSize: "0.92rem", color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ch.fullName}</p>
+                                <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>@{ch.username}{typeof ch.subscribersCount === "number" ? ` · ${formatViews(ch.subscribersCount)} subscribers` : ""}</p>
+                              </div>
+                            </Link>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* USERS TAB */}
+                {activeTab === "users" && (
+                  <div>
+                    {usersLoading ? (
+                      <div>Loading users...</div>
+                    ) : users.length === 0 ? (
+                      <p style={{ textAlign: "center", color: "var(--text-muted)", padding: "2rem 0" }}>No users found.</p>
+                    ) : (
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem" }}>
+                        {users.map(u => (
+                          <motion.div key={u._id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                            <Link href={`/channel/${u.username}`} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem", borderRadius: "var(--radius-lg)", backgroundColor: "var(--card)", textDecoration: "none", border: "1px solid var(--border)" }}>
+                              <img src={u.avatar} alt={u.fullName} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border)", flexShrink: 0 }} />
+                              <div style={{ minWidth: 0 }}>
+                                <p style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{u.fullName}</p>
+                                <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>@{u.username}</p>
+                              </div>
+                            </Link>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </>
         )}
       </div>
     </div>

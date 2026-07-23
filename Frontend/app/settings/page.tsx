@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { api, getApiErrorMessage } from "@/src/services/api";
+import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
-import { useThemeStore } from "@/src/store/useThemeStore";
+// import { useThemeStore } from "@/src/store/useThemeStore";
 import { PageMeta } from "@/src/components/PageMeta";
 import { motion } from "framer-motion";
 
@@ -73,18 +73,15 @@ const LANGUAGES = ["English", "Spanish", "French", "Hindi", "Japanese", "Korean"
 export default function SettingsPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading, logout } = useAuthStore();
-  const { theme, toggleTheme } = useThemeStore();
+  // const { theme, toggleTheme } = useThemeStore();
 
   // Password
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
-  const [passwordSuccess, setPasswordSuccess] = useState("");
-  const [passwordError, setPasswordError] = useState("");
   const [changePasswordOtp, setChangePasswordOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
-  const [_otpVerified, setOtpVerified] = useState(false);
   const [otpSending, setOtpSending] = useState(false);
   const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
   const [forgotOtpSent, setForgotOtpSent] = useState(false);
@@ -100,22 +97,12 @@ export default function SettingsPage() {
   const [notifMentions, setNotifMentions] = useState(true);
   const [notifSaving, setNotifSaving] = useState(false);
 
-  // Privacy
-  const [privateSubs, setPrivateSubs] = useState(false);
-  const [showSubsList, setShowSubsList] = useState(true);
-  const [privacySaving, setPrivacySaving] = useState(false);
-  const [privacyMsg, setPrivacyMsg] = useState("");
 
   // Language
   const [language, setLanguage] = useState("English");
   const [langSaving, setLangSaving] = useState(false);
   const [langMsg, setLangMsg] = useState("");
 
-  // Content defaults
-  const [defaultVisibility, setDefaultVisibility] = useState("public");
-  const [defaultCategory, setDefaultCategory] = useState("General");
-  const [defaultsSaving, setDefaultsSaving] = useState(false);
-  const [defaultsMsg, setDefaultsMsg] = useState("");
 
   // Sessions
   const [sessions, setSessions] = useState<Array<{ _id: string; deviceName: string; location: string; lastActiveAt: string; isCurrent: boolean }>>([]);
@@ -131,16 +118,7 @@ export default function SettingsPage() {
     api.get("/otp/usage").then((res) => setOtpUsage(res.data.data)).catch(() => {});
   };
 
-  // Delete
-  const [deletePassword, setDeletePassword] = useState("");
-  const [deleteConfirm, setDeleteConfirm] = useState("");
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState("");
-  const [deleteStep, setDeleteStep] = useState<1 | 2 | 3>(1);
-  const [deleteOtp, setDeleteOtp] = useState("");
-  const [deleteOtpSent, setDeleteOtpSent] = useState(false);
-  const [deleteOtpSending, setDeleteOtpSending] = useState(false);
-  const [deleteChannel, setDeleteChannel] = useState<"email" | "whatsapp">("email");
+
 
   const ProfileCard = () => user ? (
     <div className="form-card" style={{ padding: "1.5rem", marginBottom: "1.5rem" }}>
@@ -189,16 +167,13 @@ export default function SettingsPage() {
 
   
   const handleSendChangePasswordOtp = async () => {
-    setPasswordError(""); setPasswordSuccess("");
-    if (!oldPassword) { setPasswordError("Please enter your current password first."); return; }
+    if (!oldPassword) { return; }
     setOtpSending(true);
     try {
       await api.post("/users/send-change-password-otp", { oldPassword, channel: changePasswordChannel });
       setOtpSent(true);
-      setPasswordSuccess(`OTP sent to your ${changePasswordChannel === "whatsapp" ? "WhatsApp" : "email"}.`);
       refreshOtpUsage();
     } catch (err: unknown) {
-      setPasswordError(getApiErrorMessage(err, "Failed to send OTP."));
     } finally {
       setOtpSending(false);
     }
@@ -206,32 +181,27 @@ export default function SettingsPage() {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPasswordError(""); setPasswordSuccess("");
-    if (newPassword !== confirmPassword) { setPasswordError("New passwords do not match."); return; }
-    if (newPassword.length < 6) { setPasswordError("New password must be at least 6 characters."); return; }
-    if (!changePasswordOtp || changePasswordOtp.length !== 6) { setPasswordError("Please enter the 6-digit OTP."); return; }
+    if (newPassword !== confirmPassword) { return; }
+    if (newPassword.length < 6) { return; }
+    if (!changePasswordOtp || changePasswordOtp.length !== 6) { return; }
     setPasswordSaving(true);
     try {
       await api.post("/users/verify-change-password", { oldPassword, newPassword, otp: changePasswordOtp, channel: changePasswordChannel });
-      setPasswordSuccess("Password changed successfully! Please log in again.");
       setOldPassword(""); setNewPassword(""); setConfirmPassword(""); setChangePasswordOtp("");
-      setOtpSent(false); setOtpVerified(false);
+      setOtpSent(false);
       setTimeout(() => { logout(); router.push("/login"); }, 2000);
-    } catch (err: unknown) { setPasswordError(getApiErrorMessage(err, "Failed to change password.")); }
+    } catch (err: unknown) { }
     finally { setPasswordSaving(false); }
   };
 
   
   const handleSendForgotOtp = async () => {
-    setPasswordError(""); setPasswordSuccess("");
     setForgotOtpSending(true);
     try {
       await api.post("/users/send-forgot-password-change-otp", { channel: forgotChannel });
       setForgotOtpSent(true);
-      setPasswordSuccess(`OTP sent to your ${forgotChannel === "whatsapp" ? "WhatsApp" : "email"}.`);
       refreshOtpUsage();
     } catch (err: unknown) {
-      setPasswordError(getApiErrorMessage(err, "Failed to send OTP."));
     } finally {
       setForgotOtpSending(false);
     }
@@ -239,56 +209,19 @@ export default function SettingsPage() {
 
   const handleForgotPasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPasswordError(""); setPasswordSuccess("");
-    if (newPassword !== confirmPassword) { setPasswordError("New passwords do not match."); return; }
-    if (newPassword.length < 6) { setPasswordError("New password must be at least 6 characters."); return; }
-    if (!changePasswordOtp || changePasswordOtp.length !== 6) { setPasswordError("Please enter the 6-digit OTP."); return; }
+    if (newPassword !== confirmPassword) { return; }
+    if (newPassword.length < 6) { return; }
+    if (!changePasswordOtp || changePasswordOtp.length !== 6) { return; }
     setPasswordSaving(true);
     try {
       await api.post("/users/verify-and-reset-password-via-otp", { newPassword, otp: changePasswordOtp, channel: forgotChannel });
-      setPasswordSuccess("Password reset successfully! Please log in again.");
       setNewPassword(""); setConfirmPassword(""); setChangePasswordOtp("");
       setForgotOtpSent(false); setForgotPasswordMode(false);
       setTimeout(() => { logout(); router.push("/login"); }, 2000);
-    } catch (err: unknown) { setPasswordError(getApiErrorMessage(err, "Failed to reset password.")); }
+    } catch (err: unknown) { }
     finally { setPasswordSaving(false); }
   };
 
-  
-  const handleDeleteStep1 = () => {
-    setDeleteError("");
-    if (!deletePassword) { setDeleteError("Please enter your password."); return; }
-    setDeleteStep(2);
-  };
-
-  const handleSendDeleteOtp = async () => {
-    setDeleteError("");
-    setDeleteOtpSending(true);
-    try {
-      await api.post("/users/send-delete-account-otp", { password: deletePassword, channel: deleteChannel });
-      setDeleteOtpSent(true);
-      refreshOtpUsage();
-    } catch (err: unknown) {
-      setDeleteError(getApiErrorMessage(err, "Failed to send OTP."));
-    } finally {
-      setDeleteOtpSending(false);
-    }
-  };
-
-  const handleDeleteAccount = async () => {
-    setDeleteError("");
-    if (deleteConfirm !== "DELETE") return;
-    if (!deleteOtp || deleteOtp.length !== 6) { setDeleteError("Please enter the 6-digit OTP."); return; }
-    setDeleting(true);
-    try {
-      await api.post("/users/verify-and-delete-account", { password: deletePassword, otp: deleteOtp, channel: deleteChannel });
-      logout();
-      router.push("/login");
-    } catch (err: unknown) {
-      setDeleteError(getApiErrorMessage(err, "Failed to delete account."));
-      setDeleting(false);
-    }
-  };
 
   
   const handleSaveNotificationPrefs = async () => {
@@ -308,25 +241,10 @@ export default function SettingsPage() {
     }
   };
 
-  
-  const handleSavePrivacy = async () => {
-    setPrivacyMsg(""); setPrivacySaving(true);
-    try { await api.patch("/users/privacy", { privateSubs, showSubsList }); setPrivacyMsg("Saved"); } catch (err) { console.error("Failed to save privacy", err); setPrivacyMsg("Failed to save"); }
-    finally { setPrivacySaving(false); setTimeout(() => setPrivacyMsg(""), 3000); }
-  };
-
-  
   const handleSaveLanguage = async () => {
     setLangMsg(""); setLangSaving(true);
     try { await api.patch("/users/language", { language }); setLangMsg("Saved"); } catch (err) { console.error("Failed to save language", err); setLangMsg("Failed to save"); }
     finally { setLangSaving(false); setTimeout(() => setLangMsg(""), 3000); }
-  };
-
-  
-  const handleSaveDefaults = async () => {
-    setDefaultsMsg(""); setDefaultsSaving(true);
-    try { await api.patch("/users/content-defaults", { defaultVisibility, defaultCategory }); setDefaultsMsg("Saved"); } catch (err) { console.error("Failed to save defaults", err); setDefaultsMsg("Failed to save"); }
-    finally { setDefaultsSaving(false); setTimeout(() => setDefaultsMsg(""), 3000); }
   };
 
   
@@ -372,12 +290,32 @@ export default function SettingsPage() {
 
         <ProfileCard />
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-            
+        <div className="form-card" style={{ padding: "1.5rem", marginBottom: "1.5rem" }}>
+          <SectionHeader
+            icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
+            title="Change Password"
+            description={forgotPasswordMode ? "Reset your password via OTP" : "Update your account password securely"}
+          />
 
-            <div className="settings-grid">
+          {!forgotPasswordMode ? (
+            <form onSubmit={handleChangePassword} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              <div className="settings-grid">
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  <label htmlFor="old-pw" style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Current Password</label>
+                  <PasswordInput id="old-pw" value={oldPassword} onChange={setOldPassword} placeholder="Enter current password" />
+                </div>
+                
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  <label htmlFor="new-pw" style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>New Password</label>
+                  <PasswordInput id="new-pw" value={newPassword} onChange={setNewPassword} placeholder="Enter new password" />
+                  <PasswordStrength password={newPassword} />
+                </div>
 
-          
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  <label htmlFor="confirm-pw" style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Confirm Password</label>
+                  <PasswordInput id="confirm-pw" value={confirmPassword} onChange={setConfirmPassword} placeholder="Confirm new password" />
+                </div>
+
               <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                 <label htmlFor="settings-otp" style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Verification OTP</label>
                 {!otpSent ? (
@@ -437,26 +375,130 @@ export default function SettingsPage() {
                     </div>
                   )}
                 </div>
-
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={passwordSaving || !otpSent || changePasswordOtp.length !== 6}
-                    style={{
-                      padding: "0.65rem 1.5rem",
-                      borderRadius: "var(--radius-md)",
-                      fontSize: "0.9rem",
-                      opacity: passwordSaving || !otpSent || changePasswordOtp.length !== 6 ? 0.6 : 1,
-                      cursor: passwordSaving || !otpSent || changePasswordOtp.length !== 6 ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    {passwordSaving ? "Changing..." : "Change Password"}
-                  </button>
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={passwordSaving || !otpSent || changePasswordOtp.length !== 6}
+                  style={{
+                    padding: "0.65rem 1.5rem",
+                    borderRadius: "var(--radius-md)",
+                    fontSize: "0.9rem",
+                    opacity: passwordSaving || !otpSent || changePasswordOtp.length !== 6 ? 0.6 : 1,
+                    cursor: passwordSaving || !otpSent || changePasswordOtp.length !== 6 ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {passwordSaving ? "Changing..." : "Change Password"}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleForgotPasswordReset} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              <div className="settings-grid">
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  <label htmlFor="forgot-new-pw" style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>New Password</label>
+                  <PasswordInput id="forgot-new-pw" value={newPassword} onChange={setNewPassword} placeholder="Enter new password" />
+                  <PasswordStrength password={newPassword} />
                 </div>
-              </form>
-            )}
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  <label htmlFor="forgot-confirm-pw" style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Confirm Password</label>
+                  <PasswordInput id="forgot-confirm-pw" value={confirmPassword} onChange={setConfirmPassword} placeholder="Confirm new password" />
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  <label htmlFor="forgot-otp" style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Verification OTP</label>
+                  {!forgotOtpSent ? (
+                    <>
+                      <div style={{ display: "flex", gap: "0.5rem" }}>
+                        <button type="button" onClick={() => setForgotChannel("email")}
+                          style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: forgotChannel === "email" ? "var(--accent)" : "var(--bg-secondary)", color: forgotChannel === "email" ? "#fff" : "var(--text-muted)", border: `1px solid ${forgotChannel === "email" ? "var(--accent)" : "var(--border)"}`, cursor: "pointer", transition: "all 0.2s" }}>
+                          📧 Email
+                        </button>
+                        <button type="button" onClick={() => setForgotChannel("whatsapp")}
+                          style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: forgotChannel === "whatsapp" ? "#25D366" : "var(--bg-secondary)", color: forgotChannel === "whatsapp" ? "#fff" : "var(--text-muted)", border: `1px solid ${forgotChannel === "whatsapp" ? "#25D366" : "var(--border)"}`, cursor: "pointer", transition: "all 0.2s" }}>
+                          💬 WhatsApp
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSendForgotOtp}
+                        disabled={forgotOtpSending}
+                        style={{
+                          padding: "0.65rem 1rem",
+                          borderRadius: "var(--radius-md)",
+                          fontSize: "0.85rem",
+                          fontWeight: 600,
+                          backgroundColor: "var(--bg-secondary)",
+                          color: "var(--accent)",
+                          border: "1px solid var(--accent)",
+                          cursor: !forgotOtpSending ? "pointer" : "not-allowed",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        {forgotOtpSending ? "Sending OTP..." : `Send OTP via ${forgotChannel === "whatsapp" ? "WhatsApp" : "Email"}`}
+                      </button>
+                    </>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      <input
+                        type="text"
+                        className="input"
+                        placeholder="000000"
+                        maxLength={6}
+                        pattern="[0-9]{6}"
+                        inputMode="numeric"
+                        id="forgot-otp"
+                        autoComplete="one-time-code"
+                        value={changePasswordOtp}
+                        onChange={(e) => setChangePasswordOtp(e.target.value.replace(/\D/g, ""))}
+                        style={{ letterSpacing: "0.4em", textAlign: "center", fontSize: "1rem", fontWeight: 600 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSendForgotOtp}
+                        disabled={forgotOtpSending}
+                        style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.78rem", cursor: "pointer", textDecoration: "underline", textAlign: "left", padding: 0 }}
+                      >
+                        {forgotOtpSending ? "Sending..." : "Resend OTP"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={passwordSaving || !forgotOtpSent || changePasswordOtp.length !== 6}
+                  style={{
+                    padding: "0.65rem 1.5rem",
+                    borderRadius: "var(--radius-md)",
+                    fontSize: "0.9rem",
+                    opacity: passwordSaving || !forgotOtpSent || changePasswordOtp.length !== 6 ? 0.6 : 1,
+                    cursor: passwordSaving || !forgotOtpSent || changePasswordOtp.length !== 6 ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {passwordSaving ? "Resetting..." : "Reset Password"}
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div style={{ marginTop: "1rem" }}>
+            <button
+              onClick={() => setForgotPasswordMode(!forgotPasswordMode)}
+              style={{
+                background: "none", border: "none", color: "var(--accent)",
+                fontSize: "0.85rem", fontWeight: 600, cursor: "pointer",
+                textDecoration: "underline", padding: 0,
+              }}
+            >
+              {forgotPasswordMode ? "Back to Change Password" : "Forgot Password?"}
+            </button>
           </div>
+        </div>
 
           
           <div className="form-card" style={{ padding: "1.5rem" }}>
@@ -578,72 +620,7 @@ export default function SettingsPage() {
           </div>
 
           
-            {deleteStep === 2 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.25rem" }}>
-                  <span style={{ width: 24, height: 24, borderRadius: "50%", backgroundColor: "var(--accent-warm)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", fontWeight: 700 }}>2</span>
-                  <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--accent-warm)" }}>Verify with OTP</span>
-                </div>
-                {!deleteOtpSent ? (
-                  <>
-                    <div style={{ display: "flex", gap: "0.5rem" }}>
-                      <button type="button" onClick={() => setDeleteChannel("email")}
-                        style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: deleteChannel === "email" ? "var(--accent)" : "var(--bg-secondary)", color: deleteChannel === "email" ? "#fff" : "var(--text-muted)", border: `1px solid ${deleteChannel === "email" ? "var(--accent)" : "var(--border)"}`, cursor: "pointer", transition: "all 0.2s" }}>
-                        📧 Email
-                      </button>
-                      <button type="button" onClick={() => setDeleteChannel("whatsapp")}
-                        style={{ flex: 1, padding: "0.5rem", borderRadius: "var(--radius-md)", fontSize: "0.82rem", fontWeight: 600, backgroundColor: deleteChannel === "whatsapp" ? "#25D366" : "var(--bg-secondary)", color: deleteChannel === "whatsapp" ? "#fff" : "var(--text-muted)", border: `1px solid ${deleteChannel === "whatsapp" ? "#25D366" : "var(--border)"}`, cursor: "pointer", transition: "all 0.2s" }}>
-                        💬 WhatsApp
-                      </button>
-                    </div>
-                    <button onClick={handleSendDeleteOtp} disabled={deleteOtpSending}
-                      style={{
-                        padding: "0.65rem 1rem",
-                        borderRadius: "var(--radius-md)",
-                        fontSize: "0.85rem",
-                        fontWeight: 600,
-                        backgroundColor: "var(--bg-secondary)",
-                        color: "var(--accent)",
-                        border: "1px solid var(--accent)",
-                        cursor: !deleteOtpSending ? "pointer" : "not-allowed",
-                        transition: "all 0.2s",
-                      }}>
-                      {deleteOtpSending ? "Sending OTP..." : `Send OTP via ${deleteChannel === "whatsapp" ? "WhatsApp" : "Email"}`}
-                    </button>
-                  </>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                    <input
-                      type="text"
-                      className="input"
-                      placeholder="000000"
-                      maxLength={6}
-                      pattern="[0-9]{6}"
-                      inputMode="numeric"
-                      aria-label="Delete account OTP"
-                      value={deleteOtp}
-                      onChange={(e) => setDeleteOtp(e.target.value.replace(/\D/g, ""))}
-                      style={{ letterSpacing: "0.4em", textAlign: "center", fontSize: "1rem", fontWeight: 600 }}
-                    />
-                    <button type="button" onClick={handleSendDeleteOtp} disabled={deleteOtpSending}
-                      style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.78rem", cursor: "pointer", textDecoration: "underline", textAlign: "left", padding: 0 }}>
-                      {deleteOtpSending ? "Sending..." : "Resend OTP"}
-                    </button>
-                  </div>
-                )}
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
-                  <button onClick={() => { setDeleteStep(1); setDeleteOtpSent(false); setDeleteOtp(""); }}
-                    style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: "var(--elevated)", color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer" }}>
-                    Back
-                  </button>
-                  <button onClick={() => { if (!deleteOtp || deleteOtp.length !== 6) return; setDeleteStep(3); }}
-                    disabled={!deleteOtpSent || deleteOtp.length !== 6}
-                    style={{ padding: "0.65rem 1.5rem", borderRadius: "var(--radius-md)", fontSize: "0.9rem", fontWeight: 600, backgroundColor: deleteOtpSent && deleteOtp.length === 6 ? "var(--accent-warm)" : "var(--elevated)", color: deleteOtpSent && deleteOtp.length === 6 ? "#fff" : "var(--text-muted)", border: `1px solid ${deleteOtpSent && deleteOtp.length === 6 ? "var(--accent-warm)" : "var(--border)"}`, cursor: deleteOtpSent && deleteOtp.length === 6 ? "pointer" : "not-allowed", transition: "all 0.2s" }}>
-                    Continue
-                  </button>
-                </div>
-              </div>
-            )}
+
 
             
           <div className="form-card card-full" style={{ padding: "1.5rem" }}>
@@ -691,8 +668,6 @@ export default function SettingsPage() {
               </div>
             )}
           </div>
-          </div>{/* end settings-grid */}
-        </div>{/* end content area */}
         </motion.div>
       </div>
     );

@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { api, getApiErrorMessage } from "@/src/services/api";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   CloseIcon,
   VideoIcon,

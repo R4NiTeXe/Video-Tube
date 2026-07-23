@@ -6,12 +6,10 @@ import { useAuthStore } from "@/src/store/useAuthStore";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { COUNTRIES, FlagImg } from "@/src/lib/countries";
+
 import { PageMeta } from "@/src/components/PageMeta";
 
-const PlayLogo = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-);
+
 
 type Step = "mobile" | "otp" | "details";
 
@@ -20,12 +18,9 @@ export default function MobileRegisterPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
 
   const [step, setStep] = useState<Step>("mobile");
-  const [countryCode, setCountryCode] = useState("+91");
-  const [mobile, setMobile] = useState("");
+  const [countryCode] = useState("+91");
+  const [mobile] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [fullName, setFullName] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
@@ -79,31 +74,7 @@ export default function MobileRegisterPage() {
     }
   };
 
-  const handleRegister = async () => {
-    setError("");
-    if (!fullName.trim()) return setError("Full name is required");
-    if (!username.trim()) return setError("Username is required");
-    if (password.length < 6) return setError("Password must be at least 6 characters");
 
-    setIsLoading(true);
-    try {
-      const response = await api.post("/users/mobile/register", {
-        mobile: getFullMobile(),
-        otp: otp.join(""),
-        fullName: fullName.trim(),
-        username: username.trim().toLowerCase(),
-        password,
-      });
-      const { user } = response.data.data;
-      const { login } = useAuthStore.getState();
-      login(user);
-      router.push("/");
-    } catch (err: unknown) {
-      setError(getApiErrorMessage(err, "Registration failed"));
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleOtpChange = (index: number, value: string) => {
     if (value.length > 1) return;

@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+export const dynamic = "force-dynamic";
+
+
+import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -319,7 +322,7 @@ function VideoCard({ video }: { video: VideoResult }) {
   );
 }
 
-export default function Home() {
+function HomeContent() {
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
   const [welcomeMsg, setWelcomeMsg] = useState("");
   const searchParams = useSearchParams();
@@ -567,5 +570,13 @@ export default function Home() {
           </div>
         )}
     </>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
   );
 }

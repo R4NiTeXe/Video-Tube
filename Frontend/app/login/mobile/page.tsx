@@ -1,93 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/src/store/useAuthStore";
-import { api, getApiErrorMessage } from "@/src/services/api";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { PageMeta } from "@/src/components/PageMeta";
 
-const PlayLogo = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-);
 
 export default function MobileLoginPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
 
-  const [mobile, setMobile] = useState("");
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [otpSent, setOtpSent] = useState(false);
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
-
   useEffect(() => {
     if (!authLoading && isAuthenticated) router.push("/");
   }, [isAuthenticated, authLoading, router]);
 
-  useEffect(() => {
-    if (cooldown > 0) {
-      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-    return;
-  }, [cooldown]);
-
-  const handleSendOTP = async () => {
-    setError("");
-    if (!mobile.trim()) return setError("Mobile number is required");
-    if (!/^\+?[1-9]\d{9,14}$/.test(mobile.trim())) return setError("Invalid mobile number format");
-
-    setIsLoading(true);
-    try {
-      await api.post("/users/mobile/send-login-otp", { mobile: mobile.trim() });
-      setOtpSent(true);
-      setCooldown(60);
-    } catch (err: unknown) {
-      setError(getApiErrorMessage(err, "Failed to send OTP"));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleLogin = async () => {
-    setError("");
-    const otpString = otp.join("");
-    if (otpString.length !== 6) return setError("Enter the 6-digit OTP");
-
-    setIsLoading(true);
-    try {
-      const response = await api.post("/users/mobile/login", { mobile: mobile.trim(), otp: otpString });
-      const { user } = response.data.data;
-      const { login } = useAuthStore.getState();
-      login(user);
-      router.push("/");
-    } catch (err: unknown) {
-      setError(getApiErrorMessage(err, "Login failed"));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleOtpChange = (index: number, value: string) => {
-    if (value.length > 1) return;
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-    if (value && index < 5) {
-      const nextInput = document.querySelector(`input[name="otp-${index + 1}"]`) as HTMLInputElement;
-      if (nextInput) nextInput.focus();
-    }
-  };
-
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      const prevInput = document.querySelector(`input[name="otp-${index - 1}"]`) as HTMLInputElement;
-      if (prevInput) prevInput.focus();
-    }
-  };
 
   if (authLoading) {
     return (

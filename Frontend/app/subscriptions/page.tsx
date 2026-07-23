@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
@@ -45,12 +45,7 @@ const SkeletonVideoCard = () => (
   </div>
 );
 
-const SkeletonChannelPill = () => (
-  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.35rem", flexShrink: 0, width: 72 }}>
-    <div className="skeleton" style={{ width: 56, height: 56, borderRadius: "50%" }} />
-    <div className="skeleton" style={{ width: 56, height: 10, borderRadius: 4 }} />
-  </div>
-);
+
 
 function VideoCard({ video, channel }: { video: LatestVideo; channel: SubscribedChannel }) {
   const [isNew, setIsNew] = useState(false);
@@ -134,10 +129,7 @@ function VideoCard({ video, channel }: { video: LatestVideo; channel: Subscribed
 export default function SubscriptionsPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const router = useRouter();
-  const channelBarRef = useRef<HTMLDivElement>(null);
-  const [activeChannel, setActiveChannel] = useState<string | null>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+  const activeChannel = null;
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
@@ -152,24 +144,7 @@ export default function SubscriptionsPage() {
     enabled: isAuthenticated && !!user?._id,
   });
 
-  const checkScroll = useCallback(() => {
-    if (!channelBarRef.current) return;
-    const el = channelBarRef.current;
-    setCanScrollLeft(el.scrollLeft > 0);
-    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 1);
-  }, []);
 
-  useEffect(() => {
-    const el = channelBarRef.current;
-    if (!el) return;
-    el.addEventListener("scroll", checkScroll);
-    checkScroll();
-    return () => el.removeEventListener("scroll", checkScroll);
-  }, [checkScroll, response]);
-
-  const scrollBy = (dir: number) => {
-    channelBarRef.current?.scrollBy({ left: dir * 240, behavior: "smooth" });
-  };
 
   const subscriptions = response || [];
 

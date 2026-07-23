@@ -8,17 +8,7 @@ import { useEffect, useState } from "react";
 import { PageMeta } from "@/src/components/PageMeta";
 
 
-interface PlatformStats {
-  totalUsers: number;
-  totalVideos: number;
-  publishedVideos: number;
-  totalComments: number;
-  totalSubscriptions: number;
-  totalLikes: number;
-  totalPlaylists: number;
-  totalReports: number;
-  totalViews: number;
-}
+
 
 interface AdminUser {
   _id: string;
@@ -30,16 +20,7 @@ interface AdminUser {
   createdAt: string;
 }
 
-interface AdminReport {
-  _id: string;
-  reporter: { _id: string; fullName: string; avatar: string; username: string };
-  targetType: string;
-  target: string;
-  reason: string;
-  description?: string;
-  status: string;
-  createdAt: string;
-}
+
 
 interface AdminVideo {
   _id: string;
@@ -54,19 +35,7 @@ interface AdminActivity {
   recentVideos?: AdminVideo[];
 }
 
-type StatKey = keyof PlatformStats;
 
-const statCards: Array<{ key: StatKey; label: string; color?: string; format?: boolean }> = [
-  { key: "totalUsers", label: "Users", color: "var(--accent)" },
-  { key: "totalVideos", label: "Videos", color: "var(--success)" },
-  { key: "publishedVideos", label: "Published", color: "#3B82F6" },
-  { key: "totalComments", label: "Comments", color: "#F59E0B" },
-  { key: "totalSubscriptions", label: "Subscriptions", color: "#8B5CF6" },
-  { key: "totalLikes", label: "Likes", color: "#EC4899" },
-  { key: "totalPlaylists", label: "Playlists", color: "#14B8A6" },
-  { key: "totalReports", label: "Reports", color: "var(--accent-warm)" },
-  { key: "totalViews", label: "Views", format: true },
-];
 
 function formatCount(n: number): string {
   if (n >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
@@ -83,30 +52,17 @@ export default function AdminPage() {
   const [tab, setTab] = useState<"stats" | "users" | "reports" | "activity">("stats");
   const [userQuery, setUserQuery] = useState("");
   const [userPage, setUserPage] = useState(1);
-  const [reportFilter, setReportFilter] = useState("pending");
-  const [reportPage, setReportPage] = useState(1);
+
   const [actionMsg, setActionMsg] = useState("");
 
   useEffect(() => {
     if (!authLoading && (!isAuthenticated || user?.role !== "admin")) router.push("/");
   }, [authLoading, isAuthenticated, user, router]);
 
-  const { data: statsRes } = useQuery({
-    queryKey: ["admin-stats"],
-    queryFn: async () => { const res = await api.get("/admin/stats"); return res.data.data; },
-    enabled: isAuthenticated && user?.role === "admin",
-  });
-
   const { data: usersRes } = useQuery({
     queryKey: ["admin-users", userQuery, userPage],
     queryFn: async () => { const res = await api.get(`/admin/users?page=${userPage}&limit=15${userQuery ? `&query=${userQuery}` : ""}`); return res.data.data; },
     enabled: isAuthenticated && user?.role === "admin" && tab === "users",
-  });
-
-  const { data: reportsRes } = useQuery({
-    queryKey: ["admin-reports", reportFilter, reportPage],
-    queryFn: async () => { const res = await api.get(`/admin/reports?page=${reportPage}&limit=15&status=${reportFilter}`); return res.data.data; },
-    enabled: isAuthenticated && user?.role === "admin" && tab === "reports",
   });
 
   const { data: activityRes } = useQuery({
@@ -130,9 +86,7 @@ export default function AdminPage() {
     onSuccess: () => { setActionMsg("Video deleted"); setTimeout(() => setActionMsg(""), 3000); },
   });
 
-  const stats = statsRes as PlatformStats | undefined;
   const users = usersRes as { docs: AdminUser[]; totalDocs: number } | undefined;
-  const reports = reportsRes as { docs: AdminReport[]; totalDocs: number } | undefined;
   const activity = activityRes as AdminActivity | undefined;
 
   if (authLoading) return <div style={{ display: "flex", justifyContent: "center", padding: "4rem", color: "var(--text-muted)" }}>Loading...</div>;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { motion, useSpring, useAnimationControls, AnimatePresence, type MotionValue } from "framer-motion";
 
 interface MascotProps {
@@ -206,12 +206,23 @@ export default function RobotMascot({
       background:"radial-gradient(ellipse at 50% 38%, #1c1c2e 0%, #0d0d14 58%, #000 100%)",
     }}>
       
-        <motion.div style={{ rotate:headTilt, scaleX:bodyScaleX, scaleY:bodyScaleY, x:nervousX }}>
-          
-              <div style={{ display:"flex", gap:26, marginTop:14, position:"relative", zIndex:5 }}>
+        <motion.div style={{ rotate:headTilt, scaleX:bodyScaleX, scaleY:bodyScaleY, x:nervousX, zIndex: 10 }}>
+          <div style={{
+            width: 150, height: 116, borderRadius: "64px 64px 44px 44px",
+            background: `linear-gradient(180deg, ${C.light} 0%, ${C.mid} 100%)`,
+            border: `3px solid ${C.border}`,
+            boxShadow: `inset 0 4px 12px rgba(255,255,255,0.04), 0 12px 24px rgba(0,0,0,0.4)`,
+            display: "flex", flexDirection: "column", alignItems: "center",
+            position: "relative", zIndex: 10,
+          }}>
+            <div style={{ display:"flex", gap:26, marginTop:14, position:"relative", zIndex:5 }}>
                 {[0,1].map(i=>(
-                  mood === "secret"
-                  
+                  <motion.div key={i}
+                    animate={{ y: mood === "secret" ? 4 : 0 }}
+                    style={{ width: 16, height: 4, borderRadius: 2, background: C.border }}
+                  />
+                ))}
+              </div>
               <div style={{ display:"flex", gap:24, marginTop:6, position:"relative", zIndex:4 }}>
                 {[leftEye, rightEye].map((ctrl, i) => (
                   <Eye
@@ -241,7 +252,6 @@ export default function RobotMascot({
               <div style={{ marginTop:4, display:"flex", alignItems:"center", justifyContent:"center", height:22, position:"relative" }}>
                 <MouthShape type={cfg.mouthType} accent={C.accent} />
               </div>
-            </div>
 
             
             {cfg.sweat && (
@@ -253,8 +263,9 @@ export default function RobotMascot({
                   background:"linear-gradient(to bottom, #60a5fa, #3b82f6)",
                   opacity:0.85 }} />
             )}
-
-            
+          </div>
+        </motion.div>
+        
         <div style={{ width:28, height:10, background:`linear-gradient(to bottom,${C.border},${C.mid})`,
           borderRadius:"0 0 6px 6px", margin:"-2px 0", zIndex:6 }} />
 
@@ -331,16 +342,30 @@ function Eye({
         position: "relative",
       }}
     >
-      
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            zIndex: 6,
-            pointerEvents: "none",
-          }}
-        >
-          <svg width={eyeW - 2} height={16} viewBox={`0 0 ${eyeW - 2} 16`} fill="none">
-            
+      <motion.div
+        style={{
+          width: 14, height: 14, borderRadius: "50%", background: "#0d0d14",
+          x: pupilX, y: pupilY, position: "relative",
+          boxShadow: "0 0 4px rgba(0,0,0,0.8)",
+        }}
+      >
+        <div style={{ width:4, height:4, borderRadius:"50%", background:"#fff", position:"absolute", top:2, left:2 }} />
+      </motion.div>
+      <motion.div
+        style={{
+          position: "absolute", top: 0, left: 0, right: 0,
+          background: "#1c1c2e",
+          height: lidH,
+          borderBottom: "2px solid #000",
+          zIndex: 10,
+        }}
+      />
+    </motion.div>
+  );
+}
+
+function MouthShape({ type, accent }: { type: string; accent: string }) {
+  if (type === "smile") return (
     <svg width="40" height="22" viewBox="0 0 40 22" fill="none">
       {/* Main wide smile curve */}
       <path d="M3 6 Q20 22 37 6" stroke={accent} strokeWidth="3" strokeLinecap="round" fill="none"/>
@@ -353,7 +378,7 @@ function Eye({
       <circle cx="36" cy="8" r="2" fill={accent} opacity="0.6"/>
     </svg>
   );
-  if (t === "dots") return (
+  if (type === "dots") return (
     <div style={{ display:"flex", gap:5, alignItems:"center" }}>
       {[0,1,2].map(i=>(
         <motion.div key={i}
@@ -367,27 +392,4 @@ function Eye({
   return null;
 }
 
-function Sparkles() {
-  const positions = [
-    { x:-62, y:-18, delay:0,    size:10 },
-    { x: 58, y:-28, delay:0.22, size:8  },
-    { x:-50, y: 30, delay:0.44, size:7  },
-    { x: 52, y: 22, delay:0.15, size:9  },
-  ];
-  return (
-    <>
-      {positions.map((p, i) => (
-        <motion.div key={i}
-          animate={{ scale:[0,1.3,0], opacity:[0,1,0], rotate:[0,45,90] }}
-          transition={{ duration:1.1, repeat:Infinity, delay:p.delay, ease:"easeInOut" }}
-          style={{ position:"absolute", left:`calc(50% + ${p.x}px)`, top:`calc(50% + ${p.y}px)`,
-            width:p.size, height:p.size, pointerEvents:"none", zIndex:20 }}>
-          <svg viewBox="0 0 12 12" width={p.size} height={p.size} fill="none">
-            <path d="M6 0 L6.8 5.2 L12 6 L6.8 6.8 L6 12 L5.2 6.8 L0 6 L5.2 5.2 Z"
-              fill="rgba(255,220,50,0.9)" />
-          </svg>
-        </motion.div>
-      ))}
-    </>
-  );
-}
+

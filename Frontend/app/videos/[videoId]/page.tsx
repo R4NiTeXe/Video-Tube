@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Hls from "hls.js";
-import { formatViews } from "@/src/lib/utils";
+import { formatViews, timeAgo } from "@/src/lib/utils";
 import { PageMeta } from "@/src/components/PageMeta";
 
 import {
@@ -18,7 +18,7 @@ import {
   PlusIcon,
   CheckIcon,
   ShareIcon,
-  SettingsIcon,
+
 } from "@/src/components/icons";
 
 
@@ -75,79 +75,35 @@ interface Playlist {
   totalVideos?: number;
 }
 
-interface RelatedVideo {
-  _id: string;
-  title: string;
-  thumbnail: string;
-  duration: number;
-  views: number;
-  owner?: { fullName: string; avatar: string };
-  createdAt: string;
-}
-
 type FullscreenDocument = Document & {
   webkitFullscreenElement?: Element | null;
   webkitExitFullscreen?: () => Promise<void> | void;
 };
 
-type FullscreenElement = HTMLElement & {
-  webkitRequestFullscreen?: () => Promise<void> | void;
-};
 
 
-const formatDuration = (sec: number): string => {
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  const s = Math.floor(sec % 60).toString().padStart(2, "0");
-  if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${s}`;
-  return `${m}:${s}`;
-};
 
-const formatTimeAgo = (date: string): string => {
-  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-  if (seconds < 60) return "just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  const weeks = Math.floor(days / 7);
-  if (weeks < 4) return `${weeks}w ago`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return `${months}mo ago`;
-  return `${Math.floor(months / 12)}y ago`;
-};
 
-const formatFullDate = (date: string): string =>
-  new Date(date).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
 
-const formatTime = (sec: number): string => {
-  if (!sec || !isFinite(sec)) return "0:00";
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  const s = Math.floor(sec % 60).toString().padStart(2, "0");
-  if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${s}`;
-  return `${m}:${s}`;
-};
+
+
+
+
+
+
+
 
 
 const ThumbsUpIcon = ({ filled }: { filled?: boolean }) => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
-);
-const ThumbsDownIcon = ({ filled }: { filled?: boolean }) => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10zM17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
 );
 const FlagIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
 );
 const BookmarkIcon = ({ filled }: { filled?: boolean }) => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-);const ReplyIcon = () => (
+);
+const ReplyIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
 );const ChevronDownIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
@@ -574,14 +530,99 @@ function CommentItem({
         paddingLeft: depth > 0 ? "2.5rem" : 0,
       }}
     >
-      
+      <div style={{ width: 40, height: 40, borderRadius: "50%", overflow: "hidden", backgroundColor: "var(--accent-subtle)", flexShrink: 0, marginTop: "0.25rem" }}>
+        {comment.owner?.avatar ? (
+          <img src={comment.owner.avatar} alt={comment.owner.fullName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)", fontWeight: 700 }}>
+            {(comment.owner?.fullName?.[0] || "U").toUpperCase()}
+          </div>
+        )}
+      </div>
+
+      <div style={{ flex: 1 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.2rem" }}>
+          <span style={{ fontWeight: 600, color: "var(--text-primary)", fontSize: "0.85rem" }}>
+            {comment.owner?.fullName}
+          </span>
+          <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
+            {timeAgo(comment.createdAt)}
+          </span>
+          {comment.isPinned && (
+            <span style={{ fontSize: "0.7rem", backgroundColor: "var(--accent-subtle)", color: "var(--accent)", padding: "1px 6px", borderRadius: 4, fontWeight: 600 }}>
+              Pinned
+            </span>
+          )}
+        </div>
+
+        {editing ? (
+          <div style={{ marginTop: "0.5rem" }}>
+            <input
+              type="text"
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              className="input"
+              style={{ width: "100%", fontSize: "0.9rem", padding: "0.5rem 0.75rem" }}
+            />
+            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+              <button onClick={() => setEditing(false)} className="btn btn-sm btn-ghost btn-pill">Cancel</button>
+              <button onClick={() => editMutation.mutate()} disabled={editMutation.isPending} className="btn btn-sm btn-primary btn-pill">Save</button>
+            </div>
+          </div>
+        ) : (
+          <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", lineHeight: 1.4, margin: "0.25rem 0 0.5rem" }}>
+            {comment.content}
+          </p>
+        )}
+
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.25rem" }}>
+          <button
+            onClick={() => likeMutation.mutate()}
+            className="btn btn-sm btn-ghost btn-pill"
+            style={{ padding: "0.25rem 0.5rem", color: comment.isLiked ? "var(--accent)" : "var(--text-muted)" }}
+          >
+            <ThumbsUpIcon filled={!!comment.isLiked} />
+            <span style={{ fontSize: "0.8rem", marginLeft: "0.25rem" }}>{formatViews(comment.likesCount || 0)}</span>
+          </button>
+          
+          <button
+            onClick={() => setShowReplyForm(!showReplyForm)}
+            className="btn btn-sm btn-ghost btn-pill"
+            style={{ padding: "0.25rem 0.5rem", color: "var(--text-muted)", fontSize: "0.8rem" }}
+          >
+            Reply
+          </button>
+          
+          {isOwner && (
+            <>
+              <button onClick={() => setEditing(true)} className="btn btn-sm btn-ghost btn-pill" style={{ padding: "0.25rem", color: "var(--text-muted)" }}>
+                <EditIcon size={14} />
+              </button>
+              <button onClick={() => deleteMutation.mutate()} className="btn btn-sm btn-ghost btn-pill" style={{ padding: "0.25rem", color: "var(--error)" }}>
+                <TrashIcon size={14} />
+              </button>
+            </>
+          )}
+        </div>
+
+        {(comment.repliesCount ?? 0) > 0 && depth === 0 && (
+          <button
+            onClick={() => setShowReplies(!showReplies)}
+            className="btn btn-sm btn-ghost btn-pill"
+            style={{ marginTop: "0.5rem", color: "var(--accent)", padding: "0.25rem 0.75rem", fontSize: "0.8rem", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.25rem" }}
+          >
+            {showReplies ? <ChevronDownIcon /> : <ReplyIcon />}
+            {showReplies ? "Hide replies" : `View ${comment.repliesCount} replies`}
+          </button>
+        )}
+
         <AnimatePresence>
           {showReplyForm && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              style={{ marginTop: "var(--sp-2)", overflow: "hidden" }}
+              style={{ marginTop: "0.5rem", overflow: "hidden" }}
             >
               <div style={{ display: "flex", gap: "var(--sp-2)" }}>
                 <input
@@ -594,7 +635,7 @@ function CommentItem({
                   }}
                   className="input"
                   autoFocus
-                  style={{ flex: 1, fontSize: "0.85rem", padding: "var(--sp-2) var(--sp-3)" }}
+                  style={{ flex: 1, fontSize: "0.85rem", padding: "0.4rem 0.75rem" }}
                 />
                 <button
                   onClick={() => replyMutation.mutate()}
@@ -608,7 +649,6 @@ function CommentItem({
           )}
         </AnimatePresence>
 
-        
         <AnimatePresence>
           {showReplies && replies.length > 0 && (
             <motion.div
@@ -618,7 +658,7 @@ function CommentItem({
               style={{ marginTop: "var(--sp-3)", display: "flex", flexDirection: "column", gap: "var(--sp-3)", borderLeft: "2px solid var(--border)", paddingLeft: "var(--sp-3)", overflow: "hidden" }}
             >
               {replies.map((reply) => (
-                <CommentItem key={reply._id} comment={reply} videoId={videoId} {...(currentUserId ? { currentUserId } : {})} depth={1} />
+                <CommentItem key={reply._id} comment={reply} videoId={videoId} {...(currentUserId ? { currentUserId } : {})} depth={depth + 1} />
               ))}
             </motion.div>
           )}
@@ -638,44 +678,16 @@ export default function VideoPlayerPage() {
 
   const [theaterMode, _setTheaterMode] = useState(false);
   const [liked, setLiked] = useState(false);
-  const [disliked, setDisliked] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
-  const [showMoreMenu, setShowMoreMenu] = useState(false);
-  const [commentText, setCommentText] = useState("");
-  const [showDescription, setShowDescription] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [volume, setVolume] = useState(1);
-  const [isMuted, setIsMuted] = useState(false);
-  const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [bellActive, setBellActive] = useState(false);
-  const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [videoQuality, setVideoQuality] = useState("auto");
   const [videoSrc, setVideoSrc] = useState("");
-  const [buffering, setBuffering] = useState(false);
-  const [availableQualities, setAvailableQualities] = useState<{ height: number; name: string }[]>([]);
-  const [hoveredChapter, setHoveredChapter] = useState<Chapter | null>(null);
-  const [showChapterTooltip, setShowChapterTooltip] = useState(false);
-  const findChapterAtMouse = (e: React.MouseEvent) => {
-    if (!videoRef.current || duration <= 0) return;
-    const bar = e.currentTarget as HTMLElement;
-    const rect = bar.getBoundingClientRect();
-    const pct = (e.clientX - rect.left) / rect.width;
-    const timeAtMouse = pct * duration;
-    const chapters = video?.chapters;
-    if (!chapters?.length) return;
-    let closest: Chapter | null = null;
-    for (const ch of chapters) {
-      if (ch.startTime <= timeAtMouse) closest = ch;
-    }
-    setHoveredChapter(closest);
-    setShowChapterTooltip(true);
-  };
-  const controlsTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const [commentText, setCommentText] = useState("");
+  const [showDescription, setShowDescription] = useState(false);
+
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -705,44 +717,11 @@ export default function VideoPlayerPage() {
     enabled: isAuthenticated && !!videoId,
   });
 
-  // Fetch related videos
-  const { data: relatedRes, isLoading: relatedLoading } = useQuery({
-    queryKey: ["related-videos", videoId, isAuthenticated],
-    queryFn: async () => {
-      const res = await api.get(`/videos/${videoId}/related`);
-      return res.data;
-    },
-    enabled: isAuthenticated && !!videoId,
-  });
 
-  // Fetch channel notification status
-  const ownerId = videoRes?.data?.owner?._id;
-  const { data: channelNotifRes } = useQuery({
-    queryKey: ["channel-notifications", ownerId],
-    queryFn: async () => {
-      const res = await api.get(`/subscriptions/c/${ownerId}/notifications`);
-      return res.data;
-    },
-    enabled: isAuthenticated && !!ownerId,
-  });
 
-  const channelMuted: boolean = channelNotifRes?.data?.isMuted ?? false;
 
-  // Toggle channel notifications mutation
-  const toggleNotifMutation = useMutation({
-    mutationFn: async () => {
-      await api.patch(`/subscriptions/c/${ownerId}/notifications`);
-    },
-    onMutate: () => {
-      queryClient.setQueryData(["channel-notifications", ownerId], (old: { data?: { isMuted?: boolean } } | undefined) => {
-        if (!old?.data) return old;
-        return { ...old, data: { ...old.data, isMuted: !old.data.isMuted } };
-      });
-    },
-    onError: () => {
-      queryClient.invalidateQueries({ queryKey: ["channel-notifications", ownerId] });
-    },
-  });
+
+
 
   // Toggle like mutation
   const likeMutation = useMutation({
@@ -753,7 +732,7 @@ export default function VideoPlayerPage() {
       const cached = queryClient.getQueryData<{ data: { isLiked: boolean; likesCount: number } }>(["video", videoId]);
       const wasLiked = cached?.data?.isLiked ?? liked;
       setLiked(!wasLiked);
-      if (wasLiked) setDisliked(false);
+
       queryClient.setQueryData(["video", videoId], (old: { data?: { isLiked?: boolean; likesCount?: number } } | undefined) => {
         if (!old?.data) return old;
         return { ...old, data: { ...old.data, isLiked: !wasLiked, likesCount: (old.data.likesCount ?? 0) + (wasLiked ? -1 : 1) } };
@@ -794,15 +773,7 @@ export default function VideoPlayerPage() {
   });
 
   // Toggle watch later mutation
-  const [savedToWatchLater, setSavedToWatchLater] = useState(false);
-  const watchLaterMutation = useMutation({
-    mutationFn: async () => {
-      await api.post(`/users/watch-later/${videoId}`);
-    },
-    onSuccess: () => {
-      setSavedToWatchLater((prev) => !prev);
-    },
-  });
+
 
   // Post comment
   const postCommentMutation = useMutation({
@@ -855,7 +826,6 @@ export default function VideoPlayerPage() {
           height: l.height,
           name: l.height >= 1080 ? "1080p" : l.height >= 720 ? "720p" : l.height >= 480 ? "480p" : l.height >= 360 ? "360p" : l.height >= 240 ? "240p" : "144p",
         }));
-        setAvailableQualities(levels);
         const autoLevel = hls.autoLevelEnabled;
         setVideoQuality(autoLevel ? "auto" : levels[levels.length - 1]?.name || "auto");
       });
@@ -915,7 +885,7 @@ export default function VideoPlayerPage() {
   
   const video: Video | undefined = videoRes?.data;
   const comments: Comment[] = commentsRes?.data?.docs || [];
-  const relatedVideos: RelatedVideo[] = (relatedRes?.data || []).filter((v: RelatedVideo) => v._id !== videoId);
+
   const isSubscribed = video?.owner?.isSubscribed ?? false;
 
   const videoJsonLd = (() => {
@@ -973,98 +943,223 @@ export default function VideoPlayerPage() {
         {...(typeof window !== "undefined" ? { ogUrl: window.location.href } : {})}
         {...(videoJsonLd ? { jsonLd: videoJsonLd } : {})}
       />
-    <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
+      <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
+        <div className="video-page-wrap content-padding" style={{ width: "100%", maxWidth: theaterMode ? "100%" : 1280, margin: "0 auto", padding: "1.5rem 1rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+            
+            {/* VIDEO PLAYER CONTAINER */}
+            <div
+              ref={containerRef}
+              style={{
+                position: "relative",
+                width: "100%",
+                paddingTop: "56.25%",
+                backgroundColor: "#000",
+                borderRadius: isFullscreen ? 0 : "var(--radius-lg)",
+                overflow: "hidden",
+              }}
+            >
+              <video
+                ref={videoRef}
+                src={videoSrc || video.videoFile}
+                poster={video.thumbnail}
+                controls
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                }}
+              />
+            </div>
 
-      <div className="video-page-wrap content-padding" style={{
-        width: "100%",
-        transition: "max-width 0.3s ease",
-      }}>
+            {/* VIDEO METADATA & ACTIONS */}
+            <div>
+              <h1 style={{ fontSize: "1.35rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.75rem" }}>
+                {video.title}
+              </h1>
 
-        
-                {video?.chapters?.map((ch) => {
-                  const pct = duration > 0 ? (ch.startTime / duration) * 100 : 0;
-                  return (
-                    <div
-                      key={ch._id}
-                      title={ch.title}
-                      style={{
-                        position: "absolute", left: `${pct}%`, top: 0,
-                        width: 2, height: "100%",
-                        backgroundColor: "rgba(255,255,255,0.6)",
-                        zIndex: 2, pointerEvents: "none",
-                      }}
-                    />
-                  );
-                })}
-                
-                  <span style={{ color: "rgba(255,255,255,0.8)", fontSize: "0.78rem", fontWeight: 500, fontFamily: "monospace" }}>
-                    {formatTime(currentTime)} / {formatTime(duration)}
-                  </span>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem", marginBottom: "1rem" }}>
+                {/* CHANNEL INFO */}
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                  <Link href={`/channel/${video.owner?.username}`}>
+                    <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", backgroundColor: "var(--accent-subtle)", flexShrink: 0 }}>
+                      {video.owner?.avatar ? (
+                        <img src={video.owner.avatar} alt={video.owner.fullName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : (
+                        <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)", fontWeight: 700 }}>
+                          {(video.owner?.fullName?.[0] || "U").toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                  <div>
+                    <Link href={`/channel/${video.owner?.username}`} style={{ textDecoration: "none" }}>
+                      <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
+                        {video.owner?.fullName || video.owner?.username}
+                      </h3>
+                    </Link>
+                    <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", margin: 0 }}>
+                      {formatViews(video.owner?.subscribersCount || 0)} subscribers
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => subscribeMutation.mutate()}
+                    disabled={subscribeMutation.isPending}
+                    className={`btn ${isSubscribed ? "btn-secondary" : "btn-primary"} btn-pill`}
+                    style={{ marginLeft: "0.5rem", padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: 600 }}
+                  >
+                    {isSubscribed ? "Subscribed" : "Subscribe"}
+                  </button>
                 </div>
 
-                
-                  <button onClick={() => {
-                    const el = containerRef.current;
-                    if (!el) return;
-                    const fullscreenDocument = document as FullscreenDocument;
-                    if (fullscreenDocument.fullscreenElement || fullscreenDocument.webkitFullscreenElement) {
-                      if (document.exitFullscreen) { void document.exitFullscreen(); }
-                      else { void fullscreenDocument.webkitExitFullscreen?.(); }
-                    } else {
-                      if (el.requestFullscreen) { void el.requestFullscreen(); }
-                      else { void (el as FullscreenElement).webkitRequestFullscreen?.(); }
-                    }
-                  }}
-                    aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                    style={{ background: "none", border: "none", color: "rgba(255,255,255,0.8)", cursor: "pointer", padding: "0.25rem", display: "flex", alignItems: "center" }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                {/* ACTION BUTTONS */}
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                  <button
+                    onClick={() => likeMutation.mutate()}
+                    className="btn btn-secondary btn-pill"
+                    style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.45rem 0.9rem", fontSize: "0.85rem", color: liked ? "var(--accent)" : "var(--text-primary)" }}
+                  >
+                    <ThumbsUpIcon filled={liked} />
+                    <span>{formatViews(video.likesCount || 0)}</span>
+                  </button>
+
+                  <button
+                    onClick={handleShare}
+                    className="btn btn-secondary btn-pill"
+                    style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.45rem 0.9rem", fontSize: "0.85rem" }}
+                  >
+                    <ShareIcon />
+                    <span>{copied ? "Copied!" : "Share"}</span>
+                  </button>
+
+                  <PlaylistDropdown videoId={videoId} ownerId={user?._id || ""} />
+
+                  <button
+                    onClick={() => setShowReportModal(true)}
+                    className="btn btn-ghost btn-pill"
+                    style={{ padding: "0.45rem", color: "var(--text-muted)" }}
+                    title="Report video"
+                  >
+                    <FlagIcon />
                   </button>
                 </div>
               </div>
-            </div>
-            )}
-          </motion.div>
 
-          
-            <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", flexWrap: "wrap" }}>
-              
-            {commentsLoading ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} style={{ display: "flex", gap: "var(--sp-3)" }}>
-                    <div className="skeleton" style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0 }} />
-                    <div style={{ flex: 1 }}>
-                      <div className="skeleton" style={{ width: "30%", height: 14, borderRadius: 4, marginBottom: "var(--sp-2)" }} />
-                      <div className="skeleton" style={{ width: "80%", height: 14, borderRadius: 4 }} />
-                    </div>
-                  </div>
-                ))}
+              {/* DESCRIPTION BOX */}
+              <div
+                style={{
+                  backgroundColor: "var(--card)",
+                  borderRadius: "var(--radius-lg)",
+                  padding: "1rem",
+                  border: "1px solid var(--border)",
+                  fontSize: "0.9rem",
+                  cursor: "pointer",
+                }}
+                onClick={() => setShowDescription(!showDescription)}
+              >
+                <div style={{ display: "flex", gap: "1rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.5rem", fontSize: "0.85rem" }}>
+                  <span>{formatViews(video.views)} views</span>
+                  <span>{timeAgo(video.createdAt)}</span>
+                </div>
+                <p style={{
+                  color: "var(--text-secondary)",
+                  whiteSpace: "pre-wrap",
+                  lineHeight: 1.5,
+                  display: showDescription ? "block" : "-webkit-box",
+                  WebkitLineClamp: showDescription ? "unset" : 3,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                  margin: 0,
+                }}>
+                  {video.description || "No description provided."}
+                </p>
+                <button style={{ background: "none", border: "none", color: "var(--text-muted)", fontWeight: 600, fontSize: "0.8rem", marginTop: "0.5rem", cursor: "pointer", padding: 0 }}>
+                  {showDescription ? "Show less" : "...more"}
+                </button>
               </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-5)" }}>
-                {comments.map((comment) => (
-                  <CommentItem
-                    key={comment._id}
-                    comment={comment}
-                    videoId={videoId}
-                    {...(user?._id ? { currentUserId: user._id } : {})}
-                  />
-                ))}
-                {comments.length === 0 && (
-                  <p style={{ textAlign: "center", color: "var(--text-muted)", padding: "var(--sp-8) 0", fontSize: "0.9rem" }}>
-                    No comments yet. Be the first to comment!
-                  </p>
+
+              {/* COMMENTS SECTION */}
+              <div style={{ marginTop: "2rem" }}>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "1rem" }}>
+                  {comments.length} Comments
+                </h3>
+
+                {/* ADD COMMENT FORM */}
+                <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}>
+                  <div style={{ width: 40, height: 40, borderRadius: "50%", overflow: "hidden", backgroundColor: "var(--accent-subtle)", flexShrink: 0 }}>
+                    {user?.avatar ? (
+                      <img src={user.avatar} alt={user.fullName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)", fontWeight: 700 }}>
+                        {(user?.fullName?.[0] || "U").toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <input
+                      type="text"
+                      placeholder="Add a comment..."
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && commentText.trim()) postCommentMutation.mutate();
+                      }}
+                      className="input"
+                      style={{ width: "100%", fontSize: "0.9rem", padding: "0.65rem 0.85rem" }}
+                    />
+                    {commentText.trim() && (
+                      <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", marginTop: "0.5rem" }}>
+                        <button onClick={() => setCommentText("")} className="btn btn-ghost btn-sm btn-pill">
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => postCommentMutation.mutate()}
+                          disabled={postCommentMutation.isPending}
+                          className="btn btn-primary btn-sm btn-pill"
+                        >
+                          {postCommentMutation.isPending ? "Posting..." : "Comment"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* COMMENT LIST */}
+                {commentsLoading ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="skeleton" style={{ height: 60, borderRadius: "var(--radius-md)" }} />
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                    {comments.map((comment) => (
+                      <CommentItem
+                        key={comment._id}
+                        comment={comment}
+                        videoId={videoId}
+                        {...(user?._id ? { currentUserId: user._id } : {})}
+                      />
+                    ))}
+                    {comments.length === 0 && (
+                      <p style={{ textAlign: "center", color: "var(--text-muted)", padding: "2rem 0", fontSize: "0.9rem" }}>
+                        No comments yet. Be the first to comment!
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-          </motion.div>
+            </div>
+          </div>
         </div>
 
-        
-      <AnimatePresence>
-        {showReportModal && <ReportModal videoId={videoId} onClose={() => setShowReportModal(false)} />}
-      </AnimatePresence>
-    </div>
+        <AnimatePresence>
+          {showReportModal && <ReportModal videoId={videoId} onClose={() => setShowReportModal(false)} />}
+        </AnimatePresence>
+      </div>
     </>
   );
 }

@@ -212,6 +212,26 @@ export default function SplashScreen({ onDone }: Props) {
               height: 200,
             }}
           >
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: T.iconEntry, type: "spring", stiffness: 200, damping: 20 }}
+              style={{
+                width: 120, height: 120, borderRadius: 30,
+                background: "linear-gradient(135deg, var(--accent) 0%, #b91c1c 100%)",
+                boxShadow: "0 10px 25px rgba(220,38,38,0.4), inset 0 2px 10px rgba(255,255,255,0.2)",
+                display: "flex", alignItems: "center", justifyContent: "center"
+              }}
+            >
+              <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="7 4 19 12 7 20 7 4" fill="rgba(255,255,255,0.2)" />
+              </svg>
+            </motion.div>
+            
+            <OrbitalDot index={0} total={3} radius={110} size={8} color="#FF6B6B" duration={4} delay={T.orbitalStart} />
+            <OrbitalDot index={1} total={3} radius={110} size={5} color="#FFD166" duration={4} delay={T.orbitalStart} />
+            <OrbitalDot index={2} total={3} radius={110} size={10} color="#FF3B30" duration={4} delay={T.orbitalStart} />
+          </div>
             
           <div
             style={{

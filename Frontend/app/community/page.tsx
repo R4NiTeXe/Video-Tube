@@ -183,7 +183,65 @@ export default function CommunityPage() {
           style={{ marginBottom: "2rem" }}
         >
           <div style={{ display: "flex", gap: "0.75rem" }}>
-            
+            <div style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "var(--accent-subtle)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, overflow: "hidden", flexShrink: 0 }}>
+              {user?.avatar ? (
+                <img src={user.avatar} alt={user.fullName || "User"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                (user?.fullName?.[0] || "U").toUpperCase()
+              )}
+            </div>
+            <div style={{ flex: 1 }}>
+              <textarea
+                value={newPostContent}
+                onChange={(e) => setNewPostContent(e.target.value)}
+                placeholder="What's on your mind?"
+                rows={3}
+                style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  borderRadius: "var(--radius-md)",
+                  border: "1px solid var(--border)",
+                  backgroundColor: "var(--bg-secondary)",
+                  color: "var(--text-primary)",
+                  resize: "vertical",
+                  fontSize: "0.9rem",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+              {imagePreview && (
+                <div style={{ marginTop: "0.75rem", position: "relative", display: "inline-block" }}>
+                  <img src={imagePreview} alt="Preview" style={{ maxHeight: 200, borderRadius: "var(--radius-md)", objectFit: "cover" }} />
+                  <button
+                    onClick={() => { setNewPostImage(null); setImagePreview(null); }}
+                    style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.6)", color: "#fff", border: "none", borderRadius: "50%", width: 24, height: 24, cursor: "pointer" }}
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.75rem" }}>
+                <input type="file" ref={fileInputRef} accept="image/*" onChange={handleImageChange} style={{ display: "none" }} />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{ display: "flex", alignItems: "center", gap: "0.4rem", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "0.85rem" }}
+                >
+                  <ImageIcon /> Add Image
+                </button>
+                <button
+                  onClick={handleCreatePost}
+                  disabled={createPostMutation.isPending || (!newPostContent.trim() && !newPostImage)}
+                  className="btn btn-primary btn-pill"
+                  style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.5rem 1.25rem", fontSize: "0.85rem" }}
+                >
+                  <SendIcon /> {createPostMutation.isPending ? "Posting..." : "Post"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
         {isLoading ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
             {Array.from({ length: 3 }).map((_, i) => <SkeletonPost key={i} />)}
@@ -218,19 +276,34 @@ export default function CommunityPage() {
                   className="form-card"
                   style={{ padding: "1.25rem 1.5rem" }}
                 >
-                  
                   <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.85rem" }}>
-                    
+                    <div style={{ width: 40, height: 40, borderRadius: "50%", overflow: "hidden", backgroundColor: "var(--accent-subtle)", flexShrink: 0 }}>
+                      {post.owner?.avatar ? (
+                        <img src={post.owner.avatar} alt={post.owner.fullName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : (
+                        <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)", fontWeight: 700 }}>
+                          {(post.owner?.fullName?.[0] || "U").toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h4 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>{post.owner?.fullName || post.owner?.username || "Anonymous"}</h4>
+                      <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", margin: 0 }}>{timeAgo(post.createdAt)}</p>
+                    </div>
+                  </div>
+
                   {post.content && (
                     <p style={{ fontSize: "0.92rem", color: "var(--text-primary)", lineHeight: 1.6, marginBottom: post.image ? "0.85rem" : "1rem", whiteSpace: "pre-wrap" }}>
                       {post.content}
                     </p>
                   )}
 
-                  
                   {post.image && (
                     <div style={{ marginBottom: "1rem", borderRadius: "var(--radius-md)", overflow: "hidden" }}>
-                      
+                      <img src={post.image} alt="Post image" style={{ width: "100%", maxHeight: 400, objectFit: "cover" }} />
+                    </div>
+                  )}
+
                   <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", paddingTop: "0.5rem", borderTop: "1px solid var(--border)" }}>
                     <button
                       onClick={() => likeMutation.mutate(post._id)}
@@ -264,7 +337,6 @@ export default function CommunityPage() {
               ))}
             </AnimatePresence>
 
-            
             {hasNextPage && (
               <motion.div
                 initial={{ opacity: 0 }}
