@@ -299,9 +299,6 @@ export default function EditProfilePage() {
                 </div>
               </div>
             </div>
-
-            </div>
-            
             <ContactDetailsManager />
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem", marginTop: "2rem", borderTop: "1px solid var(--border)", paddingTop: "1.5rem" }}>
