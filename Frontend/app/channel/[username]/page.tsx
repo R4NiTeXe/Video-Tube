@@ -315,7 +315,7 @@ export default function ChannelPage() {
                 )}
               </div>
               <div style={{ display: "flex", gap: "1rem", alignItems: "center", paddingTop: "3rem" }}>
-                {!isOwnChannel ? (
+                {!isOwnChannel && (
                   <button
                     onClick={() => subscribeMutation.mutate()}
                     className={`btn ${channel.isSubscribed ? "btn-ghost" : "btn-primary"}`}
@@ -323,10 +323,6 @@ export default function ChannelPage() {
                   >
                     {channel.isSubscribed ? "Subscribed" : "Subscribe"}
                   </button>
-                ) : (
-                  <Link href="/settings" className="btn btn-secondary" style={{ borderRadius: 99, padding: "0.7rem 1.5rem" }}>
-                    Manage Channel
-                  </Link>
                 )}
               </div>
             </div>

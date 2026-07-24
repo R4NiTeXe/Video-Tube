@@ -17,7 +17,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
   const videoStats = await Video.aggregate([
     {
       $match: {
-        owner: new mongoose.Types.ObjectId(userId),
+        owner: new mongoose.Types.ObjectId(userId.toString()),
       },
     },
     {
@@ -80,7 +80,7 @@ const getChannelVideos = asyncHandler(async (req, res) => {
   const videos = await Video.aggregate([
     {
       $match: {
-        owner: new mongoose.Types.ObjectId(userId),
+        owner: new mongoose.Types.ObjectId(userId.toString()),
       },
     },
     {

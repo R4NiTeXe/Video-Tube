@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
@@ -85,7 +85,35 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
-  const [changePasswordOtp, setChangePasswordOtp] = useState("");
+  const [changePasswordOtp, setChangePasswordOtp] = useState<string[]>(Array(6).fill(""));
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+    const next = [...changePasswordOtp];
+    next[index] = value.slice(-1);
+    setChangePasswordOtp(next);
+    if (value && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !changePasswordOtp[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (pasted) {
+      const next = Array(6).fill("");
+      pasted.split("").forEach((char, i) => { next[i] = char; });
+      setChangePasswordOtp(next);
+      otpRefs.current[Math.min(pasted.length, 5)]?.focus();
+    }
+  };
   const [otpSent, setOtpSent] = useState(false);
   const [otpSending, setOtpSending] = useState(false);
   const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
@@ -193,11 +221,11 @@ export default function SettingsPage() {
     e.preventDefault();
     if (newPassword !== confirmPassword) { return; }
     if (newPassword.length < 6) { return; }
-    if (!changePasswordOtp || changePasswordOtp.length !== 6) { return; }
+    if (!changePasswordOtp || changePasswordOtp.join("").length !== 6) { return; }
     setPasswordSaving(true);
     try {
-      await api.post("/users/verify-change-password", { oldPassword, newPassword, otp: changePasswordOtp, channel: changePasswordChannel });
-      setOldPassword(""); setNewPassword(""); setConfirmPassword(""); setChangePasswordOtp("");
+      await api.post("/users/verify-change-password", { oldPassword, newPassword, otp: changePasswordOtp.join(""), channel: changePasswordChannel });
+      setOldPassword(""); setNewPassword(""); setConfirmPassword(""); setChangePasswordOtp(Array(6).fill(""));
       setOtpSent(false);
       setTimeout(() => { logout(); router.push("/login"); }, 2000);
     } catch (err: unknown) { }
@@ -225,11 +253,11 @@ export default function SettingsPage() {
     e.preventDefault();
     if (newPassword !== confirmPassword) { return; }
     if (newPassword.length < 6) { return; }
-    if (!changePasswordOtp || changePasswordOtp.length !== 6) { return; }
+    if (!changePasswordOtp || changePasswordOtp.join("").length !== 6) { return; }
     setPasswordSaving(true);
     try {
-      await api.post("/users/verify-and-reset-password-via-otp", { newPassword, otp: changePasswordOtp, channel: forgotChannel });
-      setNewPassword(""); setConfirmPassword(""); setChangePasswordOtp("");
+      await api.post("/users/verify-and-reset-password-via-otp", { newPassword, otp: changePasswordOtp.join(""), channel: forgotChannel });
+      setNewPassword(""); setConfirmPassword(""); setChangePasswordOtp(Array(6).fill(""));
       setForgotOtpSent(false); setForgotPasswordMode(false);
       setTimeout(() => { logout(); router.push("/login"); }, 2000);
     } catch (err: unknown) { }
@@ -367,19 +395,17 @@ export default function SettingsPage() {
                   </>
                 ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                      <input
-                        type="text"
-                        className="input"
-                        placeholder="000000"
-                        maxLength={6}
-                        pattern="[0-9]{6}"
-                        inputMode="numeric"
-                        id="settings-otp"
-                        autoComplete="one-time-code"
-                        value={changePasswordOtp}
-                        onChange={(e) => setChangePasswordOtp(e.target.value.replace(/\D/g, ""))}
-                        style={{ letterSpacing: "0.4em", textAlign: "center", fontSize: "1rem", fontWeight: 600 }}
-                      />
+                      <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-start", marginBottom: "0.5rem" }}>
+                        {changePasswordOtp.map((digit, i) => (
+                          <input key={i} ref={(el) => { otpRefs.current[i] = el; }}
+                            type="text" inputMode="numeric" maxLength={1} value={digit}
+                            aria-label={`OTP digit ${i + 1}`}
+                            onChange={(e) => handleOtpChange(i, e.target.value)}
+                            onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                            onPaste={handleOtpPaste}
+                            style={{ width: 44, height: 48, textAlign: "center", fontSize: "1.15rem", fontWeight: 700, borderRadius: "var(--radius-md)", border: "1.5px solid var(--border)", backgroundColor: "var(--bg-primary)", color: "var(--text-primary)", outline: "none" }} />
+                        ))}
+                      </div>
                       <button
                         type="button"
                         onClick={handleSendChangePasswordOtp}
@@ -396,13 +422,13 @@ export default function SettingsPage() {
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  disabled={passwordSaving || !otpSent || changePasswordOtp.length !== 6}
+                  disabled={passwordSaving || !otpSent || changePasswordOtp.join("").length !== 6}
                   style={{
                     padding: "0.65rem 1.5rem",
                     borderRadius: "var(--radius-md)",
                     fontSize: "0.9rem",
-                    opacity: passwordSaving || !otpSent || changePasswordOtp.length !== 6 ? 0.6 : 1,
-                    cursor: passwordSaving || !otpSent || changePasswordOtp.length !== 6 ? "not-allowed" : "pointer",
+                    opacity: passwordSaving || !otpSent || changePasswordOtp.join("").length !== 6 ? 0.6 : 1,
+                    cursor: passwordSaving || !otpSent || changePasswordOtp.join("").length !== 6 ? "not-allowed" : "pointer",
                   }}
                 >
                   {passwordSaving ? "Changing..." : "Change Password"}
@@ -460,19 +486,17 @@ export default function SettingsPage() {
                     </>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                      <input
-                        type="text"
-                        className="input"
-                        placeholder="000000"
-                        maxLength={6}
-                        pattern="[0-9]{6}"
-                        inputMode="numeric"
-                        id="forgot-otp"
-                        autoComplete="one-time-code"
-                        value={changePasswordOtp}
-                        onChange={(e) => setChangePasswordOtp(e.target.value.replace(/\D/g, ""))}
-                        style={{ letterSpacing: "0.4em", textAlign: "center", fontSize: "1rem", fontWeight: 600 }}
-                      />
+                      <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-start", marginBottom: "0.5rem" }}>
+                        {changePasswordOtp.map((digit, i) => (
+                          <input key={i} ref={(el) => { otpRefs.current[i] = el; }}
+                            type="text" inputMode="numeric" maxLength={1} value={digit}
+                            aria-label={`OTP digit ${i + 1}`}
+                            onChange={(e) => handleOtpChange(i, e.target.value)}
+                            onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                            onPaste={handleOtpPaste}
+                            style={{ width: 44, height: 48, textAlign: "center", fontSize: "1.15rem", fontWeight: 700, borderRadius: "var(--radius-md)", border: "1.5px solid var(--border)", backgroundColor: "var(--bg-primary)", color: "var(--text-primary)", outline: "none" }} />
+                        ))}
+                      </div>
                       <button
                         type="button"
                         onClick={handleSendForgotOtp}
@@ -489,13 +513,13 @@ export default function SettingsPage() {
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  disabled={passwordSaving || !forgotOtpSent || changePasswordOtp.length !== 6}
+                  disabled={passwordSaving || !forgotOtpSent || changePasswordOtp.join("").length !== 6}
                   style={{
                     padding: "0.65rem 1.5rem",
                     borderRadius: "var(--radius-md)",
                     fontSize: "0.9rem",
-                    opacity: passwordSaving || !forgotOtpSent || changePasswordOtp.length !== 6 ? 0.6 : 1,
-                    cursor: passwordSaving || !forgotOtpSent || changePasswordOtp.length !== 6 ? "not-allowed" : "pointer",
+                    opacity: passwordSaving || !forgotOtpSent || changePasswordOtp.join("").length !== 6 ? 0.6 : 1,
+                    cursor: passwordSaving || !forgotOtpSent || changePasswordOtp.join("").length !== 6 ? "not-allowed" : "pointer",
                   }}
                 >
                   {passwordSaving ? "Resetting..." : "Reset Password"}
