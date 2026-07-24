@@ -100,6 +100,28 @@ export const userSchemas = {
     }),
   },
 
+  sendIdentifierUpdateOTP: {
+    body: z.object({
+      identifier: z.string(),
+      action: z.enum(["add", "edit", "delete"]),
+    }),
+  },
+
+  verifyAndAddIdentifier: {
+    body: z.object({
+      identifier: z.string(),
+      otp: z.string().min(1),
+    }),
+  },
+
+  verifyAndDeleteIdentifier: {
+    body: z.object({
+      targetType: z.enum(["email", "mobile"]),
+      verificationIdentifier: z.string(),
+      otp: z.string().min(1),
+    }),
+  },
+
   updateProfile: {
     body: z.object({
       bio: z.string().max(500).optional(),

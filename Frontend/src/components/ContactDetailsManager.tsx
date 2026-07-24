@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { motion, AnimatePresence } from "framer-motion";
@@ -74,7 +74,7 @@ export default function ContactDetailsManager() {
       if (action === "delete") {
         const res = await api.post("/users/update-identifier/verify-delete", {
           targetType,
-          verificationIdentifier: targetType === "email" ? user?.mobile : user?.email,
+          verificationIdentifier: targetType === "email" ? (user?.mobile || "") : (user?.email || ""),
           otp: otpValue,
         });
         login(res.data.data.user);
