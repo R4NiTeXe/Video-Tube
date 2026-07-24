@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
+import { ThemeProvider } from "next-themes";
 import QueryProvider from "@/src/providers/QueryProvider";
 import AuthProvider from "@/src/providers/AuthProvider";
 import SplashWrapper from "@/src/components/SplashWrapper";
@@ -57,9 +57,6 @@ export const metadata: Metadata = {
   },
 };
 
-// Runs before React hydration to set the saved theme — prevents flash of wrong theme
-const themeInitScript = `(function(){try{var t=localStorage.getItem('vt-theme');if(!t){t='dark';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})()`;
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -68,28 +65,21 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        {/*
-          Use next/script with beforeInteractive. Placing it in the body allows Next.js
-          to hoist it to the head automatically without breaking the HTML structure.
-        */}
-        <Script
-          id="theme-init"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{ __html: themeInitScript }}
-        />
-        <QueryProvider>
-          <AuthProvider>
-            <ErrorBoundary>
-              <SplashWrapper>
-                <AppShell>
-                  {children}
-                </AppShell>
-              </SplashWrapper>
-              <BottomNav />
-              <ShortcutsDialog />
-            </ErrorBoundary>
-          </AuthProvider>
-        </QueryProvider>
+        <ThemeProvider attribute="data-theme" defaultTheme="dark" enableSystem={false}>
+          <QueryProvider>
+            <AuthProvider>
+              <ErrorBoundary>
+                <SplashWrapper>
+                  <AppShell>
+                    {children}
+                  </AppShell>
+                </SplashWrapper>
+                <BottomNav />
+                <ShortcutsDialog />
+              </ErrorBoundary>
+            </AuthProvider>
+          </QueryProvider>
+        </ThemeProvider>
         <SpeedInsights />
       </body>
     </html>

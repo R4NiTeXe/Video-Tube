@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import Link from "next/link";
@@ -12,8 +12,9 @@ import { PageMeta } from "@/src/components/PageMeta";
 const MascotAnimation = dynamic(() => import("@/src/components/MascotAnimation"), { ssr: false });
 
 const PlayLogo = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M8 5v14l11-7z" />
+  <svg width="28" height="20" viewBox="0 0 28 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="28" height="20" rx="4" fill="#dc2626"/>
+    <path d="M18 10L11 14.3301V5.66987L18 10Z" fill="white"/>
   </svg>
 );
 
@@ -25,7 +26,35 @@ export default function ForgotPasswordPage() {
 
   const [step, setStep] = useState<Step>("identifier");
   const [identifier, setIdentifier] = useState("");
-  const [otp, setOtp] = useState("");
+  const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^\\d*$/.test(value)) return;
+    const next = [...otp];
+    next[index] = value.slice(-1);
+    setOtp(next);
+    if (value && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\\D/g, "").slice(0, 6);
+    if (pasted) {
+      const next = Array(6).fill("");
+      pasted.split("").forEach((char, i) => { next[i] = char; });
+      setOtp(next);
+      otpRefs.current[Math.min(pasted.length, 5)]?.focus();
+    }
+  };
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword] = useState(false);
@@ -70,7 +99,7 @@ export default function ForgotPasswordPage() {
     try {
       const response = await api.post("/users/verify-forgot-otp", {
         identifier: identifier.trim(),
-        otp,
+        otp: otp.join(""),
       });
       setResetToken(response.data.data.resetToken);
       setStep("choice");
@@ -232,21 +261,36 @@ export default function ForgotPasswordPage() {
                 <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-secondary)" }}>
                   Verification Code (OTP)
                 </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Enter OTP"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  onFocus={() => setActiveField("otp")}
-                  onBlur={() => setActiveField("none")}
-                  style={{ ...inputFieldStyle, ...inputFocusStyle("otp") }}
-                />
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  {otp.map((digit, i) => (
+                    <input
+                      key={i}
+                      ref={(el) => { otpRefs.current[i] = el; }}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleOtpChange(i, e.target.value)}
+                      onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                      onPaste={handleOtpPaste}
+                      onFocus={() => setActiveField("otp")}
+                      onBlur={() => setActiveField("none")}
+                      style={{
+                        ...inputFieldStyle,
+                        padding: "0.8rem 0",
+                        textAlign: "center",
+                        fontSize: "1.2rem",
+                        fontWeight: 600,
+                        ...inputFocusStyle("otp"),
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
               <button
                 type="submit"
-                disabled={isLoading || !otp}
-                style={{ ...buttonStyle, opacity: isLoading || !otp ? 0.6 : 1, cursor: isLoading || !otp ? "not-allowed" : "pointer" }}
+                disabled={isLoading || otp.join("").length !== 6}
+                style={{ ...buttonStyle, opacity: isLoading || otp.join("").length !== 6 ? 0.6 : 1, cursor: isLoading || otp.join("").length !== 6 ? "not-allowed" : "pointer" }}
               >
                 {isLoading ? "Verifying..." : "Verify OTP"}
               </button>

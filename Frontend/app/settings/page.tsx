@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
-// import { useThemeStore } from "@/src/store/useThemeStore";
+import { useTheme } from "next-themes";
 import { PageMeta } from "@/src/components/PageMeta";
 import { motion } from "framer-motion";
 
@@ -78,8 +78,7 @@ const LANGUAGES = ["English", "Spanish", "French", "Hindi", "Japanese", "Korean"
 export default function SettingsPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading, logout } = useAuthStore();
-  // const { theme, toggleTheme } = useThemeStore();
-
+  const { theme, setTheme } = useTheme();
   // Password
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");

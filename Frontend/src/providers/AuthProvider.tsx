@@ -3,17 +3,13 @@
 import React, { useEffect } from "react";
 import { api, setCsrfToken } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
-import { useThemeStore } from "@/src/store/useThemeStore";
 import { useSSE } from "@/src/hooks/useSSE";
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const { login, logout, setLoading, isAuthenticated } = useAuthStore();
-  const hydrateTheme = useThemeStore((s) => s.hydrate);
   useSSE();
 
   useEffect(() => {
-    hydrateTheme();
-
     // Fetch CSRF token first so the cookie is set before any POST/PATCH/DELETE
     const init = async () => {
       try {

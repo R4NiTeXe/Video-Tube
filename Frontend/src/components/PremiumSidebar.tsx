@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { useThemeStore } from "@/src/store/useThemeStore";
+import { useTheme } from "next-themes";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import {
   HomeIcon,
@@ -26,7 +26,7 @@ const navItems = [
 export default function PremiumSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { theme, toggleTheme } = useThemeStore();
+  const { theme, setTheme } = useTheme();
   const { user } = useAuthStore();
 
   const isActive = (item: typeof navItems[0]) => {
@@ -66,7 +66,7 @@ export default function PremiumSidebar() {
             <ChevronRightIcon size={14} aria-hidden="true" />
           </button>
 
-          <button className="sidebar-theme-btn" onClick={toggleTheme} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
+          <button className="sidebar-theme-btn" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
             {theme === "dark" ? <SunIcon size={16} aria-hidden="true" /> : <MoonIcon size={16} aria-hidden="true" />}
             <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
             <span className="sidebar-theme-toggle-track" aria-hidden="true">

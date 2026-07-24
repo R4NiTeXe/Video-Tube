@@ -187,12 +187,12 @@ export default function RobotMascot({
 
   
   const C = {
-    body:   "#111118",
-    mid:    "#1a1a24",
-    light:  "#22222e",
-    border: "#2a2a38",
-    accent: "#dc2626",
-    glow:   "rgba(220,38,38,0.7)",
+    body:   "#e2e8f0",
+    mid:    "#f1f5f9",
+    light:  "#ffffff",
+    border: "#cbd5e1",
+    accent: "#3b82f6",
+    glow:   "rgba(59,130,246,0.6)",
   };
 
   const eyeW = 40;
@@ -335,7 +335,8 @@ function Eye({
         width: eyeW, height: eyeH,
         borderRadius: eyeShape,
         background: "radial-gradient(circle at 50% 38%, #fff 0%, #eee 100%)",
-        boxShadow: "inset 0 2px 4px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.35)",
+        border: "2px solid #cbd5e1",
+        boxShadow: "inset 0 2px 4px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.15)",
         overflow: "hidden",
         display: "flex", alignItems: "center", justifyContent: "center",
         transformOrigin: "center",
@@ -354,9 +355,9 @@ function Eye({
       <motion.div
         style={{
           position: "absolute", top: 0, left: 0, right: 0,
-          background: "#1c1c2e",
+          background: "#e2e8f0",
           height: lidH,
-          borderBottom: "2px solid #000",
+          borderBottom: "2px solid #cbd5e1",
           zIndex: 10,
         }}
       />
