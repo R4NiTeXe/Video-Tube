@@ -51,7 +51,11 @@ const providers: Provider[] = [
   },
 ];
 
-export default function SocialLoginButtons() {
+interface SocialLoginButtonsProps {
+  mode?: "login" | "register";
+}
+
+export default function SocialLoginButtons({ mode = "login" }: SocialLoginButtonsProps) {
   const handleOAuthLogin = (slug: string) => {
     // eslint-disable-next-line react-hooks/immutability
     window.location.href = `${API_BASE_URL}/auth/${slug}`;
@@ -89,7 +93,7 @@ export default function SocialLoginButtons() {
           }}
         >
           {p.icon}
-          <span>Log in with {p.name}</span>
+          <span>{mode === "login" ? "Log in" : "Sign up"} with {p.name}</span>
         </button>
       ))}
     </div>

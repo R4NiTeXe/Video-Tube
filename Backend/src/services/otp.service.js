@@ -159,10 +159,9 @@ const storeOtp = async ({ identifier, userId, purpose, channel = "email" }) => {
     channel,
     userId,
     globalCount: getGlobalDailyCount(),
-    userCount: userLimitCheck.used + 1,
   });
 
-  return { otp, otpDoc, remainingGlobal: globalCheck.remaining - 1, remainingUser: userLimitCheck.remaining - 1 };
+  return { otp, otpDoc };
 };
 
 const sendOtpEmail = async ({ identifier, otp, purpose, userName }) => {

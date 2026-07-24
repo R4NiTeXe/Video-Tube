@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PageMeta } from "@/src/components/PageMeta";
 import { COUNTRIES } from "@/src/lib/countries";
 import SocialLoginButtons from "@/src/components/SocialLoginButtons";
+import { PlayIcon } from "@/src/components/icons";
 
 
 const UploadImageIcon = () => (
@@ -380,7 +381,21 @@ export default function RegisterPage() {
     <>
       <PageMeta title="Create Account" description="Join VideoTube today — create your account and start sharing videos." noIndex />
       <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)", display: "flex", overflow: "hidden" }}>
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "2rem 4rem", maxWidth: 560, margin: "0 auto", overflowY: "auto" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", zIndex: 10, backgroundColor: "var(--bg-primary)", overflowY: "auto" }}>
+
+          <header style={{ padding: "var(--sp-6) var(--sp-8)", display: "flex", alignItems: "center", flexShrink: 0 }}>
+            <Link href="/" style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", textDecoration: "none" }}>
+              <div className="topnav-logo-icon">
+                <PlayIcon size={16} />
+              </div>
+              <span className="topnav-logo-text" style={{ color: "var(--text-primary)" }}>
+                Video<span style={{ color: "var(--text-muted)" }}>Tube</span>
+              </span>
+            </Link>
+          </header>
+
+          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "var(--sp-4) var(--sp-8) var(--sp-16)" }}>
+            <div style={{ width: "100%", maxWidth: "560px" }}>
           <div style={{ marginBottom: "1.5rem" }}>
             <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
               Step {stepNumber} of 3
@@ -402,7 +417,7 @@ export default function RegisterPage() {
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
               >
-                <SocialLoginButtons />
+                <SocialLoginButtons mode="register" />
 
                 <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)", margin: "var(--sp-3) 0" }}>
                   <div style={{ flex: 1, height: 1, backgroundColor: "var(--border)" }} />
@@ -714,6 +729,8 @@ export default function RegisterPage() {
               </motion.div>
             )}
           </AnimatePresence>
+            </div>
+          </div>
         </div>
       </div>
     </>
