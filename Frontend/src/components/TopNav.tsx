@@ -10,13 +10,12 @@ import { useKeyboardShortcuts } from "@/src/hooks/useKeyboardShortcuts";
 import {
   SearchIcon,
   BellIcon,
-  PlayIcon,
   UserIcon,
+  LogoutIcon,
+  StudioIcon,
+  ChevronDownIcon,
   UploadIcon,
   SettingsIcon,
-   LogoutIcon,
-   StudioIcon,
-   ChevronDownIcon,
 } from "@/src/components/icons";
 
 export default function TopNav() {
@@ -107,10 +106,8 @@ export default function TopNav() {
   return (
     <nav className="topnav" aria-label="Main navigation">
       <Link href="/" className="topnav-logo" aria-label="VideoTube Home">
-        <div className="topnav-logo-icon" aria-hidden="true">
-          <PlayIcon size={16} />
-        </div>
-        <span className="topnav-logo-text">VideoTube</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="VideoTube" style={{ height: "32px", width: "auto", display: "block" }} />
       </Link>
 
       <form className="topnav-search" onSubmit={handleSearchSubmit} role="search">

@@ -9,8 +9,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PageMeta } from "@/src/components/PageMeta";
 import { COUNTRIES } from "@/src/lib/countries";
 import SocialLoginButtons from "@/src/components/SocialLoginButtons";
-import { PlayIcon } from "@/src/components/icons";
-
 
 const UploadImageIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -385,12 +383,8 @@ export default function RegisterPage() {
 
           <header style={{ padding: "var(--sp-6) var(--sp-8)", display: "flex", alignItems: "center", flexShrink: 0 }}>
             <Link href="/" style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", textDecoration: "none" }}>
-              <div className="topnav-logo-icon">
-                <PlayIcon size={16} />
-              </div>
-              <span className="topnav-logo-text" style={{ color: "var(--text-primary)" }}>
-                Video<span style={{ color: "var(--text-muted)" }}>Tube</span>
-              </span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="VideoTube" style={{ height: "32px", width: "auto", display: "block" }} />
             </Link>
           </header>
 

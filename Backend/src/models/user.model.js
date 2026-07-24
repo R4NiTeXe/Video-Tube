@@ -15,8 +15,8 @@ const userSchema = new Schema(
     },
     email: {
       type: String,
-      required: true,
       trim: true,
+      sparse: true,
       unique: true,
       lowercase: true,
     },
@@ -223,15 +223,23 @@ userSchema.index({ role: 1, banned: 1 });
 userSchema.index({ createdAt: -1 });
 userSchema.index({ username: "text", fullName: "text" });
 userSchema.index({ passwordResetToken: 1, passwordResetExpires: 1 });
-userSchema.index({ emailVerificationToken: 1 });
+userSchema.plugin(mongooseAggregatePaginate);
 
-userSchema.pre("save", async function () {
+userSchema.pre("validate", function (next) {
+  if (!this.email && !this.mobile) {
+    return next(new Error("At least one identifier (email or mobile) is required."));
+  }
+  next();
+});
+
+userSchema.pre("save", async function (next) {
   if (this.isModified("password")) {
     this.password = await bcrypt.hash(this.password, 10);
   }
   if (this.isModified("emailVerificationToken") && this.emailVerificationToken) {
     this.emailVerificationToken = crypto.createHash("sha256").update(this.emailVerificationToken).digest("hex");
   }
+  next();
 });
 
 userSchema.methods.isPasswordCorrect = async function (password) {

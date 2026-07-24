@@ -42,6 +42,9 @@ import {
   verifyAndDeleteAccount,
   sendForgotPasswordChangeOTP,
   verifyAndResetPasswordViaOTP,
+  sendIdentifierUpdateOTP,
+  verifyAndAddIdentifier,
+  verifyAndDeleteIdentifier,
   getNotificationPrefs,
   updateNotificationPrefs,
   updatePrivacySettings,
@@ -171,6 +174,11 @@ router.route("/logout").post(verifyJWT, logoutUser);
 router.route("/current-user").get(verifyJWT, getCurrentUser);
 router.route("/change-password").post(verifyJWT, validateBody(userSchemas.changePassword.body), changeCurrentPassword);
 router.route("/update-account").patch(verifyJWT, validateBody(userSchemas.updateAccount.body), updateAccountDetails);
+
+// Identifier updates
+router.route("/update-identifier/send-otp").post(verifyJWT, validateBody(userSchemas.sendIdentifierUpdateOTP.body), sendIdentifierUpdateOTP);
+router.route("/update-identifier/verify-add").post(verifyJWT, validateBody(userSchemas.verifyAndAddIdentifier.body), verifyAndAddIdentifier);
+router.route("/update-identifier/verify-delete").post(verifyJWT, validateBody(userSchemas.verifyAndDeleteIdentifier.body), verifyAndDeleteIdentifier);
 router
   .route("/avatar")
   .patch(verifyJWT, upload.single("avatar"), validateFileSize, updateUserAvatar);

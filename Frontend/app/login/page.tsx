@@ -7,7 +7,7 @@ import { api, getApiErrorMessage } from "@/src/services/api";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageMeta } from "@/src/components/PageMeta";
-import { PlayIcon, EyeIcon, EyeOffIcon, CloseIcon } from "@/src/components/icons";
+import { EyeIcon, EyeOffIcon, CloseIcon } from "@/src/components/icons";
 
 
 export default function LoginPage() {
@@ -76,12 +76,8 @@ export default function LoginPage() {
 
         <header style={{ padding: "var(--sp-6) var(--sp-8)", display: "flex", alignItems: "center", flexShrink: 0 }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)" }}>
-            <div className="topnav-logo-icon">
-              <PlayIcon size={16} />
-            </div>
-            <span className="topnav-logo-text" style={{ color: "var(--text-primary)" }}>
-              Video<span style={{ color: "var(--text-muted)" }}>Tube</span>
-            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="VideoTube" style={{ height: "32px", width: "auto", display: "block" }} />
           </Link>
         </header>
 

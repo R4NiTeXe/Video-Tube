@@ -1,3 +1,11 @@
+export const formatDate = (dateObj = new Date()) => {
+  const day = String(dateObj.getDate()).padStart(2, '0');
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const year = dateObj.getFullYear();
+  const time = dateObj.toLocaleTimeString("en-US");
+  return `${day}/${month}/${year}, ${time}`;
+};
+
 export const getThemeConfig = (themeType) => {
   switch (themeType) {
     case "success":
@@ -56,7 +64,6 @@ export const otpEmailTemplate = (otp, purpose, userName, locationInfo = null) =>
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 20px 0; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
       <tr><td style="padding: 12px 16px;"><strong style="color:#374151; font-size: 13px;">Location:</strong> <span style="color:#6b7280; font-size: 13px;">${locationInfo.location || 'Unknown'}</span></td></tr>
       <tr><td style="padding: 12px 16px; border-top: 1px solid #e5e7eb;"><strong style="color:#374151; font-size: 13px;">Device:</strong> <span style="color:#6b7280; font-size: 13px;">${locationInfo.device || 'Unknown'}</span></td></tr>
-      <tr><td style="padding: 12px 16px; border-top: 1px solid #e5e7eb;"><strong style="color:#374151; font-size: 13px;">IP Address:</strong> <span style="color:#6b7280; font-size: 13px;">${locationInfo.ip || 'Unknown'}</span></td></tr>
     </table>
   ` : "";
 
@@ -248,7 +255,7 @@ export const accountDeletedTemplate = (user) => {
     actionUrl: `${process.env.FRONTEND_URL || "http://localhost:3000"}/support`,
     actionText: "Contact Support",
     details: [
-      { label: "Deletion Date", value: new Date().toLocaleString() },
+      { label: "Deletion Date", value: formatDate() },
       { label: "Status", value: "Permanently Deleted" }
     ],
     warning: false,
@@ -256,14 +263,13 @@ export const accountDeletedTemplate = (user) => {
   });
 };
 
-export const suspiciousLoginTemplate = (user, locationInfo, platform) => {
+export const suspiciousLoginTemplate = (user, locationInfo, platform, lastLoginDate = null) => {
   const details = [
     { label: "Login Method", value: platform },
-    { label: "Time", value: new Date().toLocaleString() }
+    { label: "Last Login", value: lastLoginDate ? formatDate(new Date(lastLoginDate)) : formatDate() }
   ];
   if (locationInfo?.location) details.push({ label: "Location", value: locationInfo.location });
   if (locationInfo?.device) details.push({ label: "Device", value: locationInfo.device });
-  if (locationInfo?.ip) details.push({ label: "IP Address", value: locationInfo.ip });
 
   return notificationEmailTemplate({
     title: "New Sign-In Detected",
@@ -280,7 +286,7 @@ export const suspiciousLoginTemplate = (user, locationInfo, platform) => {
 export const accountRecoveryTemplate = (user, locationInfo, platform) => {
   const details = [
     { label: "Recovery Method", value: platform },
-    { label: "Time", value: new Date().toLocaleString() }
+    { label: "Time", value: formatDate() }
   ];
   if (locationInfo?.location) details.push({ label: "Location", value: locationInfo.location });
   if (locationInfo?.device) details.push({ label: "Device", value: locationInfo.device });
@@ -300,7 +306,7 @@ export const accountRecoveryTemplate = (user, locationInfo, platform) => {
 export const passwordChangedEmailTemplate = (user, locationInfo) => {
   const details = [
     { label: "Action", value: "Password Changed" },
-    { label: "Time", value: new Date().toLocaleString() }
+    { label: "Time", value: formatDate() }
   ];
   if (locationInfo?.location) details.push({ label: "Location", value: locationInfo.location });
   if (locationInfo?.device) details.push({ label: "Device", value: locationInfo.device });
@@ -314,5 +320,37 @@ export const passwordChangedEmailTemplate = (user, locationInfo) => {
     details,
     warning: false,
     themeType: "success"
+  });
+};
+
+export const identifierUpdatedTemplate = (user, identifierType, newIdentifier) => {
+  return notificationEmailTemplate({
+    title: `${identifierType === 'email' ? 'Email' : 'Mobile Number'} Updated`,
+    message: `Your VideoTube profile was successfully updated. Your new ${identifierType} is ${newIdentifier}.`,
+    userName: user.fullName || user.username,
+    actionUrl: `${process.env.FRONTEND_URL || "http://localhost:3000"}/edit-profile`,
+    actionText: "View Profile",
+    details: [
+      { label: "Action", value: `${identifierType === 'email' ? 'Email' : 'Mobile'} Updated` },
+      { label: "Time", value: formatDate() }
+    ],
+    warning: false,
+    themeType: "success"
+  });
+};
+
+export const identifierDeletedTemplate = (user, identifierType) => {
+  return notificationEmailTemplate({
+    title: `${identifierType === 'email' ? 'Email' : 'Mobile Number'} Removed`,
+    message: `A ${identifierType} was successfully removed from your VideoTube account.`,
+    userName: user.fullName || user.username,
+    actionUrl: `${process.env.FRONTEND_URL || "http://localhost:3000"}/edit-profile`,
+    actionText: "View Profile",
+    details: [
+      { label: "Action", value: `${identifierType === 'email' ? 'Email' : 'Mobile'} Removed` },
+      { label: "Time", value: formatDate() }
+    ],
+    warning: true, // Warn them just in case it wasn't them
+    themeType: "warning"
   });
 };

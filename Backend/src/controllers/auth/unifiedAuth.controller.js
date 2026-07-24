@@ -289,16 +289,16 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found");
   }
 
-  const lastLoginTime = user.lastLogin ? new Date(user.lastLogin).getTime() : 0;
+  const lastLoginTime = user.lastLogin ? new Date(user.lastLogin).getTime() : Date.now();
   const FIFTEEN_DAYS = 15 * 24 * 60 * 60 * 1000;
   
-  if (Date.now() - lastLoginTime > FIFTEEN_DAYS) {
+  if (user.lastLogin && Date.now() - lastLoginTime > FIFTEEN_DAYS) {
     const locationInfo = await getLocationInfo(req);
     try {
       await sendEmail({
         to: user.email,
         subject: "New Sign-In Detected",
-        html: suspiciousLoginTemplate(user, locationInfo, channel),
+        html: suspiciousLoginTemplate(user, locationInfo, channel, user.lastLogin),
       });
     } catch (err) {
       logger.error("Failed to send suspicious login alert: " + err.message);

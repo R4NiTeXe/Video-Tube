@@ -7,14 +7,6 @@ import Link from "next/link";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { PageMeta } from "@/src/components/PageMeta";
 
-
-const PlayLogo = () => (
-  <svg width="28" height="20" viewBox="0 0 28 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="28" height="20" rx="4" fill="#dc2626"/>
-    <path d="M18 10L11 14.3301V5.66987L18 10Z" fill="white"/>
-  </svg>
-);
-
 type Step = "identifier" | "otp" | "choice" | "password" | "done";
 
 export default function ForgotPasswordPage() {
@@ -27,7 +19,7 @@ export default function ForgotPasswordPage() {
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const handleOtpChange = (index: number, value: string) => {
-    if (!/^\\d*$/.test(value)) return;
+    if (!/^\d*$/.test(value)) return;
     const next = [...otp];
     next[index] = value.slice(-1);
     setOtp(next);
@@ -44,7 +36,7 @@ export default function ForgotPasswordPage() {
 
   const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\\D/g, "").slice(0, 6);
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
     if (pasted) {
       const next = Array(6).fill("");
       pasted.split("").forEach((char, i) => { next[i] = char; });
@@ -194,8 +186,9 @@ export default function ForgotPasswordPage() {
           }}
         >
           <div style={{ marginBottom: "2rem" }}>
-            <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", color: "var(--text-primary)", fontWeight: 800, fontSize: "1.25rem", textDecoration: "none", marginBottom: "1.5rem" }}>
-              <PlayLogo /> VideoTube
+            <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: "var(--sp-2)", textDecoration: "none", marginBottom: "1.5rem" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="VideoTube" style={{ height: "32px", width: "auto", display: "block" }} />
             </Link>
             <h1 style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--text-primary)" }}>
               {step === "password" ? "Reset your password" : step === "choice" ? "Choose action" : step === "otp" ? "Enter OTP" : "Forgot Password?"}

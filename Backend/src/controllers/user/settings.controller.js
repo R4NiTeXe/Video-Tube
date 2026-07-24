@@ -19,7 +19,7 @@ import { getCookieOptions } from "../user.controller.js";
 import logger from "../../utils/logger.js";
 import { sendEmail } from "../../utils/email.js";
 import { storeOTP, verifyOTP } from "../../utils/otp.js";
-import { otpEmailTemplate, passwordChangedEmailTemplate, accountDeletedTemplate } from "../../utils/emailTemplates.js";
+import { otpEmailTemplate, passwordChangedEmailTemplate, accountDeletedTemplate, identifierUpdatedTemplate, identifierDeletedTemplate } from "../../utils/emailTemplates.js";
 import { sendWhatsAppOTP } from "../../utils/whatsappOtp.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -415,6 +415,142 @@ const getWatchLater = asyncHandler(async (req, res) => {
   );
 });
 
+const sendIdentifierUpdateOTP = asyncHandler(async (req, res) => {
+  const { identifier, action } = req.body;
+  
+  if (!["add", "edit", "delete"].includes(action)) {
+    throw new ApiError(400, "Invalid action");
+  }
+
+  const user = await User.findById(req.user._id);
+
+  let targetIdentifier = identifier;
+  let isMobile = false;
+
+  if (action === "delete") {
+    // For delete, identifier in body is what they want to delete ("email" or "mobile").
+    // We send OTP to the OTHER identifier.
+    const targetType = identifier; // "email" or "mobile"
+    if (targetType === "email" && !user.mobile) {
+      throw new ApiError(400, "Cannot delete email because you have no mobile number linked.");
+    }
+    if (targetType === "mobile" && !user.email) {
+      throw new ApiError(400, "Cannot delete mobile because you have no email linked.");
+    }
+
+    targetIdentifier = targetType === "email" ? user.mobile : user.email;
+    isMobile = targetType === "email"; // Since we send OTP to the other
+  } else {
+    // Add/Edit: target is the new identifier
+    isMobile = /^\+?[1-9]\d{9,14}$/.test(targetIdentifier.trim());
+    if (!isMobile && !isValidEmail(targetIdentifier)) {
+      throw new ApiError(400, "Invalid email or mobile format");
+    }
+
+    const existing = await User.findOne({ 
+      $or: [{ email: targetIdentifier.toLowerCase() }, { mobile: targetIdentifier.trim() }] 
+    });
+    if (existing && existing._id.toString() !== user._id.toString()) {
+      throw new ApiError(409, "This identifier is already in use by another account.");
+    }
+  }
+
+  const channel = isMobile ? "whatsapp" : "email";
+  const otp = await storeOTP(targetIdentifier, "identifier-update", channel, user._id);
+
+  try {
+    if (channel === "whatsapp") {
+      await sendWhatsAppOTP(targetIdentifier, otp);
+    } else {
+      await sendEmail({
+        to: targetIdentifier,
+        subject: "Verification Code for Profile Update",
+        html: otpEmailTemplate(otp, "verify-email", user.fullName || user.username),
+      });
+    }
+  } catch (error) {
+    logger.error(`Failed to send OTP to ${targetIdentifier}:`, error.message);
+    throw new ApiError(500, `Failed to send OTP to ${channel}`);
+  }
+
+  return res.status(200).json(new ApiResponse(200, { channel, verificationIdentifier: targetIdentifier }, "OTP sent successfully"));
+});
+
+const verifyAndAddIdentifier = asyncHandler(async (req, res) => {
+  const { identifier, otp } = req.body;
+  const isMobile = /^\+?[1-9]\d{9,14}$/.test(identifier.trim());
+
+  const result = await verifyOTP(identifier, otp, "identifier-update");
+  if (!result.valid) {
+    throw new ApiError(400, result.message);
+  }
+
+  const user = await User.findById(req.user._id);
+  
+  if (isMobile) {
+    user.mobile = identifier.trim();
+    user.isMobileVerified = true;
+  } else {
+    user.email = identifier.toLowerCase();
+  }
+
+  await user.save();
+
+  // Send notification
+  try {
+    const notifyIdentifier = isMobile ? user.mobile : user.email;
+    const notifyChannel = isMobile ? "whatsapp" : "email";
+    if (notifyChannel === "email") {
+      await sendEmail({
+        to: notifyIdentifier,
+        subject: "Profile Updated",
+        html: identifierUpdatedTemplate(user, isMobile ? "mobile" : "email", identifier.trim()),
+      });
+    }
+  } catch (error) {
+    logger.error("Failed to send identifier update notification:", error.message);
+  }
+
+  return res.status(200).json(new ApiResponse(200, { user }, "Identifier updated successfully"));
+});
+
+const verifyAndDeleteIdentifier = asyncHandler(async (req, res) => {
+  const { targetType, verificationIdentifier, otp } = req.body; // targetType: "email" or "mobile"
+
+  const result = await verifyOTP(verificationIdentifier, otp, "identifier-update");
+  if (!result.valid) {
+    throw new ApiError(400, result.message);
+  }
+
+  const user = await User.findById(req.user._id);
+
+  if (targetType === "email") {
+    user.email = undefined;
+  } else if (targetType === "mobile") {
+    user.mobile = undefined;
+    user.isMobileVerified = false;
+  }
+
+  await user.save();
+
+  // Send notification to the remaining identifier
+  try {
+    const notifyIdentifier = targetType === "email" ? user.mobile : user.email;
+    const notifyChannel = targetType === "email" ? "whatsapp" : "email";
+    if (notifyChannel === "email" && notifyIdentifier) {
+      await sendEmail({
+        to: notifyIdentifier,
+        subject: "Profile Updated",
+        html: identifierDeletedTemplate(user, targetType),
+      });
+    }
+  } catch (error) {
+    logger.error("Failed to send identifier deletion notification:", error.message);
+  }
+
+  return res.status(200).json(new ApiResponse(200, { user }, `${targetType} removed successfully`));
+});
+
 export {
   sendChangePasswordOTP,
   verifyAndChangePassword,
@@ -430,4 +566,7 @@ export {
   clearSearchHistory,
   clearWatchHistory,
   getWatchLater,
+  sendIdentifierUpdateOTP,
+  verifyAndAddIdentifier,
+  verifyAndDeleteIdentifier,
 };

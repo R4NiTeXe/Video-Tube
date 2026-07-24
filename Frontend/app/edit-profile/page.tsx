@@ -7,6 +7,7 @@ import { useAuthStore } from "@/src/store/useAuthStore";
 import Link from "next/link";
 import { PageMeta } from "@/src/components/PageMeta";
 import { motion } from "framer-motion";
+import ContactDetailsManager from "@/src/components/ContactDetailsManager";
 
 function isValidUrl(str: string): boolean {
   if (!str) return true;
@@ -29,7 +30,6 @@ export default function EditProfilePage() {
   const { user, isAuthenticated, isLoading: authLoading, login } = useAuthStore();
 
   const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
   const [bio, setBio] = useState("");
   const [youtube, setYoutube] = useState("");
   const [twitter, setTwitter] = useState("");
@@ -56,7 +56,6 @@ export default function EditProfilePage() {
   useEffect(() => {
     if (user) {
       setFullName(user.fullName || "");
-      setEmail(user.email || "");
       setAvatarPreview(user.avatar || "");
       setCoverPreview(user.coverImage || "");
       setBio(user.bio || "");
@@ -73,7 +72,6 @@ export default function EditProfilePage() {
     if (!user) return;
     const dirty =
       fullName !== (user.fullName || "") ||
-      email !== (user.email || "") ||
       bio !== (user.bio || "") ||
       youtube !== (user.socialLinks?.youtube || "") ||
       twitter !== (user.socialLinks?.twitter || "") ||
@@ -83,7 +81,7 @@ export default function EditProfilePage() {
       avatarFile !== null ||
       coverFile !== null;
     setIsDirty(dirty);
-  }, [fullName, email, bio, youtube, twitter, instagram, github, website, avatarFile, coverFile, user]);
+  }, [fullName, bio, youtube, twitter, instagram, github, website, avatarFile, coverFile, user]);
 
   // Unsaved changes guard
   useEffect(() => {
@@ -118,7 +116,7 @@ export default function EditProfilePage() {
     e.preventDefault();
     setError(""); setSuccess(""); setSaving(true);
     try {
-      await api.patch("/users/update-account", { fullName, email });
+      await api.patch("/users/update-account", { fullName });
       await api.patch("/users/profile", { bio: bio.trim(), socialLinks: { youtube, twitter, instagram, github, website } });
       if (avatarFile) { const fd = new FormData(); fd.append("avatar", avatarFile); await api.patch("/users/avatar", fd, { headers: { "Content-Type": "multipart/form-data" } }); }
       if (coverFile) { const fd = new FormData(); fd.append("coverImage", coverFile); await api.patch("/users/cover-image", fd, { headers: { "Content-Type": "multipart/form-data" } }); }
@@ -240,10 +238,6 @@ export default function EditProfilePage() {
                     <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Username cannot be changed</span>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                    <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Email</label>
-                    <input type="email" className="input" style={{ width: "100%", boxSizing: "border-box" }} value={email} onChange={(e) => { setEmail(e.target.value); markDirty(); }} required />
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Bio</label>
                       <span style={{ fontSize: "0.72rem", color: bioColor, fontWeight: 500 }}>{bio.length}/500</span>
@@ -306,8 +300,11 @@ export default function EditProfilePage() {
               </div>
             </div>
 
-            {/* Save Button */}
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "1.5rem" }}>
+            </div>
+            
+            <ContactDetailsManager />
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem", marginTop: "2rem", borderTop: "1px solid var(--border)", paddingTop: "1.5rem" }}>
               <Link href={`/channel/${user.username}`} className="btn btn-ghost" style={{ padding: "0.7rem 1.5rem", borderRadius: "var(--radius-md)", textDecoration: "none", fontSize: "0.9rem" }}
                 onClick={(e) => { if (isDirty && !confirm("You have unsaved changes. Are you sure you want to leave?")) e.preventDefault(); }}>
                 Cancel

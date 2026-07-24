@@ -1186,20 +1186,12 @@ const skipAndLogin = asyncHandler(async (req, res) => {
   const locationInfo = await getLocationInfo(req);
   
   try {
-    if (Date.now() - lastLoginTime > FIFTEEN_DAYS) {
-      const { suspiciousLoginTemplate } = await import("../utils/emailTemplates.js");
-      await sendEmail({
-        to: user.email,
-        subject: "New Sign-In Detected",
-        html: suspiciousLoginTemplate(user, locationInfo, "Skip & Login Recovery"),
-      });
-    } else {
-      await sendEmail({
-        to: user.email,
-        subject: "Account Recovery Successful",
-        html: accountRecoveryTemplate(user, locationInfo, "Skip & Login"),
-      });
-    }
+    const { accountRecoveryTemplate } = await import("../utils/emailTemplates.js");
+    await sendEmail({
+      to: user.email,
+      subject: "Account Recovery Successful",
+      html: accountRecoveryTemplate(user, locationInfo, "Skip & Login"),
+    });
   } catch (err) {
     logger.error("Failed to send account recovery alert: " + err.message);
   }
