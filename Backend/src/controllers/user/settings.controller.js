@@ -44,6 +44,7 @@ const sendChangePasswordOTP = asyncHandler(async (req, res) => {
       await sendWhatsAppOTP(mobile, otp);
     } catch (error) {
       logger.error("Failed to send OTP WhatsApp:", error.message);
+      throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);
     }
     return res.status(200).json(new ApiResponse(200, { channel: "whatsapp" }, "OTP sent to your WhatsApp"));
   } else {
@@ -56,6 +57,7 @@ const sendChangePasswordOTP = asyncHandler(async (req, res) => {
       });
     } catch (error) {
       logger.error("Failed to send OTP email:", error.message);
+      throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
     }
     return res.status(200).json(new ApiResponse(200, { channel: "email" }, "OTP sent to your email"));
   }
@@ -135,6 +137,7 @@ const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
       await sendWhatsAppOTP(mobile, otp);
     } catch (error) {
       logger.error("Failed to send delete account OTP WhatsApp:", error.message);
+      throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);
     }
     return res.status(200).json(new ApiResponse(200, { channel: "whatsapp" }, "OTP sent to your WhatsApp"));
   } else {
@@ -147,6 +150,7 @@ const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
       });
     } catch (error) {
       logger.error("Failed to send delete account OTP email:", error.message);
+      throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
     }
     return res.status(200).json(new ApiResponse(200, { channel: "email" }, "OTP sent to your email"));
   }
@@ -218,6 +222,7 @@ const sendForgotPasswordChangeOTP = asyncHandler(async (req, res) => {
       await sendWhatsAppOTP(mobile, otp);
     } catch (error) {
       logger.error("Failed to send forgot password OTP WhatsApp:", error.message);
+      throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);
     }
     return res.status(200).json(new ApiResponse(200, { channel: "whatsapp" }, "OTP sent to your WhatsApp"));
   } else {
@@ -230,6 +235,7 @@ const sendForgotPasswordChangeOTP = asyncHandler(async (req, res) => {
       });
     } catch (error) {
       logger.error("Failed to send forgot password OTP email:", error.message);
+      throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
     }
     return res.status(200).json(new ApiResponse(200, { channel: "email" }, "OTP sent to your email"));
   }

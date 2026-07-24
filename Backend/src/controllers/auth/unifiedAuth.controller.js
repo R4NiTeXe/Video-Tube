@@ -235,6 +235,7 @@ const sendLoginOTP = asyncHandler(async (req, res) => {
       });
     } catch (error) {
       logger.error("Failed to send login OTP email:", error.message);
+      throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
     }
   } else {
     const otp = await storeOTP(normalizedIdentifier, "login", "whatsapp", user._id);
@@ -242,6 +243,7 @@ const sendLoginOTP = asyncHandler(async (req, res) => {
       await sendWhatsAppOTP(normalizedIdentifier, otp);
     } catch (error) {
       logger.error("Failed to send login OTP WhatsApp:", error.message);
+      throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);
     }
   }
 
@@ -272,16 +274,17 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found");
   }
 
-  if (!user.isEmailVerified) {
-    throw new ApiError(403, "Please verify your email before logging in");
-  }
-
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
+
+  const deviceInfo = {
+    ip: req.ip,
+    userAgent: req.headers["user-agent"],
+  };
+  await createSession(user._id, deviceInfo);
+
   const loggedInUser = await User.findById(user._id).select("-password -refreshToken").lean();
 
   const options = getCookieOptions();
-
-  await createSession(user._id, refreshToken, req);
 
   return res
     .status(200)
@@ -291,7 +294,7 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         { user: loggedInUser },
-        "User logged in successfully"
+        "Login successful"
       )
     );
 });

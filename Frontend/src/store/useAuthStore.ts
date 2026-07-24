@@ -6,6 +6,7 @@ interface User {
   fullName: string;
   username: string;
   email: string;
+  mobile?: string;
   avatar: string;
   coverImage?: string;
   bio?: string;
@@ -19,6 +20,7 @@ interface User {
   isVerified?: boolean;
   role?: "user" | "admin";
   isEmailVerified?: boolean;
+  isMobileVerified?: boolean;
 }
 
 interface AuthState {

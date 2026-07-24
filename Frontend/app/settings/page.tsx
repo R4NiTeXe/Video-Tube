@@ -8,14 +8,19 @@ import { useAuthStore } from "@/src/store/useAuthStore";
 import { PageMeta } from "@/src/components/PageMeta";
 import { motion } from "framer-motion";
 
-function PasswordInput({ value, onChange, placeholder, minLength = 8, blockPaste = false, id, autoComplete }: { value: string; onChange: (v: string) => void; placeholder?: string; minLength?: number; blockPaste?: boolean; id?: string; autoComplete?: string }) {
+function PasswordInput({ value, onChange, placeholder, minLength = 8, blockPaste = false, id, autoComplete, matchState }: { value: string; onChange: (v: string) => void; placeholder?: string; minLength?: number; blockPaste?: boolean; id?: string; autoComplete?: string; matchState?: "idle" | "match" | "mismatch" }) {
   const [show, setShow] = useState(false);
   return (
     <div style={{ position: "relative" }}>
       <input
         type={show ? "text" : "password"}
         className="input"
-        style={{ width: "100%", boxSizing: "border-box", paddingRight: "2.5rem" }}
+        style={{ 
+          width: "100%", 
+          boxSizing: "border-box", 
+          paddingRight: "2.5rem",
+          borderColor: matchState === "match" ? "var(--success)" : matchState === "mismatch" ? "var(--error)" : undefined
+        }}
         required
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -170,7 +175,12 @@ export default function SettingsPage() {
     if (!oldPassword) { return; }
     setOtpSending(true);
     try {
-      await api.post("/users/send-change-password-otp", { oldPassword, channel: changePasswordChannel });
+      await api.post("/users/send-change-password-otp", { 
+        oldPassword, 
+        channel: changePasswordChannel,
+        ...(changePasswordChannel === "email" && user?.email ? { email: user.email } : {}),
+        ...(changePasswordChannel === "whatsapp" && user?.mobile ? { mobile: user.mobile } : {})
+      });
       setOtpSent(true);
       refreshOtpUsage();
     } catch (err: unknown) {
@@ -198,7 +208,11 @@ export default function SettingsPage() {
   const handleSendForgotOtp = async () => {
     setForgotOtpSending(true);
     try {
-      await api.post("/users/send-forgot-password-change-otp", { channel: forgotChannel });
+      await api.post("/users/send-forgot-password-change-otp", { 
+        channel: forgotChannel,
+        ...(forgotChannel === "email" && user?.email ? { email: user.email } : {}),
+        ...(forgotChannel === "whatsapp" && user?.mobile ? { mobile: user.mobile } : {})
+      });
       setForgotOtpSent(true);
       refreshOtpUsage();
     } catch (err: unknown) {
@@ -313,7 +327,9 @@ export default function SettingsPage() {
 
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                   <label htmlFor="confirm-pw" style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Confirm Password</label>
-                  <PasswordInput id="confirm-pw" value={confirmPassword} onChange={setConfirmPassword} placeholder="Confirm new password" />
+                  <PasswordInput id="confirm-pw" value={confirmPassword} onChange={setConfirmPassword} placeholder="Confirm new password" 
+                    matchState={confirmPassword.length === 0 ? "idle" : newPassword === confirmPassword ? "match" : "mismatch"} 
+                  />
                 </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
@@ -404,7 +420,9 @@ export default function SettingsPage() {
 
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                   <label htmlFor="forgot-confirm-pw" style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Confirm Password</label>
-                  <PasswordInput id="forgot-confirm-pw" value={confirmPassword} onChange={setConfirmPassword} placeholder="Confirm new password" />
+                  <PasswordInput id="forgot-confirm-pw" value={confirmPassword} onChange={setConfirmPassword} placeholder="Confirm new password" 
+                    matchState={confirmPassword.length === 0 ? "idle" : newPassword === confirmPassword ? "match" : "mismatch"} 
+                  />
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
