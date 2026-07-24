@@ -65,7 +65,7 @@ const oauthCallback = (provider) => (req, res, next) => {
 };
 
 // Google
-router.get("/google", passport.authenticate("google", { scope: ["profile", "email"], session: false }));
+router.get("/google", passport.authenticate("google", { scope: ["profile", "email"], prompt: "select_account", session: false }));
 router.get("/google/callback", oauthCallback("google"));
 
 // GitHub
