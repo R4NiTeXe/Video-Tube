@@ -13,23 +13,27 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     hydrateTheme();
-    const checkAuth = async () => {
-      // If already authenticated from persisted session, verify silently in background
-      // without setting isLoading=true (avoids page flash on navigation)
-      if (!isAuthenticated) {
-        setLoading(true);
-      }
-      try {
-        const response = await api.get("/users/current-user");
-        login(response.data.data);
-      } catch {
-        logout();
-      } finally {
-        setLoading(false);
-      }
+
+    // Fetch CSRF token first so the cookie is set before any POST/PATCH/DELETE
+    const init = async () => {
+      try { await api.get("/csrf-token"); } catch { /* non-fatal */ }
+
+      const checkAuth = async () => {
+        if (!isAuthenticated) setLoading(true);
+        try {
+          const response = await api.get("/users/current-user");
+          login(response.data.data);
+        } catch {
+          logout();
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      checkAuth();
     };
 
-    checkAuth();
+    init();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
