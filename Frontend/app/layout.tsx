@@ -10,6 +10,7 @@ import ShortcutsDialog from "@/src/components/ShortcutsDialog";
 import { ErrorBoundary } from "@/src/components/ErrorBoundary";
 import AppShell from "@/src/components/AppShell";
 import { SITE_URL } from "@/src/services/siteConfig";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -89,6 +90,7 @@ export default function RootLayout({
             </ErrorBoundary>
           </AuthProvider>
         </QueryProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
