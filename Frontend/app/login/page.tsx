@@ -5,12 +5,10 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageMeta } from "@/src/components/PageMeta";
 import { PlayIcon, EyeIcon, EyeOffIcon, CloseIcon } from "@/src/components/icons";
 
-const MascotAnimation = dynamic(() => import("@/src/components/MascotAnimation"), { ssr: false });
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,8 +19,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [activeField, setActiveField] = useState<"name" | "username" | "email" | "password" | "confirmPassword" | "avatar" | "cover" | "submit" | "none">("none");
-
   useEffect(() => {
     if (!authLoading && isAuthenticated) router.push("/");
   }, [isAuthenticated, authLoading, router]);
@@ -130,8 +126,6 @@ export default function LoginPage() {
                     autoComplete="email"
                     value={identifier}
                     onChange={e => setIdentifier(e.target.value)}
-                    onFocus={() => setActiveField("email")}
-                    onBlur={() => setActiveField("none")}
                   />
                 </div>
               </div>
@@ -153,8 +147,6 @@ export default function LoginPage() {
                     autoComplete="current-password"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    onFocus={() => setActiveField("password")}
-                    onBlur={() => setActiveField("none")}
                     style={{ paddingRight: 44 }}
                   />
                   <button
@@ -171,8 +163,6 @@ export default function LoginPage() {
 
               <button
                 type="submit" disabled={isLoading}
-                onMouseEnter={() => setActiveField("submit")}
-                onMouseLeave={() => setActiveField("none")}
                 className="btn btn-primary"
                 style={{ width: "100%", marginTop: "var(--sp-2)", opacity: isLoading ? 0.6 : 1, cursor: isLoading ? "not-allowed" : "pointer" }}
               >
@@ -189,16 +179,6 @@ export default function LoginPage() {
             </p>
           </motion.div>
         </div>
-      </div>
-
-      {/* RIGHT: MASCOT */}
-      <div style={{ flex: 1.2, backgroundColor: "var(--card)", borderLeft: "1px solid var(--border)" }} className="mascot-panel">
-        <MascotAnimation
-          activeField={activeField}
-          isPasswordVisible={showPassword}
-          isLoading={isLoading}
-          passwordMatch="idle"
-        />
       </div>
 
       

@@ -1,8 +1,12 @@
 import { otpService } from "../services/otp.service.js";
 import logger from "./logger.js";
+import { checkAndIncrementMessagingLimit } from "../services/messagingLimit.service.js";
 
 // Send OTP via Meta WhatsApp Business API (uses unified OTP service)
-export const sendWhatsAppOTP = async (mobile, otp) => {
+export const sendWhatsAppOTP = async (mobile, otp, userName = "") => {
+  // Enforce global and user limits
+  await checkAndIncrementMessagingLimit(mobile);
+
   const API_URL = process.env.WHATSAPP_API_URL;
   const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
   const ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
@@ -60,7 +64,7 @@ export const sendWhatsAppOTP = async (mobile, otp) => {
         to: formattedMobile,
         type: "text",
         text: {
-          body: `🔐 Your VideoTube verification code is: *${otp}*\n\nThis code expires in 10 minutes. Do not share this code with anyone.`,
+          body: `🔐 Hello ${userName || "there"},\n\nYour VideoTube verification code is: *${otp}*\n\nThis code expires in 10 minutes. Do not share this code with anyone.`,
         },
       };
     }

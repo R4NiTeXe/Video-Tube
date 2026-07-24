@@ -6,7 +6,8 @@ import { OTP } from "../../models/otp.model.js";
 import { storeOTP, verifyOTP } from "../../utils/otp.js";
 import { sendEmail } from "../../utils/email.js";
 import { sendWhatsAppOTP } from "../../utils/whatsappOtp.js";
-import { otpEmailTemplate, passwordChangedEmailTemplate } from "../../utils/emailTemplates.js";
+import { getLocationInfo } from "../../utils/location.js";
+import { accountRegisteredTemplate, suspiciousLoginTemplate, otpEmailTemplate } from "../../utils/emailTemplates.js";
 import { generateAccessAndRefreshToken, getCookieOptions } from "../user.controller.js";
 import { createSession } from "../session.controller.js";
 import { uploadOnCloudinary, deleteFromCloudinary } from "../../utils/cloudinary.js";
@@ -186,6 +187,20 @@ const registerUnified = asyncHandler(async (req, res) => {
     throw dbError;
   }
 
+  const locationInfo = await getLocationInfo(req);
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: "Welcome to VideoTube!",
+      html: accountRegisteredTemplate(user, locationInfo),
+    });
+  } catch (err) {
+    logger.error("Failed to send welcome email in registerUnified: " + err.message);
+  }
+
+  user.lastLogin = new Date();
+  await user.save({ validateBeforeSave: false });
+
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
   const loggedInUser = await User.findById(user._id).select("-password -refreshToken").lean();
 
@@ -273,6 +288,25 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
   if (!user) {
     throw new ApiError(404, "User not found");
   }
+
+  const lastLoginTime = user.lastLogin ? new Date(user.lastLogin).getTime() : 0;
+  const FIFTEEN_DAYS = 15 * 24 * 60 * 60 * 1000;
+  
+  if (Date.now() - lastLoginTime > FIFTEEN_DAYS) {
+    const locationInfo = await getLocationInfo(req);
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: "New Sign-In Detected",
+        html: suspiciousLoginTemplate(user, locationInfo, channel),
+      });
+    } catch (err) {
+      logger.error("Failed to send suspicious login alert: " + err.message);
+    }
+  }
+
+  user.lastLogin = new Date();
+  await user.save({ validateBeforeSave: false });
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
 

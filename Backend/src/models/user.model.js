@@ -115,6 +115,9 @@ const userSchema = new Schema(
       type: Number,
       default: 0,
     },
+    lastLogin: {
+      type: Date,
+    },
     lockUntil: {
       type: Date,
     },

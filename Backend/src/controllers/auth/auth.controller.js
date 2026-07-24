@@ -12,6 +12,8 @@ import jwt from "jsonwebtoken";
 import { assertPasswordStrength } from "../../utils/passwordValidation.js";
 import { uploadOnCloudinary, deleteFromCloudinary } from "../../utils/cloudinary.js";
 import logger from "../../utils/logger.js";
+import { getLocationInfo } from "../../utils/location.js";
+import { accountRegisteredTemplate, passwordChangedEmailTemplate } from "../../utils/emailTemplates.js";
 
 const registerUser = asyncHandler(async (req, res) => {
   const { username, fullName, email, password } = req.body;
@@ -82,6 +84,17 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while registering the user");
   }
 
+  const locationInfo = await getLocationInfo(req);
+  try {
+    await sendEmail({
+      to: createdUser.email,
+      subject: "Welcome to VideoTube!",
+      html: accountRegisteredTemplate(createdUser, locationInfo),
+    });
+  } catch (err) {
+    logger.error("Failed to send welcome email: " + err.message);
+  }
+
   return res
     .status(201)
     .json(new ApiResponse(201, createdUser, "User registered successfully"));
@@ -138,8 +151,10 @@ const loginUser = asyncHandler(async (req, res) => {
   if (user.loginAttempts > 0 || user.lockUntil) {
     user.loginAttempts = 0;
     user.lockUntil = undefined;
-    await user.save({ validateBeforeSave: false });
   }
+  
+  user.lastLogin = new Date();
+  await user.save({ validateBeforeSave: false });
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
 
@@ -344,7 +359,20 @@ const resetPassword = asyncHandler(async (req, res) => {
   user.password = newPassword;
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
+  
+  user.lastLogin = new Date();
   await user.save();
+  
+  const locationInfo = await getLocationInfo(req);
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: "Password Changed Successfully",
+      html: passwordChangedEmailTemplate(user, locationInfo),
+    });
+  } catch (err) {
+    logger.error("Failed to send password reset email: " + err.message);
+  }
 
   await (await import("../../models/session.model.js")).Session.updateMany({ user: user._id }, { isActive: false });
 
@@ -414,6 +442,22 @@ const socialLogin = asyncHandler(async (req, res) => {
       }
     }
   }
+
+  if (isNewUser) {
+    const locationInfo = await getLocationInfo(req);
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: "Welcome to VideoTube!",
+        html: accountRegisteredTemplate(user, locationInfo),
+      });
+    } catch (err) {
+      logger.error("Failed to send welcome email for social login: " + err.message);
+    }
+  }
+
+  user.lastLogin = new Date();
+  await user.save({ validateBeforeSave: false });
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
   const loggedInUser = await User.findById(user._id).select("-password -refreshToken").lean();

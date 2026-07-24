@@ -5,8 +5,6 @@ import { sendEmail } from "../utils/email.js";
 import logger from "../utils/logger.js";
 
 export const OTP_CONSTANTS = {
-  GLOBAL_DAILY_LIMIT: 300,
-  USER_DAILY_LIMIT: 10,
   OTP_LENGTH: 6,
   OTP_EXPIRY_MINUTES: 10,
   MAX_ATTEMPTS: 5,
@@ -122,19 +120,6 @@ const storeOtp = async ({ identifier, userId, purpose, channel = "email" }) => {
   }
   if (!OTP_CHANNELS.includes(channel)) {
     throw new Error(`Invalid OTP channel: ${channel}`);
-  }
-
-  const globalCheck = checkGlobalLimit();
-  if (!globalCheck.allowed) {
-    throw new Error(globalCheck.message);
-  }
-
-  let userLimitCheck = { allowed: true, remaining: OTP_CONSTANTS.USER_DAILY_LIMIT };
-  if (userId) {
-    userLimitCheck = await checkUserLimit(userId);
-    if (!userLimitCheck.allowed) {
-      throw new Error(userLimitCheck.message);
-    }
   }
 
   const otp = generateOtp();

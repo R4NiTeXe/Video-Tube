@@ -4,12 +4,9 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import Link from "next/link";
-import dynamic from "next/dynamic";
-
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { PageMeta } from "@/src/components/PageMeta";
 
-const MascotAnimation = dynamic(() => import("@/src/components/MascotAnimation"), { ssr: false });
 
 const PlayLogo = () => (
   <svg width="28" height="20" viewBox="0 0 28 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -62,10 +59,6 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [activeField, setActiveField] = useState<
-    "identifier" | "otp" | "password" | "none"
-  >("none");
-
   const detectInputType = (value: string): "email" | "mobile" => {
     const trimmed = value.trim();
     if (/^\+?\d{10,15}$/.test(trimmed.replace(/\s/g, ""))) return "mobile";
@@ -163,11 +156,6 @@ export default function ForgotPasswordPage() {
     boxSizing: "border-box",
   };
 
-  const inputFocusStyle = (target: typeof activeField): React.CSSProperties =>
-    activeField === target
-      ? { borderColor: "var(--accent)", boxShadow: "0 0 0 3px var(--accent-glow, rgba(99,102,241,0.15))" }
-      : {};
-
   const buttonStyle: React.CSSProperties = {
     width: "100%",
     padding: "0.85rem",
@@ -240,9 +228,7 @@ export default function ForgotPasswordPage() {
                   placeholder="Email or phone"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  onFocus={() => setActiveField("identifier")}
-                  onBlur={() => setActiveField("none")}
-                  style={{ ...inputFieldStyle, ...inputFocusStyle("identifier") }}
+                  style={{ ...inputFieldStyle }}
                 />
               </div>
               <button
@@ -273,15 +259,12 @@ export default function ForgotPasswordPage() {
                       onChange={(e) => handleOtpChange(i, e.target.value)}
                       onKeyDown={(e) => handleOtpKeyDown(i, e)}
                       onPaste={handleOtpPaste}
-                      onFocus={() => setActiveField("otp")}
-                      onBlur={() => setActiveField("none")}
                       style={{
                         ...inputFieldStyle,
                         padding: "0.8rem 0",
                         textAlign: "center",
                         fontSize: "1.2rem",
                         fontWeight: 600,
-                        ...inputFocusStyle("otp"),
                       }}
                     />
                   ))}
@@ -330,9 +313,7 @@ export default function ForgotPasswordPage() {
                   placeholder="New password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  onFocus={() => setActiveField("password")}
-                  onBlur={() => setActiveField("none")}
-                  style={{ ...inputFieldStyle, ...inputFocusStyle("password") }}
+                  style={{ ...inputFieldStyle }}
                 />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
@@ -345,9 +326,7 @@ export default function ForgotPasswordPage() {
                   placeholder="Confirm new password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  onFocus={() => setActiveField("password")}
-                  onBlur={() => setActiveField("none")}
-                  style={{ ...inputFieldStyle, ...inputFocusStyle("password") }}
+                  style={{ ...inputFieldStyle }}
                 />
               </div>
               <button
@@ -380,14 +359,6 @@ export default function ForgotPasswordPage() {
               </Link>
             </p>
           )}
-        </div>
-
-        <div style={{ flex: 1.2, backgroundColor: "var(--elevated)", borderLeft: "1px solid var(--border)" }} className="mascot-panel">
-          <MascotAnimation
-            activeField={activeField === "otp" || activeField === "identifier" ? "email" : activeField}
-            isPasswordVisible={showPassword}
-            isLoading={isLoading}
-          />
         </div>
       </div>
     </>

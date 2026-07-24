@@ -21,8 +21,9 @@ import { verifyOAuthToken } from "../utils/verifyOAuthToken.js";
 import { sendEmail } from "../utils/email.js";
 import { storeOTP, verifyOTP } from "../utils/otp.js";
 import { OTP } from "../models/otp.model.js";
-import { otpEmailTemplate, passwordChangedEmailTemplate } from "../utils/emailTemplates.js";
+import { otpEmailTemplate, passwordChangedEmailTemplate, accountRecoveryTemplate } from "../utils/emailTemplates.js";
 import { sendWhatsAppOTP } from "../utils/whatsappOtp.js";
+import { getLocationInfo } from "../utils/location.js";
 import mongoose from "mongoose";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
@@ -1172,7 +1173,39 @@ const skipAndLogin = asyncHandler(async (req, res) => {
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
   const loggedInUser = await User.findById(user._id).select("-password -refreshToken").lean();
   const options = getCookieOptions();
+  
+  const deviceInfo = {
+    ip: req.ip,
+    userAgent: req.headers["user-agent"],
+  };
   await createSession(user._id, refreshToken, req);
+
+  const lastLoginTime = user.lastLogin ? new Date(user.lastLogin).getTime() : 0;
+  const FIFTEEN_DAYS = 15 * 24 * 60 * 60 * 1000;
+  
+  const locationInfo = await getLocationInfo(req);
+  
+  try {
+    if (Date.now() - lastLoginTime > FIFTEEN_DAYS) {
+      const { suspiciousLoginTemplate } = await import("../utils/emailTemplates.js");
+      await sendEmail({
+        to: user.email,
+        subject: "New Sign-In Detected",
+        html: suspiciousLoginTemplate(user, locationInfo, "Skip & Login Recovery"),
+      });
+    } else {
+      await sendEmail({
+        to: user.email,
+        subject: "Account Recovery Successful",
+        html: accountRecoveryTemplate(user, locationInfo, "Skip & Login"),
+      });
+    }
+  } catch (err) {
+    logger.error("Failed to send account recovery alert: " + err.message);
+  }
+
+  user.lastLogin = new Date();
+  await user.save({ validateBeforeSave: false });
 
   return res
     .status(200)

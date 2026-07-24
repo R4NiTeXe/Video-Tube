@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import logger from "./logger.js";
+import { checkAndIncrementMessagingLimit } from "../services/messagingLimit.service.js";
 
 // Check if Brevo API is configured (Requires an API key, not an SMTP key)
 const isBrevoConfigured = Boolean(process.env.BREVO_API_KEY);
@@ -15,6 +16,9 @@ const maskEmail = (e) => { const at = e.indexOf("@"); return at > 0 ? `${e.slice
 
 const sendEmail = async ({ to, subject, html }) => {
   let lastError = null;
+
+  // Enforce global and user limits
+  await checkAndIncrementMessagingLimit(to);
 
   // 1. Try Brevo API first
   if (isBrevoConfigured) {

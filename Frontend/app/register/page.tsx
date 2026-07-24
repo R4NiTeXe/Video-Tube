@@ -5,13 +5,10 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageMeta } from "@/src/components/PageMeta";
 import { COUNTRIES } from "@/src/lib/countries";
 import SocialLoginButtons from "@/src/components/SocialLoginButtons";
-
-const MascotAnimation = dynamic(() => import("@/src/components/MascotAnimation"), { ssr: false });
 
 
 const UploadImageIcon = () => (
@@ -51,7 +48,6 @@ const ShieldCheckIcon = () => (
 );
 
 type Step = "details" | "otp" | "done";
-type ActiveField = "name" | "username" | "email" | "password" | "confirmPassword" | "avatar" | "cover" | "submit" | "none";
 
 const OTP_LENGTH = 6;
 const COOLDOWN_SECONDS = 60;
@@ -135,7 +131,7 @@ export default function RegisterPage() {
   const mobileOtpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   
-  const [activeField, setActiveField] = useState<ActiveField>("none");
+
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [statusText, setStatusText] = useState("");
@@ -160,13 +156,6 @@ export default function RegisterPage() {
     return () => clearTimeout(t);
   }, [mobileCooldown]);
 
-  
-  const passwordMatch: "idle" | "match" | "mismatch" =
-    confirmPassword.length === 0
-      ? "idle"
-      : formData.password === confirmPassword
-        ? "match"
-        : "mismatch";
 
   
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -372,9 +361,7 @@ export default function RegisterPage() {
   if (isAuthenticated) return null;
 
 
-  const confirmBorderClass =
-    passwordMatch === "match" ? "input input-success" :
-    passwordMatch === "mismatch" ? "input input-error" : "input";
+  const confirmBorderClass = "input";
 
   
   const stepNumber = step === "details" ? 1 : step === "otp" ? 2 : 3;
@@ -427,22 +414,19 @@ export default function RegisterPage() {
                   <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
                     <label htmlFor="reg-fullname" className="text-caption" style={{ color: "var(--text-secondary)" }}>Full Name <span style={{ color: "var(--accent)" }}>*</span></label>
                     <input type="text" required placeholder="Full name" className="input" id="reg-fullname"
-                      value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                      onFocus={() => setActiveField("name")} onBlur={() => setActiveField("none")} />
+                      value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} />
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
                     <label htmlFor="reg-username" className="text-caption" style={{ color: "var(--text-secondary)" }}>Username <span style={{ color: "var(--accent)" }}>*</span></label>
                     <input type="text" required placeholder="Username" className="input" id="reg-username"
-                      value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                      onFocus={() => setActiveField("username")} onBlur={() => setActiveField("none")} />
+                      value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} />
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
                     <label htmlFor="reg-email" className="text-caption" style={{ color: "var(--text-secondary)" }}>Email Address <span style={{ color: "var(--accent)" }}>*</span></label>
                     <input type="email" required placeholder="Email address" className="input" id="reg-email"
-                      value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      onFocus={() => setActiveField("email")} onBlur={() => setActiveField("none")} />
+                      value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
@@ -454,8 +438,7 @@ export default function RegisterPage() {
                         ))}
                       </select>
                       <input type="tel" required placeholder="Mobile number" className="input" id="reg-mobile" style={{ flex: 1 }}
-                        value={formData.mobile} onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                        onFocus={() => setActiveField("name")} onBlur={() => setActiveField("none")} />
+                        value={formData.mobile} onChange={(e) => setFormData({ ...formData, mobile: e.target.value })} />
                     </div>
                   </div>
 
@@ -465,7 +448,6 @@ export default function RegisterPage() {
                       <input type={showPassword ? "text" : "password"} required placeholder="Password" className="input" id="reg-password" autoComplete="new-password"
                         value={formData.password}
                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        onFocus={() => setActiveField("password")} onBlur={() => setActiveField("none")}
                         style={{ paddingRight: "var(--sp-12)" }} />
                       <button type="button" className="password-toggle" onClick={() => setShowPassword((p) => !p)} onMouseDown={(e) => e.preventDefault()}
                         aria-label={showPassword ? "Hide password" : "Show password"}>
@@ -481,7 +463,6 @@ export default function RegisterPage() {
                       <input type={showConfirmPassword ? "text" : "password"} required placeholder="Confirm Password" className={confirmBorderClass} id="reg-confirm" autoComplete="new-password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        onFocus={() => setActiveField("confirmPassword")} onBlur={() => setActiveField("none")}
                         style={{ paddingRight: "var(--sp-12)" }} />
                       <button type="button" className="password-toggle" onClick={() => setShowConfirmPassword((p) => !p)} onMouseDown={(e) => e.preventDefault()}
                         aria-label={showConfirmPassword ? "Hide password" : "Show password"}>
@@ -496,7 +477,6 @@ export default function RegisterPage() {
                     </label>
                     <div className={`upload-zone ${avatarPreview ? "has-file" : ""}`}
                       onClick={() => avatarRef.current?.click()}
-                      onMouseEnter={() => setActiveField("avatar")} onMouseLeave={() => setActiveField("none")}
                       style={{ flexDirection: "row", gap: "var(--sp-3)", padding: "var(--sp-3)", justifyContent: "flex-start", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1.5px dashed var(--border)", cursor: "pointer", transition: "all 0.2s" }}>
                       <input type="file" ref={avatarRef} accept="image/*" onChange={handleAvatarChange} style={{ display: "none" }} />
                       {avatarPreview ? (
@@ -734,15 +714,6 @@ export default function RegisterPage() {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
-
-        <div style={{ flex: 1.2, backgroundColor: "var(--elevated)", borderLeft: "1px solid var(--border-medium)" }} className="mascot-panel">
-          <MascotAnimation
-            activeField={activeField}
-            isPasswordVisible={showPassword}
-            isLoading={isLoading || step === "done"}
-            passwordMatch={passwordMatch}
-          />
         </div>
       </div>
     </>

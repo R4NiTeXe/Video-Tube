@@ -19,7 +19,7 @@ import { getCookieOptions } from "../user.controller.js";
 import logger from "../../utils/logger.js";
 import { sendEmail } from "../../utils/email.js";
 import { storeOTP, verifyOTP } from "../../utils/otp.js";
-import { otpEmailTemplate, passwordChangedEmailTemplate } from "../../utils/emailTemplates.js";
+import { otpEmailTemplate, passwordChangedEmailTemplate, accountDeletedTemplate } from "../../utils/emailTemplates.js";
 import { sendWhatsAppOTP } from "../../utils/whatsappOtp.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -196,6 +196,16 @@ const verifyAndDeleteAccount = asyncHandler(async (req, res) => {
   await Poll.deleteMany({ createdBy: userId });
   await Poll.updateMany({ voters: userId }, { $pull: { voters: userId } });
   await Session.deleteMany({ user: userId });
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: "Account Deletion Confirmed",
+      html: accountDeletedTemplate(user),
+    });
+  } catch (err) {
+    logger.error("Failed to send account deletion email: " + err.message);
+  }
+
   await User.findByIdAndDelete(userId);
 
   const options = getCookieOptions();
