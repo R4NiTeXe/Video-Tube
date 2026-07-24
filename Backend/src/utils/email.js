@@ -23,6 +23,20 @@ const isSmtpConfigured = Boolean(
   process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS
 );
 
+if (isSmtpConfigured) {
+  (async () => {
+    try {
+      await transporter.verify();
+      logger.info("✅ Brevo SMTP connected");
+    } catch (error) {
+      logger.error("❌ Brevo SMTP connection failed at startup:", {
+        code: error.code,
+        message: error.message,
+      });
+    }
+  })();
+}
+
 // Resend fallback
 const isResendConfigured = Boolean(process.env.RESEND_API_KEY);
 let resend = null;
