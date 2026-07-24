@@ -41,14 +41,16 @@ const sendEmail = async ({ to, subject, html }) => {
   if (isSmtpConfigured) {
     logger.info("Verifying SMTP...");
     try {
-      await transporter.verify();
+      await Promise.race([
+        transporter.verify(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("SMTP verify timeout")), 10000)
+        ),
+      ]);
+
       logger.info("✅ SMTP Verify Success");
     } catch (err) {
-      logger.error("❌ SMTP Verify Failed:", {
-        code: err.code,
-        message: err.message,
-        stack: err.stack,
-      });
+      logger.error("❌ SMTP Verify Failed:", err);
     }
 
     try {
