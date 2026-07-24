@@ -40,22 +40,27 @@ const sendRegistrationOTP = asyncHandler(async (req, res) => {
     const field = existingUser.email === normalizedEmail ? "Email" : "Mobile number";
     throw new ApiError(409, `${field} already registered. Please login.`);
   }
-
   const [emailOtp, mobileOtp] = await Promise.all([
     storeOTP(normalizedEmail, "registration", "email"),
     storeOTP(normalizedMobile, "registration", "whatsapp"),
   ]);
 
-  await Promise.allSettled([
+  const [emailResult, mobileResult] = await Promise.allSettled([
     sendEmail({
       to: normalizedEmail,
       subject: "Welcome to VideoTube — Verify Your Email",
       html: otpEmailTemplate(emailOtp, "registration"),
     }),
-    sendWhatsAppOTP(normalizedMobile, mobileOtp).catch((err) => {
-      logger.warn("WhatsApp OTP send failed, falling back to email-only", { error: err.message });
-    }),
+    sendWhatsAppOTP(normalizedMobile, mobileOtp),
   ]);
+
+  if (mobileResult.status === "rejected") {
+    logger.warn("WhatsApp OTP send failed, falling back to email-only", { error: mobileResult.reason?.message });
+  }
+
+  if (emailResult.status === "rejected") {
+    throw new ApiError(500, `Failed to send email OTP: ${emailResult.reason?.message || "Unknown error"}`);
+  }
 
   return res.status(200).json(
     new ApiResponse(200, { email: normalizedEmail, mobile: normalizedMobile }, "OTPs sent to both email and mobile number")

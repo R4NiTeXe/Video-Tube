@@ -1,31 +1,8 @@
-import nodemailer from "nodemailer";
 import { Resend } from "resend";
 import logger from "./logger.js";
 
-// Brevo SMTP transporter
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: process.env.SMTP_SECURE === "true",
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
-  auth:
-    process.env.SMTP_USER && process.env.SMTP_PASS
-      ? {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
-        }
-      : undefined,
-});
-
-const isSmtpConfigured = Boolean(
-  process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS
-);
-
-if (isSmtpConfigured) {
-  // We'll verify inside sendMail() to test the connection at runtime
-}
+// Check if Brevo API is configured (Requires an API key, not an SMTP key)
+const isBrevoConfigured = Boolean(process.env.BREVO_API_KEY);
 
 // Resend fallback
 const isResendConfigured = Boolean(process.env.RESEND_API_KEY);
@@ -37,38 +14,41 @@ if (isResendConfigured) {
 const maskEmail = (e) => { const at = e.indexOf("@"); return at > 0 ? `${e.slice(0, 2)}***${e.slice(at)}` : `${e.slice(0, 2)}***`; };
 
 const sendEmail = async ({ to, subject, html }) => {
-  // 1. Try Brevo SMTP first
-  if (isSmtpConfigured) {
-    logger.info("Verifying SMTP...");
+  let lastError = null;
+
+  // 1. Try Brevo API first
+  if (isBrevoConfigured) {
     try {
-      await Promise.race([
-        transporter.verify(),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("SMTP verify timeout")), 10000)
-        ),
-      ]);
+      const fromAddress = process.env.MAIL_FROM || process.env.SMTP_USER || "noreply@videotube.com";
+      const fromName = "VideoTube";
 
-      logger.info("✅ SMTP Verify Success");
-    } catch (err) {
-      logger.error("❌ SMTP Verify Failed:", err);
-    }
-
-    try {
-      const fromAddress = process.env.MAIL_FROM || process.env.SMTP_USER;
-
-      const info = await transporter.sendMail({
-        from: fromAddress,
-        to,
-        subject,
-        html,
-        replyTo: fromAddress,
+      const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "api-key": process.env.BREVO_API_KEY,
+        },
+        body: JSON.stringify({
+          sender: { name: fromName, email: fromAddress },
+          to: [{ email: to }],
+          subject: subject,
+          htmlContent: html,
+          replyTo: { email: fromAddress }
+        })
       });
 
-      logger.info(`Email sent via Brevo SMTP to ${maskEmail(to)}`);
-      return { success: true, messageId: info.messageId, provider: "brevo" };
+      const responseData = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(`Brevo API Error: ${response.status} - ${JSON.stringify(responseData)}`);
+      }
+
+      logger.info(`Email sent via Brevo API to ${maskEmail(to)}`);
+      return { success: true, messageId: responseData?.messageId, provider: "brevo" };
     } catch (error) {
-      logger.error("Brevo SMTP failed, trying Resend:", {
-        code: error.code,
+      lastError = error;
+      logger.error("Brevo API failed, trying Resend:", {
         message: error.message,
         stack: error.stack,
       });
@@ -93,6 +73,7 @@ const sendEmail = async ({ to, subject, html }) => {
       logger.info(`Email sent via Resend to ${maskEmail(to)}`);
       return { success: true, messageId: result.data?.id, provider: "resend" };
     } catch (error) {
+      lastError = error;
       logger.error("Resend failed:", {
         code: error.code,
         message: error.message,
@@ -101,8 +82,12 @@ const sendEmail = async ({ to, subject, html }) => {
     }
   }
 
+  if (lastError) {
+    throw new Error(`Failed to send email: ${lastError.message}`);
+  }
+
   // 3. Console fallback (dev mode)
-  if (process.env.NODE_ENV === "production") return { success: false, mode: "unconfigured", message: "No email provider configured" };
+  if (process.env.NODE_ENV === "production") throw new Error("No email provider configured");
   logger.debug("--- Development Email (No provider configured) ---");
   logger.debug(`To: ${maskEmail(to)}`);
   logger.debug(`Subject: ${subject}`);
