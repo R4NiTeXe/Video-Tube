@@ -9,6 +9,13 @@ interface ApiErrorBody {
   message?: string;
 }
 
+// In-memory CSRF token — cross-origin cookies on the backend domain
+// are not readable via document.cookie on the frontend domain
+let _csrfToken: string | null = null;
+
+export const setCsrfToken = (token: string) => { _csrfToken = token; };
+export const getCsrfToken = () => _csrfToken;
+
 // Create an Axios instance with base configuration
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -22,12 +29,8 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   const mutatingMethods = ["post", "put", "patch", "delete"];
   if (mutatingMethods.includes(config.method?.toLowerCase() || "")) {
-    const csrfToken = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("csrf_token="))
-      ?.split("=")[1];
-    if (csrfToken) {
-      config.headers["x-csrf-token"] = csrfToken;
+    if (_csrfToken) {
+      config.headers["x-csrf-token"] = _csrfToken;
     }
   }
   return config;
@@ -57,16 +60,12 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const csrfToken = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("csrf_token="))
-          ?.split("=")[1];
         await axios.post(
           `${API_BASE_URL}/users/refresh-token`,
           {},
           {
             withCredentials: true,
-            headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
+            headers: _csrfToken ? { "x-csrf-token": _csrfToken } : {},
           }
         );
         return api(originalRequest);
