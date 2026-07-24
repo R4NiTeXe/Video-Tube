@@ -7,6 +7,9 @@ const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT) || 587,
   secure: process.env.SMTP_SECURE === "true",
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
   auth:
     process.env.SMTP_USER && process.env.SMTP_PASS
       ? {
@@ -46,7 +49,11 @@ const sendEmail = async ({ to, subject, html }) => {
       logger.info(`Email sent via Brevo SMTP to ${maskEmail(to)}`);
       return { success: true, messageId: info.messageId, provider: "brevo" };
     } catch (error) {
-      logger.error("Brevo SMTP failed, trying Resend:", { error: error.message });
+      logger.error("Brevo SMTP failed, trying Resend:", {
+        code: error.code,
+        message: error.message,
+        stack: error.stack,
+      });
     }
   }
 
@@ -68,7 +75,11 @@ const sendEmail = async ({ to, subject, html }) => {
       logger.info(`Email sent via Resend to ${maskEmail(to)}`);
       return { success: true, messageId: result.data?.id, provider: "resend" };
     } catch (error) {
-      logger.error("Resend failed:", { error: error.message });
+      logger.error("Resend failed:", {
+        code: error.code,
+        message: error.message,
+        stack: error.stack,
+      });
     }
   }
 
