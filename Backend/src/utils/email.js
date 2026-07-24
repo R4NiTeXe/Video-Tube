@@ -24,17 +24,7 @@ const isSmtpConfigured = Boolean(
 );
 
 if (isSmtpConfigured) {
-  (async () => {
-    try {
-      await transporter.verify();
-      logger.info("✅ Brevo SMTP connected");
-    } catch (error) {
-      logger.error("❌ Brevo SMTP connection failed at startup:", {
-        code: error.code,
-        message: error.message,
-      });
-    }
-  })();
+  // We'll verify inside sendMail() to test the connection at runtime
 }
 
 // Resend fallback
@@ -49,6 +39,18 @@ const maskEmail = (e) => { const at = e.indexOf("@"); return at > 0 ? `${e.slice
 const sendEmail = async ({ to, subject, html }) => {
   // 1. Try Brevo SMTP first
   if (isSmtpConfigured) {
+    logger.info("Verifying SMTP...");
+    try {
+      await transporter.verify();
+      logger.info("✅ SMTP Verify Success");
+    } catch (err) {
+      logger.error("❌ SMTP Verify Failed:", {
+        code: err.code,
+        message: err.message,
+        stack: err.stack,
+      });
+    }
+
     try {
       const fromAddress = process.env.MAIL_FROM || process.env.SMTP_USER;
 
