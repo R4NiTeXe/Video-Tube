@@ -17,8 +17,15 @@ const maskEmail = (e) => { const at = e.indexOf("@"); return at > 0 ? `${e.slice
 const sendEmail = async ({ to, subject, html }) => {
   let lastError = null;
 
-  // Check limits before sending
-  await checkMessagingLimit(to);
+  // Check limits before sending — wrap in try/catch so Redis issues don't crash the flow
+  try {
+    await checkMessagingLimit(to);
+  } catch (limitError) {
+    // Re-throw rate limit errors (429) so callers can handle them
+    if (limitError?.statusCode === 429 || limitError?.status === 429) throw limitError;
+    // For unexpected errors (Redis down, etc), log and continue
+    logger.warn("Messaging limit check failed (skipping):", { error: limitError?.message });
+  }
 
   // 1. Try Brevo API first
   if (isBrevoConfigured) {
