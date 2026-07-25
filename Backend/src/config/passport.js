@@ -32,10 +32,9 @@ const findOrCreateUser = async (provider, providerId, email, name, avatar) => {
   }
 
   const randomPassword = crypto.randomBytes(32).toString("hex");
-  const socialMap = new Map();
-  socialMap.set(provider, providerId);
+  const socialMap = { [provider]: providerId };
 
-  const usernameBase = normalizedEmail.split("@")[0].replace(/[^a-z0-9]/g, "");
+  const usernameBase = normalizedEmail.split("@")[0].replace(/[^a-z0-9]/g, "") || "user";
   let username = usernameBase;
   let suffix = 1;
   while (await User.findOne({ username })) {
