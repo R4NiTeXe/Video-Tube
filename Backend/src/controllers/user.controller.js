@@ -1138,7 +1138,7 @@ const resetPasswordWithOTP = asyncHandler(async (req, res) => {
     await sendEmail({
       to: user.email,
       subject: "Password Changed",
-      html: passwordChangedEmailTemplate(),
+      html: passwordChangedEmailTemplate(user),
     });
   } catch (error) {
     logger.error("Failed to send password changed email:", error.message);
@@ -1285,7 +1285,7 @@ const verifyAndChangePassword = asyncHandler(async (req, res) => {
     await sendEmail({
       to: user.email,
       subject: "Password Changed",
-      html: passwordChangedEmailTemplate(),
+      html: passwordChangedEmailTemplate(user),
     });
   } catch (error) {
     logger.error("Failed to send password changed email:", error.message);
@@ -1871,7 +1871,7 @@ const verifyAndResetPasswordViaOTP = asyncHandler(async (req, res) => {
     await sendEmail({
       to: user.email,
       subject: "Password Changed",
-      html: passwordChangedEmailTemplate(),
+      html: passwordChangedEmailTemplate(user),
     });
   } catch (error) {
     logger.error("Failed to send password changed email:", error.message);
