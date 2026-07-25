@@ -2,7 +2,6 @@
 
 export const dynamic = "force-dynamic";
 
-
 import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -562,7 +561,7 @@ function HomeContent() {
         </div>
       ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.5rem", padding: "1.5rem 2rem" }}>
-            {videos.map((v) => (
+            {(Array.isArray(videos) ? videos : []).map((v) => (
               <div key={v._id}>
                 <VideoCard video={v} />
               </div>
