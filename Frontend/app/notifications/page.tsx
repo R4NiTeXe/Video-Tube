@@ -36,10 +36,32 @@ export default function NotificationsPage() {
   const { data: response, isLoading } = useQuery({
     queryKey: ["notifications"],
     queryFn: async () => {
-      const res = await api.get("/notifications");
-      return res.data;
+      try {
+        const res = await api.get("/notifications");
+        const body = res.data;
+
+        // Log the response shape in dev for debugging
+        if (process.env.NODE_ENV === "development") {
+          console.log("[Notifications] typeof data:", typeof body, "data:", body);
+        }
+
+        return body;
+      } catch (err: unknown) {
+        // If 401 / session expired, don't crash — just show empty
+        if (err && typeof err === "object" && "response" in err) {
+          const axiosErr = err as { response?: { status?: number } };
+          if (axiosErr.response?.status === 401) {
+            if (process.env.NODE_ENV === "development") {
+              console.warn("[Notifications] 401 fetching notifications — showing empty");
+            }
+            return { data: { notifications: [] } };
+          }
+        }
+        throw err;
+      }
     },
     enabled: isAuthenticated,
+    retry: false,
   });
 
   const markAllRead = useMutation({
@@ -63,7 +85,9 @@ export default function NotificationsPage() {
   });
 
   useEffect(() => {
-    if (isAuthenticated && !isLoading) markAllRead.mutate();
+    if (isAuthenticated && !isLoading && !markAllRead.isPending) {
+      markAllRead.mutate();
+    }
   }, [isAuthenticated, isLoading]);
 
   if (authLoading || !isAuthenticated) {
@@ -76,7 +100,8 @@ export default function NotificationsPage() {
     );
   }
 
-  const notifications: Notification[] = response?.data?.notifications || [];
+  const rawNotifications = response?.data?.notifications;
+  const notifications: Notification[] = Array.isArray(rawNotifications) ? rawNotifications : [];
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>

@@ -17,6 +17,7 @@ const logger = {
 
 export function useSSE() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isLoading = useAuthStore((s) => s.isLoading);
   const authRef = useRef(isAuthenticated);
   authRef.current = isAuthenticated;
   const queryClient = useQueryClient();
@@ -104,13 +105,15 @@ export function useSSE() {
 
   useEffect(() => {
     isMountedRef.current = true;
-    if (!authRef.current) {
+
+    // Don't connect until AuthProvider has verified the session
+    if (isLoading || !authRef.current) {
       if (esRef.current) {
         esRef.current.close();
         esRef.current = null;
       }
       setIsConnected(false);
-      retryCountRef.current = MAX_RETRIES; // prevent further retries
+      retryCountRef.current = MAX_RETRIES;
       return;
     }
 
@@ -121,7 +124,7 @@ export function useSSE() {
       if (esRef.current) esRef.current.close();
       if (reconnectRef.current) clearTimeout(reconnectRef.current);
     };
-  }, [isAuthenticated, connect]);
+  }, [isAuthenticated, isLoading, connect]);
 
   return { isConnected };
 }

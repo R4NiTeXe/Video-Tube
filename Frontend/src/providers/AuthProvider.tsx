@@ -20,7 +20,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       } catch { /* non-fatal */ }
 
       const checkAuth = async () => {
-        if (!isAuthenticated) setLoading(true);
+        setLoading(true);
         try {
           const response = await api.get("/users/current-user");
           login(response.data.data);

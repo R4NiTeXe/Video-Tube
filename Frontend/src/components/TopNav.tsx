@@ -30,14 +30,24 @@ export default function TopNav() {
   const { data: unreadData } = useQuery({
     queryKey: ["unreadNotifications"],
     queryFn: async () => {
-      const res = await api.get("/notifications/unread-count");
-      return res.data.data;
+      try {
+        const res = await api.get("/notifications/unread-count");
+        const body = res.data;
+        return body?.data ?? {};
+      } catch {
+        // 401 or network error — silently return empty
+        return {};
+      }
     },
     enabled: !!user,
     refetchInterval: 300000,
+    retry: false,
   });
 
-  const unreadCount: number = unreadData?.unreadCount ?? 0;
+  const unreadCount: number =
+    unreadData && typeof unreadData.unreadCount === "number"
+      ? unreadData.unreadCount
+      : 0;
 
   const focusSearch = useCallback(() => {
     searchInputRef.current?.focus();
