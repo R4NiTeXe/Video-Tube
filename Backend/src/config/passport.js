@@ -5,8 +5,15 @@ import { Strategy as GitHubStrategy } from "passport-github2";
 import { Strategy as FacebookStrategy } from "passport-facebook";
 import { Strategy as DiscordStrategy } from "passport-discord";
 import { User } from "../models/user.model.js";
+import logger from "../utils/logger.js";
 
-const CALLBACK_URL = `${process.env.BACKEND_URL || "http://localhost:8000"}/api/v1/auth`;
+const getProviderCallbackUrl = (provider) => {
+  const envVar = `${provider.toUpperCase()}_CALLBACK_URL`;
+  const configured = process.env[envVar];
+  if (configured) return configured.replace(/\/+$/, "");
+  const baseCallbackUrl = `${process.env.BACKEND_URL || "http://localhost:8000"}/api/v1/auth`;
+  return `${baseCallbackUrl}/${provider}/callback`;
+};
 
 const findOrCreateUser = async (provider, providerId, email, name, avatar) => {
   if (!email) throw new Error("Email is required from OAuth provider");
@@ -57,6 +64,18 @@ const sanitizeUser = (user, isNew) => {
 };
 
 export const configurePassport = () => {
+  const googleCallbackUrl = getProviderCallbackUrl("google");
+  const githubCallbackUrl = getProviderCallbackUrl("github");
+  const facebookCallbackUrl = getProviderCallbackUrl("facebook");
+  const discordCallbackUrl = getProviderCallbackUrl("discord");
+
+  logger.info("OAuth callback URLs: ", {
+    google: googleCallbackUrl,
+    github: githubCallbackUrl,
+    facebook: facebookCallbackUrl,
+    discord: discordCallbackUrl,
+  });
+
   passport.serializeUser((user, done) => done(null, user._id));
   passport.deserializeUser(async (id, done) => {
     try {
@@ -74,7 +93,7 @@ export const configurePassport = () => {
         {
           clientID: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          callbackURL: `${CALLBACK_URL}/google/callback`,
+          callbackURL: googleCallbackUrl,
           scope: ["profile", "email"],
         },
         async (accessToken, refreshToken, profile, done) => {
@@ -102,7 +121,7 @@ export const configurePassport = () => {
         {
           clientID: process.env.GITHUB_CLIENT_ID,
           clientSecret: process.env.GITHUB_CLIENT_SECRET,
-          callbackURL: `${CALLBACK_URL}/github/callback`,
+          callbackURL: githubCallbackUrl,
           scope: ["user:email"],
         },
         async (accessToken, refreshToken, profile, done) => {
@@ -131,7 +150,7 @@ export const configurePassport = () => {
         {
           clientID: process.env.FACEBOOK_APP_ID,
           clientSecret: process.env.FACEBOOK_APP_SECRET,
-          callbackURL: `${CALLBACK_URL}/facebook/callback`,
+          callbackURL: facebookCallbackUrl,
           profileFields: ["id", "displayName", "photos", "email"],
         },
         async (accessToken, refreshToken, profile, done) => {
@@ -160,7 +179,7 @@ export const configurePassport = () => {
         {
           clientID: process.env.DISCORD_CLIENT_ID,
           clientSecret: process.env.DISCORD_CLIENT_SECRET,
-          callbackURL: `${CALLBACK_URL}/discord/callback`,
+          callbackURL: discordCallbackUrl,
           scope: ["identify", "email"],
         },
         async (accessToken, refreshToken, profile, done) => {
