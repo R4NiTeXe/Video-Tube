@@ -202,13 +202,10 @@ export const userSchemas = {
 
   verifyAndResetPasswordViaOTP: {
     body: z.object({
-      identifier: z.string().min(1).optional(),
-      email: z.string().email().optional(),
-      mobile: mobileSchema.optional(),
       newPassword: passwordSchema,
       otp: z.string().length(6),
       channel: channelEnum,
-    }).refine(identifierRefine, { message: identifierMessage }),
+    }),
   },
 
   blockUser: {
