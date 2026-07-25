@@ -6,7 +6,7 @@ import { useAuthStore } from "@/src/store/useAuthStore";
 import { useSSE } from "@/src/hooks/useSSE";
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { login, logout, setLoading, isAuthenticated } = useAuthStore();
+  const { login, logout, setLoading } = useAuthStore();
   useSSE();
 
   useEffect(() => {
