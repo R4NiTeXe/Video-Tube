@@ -1,7 +1,6 @@
 import { Router } from "express";
 import passport from "passport";
 import jwt from "jsonwebtoken";
-import crypto from "crypto";
 import { User } from "../models/user.model.js";
 import { createSession } from "../controllers/session.controller.js";
 import logger from "../utils/logger.js";
@@ -60,46 +59,25 @@ const oauthCallback = (provider) => (req, res, next) => {
     if (err || !user) {
       return res.redirect(`${FE()}/login?error=auth_failed`);
     }
-
-    const stateToken = req.query?.state;
-    const savedState = req.cookies?.oauth_state;
-    if (!stateToken || !savedState || stateToken !== savedState) {
-      return res.redirect(`${FE()}/login?error=csrf_failed`);
-    }
-    res.clearCookie("oauth_state");
-
     req.user = user;
     handleOAuthCallback(req, res);
   })(req, res, next);
 };
 
-const oauthRedirect = (provider, scope) => (req, res, next) => {
-  const state = crypto.randomBytes(32).toString("hex");
-  const isProduction = process.env.NODE_ENV === "production";
-  res.cookie("oauth_state", state, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? "none" : "lax",
-    maxAge: 10 * 60 * 1000,
-    path: "/",
-  });
-  passport.authenticate(provider, { scope, session: false, state })(req, res, next);
-};
-
 // Google
-router.get("/google", oauthRedirect("google", ["profile", "email"]));
+router.get("/google", passport.authenticate("google", { scope: ["profile", "email"], prompt: "select_account", session: false }));
 router.get("/google/callback", oauthCallback("google"));
 
 // GitHub
-router.get("/github", oauthRedirect("github", ["user:email"]));
+router.get("/github", passport.authenticate("github", { scope: ["user:email"], session: false }));
 router.get("/github/callback", oauthCallback("github"));
 
 // Facebook
-router.get("/facebook", oauthRedirect("facebook", ["public_profile"]));
+router.get("/facebook", passport.authenticate("facebook", { scope: ["public_profile"], session: false }));
 router.get("/facebook/callback", oauthCallback("facebook"));
 
 // Discord
-router.get("/discord", oauthRedirect("discord", ["identify", "email"]));
+router.get("/discord", passport.authenticate("discord", { scope: ["identify", "email"], session: false }));
 router.get("/discord/callback", oauthCallback("discord"));
 
 export default router;
