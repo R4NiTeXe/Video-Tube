@@ -12,6 +12,23 @@ const getCookieOptions = () => ({
 
 export const generateCsrfToken = () => crypto.randomBytes(32).toString("hex");
 
+// Public unauthenticated routes that are exempt from CSRF validation.
+// These endpoints are either GET requests or are hit before the user has
+// a session (e.g. login, register, forgot-password flows).
+const CSRF_EXEMPT_ROUTES = [
+  "/api/v1/users/login",
+  "/api/v1/users/register",
+  "/api/v1/users/send-forgot-otp",
+  "/api/v1/users/verify-forgot-otp",
+  "/api/v1/users/reset-password-token",
+  "/api/v1/users/refresh-token",
+  "/api/v1/users/send-registration-otp",
+  "/api/v1/users/verify-registration-otp",
+  "/api/v1/users/skip-and-login",
+  "/api/v1/users/send-login-otp",
+  "/api/v1/users/login-with-otp",
+];
+
 export const csrfMiddleware = (req, res, next) => {
   // Skip CSRF in test environment
   if (process.env.NODE_ENV === "test") {
@@ -24,6 +41,11 @@ export const csrfMiddleware = (req, res, next) => {
       const token = generateCsrfToken();
       res.cookie(CSRF_COOKIE_NAME, token, getCookieOptions());
     }
+    return next();
+  }
+
+  // Skip CSRF for public exempt routes
+  if (CSRF_EXEMPT_ROUTES.some((route) => req.path === route || req.originalUrl.split("?")[0] === route)) {
     return next();
   }
 
