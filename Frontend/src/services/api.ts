@@ -25,8 +25,16 @@ export const api = axios.create({
   },
 });
 
-// Request interceptor to add CSRF token for mutating requests
+// Request interceptor to add CSRF token for mutating requests and Bearer token fallback
 api.interceptors.request.use((config) => {
+  // Attach Bearer token from localStorage if available (fallback for OAuth cross-origin flows)
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("accessToken");
+    if (stored && !config.headers["Authorization"]) {
+      config.headers["Authorization"] = `Bearer ${stored}`;
+    }
+  }
+
   const mutatingMethods = ["post", "put", "patch", "delete"];
   if (mutatingMethods.includes(config.method?.toLowerCase() || "")) {
     if (_csrfToken) {
@@ -60,16 +68,27 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        await axios.post(
+        const storedRefreshToken = typeof window !== "undefined" ? localStorage.getItem("refreshToken") : null;
+        const refreshRes = await axios.post(
           `${API_BASE_URL}/users/refresh-token`,
-          {},
+          storedRefreshToken ? { refreshToken: storedRefreshToken } : {},
           {
             withCredentials: true,
             headers: _csrfToken ? { "x-csrf-token": _csrfToken } : {},
           }
         );
+        // Update stored access token if backend returns a new one
+        const newAccessToken = refreshRes.data?.data?.accessToken;
+        if (newAccessToken && typeof window !== "undefined") {
+          localStorage.setItem("accessToken", newAccessToken);
+        }
         return api(originalRequest);
       } catch (refreshError) {
+        // Clear stored tokens on refresh failure
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+        }
         // Only redirect to login for protected routes, not public pages
         if (typeof window !== "undefined") {
           const publicPaths = ["/", "/login", "/register", "/forgot-password", "/auth/callback"];
