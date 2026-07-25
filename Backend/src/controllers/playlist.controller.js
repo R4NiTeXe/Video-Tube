@@ -99,6 +99,10 @@ const getPlaylistById = asyncHandler(async (req, res) => {
     {
       $match: {
         _id: new mongoose.Types.ObjectId(playlistId),
+        $or: [
+          { visibility: { $ne: "private" } },
+          { owner: new mongoose.Types.ObjectId(req.user?._id) },
+        ],
       },
     },
     {

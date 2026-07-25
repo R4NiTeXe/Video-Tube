@@ -351,10 +351,10 @@ const deleteCommunityPost = asyncHandler(async (req, res) => {
     await Poll.findByIdAndDelete(post.poll);
   }
 
-  await CommunityPost.findByIdAndDelete(postId);
-
-  // Cleanup related post likes
+  // Cleanup related post likes first
   await PostLike.deleteMany({ post: postId });
+
+  await CommunityPost.findByIdAndDelete(postId);
 
   return res
     .status(200)

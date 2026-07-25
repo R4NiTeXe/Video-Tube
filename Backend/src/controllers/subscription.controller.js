@@ -19,7 +19,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
     throw new ApiError(400, "You cannot subscribe to yourself");
   }
 
-  const existingSub = await Subscription.findOne({
+  const existingSub = await Subscription.findOneAndDelete({
     subscriber: req.user._id,
     channel: channelId,
   }).select("_id").lean();
@@ -27,11 +27,18 @@ const toggleSubscription = asyncHandler(async (req, res) => {
   let subscribed;
 
   if (existingSub) {
-    await Subscription.findByIdAndDelete(existingSub._id);
     subscribed = false;
   } else {
-    await Subscription.create({ subscriber: req.user._id, channel: channelId });
-    subscribed = true;
+    try {
+      await Subscription.create({ subscriber: req.user._id, channel: channelId });
+      subscribed = true;
+    } catch (error) {
+      if (error.code === 11000) {
+        subscribed = true;
+      } else {
+        throw error;
+      }
+    }
   }
 
   const subscribersCount = await Subscription.countDocuments({ channel: channelId });

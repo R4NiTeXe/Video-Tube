@@ -10,7 +10,7 @@ const pagination = z.object({
 const passwordSchema = z
   .string()
   .min(8)
-  .max(16)
+  .max(64)
   .regex(/[A-Z]/, "Must contain uppercase letter")
   .regex(/[a-z]/, "Must contain lowercase letter")
   .regex(/[0-9]/, "Must contain number")
@@ -30,7 +30,7 @@ export const userSchemas = {
       username: z.string().min(3).max(20).regex(/^[a-zA-Z0-9_]+$/),
       fullName: z.string().min(1).max(50).trim(),
       email: z.string().email(),
-      password: z.string().min(8).max(16)
+      password: z.string().min(8).max(64)
         .regex(/[A-Z]/, "Must contain uppercase")
         .regex(/[a-z]/, "Must contain lowercase")
         .regex(/[0-9]/, "Must contain number")
@@ -323,7 +323,7 @@ export const userSchemas = {
       otp: z.string().length(6),
       fullName: z.string().min(1).max(50).trim(),
       username: z.string().min(3).max(20).regex(/^[a-zA-Z0-9_]+$/),
-      password: z.string().min(8).max(16)
+      password: z.string().min(8).max(64)
         .regex(/[A-Z]/)
         .regex(/[a-z]/)
         .regex(/[0-9]/)

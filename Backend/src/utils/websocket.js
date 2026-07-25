@@ -5,9 +5,12 @@ import logger from "./logger.js";
 let wss = null;
 
 const rooms = new Map();
+const MAX_MESSAGE_SIZE = 64 * 1024;
+const RATE_LIMIT_WINDOW = 1000;
+const RATE_LIMIT_MAX = 20;
 
 export const initWebSocket = (server) => {
-  wss = new WebSocketServer({ server, path: "/ws" });
+  wss = new WebSocketServer({ server, path: "/ws", maxPayload: MAX_MESSAGE_SIZE });
 
   wss.on("connection", (ws, req) => {
     const token = new URL(req.url, "http://localhost").searchParams.get("token");
@@ -25,8 +28,24 @@ export const initWebSocket = (server) => {
     }
 
     ws.rooms = new Set();
+    ws.rateLimit = { count: 0, resetAt: Date.now() + RATE_LIMIT_WINDOW };
 
     ws.on("message", (data) => {
+      if (data.length > MAX_MESSAGE_SIZE) {
+        ws.close(4002, "Message too large");
+        return;
+      }
+
+      const now = Date.now();
+      if (now > ws.rateLimit.resetAt) {
+        ws.rateLimit = { count: 0, resetAt: now + RATE_LIMIT_WINDOW };
+      }
+      ws.rateLimit.count++;
+      if (ws.rateLimit.count > RATE_LIMIT_MAX) {
+        ws.close(4003, "Rate limit exceeded");
+        return;
+      }
+
       try {
         const msg = JSON.parse(data);
         handleMessage(ws, msg);
@@ -59,7 +78,15 @@ const handleMessage = (ws, msg) => {
       leaveRoom(ws, `video:${msg.videoId}`);
       break;
     case "comment:new":
-      broadcast(`video:${msg.videoId}`, { type: "comment:new", comment: msg.comment });
+      if (msg.comment && typeof msg.comment === "object") {
+        const sanitized = {
+          _id: msg.comment._id,
+          content: typeof msg.comment.content === "string" ? msg.comment.content.slice(0, 2000) : "",
+          owner: msg.comment.owner,
+          createdAt: msg.comment.createdAt,
+        };
+        broadcast(`video:${msg.videoId}`, { type: "comment:new", comment: sanitized });
+      }
       break;
     case "typing:start":
       broadcast(`video:${msg.videoId}`, { type: "typing:start", userId: ws.userId, username: msg.username }, ws);

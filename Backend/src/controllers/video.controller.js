@@ -29,17 +29,19 @@ const getAllVideos = asyncHandler(async (req, res) => {
   const pipeline = [];
 
   // search by title, description, or tags (escape regex to prevent ReDoS)
-  if (query) {
+  if (query && query.trim().length > 0) {
     const safeQuery = escapeRegex(query);
-    pipeline.push({
-      $match: {
-        $or: [
-          { title: { $regex: safeQuery, $options: "i" } },
-          { description: { $regex: safeQuery, $options: "i" } },
-          { tags: { $in: [new RegExp(safeQuery, "i")] } },
-        ],
-      },
-    });
+    if (safeQuery) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { title: { $regex: safeQuery, $options: "i" } },
+            { description: { $regex: safeQuery, $options: "i" } },
+            { tags: { $in: [new RegExp(safeQuery, "i")] } },
+          ],
+        },
+      });
+    }
   }
 
   // filter by userId if provided
@@ -467,42 +469,17 @@ const getVideoById = asyncHandler(async (req, res) => {
     const userModel = mongoose.model("User");
     const videoModel = mongoose.model("Video");
     
-    // Use a transaction to ensure atomicity
-    const session = await mongoose.startSession();
-    session.startTransaction();
     try {
-      const user = await userModel.findById(req.user._id).select("watchHistory").session(session);
-      const alreadyWatched = user?.watchHistory?.some(id => id.equals(videoId));
-      
-      if (!alreadyWatched) {
-        await videoModel.findByIdAndUpdate(videoId, { $inc: { views: 1 } }).session(session);
-        await userModel.findByIdAndUpdate(
-          req.user._id,
-          { $addToSet: { watchHistory: videoId } },
-          { session }
-        );
-        // Cap watchHistory to 500 to prevent unbounded document growth
-        await userModel.findByIdAndUpdate(
-          req.user._id,
-          { $push: { watchHistory: { $each: [], $slice: -500 } } },
-          { session }
-        );
-      }
-      await session.commitTransaction();
-    } catch (err) {
-      await session.abortTransaction();
-      logger.error("View increment transaction failed", { error: err.message, videoId });
-      // Fallback: non-transactional best-effort
       const oldUser = await userModel.findByIdAndUpdate(
         req.user._id,
         { $addToSet: { watchHistory: videoId } },
         { new: false, projection: { watchHistory: 1 } }
       );
-      if (!oldUser?.watchHistory?.includes(videoId)) {
+      if (!oldUser?.watchHistory?.some(id => id.equals(videoId))) {
         await videoModel.findByIdAndUpdate(videoId, { $inc: { views: 1 } });
       }
-    } finally {
-      session.endSession();
+    } catch (err) {
+      logger.error("View increment failed", { error: err.message, videoId });
     }
   }
 
@@ -609,19 +586,19 @@ const deleteVideo = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You are not authorized to delete this video");
   }
 
-  // delete video and thumbnail from cloudinary
-  await deleteFromCloudinary(video.videoFile, "video");
-  await deleteFromCloudinary(video.thumbnail, "image");
-
-  await Video.findByIdAndDelete(videoId);
-
-  // clean up related data (safe even if models are not yet registered)
+  // clean up related data first (safe even if models are not yet registered)
   if (mongoose.modelNames().includes("Like")) {
     await mongoose.model("Like").deleteMany({ video: videoId });
   }
   if (mongoose.modelNames().includes("Comment")) {
     await mongoose.model("Comment").deleteMany({ video: videoId });
   }
+
+  // delete video and thumbnail from cloudinary
+  await deleteFromCloudinary(video.videoFile, "video");
+  await deleteFromCloudinary(video.thumbnail, "image");
+
+  await Video.findByIdAndDelete(videoId);
 
   return res
     .status(200)

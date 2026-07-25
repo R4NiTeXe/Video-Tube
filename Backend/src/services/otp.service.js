@@ -9,6 +9,8 @@ export const OTP_CONSTANTS = {
   OTP_EXPIRY_MINUTES: 10,
   MAX_ATTEMPTS: 5,
   RESEND_COOLDOWN_SECONDS: 60,
+  GLOBAL_DAILY_LIMIT: 100,
+  USER_DAILY_LIMIT: 10,
 };
 
 const OTP_PURPOSES = [
@@ -91,12 +93,20 @@ const checkUserLimit = async (userId) => {
 
 const incrementUserDailyCount = async (userId) => {
   const today = OTP.getStartOfDay();
-  const user = await User.findById(userId).select("otpDailyCount otpDailyCountDate").lean();
-  const date = user?.otpDailyCountDate ? new Date(user.otpDailyCountDate) : null;
-  const count = (date && date.getTime() === today.getTime()) ? (user.otpDailyCount || 0) + 1 : 1;
-  await User.findByIdAndUpdate(userId, {
-    $set: { otpDailyCount: count, otpDailyCountDate: today },
-  });
+  await User.findByIdAndUpdate(userId, [
+    {
+      $set: {
+        otpDailyCount: {
+          $cond: {
+            if: { $eq: ["$otpDailyCountDate", today] },
+            then: { $add: ["$otpDailyCount", 1] },
+            else: 1,
+          },
+        },
+        otpDailyCountDate: today,
+      },
+    },
+  ]);
 };
 
 const getUserOtpUsage = async (userId) => {

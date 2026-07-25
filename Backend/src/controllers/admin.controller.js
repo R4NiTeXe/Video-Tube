@@ -144,17 +144,19 @@ const adminDeleteVideo = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid video id");
   }
 
-  const video = await Video.findByIdAndDelete(videoId);
+  const video = await Video.findById(videoId).select("owner videoFile thumbnail title");
   if (!video) throw new ApiError(404, "Video not found");
+
+  // Cleanup related data first
+  await Comment.deleteMany({ video: videoId });
+  await Like.deleteMany({ video: videoId });
+  await Playlist.updateMany({ videos: videoId }, { $pull: { videos: videoId } });
 
   // Cleanup Cloudinary
   if (video.videoFile) await deleteFromCloudinary(video.videoFile, "video").catch(() => {});
   if (video.thumbnail) await deleteFromCloudinary(video.thumbnail, "image").catch(() => {});
 
-  // Cleanup related data
-  await Comment.deleteMany({ video: videoId });
-  await Like.deleteMany({ video: videoId });
-  await Playlist.updateMany({}, { $pull: { videos: videoId } });
+  await Video.findByIdAndDelete(videoId);
 
   // Notify the video owner
   try {

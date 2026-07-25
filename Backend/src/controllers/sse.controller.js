@@ -1,9 +1,17 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 const sseClients = new Map();
+const MAX_CONNECTIONS_PER_USER = 5;
 
 export const streamNotifications = asyncHandler(async (req, res) => {
   const userId = req.user._id.toString();
+
+  const existingClients = sseClients.get(userId);
+  if (existingClients && existingClients.size >= MAX_CONNECTIONS_PER_USER) {
+    res.setHeader("Content-Type", "application/json");
+    res.status(429).json({ success: false, message: "Too many connections. Close existing connections first." });
+    return;
+  }
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");

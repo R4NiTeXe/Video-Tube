@@ -1092,7 +1092,7 @@ const verifyResetOTP = asyncHandler(async (req, res) => {
 
   const resetToken = jwt.sign(
     { email: id, purpose: "reset" },
-    process.env.REFRESH_TOKEN_SECRET,
+    process.env.ACCESS_TOKEN_SECRET + "_reset",
     { expiresIn: "5m" }
   );
 
@@ -1112,7 +1112,7 @@ const resetPasswordWithOTP = asyncHandler(async (req, res) => {
 
   let decoded;
   try {
-    decoded = jwt.verify(resetToken, process.env.REFRESH_TOKEN_SECRET);
+    decoded = jwt.verify(resetToken, process.env.ACCESS_TOKEN_SECRET + "_reset");
   } catch (error) {
     throw new ApiError(400, "Invalid or expired reset token");
   }
@@ -1158,7 +1158,7 @@ const skipAndLogin = asyncHandler(async (req, res) => {
 
   let decoded;
   try {
-    decoded = jwt.verify(resetToken, process.env.REFRESH_TOKEN_SECRET);
+    decoded = jwt.verify(resetToken, process.env.ACCESS_TOKEN_SECRET + "_reset");
   } catch (error) {
     throw new ApiError(400, "Invalid or expired reset token");
   }

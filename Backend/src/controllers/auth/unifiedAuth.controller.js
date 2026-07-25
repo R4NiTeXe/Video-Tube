@@ -310,11 +310,7 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
 
-  const deviceInfo = {
-    ip: req.ip,
-    userAgent: req.headers["user-agent"],
-  };
-  await createSession(user._id, deviceInfo);
+  await createSession(user._id, refreshToken, req);
 
   const loggedInUser = await User.findById(user._id).select("-password -refreshToken").lean();
 

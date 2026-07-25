@@ -156,7 +156,6 @@ const options = {
       { name: "Comments", description: "Video comments" },
       { name: "Likes", description: "Like/dislike videos & comments" },
       { name: "Subscriptions", description: "Channel subscriptions" },
-      { name: "Playlists", description: "Playlist management" },
       { name: "Dashboard", description: "Creator dashboard & analytics" },
       { name: "Admin", description: "Admin panel endpoints" },
       { name: "Health", description: "Health check endpoints" },

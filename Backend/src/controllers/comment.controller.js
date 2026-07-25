@@ -213,9 +213,10 @@ const deleteComment = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You are not authorized to delete this comment");
   }
 
+  const childCount = await Comment.countDocuments({ parentComment: commentId });
   await Comment.deleteMany({ parentComment: commentId });
   await Like.deleteMany({ comment: commentId });
-  await Video.findByIdAndUpdate(comment.video, { $inc: { commentsCount: -1 } });
+  await Video.findByIdAndUpdate(comment.video, { $inc: { commentsCount: -(childCount + 1) } });
   await Comment.findByIdAndDelete(commentId);
 
   return res

@@ -14,7 +14,6 @@ const reportSchema = new Schema(
     },
     target: {
       type: Schema.Types.ObjectId,
-      ref: function () { return { video: "Video", comment: "Comment", user: "User" }[this.targetType]; },
       required: true,
     },
     reason: {

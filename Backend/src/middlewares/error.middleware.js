@@ -1,4 +1,3 @@
-import fs from "fs";
 import multer from "multer";
 import mongoose from "mongoose";
 import { ZodError } from "zod";
@@ -90,7 +89,6 @@ const errorHandler = (err, req, res, next) => {
 
   
   if (statusCode >= 500) {
-    try { fs.writeFileSync("c:/Users/ranit/Desktop/WebDev/Coding/Bankend/HiteshSir/error_log.txt", err.stack || err.message || "Unknown error"); } catch(e) {}
     logger.error(`${req.method} ${req.originalUrl}`, {
       statusCode,
       message,

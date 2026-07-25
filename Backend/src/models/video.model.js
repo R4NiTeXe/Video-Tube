@@ -49,6 +49,11 @@ const videoSchema = new Schema(
         type:Boolean,
         default:true,
     },
+    visibility:{
+        type:String,
+        enum:["public","unlisted","private"],
+        default:"public",
+    },
     tags:{
         type:[String],
         default:[],

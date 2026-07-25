@@ -8,7 +8,7 @@ import { OTP } from "../models/otp.model.js";
 import logger from "../utils/logger.js";
 
 const sendOtp = asyncHandler(async (req, res) => {
-  const { identifier, purpose, channel = "email", userId } = req.body;
+  const { identifier, purpose, channel = "email" } = req.body;
 
   if (!identifier || !purpose) {
     throw new ApiError(400, "Identifier and purpose are required.");
@@ -21,7 +21,7 @@ const sendOtp = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid email format.");
   }
 
-  const targetUserId = userId || (req.user?._id);
+  const targetUserId = req.user?._id;
   let user = null;
 
   if (targetUserId) {

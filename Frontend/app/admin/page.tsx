@@ -61,7 +61,7 @@ export default function AdminPage() {
 
   const { data: usersRes } = useQuery({
     queryKey: ["admin-users", userQuery, userPage],
-    queryFn: async () => { const res = await api.get(`/admin/users?page=${userPage}&limit=15${userQuery ? `&query=${userQuery}` : ""}`); return res.data.data; },
+    queryFn: async () => { const res = await api.get(`/admin/users?page=${userPage}&limit=15${userQuery ? `&query=${encodeURIComponent(userQuery)}` : ""}`); return res.data.data; },
     enabled: isAuthenticated && user?.role === "admin" && tab === "users",
   });
 
@@ -83,7 +83,7 @@ export default function AdminPage() {
 
   const deleteVideoMutation = useMutation({
     mutationFn: async (videoId: string) => { await api.delete(`/admin/videos/${videoId}`); },
-    onSuccess: () => { setActionMsg("Video deleted"); setTimeout(() => setActionMsg(""), 3000); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-activity"] }); setActionMsg("Video deleted"); setTimeout(() => setActionMsg(""), 3000); },
   });
 
   const users = usersRes as { docs: AdminUser[]; totalDocs: number } | undefined;

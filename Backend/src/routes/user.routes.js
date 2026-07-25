@@ -145,7 +145,7 @@ router.route("/mobile/register").post(
   asyncHandler(async (req, res) => {
     const { mobile, otp: otpValue, fullName, username, password } = req.body;
     const normalizedMobile = mobile.trim();
-    const result = await verifyOTP(normalizedMobile, otpValue, "login");
+    const result = await verifyOTP(normalizedMobile, otpValue, "registration");
     if (!result.valid) {
       throw new ApiError(400, result.message);
     }

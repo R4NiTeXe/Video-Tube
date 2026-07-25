@@ -40,14 +40,18 @@ const MAGIC_BYTES = {
 };
 
 const readMagicBytes = (filePath, bytes = 8) => {
+  let fd;
   try {
-    const fd = fs.openSync(filePath, "r");
+    fd = fs.openSync(filePath, "r");
     const buffer = Buffer.alloc(bytes);
     fs.readSync(fd, buffer, 0, bytes, 0);
-    fs.closeSync(fd);
     return Array.from(buffer.subarray(0, bytes));
   } catch {
     return [];
+  } finally {
+    if (fd !== undefined) {
+      try { fs.closeSync(fd); } catch {}
+    }
   }
 };
 

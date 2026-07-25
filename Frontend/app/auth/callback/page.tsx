@@ -18,22 +18,12 @@ function CallbackContent() {
     const isNew = searchParams.get("isNew") === "true";
 
     if (error) {
-      router.replace(`/login?error=${error}`);
+      router.replace(`/login?error=${encodeURIComponent(error)}`);
       return;
     }
 
     if (isNew) sessionStorage.setItem("_welcome", "new");
     else sessionStorage.setItem("_welcome", "back");
-
-    const accessToken = searchParams.get("accessToken");
-    const refreshToken = searchParams.get("refreshToken");
-
-    if (accessToken) {
-      document.cookie = `accessToken=${accessToken}; path=/; max-age=86400; SameSite=Lax`;
-    }
-    if (refreshToken) {
-      document.cookie = `refreshToken=${refreshToken}; path=/; max-age=864000; SameSite=Lax`;
-    }
 
     const fetchUser = async () => {
       try {

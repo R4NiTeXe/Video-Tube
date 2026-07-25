@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 import logger from "./logger.js";
-import { checkAndIncrementMessagingLimit } from "../services/messagingLimit.service.js";
+import { checkMessagingLimit, incrementMessagingLimit } from "../services/messagingLimit.service.js";
 
 // Check if Brevo API is configured (Requires an API key, not an SMTP key)
 const isBrevoConfigured = Boolean(process.env.BREVO_API_KEY);
@@ -17,8 +17,8 @@ const maskEmail = (e) => { const at = e.indexOf("@"); return at > 0 ? `${e.slice
 const sendEmail = async ({ to, subject, html }) => {
   let lastError = null;
 
-  // Enforce global and user limits
-  await checkAndIncrementMessagingLimit(to);
+  // Check limits before sending
+  await checkMessagingLimit(to);
 
   // 1. Try Brevo API first
   if (isBrevoConfigured) {
@@ -49,6 +49,7 @@ const sendEmail = async ({ to, subject, html }) => {
       }
 
       logger.info(`Email sent via Brevo API to ${maskEmail(to)}`);
+      await incrementMessagingLimit(to);
       return { success: true, messageId: responseData?.messageId, provider: "brevo" };
     } catch (error) {
       lastError = error;
@@ -75,6 +76,7 @@ const sendEmail = async ({ to, subject, html }) => {
       }
 
       logger.info(`Email sent via Resend to ${maskEmail(to)}`);
+      await incrementMessagingLimit(to);
       return { success: true, messageId: result.data?.id, provider: "resend" };
     } catch (error) {
       lastError = error;

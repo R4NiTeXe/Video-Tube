@@ -22,17 +22,14 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
   let isLiked;
 
   if (existingLike) {
-    await Video.findByIdAndUpdate(videoId, { $inc: { likesCount: -1 } });
     isLiked = false;
   } else {
     try {
       await Like.create({ video: videoId, likedBy: req.user._id });
-      await Video.findByIdAndUpdate(videoId, { $inc: { likesCount: 1 } });
       isLiked = true;
     } catch (error) {
-      // If it's a duplicate key error (11000), it means another request already liked it
       if (error.code === 11000) {
-        isLiked = true; // It's already liked, so pretend we succeeded
+        isLiked = true;
       } else {
         throw error;
       }
