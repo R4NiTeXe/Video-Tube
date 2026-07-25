@@ -103,7 +103,7 @@ const errorHandler = (err, req, res, next) => {
   res.status(statusCode).json({
     success: false,
     statusCode,
-    message: message,
+    message: statusCode >= 500 && isProduction ? "Internal Server Error" : message,
     ...(errors.length > 0 ? { errors } : {}),
     ...(err.attemptsRemaining !== undefined ? { attemptsRemaining: err.attemptsRemaining } : {}),
   });

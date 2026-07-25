@@ -233,14 +233,13 @@ userSchema.pre("validate", function (next) {
   next();
 });
 
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", async function () {
   if (this.isModified("password")) {
     this.password = await bcrypt.hash(this.password, 10);
   }
   if (this.isModified("emailVerificationToken") && this.emailVerificationToken) {
     this.emailVerificationToken = crypto.createHash("sha256").update(this.emailVerificationToken).digest("hex");
   }
-  next();
 });
 
 userSchema.methods.isPasswordCorrect = async function (password) {
