@@ -78,6 +78,18 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (backendUrl) {
+      return [
+        {
+          source: "/api/v1/:path*",
+          destination: `${backendUrl.replace(/\/+$/, '')}/:path*`,
+        },
+      ];
+    }
+    return [];
+  },
 };
 
 export default bundleAnalyzer(nextConfig);

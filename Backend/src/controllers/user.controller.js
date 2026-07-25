@@ -1121,7 +1121,9 @@ const resetPasswordWithOTP = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid reset token");
   }
 
-  const user = await User.findOne({ email: decoded.email });
+  const user = await User.findOne({ 
+    $or: [{ email: decoded.email }, { mobile: decoded.email }] 
+  });
   if (!user) {
     throw new ApiError(404, "User not found");
   }
@@ -1165,7 +1167,9 @@ const skipAndLogin = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid reset token");
   }
 
-  const user = await User.findOne({ email: decoded.email });
+  const user = await User.findOne({ 
+    $or: [{ email: decoded.email }, { mobile: decoded.email }] 
+  });
   if (!user) {
     throw new ApiError(404, "User not found");
   }

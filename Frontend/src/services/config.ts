@@ -6,6 +6,9 @@ export const API_BASE_URL = (() => {
   const configuredUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   if (configuredUrl) {
+    if (typeof window !== "undefined" && process.env.NODE_ENV === "production") {
+      return "/api/v1";
+    }
     return normalizeApiBaseUrl(configuredUrl);
   }
 

@@ -89,6 +89,7 @@ const errorHandler = (err, req, res, next) => {
 
   
   if (statusCode >= 500) {
+    import("fs").then(fs => fs.writeFileSync("error_log.txt", err.stack || err.message || "Unknown error"));
     logger.error(`${req.method} ${req.originalUrl}`, {
       statusCode,
       message,
