@@ -380,9 +380,13 @@ const togglePostLike = asyncHandler(async (req, res) => {
   });
 
   if (deleted) {
-    await CommunityPost.findByIdAndUpdate(postId, [
-      { $set: { likesCount: { $max: [0, { $subtract: ["$likesCount", 1] }] } } },
-    ]);
+    await CommunityPost.findByIdAndUpdate(
+      postId,
+      [
+        { $set: { likesCount: { $max: [0, { $subtract: ["$likesCount", 1] }] } } },
+      ],
+      { updatePipeline: true }
+    );
 
     return res
       .status(200)

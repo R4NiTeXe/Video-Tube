@@ -59,7 +59,8 @@ const runUpdateTrendingScores = async () => {
             },
           },
         },
-      ]
+      ],
+      { updatePipeline: true }
     );
     if (result.modifiedCount > 0) {
       logger.info(`Updated trending scores for ${result.modifiedCount} videos`);

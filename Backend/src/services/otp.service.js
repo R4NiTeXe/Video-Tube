@@ -93,20 +93,24 @@ const checkUserLimit = async (userId) => {
 
 const incrementUserDailyCount = async (userId) => {
   const today = OTP.getStartOfDay();
-  await User.findByIdAndUpdate(userId, [
-    {
-      $set: {
-        otpDailyCount: {
-          $cond: {
-            if: { $eq: ["$otpDailyCountDate", today] },
-            then: { $add: ["$otpDailyCount", 1] },
-            else: 1,
+  await User.findByIdAndUpdate(
+    userId,
+    [
+      {
+        $set: {
+          otpDailyCount: {
+            $cond: {
+              if: { $eq: ["$otpDailyCountDate", today] },
+              then: { $add: ["$otpDailyCount", 1] },
+              else: 1,
+            },
           },
+          otpDailyCountDate: today,
         },
-        otpDailyCountDate: today,
       },
-    },
-  ]);
+    ],
+    { updatePipeline: true }
+  );
 };
 
 const getUserOtpUsage = async (userId) => {

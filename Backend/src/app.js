@@ -8,7 +8,8 @@ import compression from "compression";
 import crypto from "crypto";
 import * as Sentry from "@sentry/node";
 import logger, { runWithCorrelationId } from "./utils/logger.js";
-import { apiLimiter } from "./middlewares/rateLimiter.middleware.js";
+// Removed: import { apiLimiter } — global apiLimiter was removed to avoid
+// ERR_ERL_DOUBLE_COUNT with per-route limiters (authLimiter, otpLimiter, etc.)
 import { csrfMiddleware, csrfTokenHandler } from "./middlewares/csrf.middleware.js";
 import { configurePassport } from "./config/passport.js";
 import swaggerUi from "swagger-ui-express";
@@ -227,7 +228,8 @@ app.use((req, res, next) => {
 });
 
 
-app.use("/api", apiLimiter);
+// REMOVED: app.use("/api", apiLimiter) — per-route limiters exist on auth, OTP, etc.
+// Global + per-route on same request causes express-rate-limit v8 ERR_ERL_DOUBLE_COUNT.
 
 
 app.get("/health/live", (req, res) => {
