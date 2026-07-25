@@ -226,11 +226,10 @@ userSchema.index({ username: "text", fullName: "text" });
 userSchema.index({ passwordResetToken: 1, passwordResetExpires: 1 });
 userSchema.plugin(mongooseAggregatePaginate);
 
-userSchema.pre("validate", function (next) {
+userSchema.pre("validate", function () {
   if (!this.email && !this.mobile) {
-    return next(new Error("At least one identifier (email or mobile) is required."));
+    throw new Error("At least one identifier (email or mobile) is required.");
   }
-  next();
 });
 
 userSchema.pre("save", async function () {
