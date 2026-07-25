@@ -1,13 +1,3 @@
-const escapeHtml = (str) => {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-};
-
 export const formatDate = (dateObj = new Date()) => {
   const day = String(dateObj.getDate()).padStart(2, '0');
   const month = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -72,8 +62,8 @@ export const otpEmailTemplate = (otp, purpose, userName, locationInfo = null) =>
 
   const locationHtml = locationInfo ? `
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 20px 0; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
-      <tr><td style="padding: 12px 16px;"><strong style="color:#374151; font-size: 13px;">Location:</strong> <span style="color:#6b7280; font-size: 13px;">${escapeHtml(locationInfo.location || 'Unknown')}</span></td></tr>
-      <tr><td style="padding: 12px 16px; border-top: 1px solid #e5e7eb;"><strong style="color:#374151; font-size: 13px;">Device:</strong> <span style="color:#6b7280; font-size: 13px;">${escapeHtml(locationInfo.device || 'Unknown')}</span></td></tr>
+      <tr><td style="padding: 12px 16px;"><strong style="color:#374151; font-size: 13px;">Location:</strong> <span style="color:#6b7280; font-size: 13px;">${locationInfo.location || 'Unknown'}</span></td></tr>
+      <tr><td style="padding: 12px 16px; border-top: 1px solid #e5e7eb;"><strong style="color:#374151; font-size: 13px;">Device:</strong> <span style="color:#6b7280; font-size: 13px;">${locationInfo.device || 'Unknown'}</span></td></tr>
     </table>
   ` : "";
 
@@ -101,7 +91,7 @@ export const otpEmailTemplate = (otp, purpose, userName, locationInfo = null) =>
             <td style="padding: 40px 40px 32px;">
               <h1 style="margin: 0 0 16px; font-size: 24px; font-weight: 700; color: #111827; text-align: center;">${label}</h1>
               <p style="margin: 0 0 24px; font-size: 16px; color: #4b5563; text-align: center; line-height: 1.6;">
-                ${userName ? `Hi ${escapeHtml(userName)},` : "Hello,"}
+                ${userName ? `Hi ${userName},` : "Hello,"}
               </p>
               <p style="margin: 0 0 32px; font-size: 15px; color: #6b7280; text-align: center; line-height: 1.6;">
                 Use the verification code below to complete your ${label.toLowerCase()}. This code expires in <strong>${expiryMinutes} minutes</strong>.
@@ -169,7 +159,7 @@ export const notificationEmailTemplate = ({ title, message, userName, actionUrl,
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(title)} — VideoTube</title>
+  <title>${title} — VideoTube</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
@@ -185,12 +175,12 @@ export const notificationEmailTemplate = ({ title, message, userName, actionUrl,
           </tr>
           <tr>
             <td style="padding: 40px 40px 32px;">
-              <h1 style="margin: 0 0 16px; font-size: 24px; font-weight: 700; color: #111827; text-align: center;">${escapeHtml(title)}</h1>
+              <h1 style="margin: 0 0 16px; font-size: 24px; font-weight: 700; color: #111827; text-align: center;">${title}</h1>
               <p style="margin: 0 0 24px; font-size: 16px; color: #4b5563; text-align: center; line-height: 1.6;">
-                ${userName ? `Hi ${escapeHtml(userName)},` : "Hello,"}
+                ${userName ? `Hi ${userName},` : "Hello,"}
               </p>
               <p style="margin: 0 0 32px; font-size: 15px; color: #6b7280; text-align: center; line-height: 1.6;">
-                ${escapeHtml(message)}
+                ${message}
               </p>
 
               ${details.length > 0 ? `
@@ -198,8 +188,8 @@ export const notificationEmailTemplate = ({ title, message, userName, actionUrl,
                 ${details.map((d, index) => `
                 <tr>
                   <td style="padding: 12px 16px; ${index < details.length - 1 ? 'border-bottom: 1px solid #e5e7eb;' : ''}">
-                    <strong style="color: #374151; font-size: 13px;">${escapeHtml(d.label)}:</strong>
-                    <span style="color: #6b7280; font-size: 13px; margin-left: 8px;">${escapeHtml(d.value)}</span>
+                    <strong style="color: #374151; font-size: 13px;">${d.label}:</strong>
+                    <span style="color: #6b7280; font-size: 13px; margin-left: 8px;">${d.value}</span>
                   </td>
                 </tr>
                 `).join("")}
@@ -210,7 +200,7 @@ export const notificationEmailTemplate = ({ title, message, userName, actionUrl,
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top: 16px;">
                 <tr>
                   <td align="center">
-                    <a href="${escapeHtml(actionUrl)}" target="_blank" style="background: ${theme.gradient}; display: inline-block; padding: 14px 28px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 8px;">${escapeHtml(actionText)}</a>
+                    <a href="${actionUrl}" target="_blank" style="background: ${theme.gradient}; display: inline-block; padding: 14px 28px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 8px;">${actionText}</a>
                   </td>
                 </tr>
               </table>

@@ -55,8 +55,13 @@ const handleOAuthCallback = async (req, res) => {
 };
 
 const oauthCallback = (provider) => (req, res, next) => {
-  passport.authenticate(provider, { session: false }, (err, user) => {
-    if (err || !user) {
+  passport.authenticate(provider, { session: false }, (err, user, info) => {
+    if (err) {
+      logger.error(`${provider} OAuth error:`, { error: err.message, stack: err.stack });
+      return res.redirect(`${FE()}/login?error=auth_failed`);
+    }
+    if (!user) {
+      logger.warn(`${provider} OAuth failed: no user returned`, { info: info?.message || "unknown" });
       return res.redirect(`${FE()}/login?error=auth_failed`);
     }
     req.user = user;

@@ -524,13 +524,6 @@ const verifyAndDeleteIdentifier = asyncHandler(async (req, res) => {
 
   const user = await User.findById(req.user._id);
 
-  if (targetType === "email" && !user.mobile) {
-    throw new ApiError(400, "Cannot remove email: you must have at least one contact method (email or mobile)");
-  }
-  if (targetType === "mobile" && !user.email) {
-    throw new ApiError(400, "Cannot remove mobile: you must have at least one contact method (email or mobile)");
-  }
-
   if (targetType === "email") {
     user.email = undefined;
   } else if (targetType === "mobile") {

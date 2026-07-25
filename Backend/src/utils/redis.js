@@ -86,7 +86,7 @@ const blacklistToken = async (token, ttlSeconds = 86400) => {
 };
 
 const isTokenBlacklisted = async (token) => {
-  if (!isRedisAvailable()) return true;
+  if (!isRedisAvailable()) return false;
   try {
     const val = await redis.get(`blacklist:${token}`);
     return val === "1";

@@ -18,3 +18,7 @@ export const API_BASE_URL = (() => {
 
   return DEV_API_BASE_URL;
 })();
+
+export const API_FULL_URL = normalizeApiBaseUrl(
+  process.env.NEXT_PUBLIC_API_BASE_URL || DEV_API_BASE_URL
+);

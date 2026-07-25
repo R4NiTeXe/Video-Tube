@@ -4,8 +4,9 @@ export const dynamic = "force-dynamic";
 
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import axios from "axios";
 import { useAuthStore } from "@/src/store/useAuthStore";
-import { api } from "@/src/services/api";
+import { API_FULL_URL } from "@/src/services/config";
 import { PageMeta } from "@/src/components/PageMeta";
 
 function CallbackContent() {
@@ -27,7 +28,9 @@ function CallbackContent() {
 
     const fetchUser = async () => {
       try {
-        const response = await api.get("/users/current-user");
+        const response = await axios.get(`${API_FULL_URL}/users/current-user`, {
+          withCredentials: true,
+        });
         login(response.data.data);
         router.replace("/");
       } catch {

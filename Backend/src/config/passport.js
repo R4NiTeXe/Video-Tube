@@ -107,7 +107,7 @@ export const configurePassport = () => {
         },
         async (accessToken, refreshToken, profile, done) => {
           try {
-            const email = profile.emails?.[0]?.value || `${profile.username}@github.noreply.videotube`;
+            const email = profile.emails?.[0]?.value || `${profile.username}@github.local`;
             const { user, isNew } = await findOrCreateUser(
               "github",
               profile.id.toString(),
@@ -136,7 +136,7 @@ export const configurePassport = () => {
         },
         async (accessToken, refreshToken, profile, done) => {
           try {
-            const email = profile.emails?.[0]?.value || `${profile.id}@facebook.noreply.videotube`;
+            const email = profile.emails?.[0]?.value || `${profile.id}@facebook.local`;
             const { user, isNew } = await findOrCreateUser(
               "facebook",
               profile.id,
@@ -165,7 +165,7 @@ export const configurePassport = () => {
         },
         async (accessToken, refreshToken, profile, done) => {
           try {
-            const email = profile.email || `${profile.id}@discord.noreply.videotube`;
+            const email = profile.email || `${profile.id}@discord.local`;
             const { user, isNew } = await findOrCreateUser(
               "discord",
               profile.id,
