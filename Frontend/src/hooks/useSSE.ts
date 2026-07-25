@@ -17,6 +17,8 @@ const logger = {
 
 export function useSSE() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const authRef = useRef(isAuthenticated);
+  authRef.current = isAuthenticated;
   const queryClient = useQueryClient();
   const esRef = useRef<EventSource | null>(null);
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -26,7 +28,7 @@ export function useSSE() {
   const [isConnected, setIsConnected] = useState(false);
 
   const connect = useCallback(() => {
-    if (!isMountedRef.current || !isAuthenticated) return;
+    if (!isMountedRef.current || !authRef.current) return;
 
     if (esRef.current) {
       esRef.current.close();
@@ -64,6 +66,12 @@ export function useSSE() {
       setIsConnected(false);
       es.close();
 
+      // If authentication was lost, stop retrying immediately
+      if (!authRef.current) {
+        logger?.warn?.("SSE stopped — not authenticated");
+        return;
+      }
+
       // Exponential backoff with jitter
       const delay = Math.min(retryDelayRef.current, MAX_RETRY_DELAY);
       const jitter = Math.random() * 0.5 * delay;
@@ -78,12 +86,12 @@ export function useSSE() {
         logger?.warn?.("SSE max retries reached, stopping reconnection attempts");
       }
     };
-  }, [isAuthenticated, queryClient]);
+  }, [queryClient]);
 
   // Handle page visibility - reconnect when tab becomes visible
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible" && isAuthenticated && !isConnected) {
+      if (document.visibilityState === "visible" && authRef.current && !isConnected) {
         retryCountRef.current = 0;
         retryDelayRef.current = INITIAL_RETRY_DELAY;
         connect();
@@ -92,16 +100,17 @@ export function useSSE() {
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [isAuthenticated, isConnected, connect]);
+  }, [isConnected, connect]);
 
   useEffect(() => {
     isMountedRef.current = true;
-    if (!isAuthenticated) {
+    if (!authRef.current) {
       if (esRef.current) {
         esRef.current.close();
         esRef.current = null;
       }
       setIsConnected(false);
+      retryCountRef.current = MAX_RETRIES; // prevent further retries
       return;
     }
 

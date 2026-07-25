@@ -12,9 +12,10 @@ const getCookieOptions = () => ({
 
 export const generateCsrfToken = () => crypto.randomBytes(32).toString("hex");
 
-// Public unauthenticated routes that are exempt from CSRF validation.
-// These endpoints are either GET requests or are hit before the user has
-// a session (e.g. login, register, forgot-password flows).
+// Routes that are exempt from CSRF validation.
+// These are either public unauthenticated flows (login, register, forgot-password)
+// or authenticated routes where the action itself provides side-effect protection
+// (e.g. sending an OTP — the OTP verification is the real auth gate).
 const CSRF_EXEMPT_ROUTES = [
   "/api/v1/users/login",
   "/api/v1/users/register",
@@ -27,6 +28,8 @@ const CSRF_EXEMPT_ROUTES = [
   "/api/v1/users/skip-and-login",
   "/api/v1/users/send-login-otp",
   "/api/v1/users/login-with-otp",
+  // Identifier update OTP flows — already gated by verifyJWT + OTP verification
+  "/api/v1/users/update-identifier/send-otp",
 ];
 
 export const csrfMiddleware = (req, res, next) => {

@@ -1,12 +1,18 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { API_BASE_URL } from "@/src/services/config";
+import { useAuthStore } from "@/src/store/useAuthStore";
+
+// Set to true to enable console logging for auth/CSRF debugging
+const DEBUG = false;
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
+  _csrfRetry?: boolean;
 }
 
 interface ApiErrorBody {
   message?: string;
+  errors?: string[];
 }
 
 // In-memory CSRF token — cross-origin cookies on the backend domain
@@ -19,18 +25,19 @@ export const getCsrfToken = () => _csrfToken;
 // Create an Axios instance with base configuration
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true, // Crucial for sending/receiving secure cookies
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Request interceptor to add CSRF token for mutating requests and Bearer token fallback
+// Request interceptor — adds Bearer token fallback from localStorage
+// and CSRF header for mutating methods
 api.interceptors.request.use((config) => {
-  // Attach Bearer token from localStorage if available (fallback for OAuth cross-origin flows)
   if (typeof window !== "undefined") {
     const stored = localStorage.getItem("accessToken");
     if (stored && !config.headers["Authorization"]) {
+      if (DEBUG) console.log("[API] Attaching Bearer token from localStorage");
       config.headers["Authorization"] = `Bearer ${stored}`;
     }
   }
@@ -38,37 +45,67 @@ api.interceptors.request.use((config) => {
   const mutatingMethods = ["post", "put", "patch", "delete"];
   if (mutatingMethods.includes(config.method?.toLowerCase() || "")) {
     if (_csrfToken) {
+      if (DEBUG) console.log("[API] Attaching CSRF token to", config.method, config.url);
       config.headers["x-csrf-token"] = _csrfToken;
+    } else if (DEBUG) {
+      console.log("[API] CSRF token missing for", config.method, config.url);
     }
   }
+
+  if (DEBUG) {
+    console.log("[API] Request:", config.method?.toUpperCase(), config.url);
+  }
+
   return config;
 });
 
-export const getApiErrorMessage = (error: unknown, fallback: string) => {
-  if (axios.isAxiosError<ApiErrorBody>(error)) {
-    return error.response?.data?.message || error.message || fallback;
-  }
-
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return fallback;
-};
-
-// Response Interceptor for handling token refresh logic globally
+// Response Interceptor — handles CSRF 403 and 401 with token refresh
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   async (error: AxiosError<ApiErrorBody>) => {
     const originalRequest = error.config as RetryableRequestConfig | undefined;
 
+    // Handle CSRF token missing / expired — re-fetch CSRF and retry once
+    if (
+      error.response?.status === 403 &&
+      originalRequest &&
+      !originalRequest._csrfRetry
+    ) {
+      const msg = error.response?.data?.message?.toLowerCase() || "";
+      const hasCsrfError = msg.includes("csrf") ||
+        (error.response?.data?.errors || []).some((e: string) => e.toLowerCase().includes("csrf"));
+
+      if (hasCsrfError) {
+        if (DEBUG) console.log("[API] CSRF 403 — re-fetching token and retrying");
+        originalRequest._csrfRetry = true;
+        _csrfToken = null;
+        try {
+          const res = await axios.get(`${API_BASE_URL}/csrf-token`, {
+            withCredentials: true,
+          });
+          if (res.data?.csrfToken) {
+            _csrfToken = res.data.csrfToken;
+            if (DEBUG) console.log("[API] CSRF token refreshed");
+          }
+        } catch (e) {
+          if (DEBUG) console.log("[API] CSRF fetch failed", e);
+        }
+        if (_csrfToken) {
+          return api(originalRequest);
+        }
+      }
+    }
+
+    // Handle 401 — attempt token refresh and retry once
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      if (DEBUG) console.log("[API] 401 — attempting token refresh");
       originalRequest._retry = true;
 
       try {
-        const storedRefreshToken = typeof window !== "undefined" ? localStorage.getItem("refreshToken") : null;
+        const storedRefreshToken = typeof window !== "undefined"
+          ? localStorage.getItem("refreshToken")
+          : null;
+
         const refreshRes = await axios.post(
           `${API_BASE_URL}/users/refresh-token`,
           storedRefreshToken ? { refreshToken: storedRefreshToken } : {},
@@ -77,30 +114,64 @@ api.interceptors.response.use(
             headers: _csrfToken ? { "x-csrf-token": _csrfToken } : {},
           }
         );
-        // Update stored access token if backend returns a new one
+
         const newAccessToken = refreshRes.data?.data?.accessToken;
         if (newAccessToken && typeof window !== "undefined") {
           localStorage.setItem("accessToken", newAccessToken);
         }
+
+        if (DEBUG) console.log("[API] Token refreshed, retrying original request");
         return api(originalRequest);
       } catch (refreshError) {
-        // Clear stored tokens on refresh failure
+        if (DEBUG) console.log("[API] Token refresh failed");
+
+        // Update auth store to prevent further 401 retries from React Query
         if (typeof window !== "undefined") {
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
+          useAuthStore.getState().logout();
         }
-        // Only redirect to login for protected routes, not public pages
+
+        // Redirect to login if on a protected page (stops React Query retry loop)
         if (typeof window !== "undefined") {
           const publicPaths = ["/", "/login", "/register", "/forgot-password", "/auth/callback"];
-          const isPublicPath = publicPaths.some((p) => window.location.pathname === p || window.location.pathname.startsWith(`${p}/`));
-          if (!isPublicPath && !window.location.pathname.startsWith("/login")) {
+          const isPublicPath = publicPaths.some(
+            (p) => window.location.pathname === p || window.location.pathname.startsWith(`${p}/`)
+          );
+          if (!isPublicPath) {
             window.location.href = "/login";
           }
         }
-        return Promise.reject(new Error(refreshError instanceof Error ? refreshError.message : "Session expired"));
+
+        return Promise.reject(
+          new Error(
+            refreshError instanceof Error
+              ? refreshError.message
+              : "Session expired"
+          )
+        );
       }
     }
 
     return Promise.reject(error);
   }
 );
+
+// Eagerly fetch CSRF token when module loads (before any component renders)
+// This minimizes the race condition window where a mutating request fires
+// before the CSRF token is available.
+if (typeof window !== "undefined") {
+  axios.get(`${API_BASE_URL}/csrf-token`, { withCredentials: true })
+    .then((res) => { if (res.data?.csrfToken) _csrfToken = res.data.csrfToken; })
+    .catch(() => {});
+}
+
+export const getApiErrorMessage = (error: unknown, fallback: string) => {
+  if (axios.isAxiosError<ApiErrorBody>(error)) {
+    return error.response?.data?.message || error.message || fallback;
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return fallback;
+};
