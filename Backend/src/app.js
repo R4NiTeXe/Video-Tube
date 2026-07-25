@@ -19,13 +19,16 @@ const app = express();
 
 // Trust proxy — required when behind nginx/reverse proxy for correct IP detection.
 // Set PROXY_TRUST_COUNT to the number of reverse proxies between client and app.
-//   - 1 (default): behind nginx only
+//   - 1 (default): behind nginx/Render proxy
 //   - 2: behind CDN (e.g. Cloudflare) + nginx
-//   - true: trust all (less secure — only if proxies strip external X-Forwarded-For)
+//   - Do NOT set to true — express-rate-limit v8 rejects permissive trust proxy
 const proxyTrustCount = (() => {
   const raw = process.env.PROXY_TRUST_COUNT;
   if (!raw) return 1;
-  if (raw.toLowerCase() === "true") return true;
+  if (raw.toLowerCase() === "true" || raw.toLowerCase() === "false") {
+    logger.warn(`PROXY_TRUST_COUNT="${raw}" is not supported with express-rate-limit v8. Falling back to 1.`);
+    return 1;
+  }
   const num = Number(raw);
   if (Number.isInteger(num) && num > 0) return num;
   logger.warn(`Invalid PROXY_TRUST_COUNT "${raw}". Falling back to 1.`);
