@@ -263,8 +263,8 @@ const verifyAndResetPasswordViaOTP = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
   const identifier = channel === "whatsapp" ? user.mobile : user.email;
 
-  if (channel === "whatsapp" && !identifier) {
-    throw new ApiError(400, "No mobile number linked to this account");
+  if (!identifier) {
+    throw new ApiError(400, `No ${channel === "whatsapp" ? "mobile number" : "email"} linked to this account`);
   }
 
   const result = await verifyOTP(identifier, otp, "forgot-password-change");
@@ -281,10 +281,10 @@ const verifyAndResetPasswordViaOTP = asyncHandler(async (req, res) => {
     await sendEmail({
       to: user.email,
       subject: "Password Changed",
-      html: passwordChangedEmailTemplate(),
+      html: passwordChangedEmailTemplate(user),
     });
   } catch (error) {
-    logger.error("Failed to send password changed email:", error.message);
+    logger.error("Failed to send password changed email:", { error: error.message });
   }
 
   const options = getCookieOptions();

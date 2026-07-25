@@ -197,7 +197,7 @@ export const userSchemas = {
       email: z.string().email().optional(),
       mobile: mobileSchema.optional(),
       channel: channelEnum,
-    }).refine(identifierRefine, { message: identifierMessage }),
+    }),
   },
 
   verifyAndResetPasswordViaOTP: {
