@@ -1,6 +1,5 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { API_BASE_URL } from "@/src/services/config";
-import { useAuthStore } from "@/src/store/useAuthStore";
 
 // Set to true to enable console logging for auth/CSRF debugging
 const DEBUG = false;
@@ -123,16 +122,15 @@ api.interceptors.response.use(
         if (DEBUG) console.log("[API] Token refreshed, retrying original request");
         return api(originalRequest);
       } catch (refreshError) {
-        if (DEBUG) console.log("[API] Token refresh failed");
+        if (DEBUG) console.log("[API] Token refresh failed — clearing tokens");
 
-        // Update auth store to prevent further 401 retries from React Query
         if (typeof window !== "undefined") {
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
-          useAuthStore.getState().logout();
         }
 
-        // Redirect to login if on a protected page (stops React Query retry loop)
+        // Redirect to login to break React Query retry loops.
+        // AuthProvider will handle the auth store cleanup on next mount.
         if (typeof window !== "undefined") {
           const publicPaths = ["/", "/login", "/register", "/forgot-password", "/auth/callback"];
           const isPublicPath = publicPaths.some(
@@ -156,15 +154,6 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-// Eagerly fetch CSRF token when module loads (before any component renders)
-// This minimizes the race condition window where a mutating request fires
-// before the CSRF token is available.
-if (typeof window !== "undefined") {
-  axios.get(`${API_BASE_URL}/csrf-token`, { withCredentials: true })
-    .then((res) => { if (res.data?.csrfToken) _csrfToken = res.data.csrfToken; })
-    .catch(() => {});
-}
 
 export const getApiErrorMessage = (error: unknown, fallback: string) => {
   if (axios.isAxiosError<ApiErrorBody>(error)) {
