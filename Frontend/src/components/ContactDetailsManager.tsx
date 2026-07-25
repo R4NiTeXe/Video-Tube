@@ -37,11 +37,11 @@ export default function ContactDetailsManager() {
     setModalOpen(true);
 
     if (act === "delete") {
-      handleSendOTP(act, type, type); // For delete, the identifier parameter is the targetType
+      handleSendOTP(act, type); // For delete, the identifier parameter is the targetType
     }
   };
 
-  const handleSendOTP = async (currentAction: ModalAction, currentTarget: TargetType, value: string) => {
+  const handleSendOTP = async (currentAction: ModalAction, value: string) => {
     setError("");
     setLoading(true);
     try {
@@ -194,7 +194,7 @@ export default function ContactDetailsManager() {
                   />
                   <div style={{ display: "flex", gap: "0.5rem" }}>
                     <button onClick={() => setModalOpen(false)} className="btn btn-secondary" style={{ flex: 1, padding: "0.75rem" }}>Cancel</button>
-                    <button onClick={() => handleSendOTP(action, targetType, inputValue)} disabled={loading || !inputValue} className="btn btn-primary" style={{ flex: 1, padding: "0.75rem" }}>
+                    <button onClick={() => handleSendOTP(action, inputValue)} disabled={loading || !inputValue} className="btn btn-primary" style={{ flex: 1, padding: "0.75rem" }}>
                       {loading ? "Sending..." : "Send OTP"}
                     </button>
                   </div>
