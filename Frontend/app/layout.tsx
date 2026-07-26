@@ -48,6 +48,9 @@ export const metadata: Metadata = {
     description: "Discover, watch, and share videos on VideoTube — a premium video sharing platform.",
     images: ["/opengraph-image"],
   },
+  icons: {
+    icon: "/logo.png",
+  },
   robots: {
     index: true,
     follow: true,
