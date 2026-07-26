@@ -99,6 +99,7 @@ export const deactivateSession = async (refreshToken) => {
 
 export const getActiveSessions = asyncHandler(async (req, res) => {
   const userId = req.user._id;
+  logger.info("getActiveSessions called", { userId: userId.toString(), path: req.path });
 
   let decodedToken;
   try {
@@ -117,6 +118,8 @@ export const getActiveSessions = asyncHandler(async (req, res) => {
     .sort({ lastActiveAt: -1 })
     .select("-userAgent -__v")
     .lean();
+
+  logger.info("getActiveSessions result", { count: sessions.length });
 
   const enriched = sessions.map(({ refreshToken, ...rest }) => ({
     ...rest,

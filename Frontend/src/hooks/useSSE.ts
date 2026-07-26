@@ -5,11 +5,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { API_BASE_URL } from "@/src/services/config";
 
-const MAX_RETRIES = 10;
-const INITIAL_RETRY_DELAY = 1000;
+const MAX_RETRIES = 5;
+const INITIAL_RETRY_DELAY = 2000;
 const MAX_RETRY_DELAY = 30000;
 
-// Simple logger for client-side
 const logger = {
   warn: (msg: string) => console.warn(`[SSE] ${msg}`),
   error: (msg: string, err?: unknown) => console.error(`[SSE] ${msg}`, err),
@@ -73,17 +72,32 @@ export function useSSE() {
         return;
       }
 
-      // Exponential backoff with jitter
-      const delay = Math.min(retryDelayRef.current, MAX_RETRY_DELAY);
-      const jitter = Math.random() * 0.5 * delay;
-      const nextDelay = Math.min(delay * 2 + jitter, MAX_RETRY_DELAY);
-
+      // Check session validity before retrying — the cookie may have an expired token
+      // even though the store says we're authenticated (stale Bearer token in localStorage).
       if (retryCountRef.current < MAX_RETRIES) {
         retryCountRef.current++;
-        retryDelayRef.current = nextDelay;
-        reconnectRef.current = setTimeout(connect, delay);
+        const delay = Math.min(retryDelayRef.current, MAX_RETRY_DELAY);
+        const jitter = Math.random() * 0.5 * delay;
+        retryDelayRef.current = Math.min(delay * 2 + jitter, MAX_RETRY_DELAY);
+
+        reconnectRef.current = setTimeout(async () => {
+          if (!isMountedRef.current || !authRef.current) return;
+
+          try {
+            const res = await fetch(`${API_BASE_URL}/users/current-user`, {
+              credentials: "include",
+            });
+            if (res.ok && isMountedRef.current) {
+              connect();
+            } else if (isMountedRef.current) {
+              logger?.warn?.("SSE stopped — session check failed");
+              retryCountRef.current = MAX_RETRIES;
+            }
+          } catch {
+            if (isMountedRef.current) connect();
+          }
+        }, delay);
       } else {
-        // Max retries reached - stop attempting
         logger?.warn?.("SSE max retries reached, stopping reconnection attempts");
       }
     };

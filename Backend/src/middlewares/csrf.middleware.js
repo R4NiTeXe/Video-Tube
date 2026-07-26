@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import logger from "../utils/logger.js";
 
 const CSRF_COOKIE_NAME = "csrf_token";
 const CSRF_HEADER_NAME = "x-csrf-token";
@@ -30,6 +31,8 @@ const CSRF_EXEMPT_ROUTES = [
   "/api/v1/users/login-with-otp",
   // Identifier update OTP flows — already gated by verifyJWT + OTP verification
   "/api/v1/users/update-identifier/send-otp",
+  // Sessions — GET is safe, but add as exempt for safety
+  "/api/v1/sessions",
 ];
 
 export const csrfMiddleware = (req, res, next) => {
@@ -37,9 +40,9 @@ export const csrfMiddleware = (req, res, next) => {
   if (process.env.NODE_ENV === "test") {
     return next();
   }
+
   // Skip CSRF for safe methods
   if (["GET", "HEAD", "OPTIONS"].includes(req.method)) {
-    // Ensure CSRF token cookie exists for future requests
     if (!req.cookies[CSRF_COOKIE_NAME]) {
       const token = generateCsrfToken();
       res.cookie(CSRF_COOKIE_NAME, token, getCookieOptions());
@@ -47,8 +50,8 @@ export const csrfMiddleware = (req, res, next) => {
     return next();
   }
 
-  // Skip CSRF for public exempt routes
-  if (CSRF_EXEMPT_ROUTES.some((route) => req.path === route || req.originalUrl.split("?")[0] === route)) {
+  // Skip CSRF for public exempt routes (prefix match so sub-routes like /sessions/:id are covered)
+  if (CSRF_EXEMPT_ROUTES.some((route) => req.path === route || req.path.startsWith(route + "/"))) {
     return next();
   }
 
@@ -57,6 +60,12 @@ export const csrfMiddleware = (req, res, next) => {
   const headerToken = req.headers[CSRF_HEADER_NAME];
 
   if (!cookieToken || !headerToken) {
+    logger.warn("CSRF token missing", {
+      method: req.method,
+      path: req.path,
+      hasCookie: !!req.cookies[CSRF_COOKIE_NAME],
+      hasHeader: !!req.headers[CSRF_HEADER_NAME],
+    });
     return res.status(403).json({
       success: false,
       statusCode: 403,
@@ -69,6 +78,12 @@ export const csrfMiddleware = (req, res, next) => {
   const headerBuf = Buffer.from(headerToken);
 
   if (cookieBuf.length !== headerBuf.length || !crypto.timingSafeEqual(cookieBuf, headerBuf)) {
+    logger.warn("CSRF token mismatch", {
+      method: req.method,
+      path: req.path,
+      cookieLen: cookieBuf.length,
+      headerLen: headerBuf.length,
+    });
     return res.status(403).json({
       success: false,
       statusCode: 403,
