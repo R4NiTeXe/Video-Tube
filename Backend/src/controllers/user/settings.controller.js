@@ -11,6 +11,7 @@ import { Notification } from "../../models/notification.model.js";
 import { CommunityPost } from "../../models/communityPost.model.js";
 import { Poll } from "../../models/poll.model.js";
 import { Session } from "../../models/session.model.js";
+import { getLocationInfo } from "../../utils/location.js";
 import { uploadOnCloudinary, deleteFromCloudinary } from "../../utils/cloudinary.js";
 import { escapeRegex } from "../../utils/sanitizer.js";
 import mongoose from "mongoose";
@@ -196,11 +197,12 @@ const verifyAndDeleteAccount = asyncHandler(async (req, res) => {
   await Poll.deleteMany({ createdBy: userId });
   await Poll.updateMany({ voters: userId }, { $pull: { voters: userId } });
   await Session.deleteMany({ user: userId });
+  const deleteLoc = await getLocationInfo(req).catch(() => ({ timezone: undefined }));
   try {
     await sendEmail({
       to: user.email,
       subject: "Account Deletion Confirmed",
-      html: accountDeletedTemplate(user),
+      html: accountDeletedTemplate(user, deleteLoc.timezone),
     });
   } catch (err) {
     logger.error("Failed to send account deletion email: " + err.message);
@@ -495,6 +497,7 @@ const verifyAndAddIdentifier = asyncHandler(async (req, res) => {
 
   await user.save();
 
+  const idUpdateLoc = await getLocationInfo(req).catch(() => ({ timezone: undefined }));
   try {
     const notifyIdentifier = isMobile ? user.mobile : user.email;
     const notifyChannel = isMobile ? "whatsapp" : "email";
@@ -502,7 +505,7 @@ const verifyAndAddIdentifier = asyncHandler(async (req, res) => {
       await sendEmail({
         to: notifyIdentifier,
         subject: "Profile Updated",
-        html: identifierUpdatedTemplate(user, isMobile ? "mobile" : "email", identifier.trim()),
+        html: identifierUpdatedTemplate(user, isMobile ? "mobile" : "email", identifier.trim(), idUpdateLoc.timezone),
       });
     }
   } catch (error) {
@@ -531,6 +534,7 @@ const verifyAndDeleteIdentifier = asyncHandler(async (req, res) => {
 
   await user.save();
 
+  const idDelLoc = await getLocationInfo(req).catch(() => ({ timezone: undefined }));
   try {
     const notifyIdentifier = targetType === "email" ? user.mobile : user.email;
     const notifyChannel = targetType === "email" ? "whatsapp" : "email";
@@ -538,7 +542,7 @@ const verifyAndDeleteIdentifier = asyncHandler(async (req, res) => {
       await sendEmail({
         to: notifyIdentifier,
         subject: "Profile Updated",
-        html: identifierDeletedTemplate(user, targetType),
+        html: identifierDeletedTemplate(user, targetType, idDelLoc.timezone),
       });
     }
   } catch (error) {

@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Contact } from "../models/contact.model.js";
 import { sendEmail } from "../utils/email.js";
+import { getLocationInfo } from "../utils/location.js";
 import { contactOwnerTemplate, contactUserConfirmationTemplate, formatDate } from "../utils/emailTemplates.js";
 import logger from "../utils/logger.js";
 
@@ -21,7 +22,8 @@ const createContact = asyncHandler(async (req, res) => {
     userAgent,
   });
 
-  const time = formatDate();
+  const contactLoc = await getLocationInfo(req).catch(() => ({ timezone: undefined }));
+  const time = formatDate(undefined, contactLoc.timezone);
   const ownerEmail = process.env.CONTACT_EMAIL || process.env.MAIL_FROM || "videotube044.official@gmail.com";
 
   try {

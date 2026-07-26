@@ -8,7 +8,7 @@ export const formatDate = (dateObj = new Date(), timezone = undefined) => {
       minute: "2-digit",
       second: "2-digit",
       hour12: true,
-      timeZoneName: "short",
+      timeZoneName: "shortGeneric",
       ...(timezone ? { timeZone: timezone } : {}),
     };
     return new Intl.DateTimeFormat("en-GB", options).format(dateObj);
@@ -21,7 +21,7 @@ export const formatDate = (dateObj = new Date(), timezone = undefined) => {
       minute: "2-digit",
       second: "2-digit",
       hour12: true,
-      timeZoneName: "short",
+      timeZoneName: "shortGeneric",
     };
     return new Intl.DateTimeFormat("en-GB", fallback).format(dateObj);
   }
@@ -267,13 +267,13 @@ export const accountRegisteredTemplate = (user, locationInfo) => {
   });
 };
 
-export const accountDeletedTemplate = (user) => {
+export const accountDeletedTemplate = (user, timezone) => {
   return notificationEmailTemplate({
     title: "Account Deletion Confirmed",
     message: "Your VideoTube account has been permanently deleted as requested. We're sad to see you go.",
     userName: user.fullName || user.username,
     details: [
-      { label: "Deletion Date", value: formatDate() },
+      { label: "Deletion Date", value: formatDate(undefined, timezone) },
       { label: "Status", value: "Permanently Deleted" }
     ],
     warning: false,
@@ -336,7 +336,7 @@ export const passwordChangedEmailTemplate = (user, locationInfo) => {
   });
 };
 
-export const identifierUpdatedTemplate = (user, identifierType, newIdentifier) => {
+export const identifierUpdatedTemplate = (user, identifierType, newIdentifier, timezone) => {
   return notificationEmailTemplate({
     title: `${identifierType === 'email' ? 'Email' : 'Mobile Number'} Updated`,
     message: `Your VideoTube profile was successfully updated. Your new ${identifierType} is ${newIdentifier}.`,
@@ -345,14 +345,14 @@ export const identifierUpdatedTemplate = (user, identifierType, newIdentifier) =
     actionText: "View Profile",
     details: [
       { label: "Action", value: `${identifierType === 'email' ? 'Email' : 'Mobile'} Updated` },
-      { label: "Time", value: formatDate() }
+      { label: "Time", value: formatDate(undefined, timezone) }
     ],
     warning: false,
     themeType: "success"
   });
 };
 
-export const identifierDeletedTemplate = (user, identifierType) => {
+export const identifierDeletedTemplate = (user, identifierType, timezone) => {
   return notificationEmailTemplate({
     title: `${identifierType === 'email' ? 'Email' : 'Mobile Number'} Removed`,
     message: `A ${identifierType} was successfully removed from your VideoTube account.`,
@@ -361,7 +361,7 @@ export const identifierDeletedTemplate = (user, identifierType) => {
     actionText: "View Profile",
     details: [
       { label: "Action", value: `${identifierType === 'email' ? 'Email' : 'Mobile'} Removed` },
-      { label: "Time", value: formatDate() }
+      { label: "Time", value: formatDate(undefined, timezone) }
     ],
     warning: true,
     themeType: "warning"

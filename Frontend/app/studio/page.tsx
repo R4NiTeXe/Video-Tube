@@ -12,7 +12,7 @@ import {
   Edit3, Trash2, Search, ChartNoAxesCombined, ListVideo,
   Play, Pencil,
 } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { timeAgo, formatDuration } from "@/src/lib/utils";
@@ -130,18 +130,12 @@ function EmptyVideosState({ onUpload }: { onUpload: () => void }) {
   );
 }
 
-function PlaceholderChart() {
-  const data = Array.from({ length: 7 }, (_, i) => ({ day: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i], views: Math.floor(Math.random() * 50 + 10) }));
+function EmptyChart() {
   return (
-    <ResponsiveContainer width="100%" height={220}>
-      <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-        <XAxis dataKey="day" tick={{ fill: "var(--text-muted)", fontSize: 11 }} axisLine={false} tickLine={false} />
-        <YAxis tick={{ fill: "var(--text-muted)", fontSize: 11 }} axisLine={false} tickLine={false} />
-        <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, color: "var(--text-primary)" }} />
-        <Line type="monotone" dataKey="views" stroke="var(--accent)" strokeWidth={2} dot={{ r: 3, fill: "var(--accent)" }} />
-      </LineChart>
-    </ResponsiveContainer>
+    <div style={{ height: 200, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.75rem" }}>
+      <ChartNoAxesCombined size={36} style={{ color: "var(--text-muted)", opacity: 0.3 }} />
+      <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>No views data yet</p>
+    </div>
   );
 }
 
@@ -183,6 +177,10 @@ function CreatorStudioContent() {
   const avgViews = stats.totalVideos > 0 ? Math.round(stats.totalViews / stats.totalVideos) : 0;
   const engagementRate = stats.totalViews > 0 ? ((stats.totalLikes / stats.totalViews) * 100).toFixed(1) : "0";
   const likesPerVideo = stats.totalVideos > 0 ? Math.round(stats.totalLikes / stats.totalVideos) : 0;
+  const engagementPct = stats.totalViews > 0 ? Math.min(parseFloat(engagementRate), 100) : 0;
+  const watchTimePct = Math.min((stats.totalWatchTime || 0) / 10, 100);
+  const likesPerVideoPct = Math.min(likesPerVideo * 5, 100);
+  const avgViewsPct = Math.min(avgViews / 10, 100);
 
   const deleteMutation = useMutation({
     mutationFn: async (videoId: string) => { await api.delete(`/videos/${videoId}`); },
@@ -235,7 +233,7 @@ function CreatorStudioContent() {
               </div>
             ) : (
               <motion.div variants={itemVariants} style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(${isMobile ? "140px" : "160px"}, 1fr))`, gap: isMobile ? "0.6rem" : "0.75rem", marginBottom: "1.25rem" }}>
-                <MetricCard label="Views" value={stats.totalViews || 0} icon={<Eye size={18} />} color="var(--accent)" trend={{ value: 12, positive: true }} subtitle="All time" />
+                <MetricCard label="Views" value={stats.totalViews || 0} icon={<Eye size={18} />} color="var(--accent)" subtitle="All time" />
                 <MetricCard label="Subscribers" value={stats.totalSubscribers || 0} icon={<Users size={18} />} color="#22c55e" />
                 <MetricCard label="Videos" value={stats.totalVideos || 0} icon={<Clapperboard size={18} />} color="#f59e0b" />
                 <MetricCard label="Likes" value={stats.totalLikes || 0} icon={<Heart size={18} />} color="#ec4899" />
@@ -251,14 +249,7 @@ function CreatorStudioContent() {
                   <ChartNoAxesCombined size={18} style={{ color: "var(--accent)" }} />
                   <h2 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>Weekly Views</h2>
                 </div>
-                {stats.totalViews > 0 ? (
-                  <PlaceholderChart />
-                ) : (
-                  <div style={{ height: 200, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.75rem" }}>
-                    <ChartNoAxesCombined size={36} style={{ color: "var(--text-muted)", opacity: 0.3 }} />
-                    <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>No views data yet</p>
-                  </div>
-                )}
+                <EmptyChart />
               </div>
               <div style={{ backgroundColor: "var(--card)", borderRadius: 20, border: "1px solid var(--border)", padding: isMobile ? "1rem" : "1.5rem" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
@@ -267,11 +258,10 @@ function CreatorStudioContent() {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
                   {[
-                    { label: "Engagement Rate", value: `${engagementRate}%`, pct: Math.min(parseFloat(engagementRate) * 10, 100) },
-                    { label: "CTR", value: `${(Math.random() * 8 + 2).toFixed(1)}%`, pct: Math.random() * 60 + 20 },
-                    { label: "Watch Time", value: `${stats.totalWatchTime || 0}m`, pct: Math.min((stats.totalWatchTime || 0) / 100, 100) },
-                    { label: "Likes per Video", value: `${likesPerVideo}`, pct: Math.min(likesPerVideo * 10, 100) },
-                    { label: "Avg Views", value: `${avgViews.toLocaleString()}`, pct: Math.min(avgViews / 10, 100) },
+                    { label: "Engagement Rate", value: `${engagementRate}%`, pct: engagementPct },
+                    { label: "Watch Time", value: `${stats.totalWatchTime || 0}m`, pct: watchTimePct },
+                    { label: "Likes per Video", value: `${likesPerVideo}`, pct: likesPerVideoPct },
+                    { label: "Avg Views", value: `${avgViews.toLocaleString()}`, pct: avgViewsPct },
                   ].map((item) => (
                     <div key={item.label}>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", marginBottom: "0.25rem" }}>
