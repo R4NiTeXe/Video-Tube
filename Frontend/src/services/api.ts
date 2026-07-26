@@ -23,9 +23,10 @@ export const refreshCsrfToken = async (): Promise<string | null> => {
     const res = await axios.get(`${API_BASE_URL}/csrf-token`, {
       withCredentials: true,
     });
-    if (res.data?.csrfToken) {
-      _csrfToken = res.data.csrfToken;
-      if (DEBUG) console.log("[CSRF] Token refreshed:", _csrfToken.slice(0, 12) + "...");
+    const csrfToken: unknown = res.data?.csrfToken;
+    if (typeof csrfToken === "string" && csrfToken.length > 0) {
+      _csrfToken = csrfToken;
+      if (DEBUG) console.log("[CSRF] Token refreshed:", csrfToken.slice(0, 12) + "...");
       return _csrfToken;
     }
   } catch (e) {
