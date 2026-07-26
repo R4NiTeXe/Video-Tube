@@ -2,50 +2,31 @@
 
 import { useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useMobileDrawer } from "@/src/store/useMobileDrawer";
-import { api } from "@/src/services/api";
 import {
   HomeIcon,
-  TrendingIcon,
   SubscriptionsIcon,
   LibraryIcon,
   PlaylistsIcon,
   CommunityIcon,
-  ClockIcon,
-  HeartIcon,
-  UserIcon,
-  StudioIcon,
-  SettingsIcon,
-  LogoutIcon,
   CloseIcon,
 } from "@/src/components/icons";
 
 const mainNavItems = [
   { key: "home", href: "/", label: "Home", icon: HomeIcon },
-  { key: "trending", href: "/?sortBy=views&sortType=desc", label: "Trending", icon: TrendingIcon },
   { key: "subscriptions", href: "/subscriptions", label: "Subscriptions", icon: SubscriptionsIcon },
   { key: "library", href: "/library", label: "Library", icon: LibraryIcon },
   { key: "playlists", href: "/playlists", label: "Playlists", icon: PlaylistsIcon },
   { key: "community", href: "/community", label: "Community", icon: CommunityIcon },
-  { key: "history", href: "/history", label: "History", icon: ClockIcon },
-  { key: "liked", href: "/liked", label: "Liked Videos", icon: HeartIcon },
-];
-
-const accountNavItems = [
-  { key: "channel", href: "", label: "My Channel", icon: UserIcon },
-  { key: "edit-profile", href: "/edit-profile", label: "Edit Profile", icon: UserIcon },
-  { key: "studio", href: "/studio", label: "Creator Studio", icon: StudioIcon },
-  { key: "settings", href: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 
 export default function MobileDrawer() {
   const pathname = usePathname();
-  const router = useRouter();
   const { isOpen, close } = useMobileDrawer();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -69,23 +50,9 @@ export default function MobileDrawer() {
     close();
   };
 
-  const handleLogout = async () => {
-    try {
-      await api.post("/users/logout");
-    } finally {
-      logout();
-      close();
-      router.push("/login");
-    }
-  };
-
   const isActive = (href: string) => {
     if (!pathname) return false;
     if (href === "/") return pathname === "/";
-    if (href.includes("?")) {
-      const [base] = href.split("?");
-      return pathname === base;
-    }
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
@@ -151,7 +118,6 @@ export default function MobileDrawer() {
               )}
 
               <nav className="mobile-drawer-nav" aria-label="Mobile navigation">
-                <div className="mobile-drawer-section-label">Main</div>
                 {mainNavItems.map((item) => (
                   <Link
                     key={item.key}
@@ -164,38 +130,6 @@ export default function MobileDrawer() {
                     <span>{item.label}</span>
                   </Link>
                 ))}
-
-                {user && (
-                  <>
-                    <div className="mobile-drawer-divider" />
-                    <div className="mobile-drawer-section-label">Account</div>
-                    {accountNavItems.map((item) => {
-                      const href = item.key === "channel" ? `/channel/${user.username}` : item.href;
-                      return (
-                        <Link
-                          key={item.key}
-                          href={href}
-                          className={`mobile-drawer-item${isActive(href) ? " active" : ""}`}
-                          onClick={handleItemClick}
-                          aria-current={isActive(href) ? "page" : undefined}
-                        >
-                          <item.icon size={18} aria-hidden="true" />
-                          <span>{item.label}</span>
-                        </Link>
-                      );
-                    })}
-
-                    <div className="mobile-drawer-divider" />
-
-                    <button
-                      className="mobile-drawer-item mobile-drawer-logout"
-                      onClick={handleLogout}
-                    >
-                      <LogoutIcon size={18} aria-hidden="true" />
-                      <span>Log Out</span>
-                    </button>
-                  </>
-                )}
               </nav>
             </div>
           </motion.aside>
