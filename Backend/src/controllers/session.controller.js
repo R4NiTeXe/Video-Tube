@@ -4,7 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Session } from "../models/session.model.js";
 import jwt from "jsonwebtoken";
 import logger from "../utils/logger.js";
-import UAParser from "ua-parser-js";
+import { UAParser } from "ua-parser-js";
 
 // Simple in-memory GeoIP cache: ip -> { location, expiresAt }
 const geoIpCache = new Map();
