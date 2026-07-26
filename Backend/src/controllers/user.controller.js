@@ -1185,7 +1185,7 @@ const skipAndLogin = asyncHandler(async (req, res) => {
     .status(200)
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
-    .json(new ApiResponse(200, { user: loggedInUser }, "Logged in successfully"));
+    .json(new ApiResponse(200, { user: loggedInUser, accessToken, refreshToken }, "Logged in successfully"));
 });
 
 const sendChangePasswordOTP = asyncHandler(async (req, res) => {
@@ -1355,7 +1355,7 @@ const socialLogin = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         isNewUser ? 201 : 200,
-        { user: loggedInUser },
+        { user: loggedInUser, accessToken, refreshToken },
         isNewUser ? "User registered via social login" : "User logged in successfully"
       )
     );
@@ -1535,11 +1535,13 @@ const registerUnified = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         201,
-        { user: loggedInUser },
+        { user: loggedInUser, accessToken, refreshToken },
         "User registered successfully"
       )
     );
 });
+
+const sendLoginOTP
 
 
 const sendLoginOTP = asyncHandler(async (req, res) => {
@@ -1629,7 +1631,7 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        { user: loggedInUser },
+        { user: loggedInUser, accessToken, refreshToken },
         "User logged in successfully"
       )
     );

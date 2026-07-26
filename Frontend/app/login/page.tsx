@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/src/store/useAuthStore";
+import axios from "axios";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -46,11 +47,17 @@ export default function LoginPage() {
           ? { mobile: trimmed, password }
           : { email: trimmed, password };
       const response = await api.post("/users/login", payload);
-      const { user } = response.data.data;
+      const { user, accessToken, refreshToken } = response.data.data;
+      if (accessToken) localStorage.setItem("accessToken", accessToken);
+      if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
       login(user);
       router.push("/");
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, "Login failed"));
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        setError("Invalid email or password. Please try again.");
+      } else {
+        setError(getApiErrorMessage(err, "Login failed. Please try again."));
+      }
     } finally {
       setIsLoading(false);
     }

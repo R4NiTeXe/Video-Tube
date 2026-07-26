@@ -99,6 +99,12 @@ api.interceptors.response.use(
     }
 
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      const noAuthEndpoints = ["/users/login", "/users/register", "/users/send-forgot-otp", "/users/verify-forgot-otp", "/users/reset-password-token"];
+      const isNoAuth = noAuthEndpoints.some((ep) => originalRequest.url?.includes(ep));
+      if (isNoAuth) {
+        return Promise.reject(error);
+      }
+
       if (DEBUG) console.log("[API] 401 — attempting token refresh");
       originalRequest._retry = true;
 
@@ -141,13 +147,7 @@ api.interceptors.response.use(
           }
         }
 
-        return Promise.reject(
-          new Error(
-            refreshError instanceof Error
-              ? refreshError.message
-              : "Session expired"
-          )
-        );
+        return Promise.reject(error);
       }
     }
 

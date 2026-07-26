@@ -82,6 +82,8 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
+  const [changePasswordError, setChangePasswordError] = useState("");
+  const [forgotPasswordError, setForgotPasswordError] = useState("");
   const [changePasswordOtp, setChangePasswordOtp] = useState<string[]>(Array(6).fill(""));
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -221,17 +223,21 @@ export default function SettingsPage() {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword !== confirmPassword) { return; }
-    if (newPassword.length < 6) { return; }
-    if (!changePasswordOtp || changePasswordOtp.join("").length !== 6) { return; }
+    setChangePasswordError("");
+    if (newPassword !== confirmPassword) { setChangePasswordError("Passwords do not match."); return; }
+    if (newPassword.length < 6) { setChangePasswordError("Password must be at least 6 characters."); return; }
+    if (!changePasswordOtp || changePasswordOtp.join("").length !== 6) { setChangePasswordError("Please enter the complete 6-digit OTP."); return; }
     setPasswordSaving(true);
     try {
       await api.post("/users/verify-change-password", { oldPassword, newPassword, otp: changePasswordOtp.join(""), channel: changePasswordChannel });
       setOldPassword(""); setNewPassword(""); setConfirmPassword(""); setChangePasswordOtp(Array(6).fill(""));
       setOtpSent(false);
       setTimeout(() => { logout(); router.push("/login"); }, 2000);
-    } catch (err: unknown) { }
-    finally { setPasswordSaving(false); }
+    } catch (err: unknown) {
+      setChangePasswordError(getApiErrorMessage(err, "Failed to change password. Please try again."));
+    } finally {
+      setPasswordSaving(false);
+    }
   };
 
   
@@ -256,17 +262,21 @@ export default function SettingsPage() {
 
   const handleForgotPasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword !== confirmPassword) { return; }
-    if (newPassword.length < 6) { return; }
-    if (!changePasswordOtp || changePasswordOtp.join("").length !== 6) { return; }
+    setForgotPasswordError("");
+    if (newPassword !== confirmPassword) { setForgotPasswordError("Passwords do not match."); return; }
+    if (newPassword.length < 6) { setForgotPasswordError("Password must be at least 6 characters."); return; }
+    if (!changePasswordOtp || changePasswordOtp.join("").length !== 6) { setForgotPasswordError("Please enter the complete 6-digit OTP."); return; }
     setPasswordSaving(true);
     try {
       await api.post("/users/verify-and-reset-password-via-otp", { newPassword, otp: changePasswordOtp.join(""), channel: forgotChannel });
       setNewPassword(""); setConfirmPassword(""); setChangePasswordOtp(Array(6).fill(""));
       setForgotOtpSent(false); setForgotPasswordMode(false);
       setTimeout(() => { logout(); router.push("/login"); }, 2000);
-    } catch (err: unknown) { }
-    finally { setPasswordSaving(false); }
+    } catch (err: unknown) {
+      setForgotPasswordError(getApiErrorMessage(err, "Failed to reset password. Please try again."));
+    } finally {
+      setPasswordSaving(false);
+    }
   };
 
 
@@ -428,6 +438,11 @@ export default function SettingsPage() {
                   )}
                 </div>
               </div>
+              {changePasswordError && (
+                <div style={{ padding: "0.5rem 0.75rem", borderRadius: "var(--radius-md)", backgroundColor: "rgba(220,38,38,0.1)", border: "1px solid var(--error)", color: "var(--error)", fontSize: "0.82rem" }}>
+                  {changePasswordError}
+                </div>
+              )}
               <div style={{ display: "flex", justifyContent: "flex-end" }}>
                 <button
                   type="submit"
@@ -524,6 +539,11 @@ export default function SettingsPage() {
                   )}
                 </div>
               </div>
+              {forgotPasswordError && (
+                <div style={{ padding: "0.5rem 0.75rem", borderRadius: "var(--radius-md)", backgroundColor: "rgba(220,38,38,0.1)", border: "1px solid var(--error)", color: "var(--error)", fontSize: "0.82rem" }}>
+                  {forgotPasswordError}
+                </div>
+              )}
               <div style={{ display: "flex", justifyContent: "flex-end" }}>
                 <button
                   type="submit"

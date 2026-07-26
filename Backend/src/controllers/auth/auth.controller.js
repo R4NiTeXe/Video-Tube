@@ -171,7 +171,7 @@ const loginUser = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        { user: loggedInUser },
+        { user: loggedInUser, accessToken, refreshToken },
         "User logged in successfully"
       )
     );
@@ -244,7 +244,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        { user: freshUser },
+        { user: freshUser, accessToken, refreshToken },
         "Token refreshed successfully"
       )
     );

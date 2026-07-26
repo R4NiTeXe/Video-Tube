@@ -213,7 +213,7 @@ const registerUnified = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         201,
-        { user: loggedInUser },
+        { user: loggedInUser, accessToken, refreshToken },
         "User registered successfully"
       )
     );
@@ -323,7 +323,7 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        { user: loggedInUser },
+        { user: loggedInUser, accessToken, refreshToken },
         "Login successful"
       )
     );
