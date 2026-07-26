@@ -1025,6 +1025,8 @@ const updatePrivacySettings = asyncHandler(async (req, res) => {
 });
 
 const forgotPasswordOTP = asyncHandler(async (req, res) => {
+  logger.info("[forgotPasswordOTP] Request received", { body: { ...req.body, identifier: req.body.identifier ? req.body.identifier.replace(/^(.{1,2}).*(@.+)/, "$1***$2") : undefined } });
+
   const { identifier, email } = req.body;
   const id = (identifier || email || "").trim().toLowerCase();
 
@@ -1035,20 +1037,22 @@ const forgotPasswordOTP = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email: id });
 
   if (!user) {
+    logger.info("[forgotPasswordOTP] User not found — returning generic response");
     return res.status(200).json(new ApiResponse(200, {}, "If the email exists, an OTP has been sent"));
   }
 
-  const otp = await storeOTP(id, "forgot-password", "email", user._id);
+  logger.info("[forgotPasswordOTP] User found", { userId: user._id, email: id });
 
-  try {
-    await sendEmail({
-      to: id,
-      subject: "Your VideoTube Account Recovery Code",
-      html: otpEmailTemplate(otp, "forgot-password"),
-    });
-  } catch (error) {
-    logger.error("Failed to send OTP email:", error.message);
-  }
+  const otp = await storeOTP(id, "forgot-password", "email", user._id);
+  logger.info("[forgotPasswordOTP] OTP generated and stored", { userId: user._id });
+
+  logger.info("[forgotPasswordOTP] Sending email via sendEmail()...", { to: id });
+  await sendEmail({
+    to: id,
+    subject: "Your VideoTube Account Recovery Code",
+    html: otpEmailTemplate(otp, "forgot-password"),
+  });
+  logger.info("[forgotPasswordOTP] Email sent successfully via provider");
 
   return res.status(200).json(
     new ApiResponse(200, {}, "If the email exists, an OTP has been sent")

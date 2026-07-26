@@ -49,11 +49,13 @@ const sendEmail = async ({ to, subject, html }) => {
 
       const responseData = await response.json().catch(() => null);
 
+      logger.debug(`[sendEmail] Brevo response status: ${response.status}`, { responseData });
+
       if (!response.ok) {
         throw new Error(`Brevo API Error: ${response.status} - ${JSON.stringify(responseData)}`);
       }
 
-      logger.info(`Email sent via Brevo API to ${maskEmail(to)}`);
+      logger.info(`Email sent via Brevo API to ${maskEmail(to)}`, { messageId: responseData?.messageId, provider: "brevo" });
       await incrementMessagingLimit(to);
       return { success: true, messageId: responseData?.messageId, provider: "brevo" };
     } catch (error) {
@@ -76,11 +78,11 @@ const sendEmail = async ({ to, subject, html }) => {
       });
 
       if (result.error) {
-        logger.error("Resend API error:", { error: result.error });
+        logger.error("[sendEmail] Resend API error:", { error: result.error });
         throw new Error(result.error.message || "Resend failed");
       }
 
-      logger.info(`Email sent via Resend to ${maskEmail(to)}`);
+      logger.info(`Email sent via Resend to ${maskEmail(to)}`, { messageId: result.data?.id, provider: "resend" });
       await incrementMessagingLimit(to);
       return { success: true, messageId: result.data?.id, provider: "resend" };
     } catch (error) {
@@ -98,12 +100,14 @@ const sendEmail = async ({ to, subject, html }) => {
   }
 
   // Console fallback (dev mode)
-  if (process.env.NODE_ENV === "production") throw new Error("No email provider configured");
-  logger.debug("--- Development Email (No provider configured) ---");
+  if (process.env.NODE_ENV === "production") {
+    logger.error("[sendEmail] No email provider configured — throwing");
+    throw new Error("No email provider configured");
+  }
+  logger.warn("[sendEmail] No email provider configured — email NOT sent, logged to console");
   logger.debug(`To: ${maskEmail(to)}`);
   logger.debug(`Subject: ${subject}`);
   logger.debug(`Body length: ${Buffer.byteLength(html, "utf8")} bytes`);
-  logger.debug("-------------------------------------------------");
   return { success: true, mode: "console" };
 };
 
