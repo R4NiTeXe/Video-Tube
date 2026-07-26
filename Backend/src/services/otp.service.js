@@ -136,6 +136,18 @@ const storeOtp = async ({ identifier, userId, purpose, channel = "email" }) => {
     throw new Error(`Invalid OTP channel: ${channel}`);
   }
 
+  const globalCheck = checkGlobalLimit();
+  if (!globalCheck.allowed) {
+    throw new Error(globalCheck.message);
+  }
+
+  if (userId) {
+    const userCheck = await checkUserLimit(userId);
+    if (!userCheck.allowed) {
+      throw new Error(userCheck.message);
+    }
+  }
+
   const otp = generateOtp();
   const otpHash = hashOtp(otp);
   const expiresAt = new Date(Date.now() + OTP_CONSTANTS.OTP_EXPIRY_MINUTES * 60 * 1000);
@@ -162,10 +174,11 @@ const storeOtp = async ({ identifier, userId, purpose, channel = "email" }) => {
     { upsert: true, returnDocument: "after" }
   );
 
-  incrementGlobalDailyCount();
   if (userId) {
     await incrementUserDailyCount(userId);
   }
+
+  incrementGlobalDailyCount();
 
   logger.info(`OTP generated`, {
     identifier: identifier.replace(/^(.{1,2}).*(@.+)/, "$1***$2"),
@@ -175,7 +188,9 @@ const storeOtp = async ({ identifier, userId, purpose, channel = "email" }) => {
     globalCount: getGlobalDailyCount(),
   });
 
-  return { otp, otpDoc };
+  const usage = userId ? await getUserOtpUsage(userId) : { used: 0, limit: OTP_CONSTANTS.USER_DAILY_LIMIT, remaining: OTP_CONSTANTS.USER_DAILY_LIMIT };
+  const globalUsage = getGlobalDailyCount();
+  return { otp, otpDoc, remainingGlobal: OTP_CONSTANTS.GLOBAL_DAILY_LIMIT - globalUsage, remainingUser: usage.remaining };
 };
 
 const sendOtpEmail = async ({ identifier, otp, purpose, userName }) => {

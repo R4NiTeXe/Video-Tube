@@ -130,37 +130,37 @@ export default function ContactDetailsManager() {
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         
         {/* Email Row */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
-          <div>
+        <div className="contact-detail-row">
+          <div className="contact-detail-info">
             <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "0.2rem" }}>Email Address</div>
-            <div style={{ fontSize: "0.95rem", color: "var(--text-primary)" }}>{hasEmail ? user.email : "Not added"}</div>
+            <div style={{ fontSize: "0.95rem", color: "var(--text-primary)", wordBreak: "break-all" }}>{hasEmail ? user.email : "Not added"}</div>
           </div>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
+          <div className="contact-detail-actions">
             {hasEmail ? (
               <>
-                <button type="button" onClick={() => openModal("edit", "email")} className="btn btn-secondary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem" }}>Edit</button>
-                <button type="button" onClick={() => openModal("delete", "email")} className="btn" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem", backgroundColor: "var(--accent-warm-light)", color: "var(--accent-warm)", border: "1px solid rgba(244,63,94,0.2)" }}>Delete</button>
+                <button type="button" onClick={() => openModal("edit", "email")} className="btn btn-secondary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem", whiteSpace: "nowrap" }}>Edit</button>
+                <button type="button" onClick={() => openModal("delete", "email")} className="btn" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem", whiteSpace: "nowrap", backgroundColor: "var(--accent-warm-light)", color: "var(--accent-warm)", border: "1px solid rgba(244,63,94,0.2)" }}>Delete</button>
               </>
             ) : (
-              <button type="button" onClick={() => openModal("add", "email")} className="btn btn-primary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem" }}>Add Email</button>
+              <button type="button" onClick={() => openModal("add", "email")} className="btn btn-primary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem", whiteSpace: "nowrap" }}>Add Email</button>
             )}
           </div>
         </div>
 
         {/* Mobile Row */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
-          <div>
+        <div className="contact-detail-row">
+          <div className="contact-detail-info">
             <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "0.2rem" }}>Mobile Number</div>
             <div style={{ fontSize: "0.95rem", color: "var(--text-primary)" }}>{hasMobile ? user.mobile : "Not added"}</div>
           </div>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
+          <div className="contact-detail-actions">
             {hasMobile ? (
               <>
-                <button type="button" onClick={() => openModal("edit", "mobile")} className="btn btn-secondary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem" }}>Edit</button>
-                <button type="button" onClick={() => openModal("delete", "mobile")} className="btn" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem", backgroundColor: "var(--accent-warm-light)", color: "var(--accent-warm)", border: "1px solid rgba(244,63,94,0.2)" }}>Delete</button>
+                <button type="button" onClick={() => openModal("edit", "mobile")} className="btn btn-secondary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem", whiteSpace: "nowrap" }}>Edit</button>
+                <button type="button" onClick={() => openModal("delete", "mobile")} className="btn" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem", whiteSpace: "nowrap", backgroundColor: "var(--accent-warm-light)", color: "var(--accent-warm)", border: "1px solid rgba(244,63,94,0.2)" }}>Delete</button>
               </>
             ) : (
-              <button type="button" onClick={() => openModal("add", "mobile")} className="btn btn-primary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem" }}>Add Mobile</button>
+              <button type="button" onClick={() => openModal("add", "mobile")} className="btn btn-primary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem", whiteSpace: "nowrap" }}>Add Mobile</button>
             )}
           </div>
         </div>

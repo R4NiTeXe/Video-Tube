@@ -33,14 +33,11 @@ import { validatePasswordStrength, assertPasswordStrength } from "../utils/passw
 import logger from "../utils/logger.js";
 import { createSession, deactivateSession } from "./session.controller.js";
 
-// Cookie relies on trust proxy being correctly configured in app.js.
-// In production the reverse proxy terminates HTTPS; Express receives HTTP but
-// the cookie is marked Secure because the outer channel is HTTPS.
-// sameSite: "none" allows cross-origin cookie flow (frontend + backend on different domains).
 const getCookieOptions = () => ({
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  secure: true,
+  sameSite: "none",
+  path: "/",
 });
 
 const isValidEmail = (email) => validator.isEmail(email);

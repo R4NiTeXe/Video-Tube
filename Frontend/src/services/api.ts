@@ -1,8 +1,7 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { API_BASE_URL } from "@/src/services/config";
 
-// Set to true to enable console logging for auth/CSRF debugging
-const DEBUG = false;
+const DEBUG = true;
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
@@ -18,6 +17,22 @@ let _csrfToken: string | null = null;
 
 export const setCsrfToken = (token: string) => { _csrfToken = token; };
 export const getCsrfToken = () => _csrfToken;
+
+export const refreshCsrfToken = async (): Promise<string | null> => {
+  try {
+    const res = await axios.get(`${API_BASE_URL}/csrf-token`, {
+      withCredentials: true,
+    });
+    if (res.data?.csrfToken) {
+      _csrfToken = res.data.csrfToken;
+      if (DEBUG) console.log("[CSRF] Token refreshed:", _csrfToken.slice(0, 12) + "...");
+      return _csrfToken;
+    }
+  } catch (e) {
+    if (DEBUG) console.log("[CSRF] Refresh failed", e);
+  }
+  return null;
+};
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -39,15 +54,18 @@ api.interceptors.request.use((config) => {
   const mutatingMethods = ["post", "put", "patch", "delete"];
   if (mutatingMethods.includes(config.method?.toLowerCase() || "")) {
     if (_csrfToken) {
-      if (DEBUG) console.log("[API] Attaching CSRF token to", config.method, config.url);
+      if (DEBUG) console.log(`[API] CSRF header set for ${config.method?.toUpperCase()} ${config.url}: ${_csrfToken.slice(0, 12)}...`);
       config.headers["x-csrf-token"] = _csrfToken;
     } else if (DEBUG) {
-      console.log("[API] CSRF token missing for", config.method, config.url);
+      console.log(`[API] WARNING: CSRF token MISSING for ${config.method?.toUpperCase()} ${config.url}`);
     }
   }
 
   if (DEBUG) {
-    console.log("[API] Request:", config.method?.toUpperCase(), config.url);
+    console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`, {
+      hasCsrfToken: !!_csrfToken,
+      withCredentials: config.withCredentials,
+    });
   }
 
   return config;
@@ -71,18 +89,9 @@ api.interceptors.response.use(
         if (DEBUG) console.log("[API] CSRF 403 — re-fetching token and retrying");
         originalRequest._csrfRetry = true;
         _csrfToken = null;
-        try {
-          const res = await axios.get(`${API_BASE_URL}/csrf-token`, {
-            withCredentials: true,
-          });
-          if (res.data?.csrfToken) {
-            _csrfToken = res.data.csrfToken;
-            if (DEBUG) console.log("[API] CSRF token refreshed");
-          }
-        } catch (e) {
-          if (DEBUG) console.log("[API] CSRF fetch failed", e);
-        }
-        if (_csrfToken) {
+        const newToken = await refreshCsrfToken();
+        if (newToken) {
+          if (DEBUG) console.log("[API] CSRF retry with new token");
           return api(originalRequest);
         }
       }

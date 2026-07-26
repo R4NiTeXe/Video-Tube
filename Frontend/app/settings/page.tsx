@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/src/services/api";
+import { api, getApiErrorMessage, refreshCsrfToken } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { PageMeta } from "@/src/components/PageMeta";
 import { motion } from "framer-motion";
@@ -113,9 +113,11 @@ export default function SettingsPage() {
   };
   const [otpSent, setOtpSent] = useState(false);
   const [otpSending, setOtpSending] = useState(false);
+  const [changePasswordOtpError, setChangePasswordOtpError] = useState("");
   const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
   const [forgotOtpSent, setForgotOtpSent] = useState(false);
   const [forgotOtpSending, setForgotOtpSending] = useState(false);
+  const [forgotOtpError, setForgotOtpError] = useState("");
   const [changePasswordChannel, setChangePasswordChannel] = useState<"email" | "whatsapp">("email");
   const [forgotChannel, setForgotChannel] = useState<"email" | "whatsapp">("email");
 
@@ -198,8 +200,10 @@ export default function SettingsPage() {
   
   const handleSendChangePasswordOtp = async () => {
     if (!oldPassword) { return; }
+    setChangePasswordOtpError("");
     setOtpSending(true);
     try {
+      await refreshCsrfToken();
       await api.post("/users/send-change-password-otp", { 
         oldPassword, 
         channel: changePasswordChannel,
@@ -209,6 +213,7 @@ export default function SettingsPage() {
       setOtpSent(true);
       refreshOtpUsage();
     } catch (err: unknown) {
+      setChangePasswordOtpError(getApiErrorMessage(err, "Failed to send OTP."));
     } finally {
       setOtpSending(false);
     }
@@ -231,8 +236,10 @@ export default function SettingsPage() {
 
   
   const handleSendForgotOtp = async () => {
+    setForgotOtpError("");
     setForgotOtpSending(true);
     try {
+      await refreshCsrfToken();
       await api.post("/users/send-forgot-password-change-otp", { 
         channel: forgotChannel,
         ...(forgotChannel === "email" && user?.email ? { email: user.email } : {}),
@@ -241,6 +248,7 @@ export default function SettingsPage() {
       setForgotOtpSent(true);
       refreshOtpUsage();
     } catch (err: unknown) {
+      setForgotOtpError(getApiErrorMessage(err, "Failed to send OTP."));
     } finally {
       setForgotOtpSending(false);
     }
@@ -357,8 +365,13 @@ export default function SettingsPage() {
                   />
                 </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                              <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                 <label htmlFor="settings-otp" style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Verification OTP</label>
+                {changePasswordOtpError && (
+                  <div style={{ padding: "0.5rem 0.75rem", borderRadius: "var(--radius-md)", backgroundColor: "rgba(220,38,38,0.1)", border: "1px solid var(--error)", color: "var(--error)", fontSize: "0.82rem" }}>
+                    {changePasswordOtpError}
+                  </div>
+                )}
                 {!otpSent ? (
                   <>
                     <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -450,6 +463,11 @@ export default function SettingsPage() {
 
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                   <label htmlFor="forgot-otp" style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Verification OTP</label>
+                  {forgotOtpError && (
+                    <div style={{ padding: "0.5rem 0.75rem", borderRadius: "var(--radius-md)", backgroundColor: "rgba(220,38,38,0.1)", border: "1px solid var(--error)", color: "var(--error)", fontSize: "0.82rem" }}>
+                      {forgotOtpError}
+                    </div>
+                  )}
                   {!forgotOtpSent ? (
                     <>
                       <div style={{ display: "flex", gap: "0.5rem" }}>

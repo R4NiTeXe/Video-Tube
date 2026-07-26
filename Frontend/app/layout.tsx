@@ -5,8 +5,8 @@ import { ThemeProvider } from "next-themes";
 import QueryProvider from "@/src/providers/QueryProvider";
 import AuthProvider from "@/src/providers/AuthProvider";
 import SplashWrapper from "@/src/components/SplashWrapper";
-import BottomNav from "@/src/components/BottomNav";
 import ShortcutsDialog from "@/src/components/ShortcutsDialog";
+import MobileDrawer from "@/src/components/MobileDrawer";
 import { ErrorBoundary } from "@/src/components/ErrorBoundary";
 import AppShell from "@/src/components/AppShell";
 import { SITE_URL } from "@/src/services/siteConfig";
@@ -77,8 +77,8 @@ export default function RootLayout({
                   <AppShell>
                     {children}
                   </AppShell>
+                  <MobileDrawer />
                 </SplashWrapper>
-                <BottomNav />
                 <ShortcutsDialog />
               </ErrorBoundary>
             </AuthProvider>

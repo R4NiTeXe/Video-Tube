@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { api } from "@/src/services/api";
 import { useKeyboardShortcuts } from "@/src/hooks/useKeyboardShortcuts";
+import { useMobileDrawer } from "@/src/store/useMobileDrawer";
 import {
   SearchIcon,
   BellIcon,
@@ -16,12 +17,14 @@ import {
   ChevronDownIcon,
   UploadIcon,
   SettingsIcon,
+  MenuIcon,
 } from "@/src/components/icons";
 
 export default function TopNav() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
+  const { open: openDrawer } = useMobileDrawer();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -116,6 +119,14 @@ export default function TopNav() {
 
   return (
     <nav className="topnav" aria-label="Main navigation">
+      <button
+        className="topnav-menu-btn"
+        onClick={openDrawer}
+        aria-label="Open navigation menu"
+      >
+        <MenuIcon size={20} aria-hidden="true" />
+      </button>
+
       <Link href="/" className="topnav-logo" aria-label="VideoTube Home">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo.png" alt="VideoTube" style={{ height: "32px", width: "auto", display: "block" }} />
@@ -182,19 +193,41 @@ export default function TopNav() {
               My Channel
             </Link>
 
-            <Link href="/edit-profile" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+            <Link
+              href="/edit-profile"
+              className={`dropdown-item${pathname === "/edit-profile" ? " active" : ""}`}
+              style={pathname === "/edit-profile" ? { color: "var(--accent)", fontWeight: 500 } : undefined}
+              onClick={() => setIsDropdownOpen(false)}
+            >
               <UserIcon size={16} />
               Edit Profile
             </Link>
 
-            <Link href="/studio" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+            <Link
+              href="/studio"
+              className={`dropdown-item${pathname.startsWith("/studio") ? " active" : ""}`}
+              style={pathname.startsWith("/studio") ? { color: "var(--accent)", fontWeight: 500 } : undefined}
+              onClick={() => setIsDropdownOpen(false)}
+            >
               <StudioIcon size={16} />
               Creator Studio
             </Link>
 
-            <Link href="/settings" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+            <Link
+              href="/settings"
+              className={`dropdown-item${pathname === "/settings" ? " active" : ""}`}
+              style={pathname === "/settings" ? { color: "var(--accent)", fontWeight: 500 } : undefined}
+              onClick={() => setIsDropdownOpen(false)}
+            >
               <SettingsIcon size={16} />
               Settings
+            </Link>
+
+            <div className="dropdown-divider" />
+
+            <Link href="/about" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+              <UserIcon size={16} />
+              About
             </Link>
 
             <div className="dropdown-divider" />
