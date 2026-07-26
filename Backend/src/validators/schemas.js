@@ -850,3 +850,14 @@ export const healthSchemas = {
 export const metricsSchemas = {
   metrics: {},
 };
+
+export const contactSchemas = {
+  createContact: {
+    body: z.object({
+      name: z.string().min(1, "Full name is required").max(100).trim(),
+      email: z.string().email("Please enter a valid email"),
+      subject: z.string().min(1, "Subject is required").max(200).trim(),
+      message: z.string().min(1, "Message is required").max(2000).trim(),
+    }),
+  },
+};

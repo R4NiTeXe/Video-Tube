@@ -1,27 +1,43 @@
+import { UAParser } from "ua-parser-js";
 import logger from "./logger.js";
 
-/**
- * Extracts basic device information from the User-Agent string.
- */
 const parseUserAgent = (userAgent) => {
   if (!userAgent) return "Unknown Device";
-  
-  let os = "Unknown OS";
-  let browser = "Unknown Browser";
+  try {
+    const parser = new UAParser(userAgent);
+    const browser = parser.getBrowser();
+    const os = parser.getOS();
+    const device = parser.getDevice();
 
-  if (userAgent.includes("Windows")) os = "Windows";
-  else if (userAgent.includes("Mac OS")) os = "Mac OS";
-  else if (userAgent.includes("Linux")) os = "Linux";
-  else if (userAgent.includes("Android")) os = "Android";
-  else if (userAgent.includes("iOS") || userAgent.includes("iPhone")) os = "iOS";
+    let browserName = browser.name || null;
+    const browserMajor = (browser.version || "").split(".")[0] || "";
+    let osName = os.name || null;
+    const osMajor = (os.version || "").split(".")[0] || "";
+    const deviceType = device.type || "desktop";
+    const deviceModel = device.model || "";
 
-  if (userAgent.includes("Chrome") && !userAgent.includes("Edg")) browser = "Chrome";
-  else if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) browser = "Safari";
-  else if (userAgent.includes("Firefox")) browser = "Firefox";
-  else if (userAgent.includes("Edg")) browser = "Edge";
-  else if (userAgent.includes("Postman")) browser = "Postman";
+    if (!browserName && !osName) return "Unknown Device";
 
-  return `${os} - ${browser}`;
+    if (browserName?.startsWith("Mobile ")) browserName = browserName.slice(7);
+
+    const browserStr = browserMajor ? `${browserName} ${browserMajor}` : browserName || "Browser";
+
+    let osStr = osName || "OS";
+    if (osName === "macOS") osStr = "macOS";
+    else if (osName === "Windows" && osMajor) osStr = `${osName} ${osMajor}`;
+    else if (osMajor) osStr = `${osName} ${osMajor}`;
+
+    if (deviceType === "mobile" || deviceType === "tablet") {
+      if (deviceModel) {
+        return `${browserStr} • ${deviceModel}`;
+      }
+      return `${browserStr} • ${osStr}`;
+    }
+
+    return `${browserStr} • ${osStr}`;
+  } catch {
+    return "Unknown Device";
+  }
 };
 
 /**
@@ -39,21 +55,25 @@ export const getLocationInfo = async (req) => {
         ip: "127.0.0.1",
         location: "Local Network",
         device,
+        timezone: undefined,
       };
     }
 
-      const response = await fetch(`http://ip-api.com/json/${ip}`);
+    const response = await fetch(`http://ip-api.com/json/${ip}`);
     const data = await response.json();
-    
+
     let locationStr = "Unknown Location";
-    if (data && data.status === "success") {
+    let timezone = undefined;
+    if (data && data.status === "success" && data.city && data.regionName && data.country) {
       locationStr = `${data.city}, ${data.regionName}, ${data.country}`;
+      timezone = data.timezone || undefined;
     }
 
     return {
       ip,
       location: locationStr,
       device,
+      timezone,
     };
   } catch (error) {
     logger.error("Failed to fetch location data: " + error.message);
@@ -61,6 +81,7 @@ export const getLocationInfo = async (req) => {
       ip: req?.ip || "Unknown IP",
       location: "Unknown Location",
       device: parseUserAgent(req?.headers?.["user-agent"]),
+      timezone: undefined,
     };
   }
 };

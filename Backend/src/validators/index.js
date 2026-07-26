@@ -18,3 +18,4 @@ export { searchSchemas } from "./schemas.js";
 export { settingsSchemas } from "./schemas.js";
 export { healthSchemas } from "./schemas.js";
 export { metricsSchemas } from "./schemas.js";
+export { contactSchemas } from "./schemas.js";

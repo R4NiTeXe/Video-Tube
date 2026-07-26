@@ -1,9 +1,30 @@
-export const formatDate = (dateObj = new Date()) => {
-  const day = String(dateObj.getDate()).padStart(2, '0');
-  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-  const year = dateObj.getFullYear();
-  const time = dateObj.toLocaleTimeString("en-US");
-  return `${day}/${month}/${year}, ${time}`;
+export const formatDate = (dateObj = new Date(), timezone = undefined) => {
+  try {
+    const options = {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+      timeZoneName: "short",
+      ...(timezone ? { timeZone: timezone } : {}),
+    };
+    return new Intl.DateTimeFormat("en-GB", options).format(dateObj);
+  } catch {
+    const fallback = {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+      timeZoneName: "short",
+    };
+    return new Intl.DateTimeFormat("en-GB", fallback).format(dateObj);
+  }
 };
 
 export const getThemeConfig = (themeType) => {
@@ -251,8 +272,6 @@ export const accountDeletedTemplate = (user) => {
     title: "Account Deletion Confirmed",
     message: "Your VideoTube account has been permanently deleted as requested. We're sad to see you go.",
     userName: user.fullName || user.username,
-    actionUrl: `${process.env.FRONTEND_URL || "http://localhost:3000"}/support`,
-    actionText: "Contact Support",
     details: [
       { label: "Deletion Date", value: formatDate() },
       { label: "Status", value: "Permanently Deleted" }
@@ -263,9 +282,10 @@ export const accountDeletedTemplate = (user) => {
 };
 
 export const suspiciousLoginTemplate = (user, locationInfo, platform, lastLoginDate = null) => {
+  const tz = locationInfo?.timezone;
   const details = [
     { label: "Login Method", value: platform },
-    { label: "Last Login", value: lastLoginDate ? formatDate(new Date(lastLoginDate)) : formatDate() }
+    { label: "Last Login", value: lastLoginDate ? formatDate(new Date(lastLoginDate), tz) : formatDate(undefined, tz) }
   ];
   if (locationInfo?.location) details.push({ label: "Location", value: locationInfo.location });
   if (locationInfo?.device) details.push({ label: "Device", value: locationInfo.device });
@@ -274,8 +294,6 @@ export const suspiciousLoginTemplate = (user, locationInfo, platform, lastLoginD
     title: "New Sign-In Detected",
     message: "We noticed a sign-in to your VideoTube account after a long period of inactivity.",
     userName: user.fullName || user.username,
-    actionUrl: `${process.env.FRONTEND_URL || "http://localhost:3000"}/settings/security`,
-    actionText: "Review Account Security",
     details,
     warning: true,
     themeType: "warning"
@@ -285,7 +303,7 @@ export const suspiciousLoginTemplate = (user, locationInfo, platform, lastLoginD
 export const accountRecoveryTemplate = (user, locationInfo, platform) => {
   const details = [
     { label: "Recovery Method", value: platform },
-    { label: "Time", value: formatDate() }
+    { label: "Time", value: formatDate(undefined, locationInfo?.timezone) }
   ];
   if (locationInfo?.location) details.push({ label: "Location", value: locationInfo.location });
   if (locationInfo?.device) details.push({ label: "Device", value: locationInfo.device });
@@ -294,8 +312,6 @@ export const accountRecoveryTemplate = (user, locationInfo, platform) => {
     title: "Account Recovery Successful",
     message: "Your VideoTube account was successfully accessed via Skip & Login recovery.",
     userName: user.fullName || user.username,
-    actionUrl: `${process.env.FRONTEND_URL || "http://localhost:3000"}/settings/security`,
-    actionText: "Review Security Settings",
     details,
     warning: true,
     themeType: "warning"
@@ -305,7 +321,7 @@ export const accountRecoveryTemplate = (user, locationInfo, platform) => {
 export const passwordChangedEmailTemplate = (user, locationInfo) => {
   const details = [
     { label: "Action", value: "Password Changed" },
-    { label: "Time", value: formatDate() }
+    { label: "Time", value: formatDate(undefined, locationInfo?.timezone) }
   ];
   if (locationInfo?.location) details.push({ label: "Location", value: locationInfo.location });
   if (locationInfo?.device) details.push({ label: "Device", value: locationInfo.device });
@@ -314,8 +330,6 @@ export const passwordChangedEmailTemplate = (user, locationInfo) => {
     title: "Password Changed Successfully",
     message: "Your VideoTube account password has been changed successfully.",
     userName: user.fullName || user.username,
-    actionUrl: `${process.env.FRONTEND_URL || "http://localhost:3000"}/settings/security`,
-    actionText: "View Security Settings",
     details,
     warning: false,
     themeType: "success"
@@ -349,7 +363,125 @@ export const identifierDeletedTemplate = (user, identifierType) => {
       { label: "Action", value: `${identifierType === 'email' ? 'Email' : 'Mobile'} Removed` },
       { label: "Time", value: formatDate() }
     ],
-    warning: true, // Warn them just in case it wasn't them
+    warning: true,
     themeType: "warning"
   });
+};
+
+export const contactOwnerTemplate = ({ name, email, subject, message, time, ip, userAgent }) => {
+  const details = [
+    { label: "Name", value: name },
+    { label: "Email", value: email },
+    { label: "Subject", value: subject },
+    { label: "Message", value: message },
+    { label: "Time", value: time },
+    { label: "IP", value: ip },
+    { label: "User Agent", value: userAgent },
+  ];
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Contact Message — VideoTube</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <tr>
+      <td>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: #ffffff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); overflow: hidden;">
+          <tr>
+            <td style="background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); padding: 32px; text-align: center;">
+              <div style="background: rgba(255,255,255,0.15); border-radius: 12px; display: inline-block; padding: 12px 20px;">
+                <span style="font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">Video<span style="color: #c7d2fe;">Tube</span></span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px 40px 32px;">
+              <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: #111827; text-align: center;">New Contact Message</h1>
+              <p style="margin: 0 0 24px; font-size: 14px; color: #6b7280; text-align: center;">A user has submitted a contact form.</p>
+
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border: 1px solid #e5e7eb; border-radius: 8px;">
+                ${details.map((d, index) => `
+                <tr>
+                  <td style="padding: 12px 16px; ${index < details.length - 1 ? 'border-bottom: 1px solid #e5e7eb;' : ''}">
+                    <strong style="color: #374151; font-size: 13px; display: block; margin-bottom: 2px;">${d.label}:</strong>
+                    <span style="color: #6b7280; font-size: 13px; word-break: break-word;">${d.value}</span>
+                  </td>
+                </tr>
+                `).join("")}
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 24px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; font-size: 12px; color: #9ca3af;">This is an automated notification from the VideoTube contact form.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+};
+
+export const contactUserConfirmationTemplate = (name) => {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>We received your message — VideoTube</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <tr>
+      <td>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: #ffffff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); overflow: hidden;">
+          <tr>
+            <td style="background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); padding: 32px; text-align: center;">
+              <div style="background: rgba(255,255,255,0.15); border-radius: 12px; display: inline-block; padding: 12px 20px;">
+                <span style="font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">Video<span style="color: #86efac;">Tube</span></span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px 40px 32px;">
+              <h1 style="margin: 0 0 16px; font-size: 24px; font-weight: 700; color: #111827; text-align: center;">We received your message</h1>
+              <p style="margin: 0 0 16px; font-size: 16px; color: #4b5563; text-align: center; line-height: 1.6;">
+                Hello ${name},
+              </p>
+              <p style="margin: 0 0 8px; font-size: 15px; color: #6b7280; text-align: center; line-height: 1.6;">
+                Thank you for contacting VideoTube.
+              </p>
+              <p style="margin: 0 0 24px; font-size: 15px; color: #6b7280; text-align: center; line-height: 1.6;">
+                Your message has been received successfully. We appreciate your feedback and will review it as soon as possible.
+              </p>
+              <p style="margin: 0 0 8px; font-size: 13px; color: #9ca3af; text-align: center;">
+                This is an automated confirmation email.
+              </p>
+              <p style="margin: 0; font-size: 13px; color: #9ca3af; text-align: center;">
+                Regards,<br>VideoTube
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 24px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; font-size: 12px; color: #9ca3af;">This is an automated message. Please do not reply.</p>
+              <p style="margin: 0; font-size: 12px; color: #9ca3af;">&copy; ${new Date().getFullYear()} VideoTube. All rights reserved.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
 };
