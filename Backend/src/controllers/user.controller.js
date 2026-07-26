@@ -1541,9 +1541,6 @@ const registerUnified = asyncHandler(async (req, res) => {
     );
 });
 
-const sendLoginOTP
-
-
 const sendLoginOTP = asyncHandler(async (req, res) => {
   const { identifier } = req.body;
 
