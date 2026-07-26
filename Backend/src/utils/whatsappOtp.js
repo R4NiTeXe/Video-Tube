@@ -2,9 +2,7 @@ import { otpService } from "../services/otp.service.js";
 import logger from "./logger.js";
 import { checkAndIncrementMessagingLimit } from "../services/messagingLimit.service.js";
 
-// Send OTP via Meta WhatsApp Business API (uses unified OTP service)
 export const sendWhatsAppOTP = async (mobile, otp, userName = "") => {
-  // Enforce global and user limits
   await checkAndIncrementMessagingLimit(mobile);
 
   const API_URL = process.env.WHATSAPP_API_URL;
@@ -14,7 +12,6 @@ export const sendWhatsAppOTP = async (mobile, otp, userName = "") => {
   const LANGUAGE_CODE = process.env.WHATSAPP_LANGUAGE_CODE || "en";
   const WHATSAPP_MODE = process.env.WHATSAPP_MODE || "text";
 
-  // Dev mode: console.log fallback
   if (!API_URL || !PHONE_NUMBER_ID || !ACCESS_TOKEN) {
     if (process.env.NODE_ENV === "production") throw new Error("WhatsApp not configured");
     logger.debug("--- Development WhatsApp OTP (masked) ---");
@@ -31,7 +28,6 @@ export const sendWhatsAppOTP = async (mobile, otp, userName = "") => {
     let body;
 
     if (WHATSAPP_MODE === "template") {
-      // Production: Use approved template message
       body = {
         messaging_product: "whatsapp",
         to: formattedMobile,
@@ -58,7 +54,6 @@ export const sendWhatsAppOTP = async (mobile, otp, userName = "") => {
         },
       };
     } else {
-      // Dev/Test: Use free-form text message (works with test phone numbers)
       body = {
         messaging_product: "whatsapp",
         to: formattedMobile,

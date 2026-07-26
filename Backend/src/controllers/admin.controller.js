@@ -124,13 +124,10 @@ const banUser = asyncHandler(async (req, res) => {
   if (user.banned) throw new ApiError(400, "User is already banned");
   if (user.role === "admin") throw new ApiError(403, "Cannot ban an admin");
 
-  // Unpublish all user's videos
   await Video.updateMany({ owner: userId }, { $set: { isPublished: false } });
 
-  // Invalidate all sessions
   await Session.updateMany({ user: userId }, { isActive: false });
 
-  // Set banned flag
   user.banned = true;
   await user.save({ validateBeforeSave: false });
 
@@ -147,18 +144,14 @@ const adminDeleteVideo = asyncHandler(async (req, res) => {
   const video = await Video.findById(videoId).select("owner videoFile thumbnail title");
   if (!video) throw new ApiError(404, "Video not found");
 
-  // Cleanup related data first
   await Comment.deleteMany({ video: videoId });
   await Like.deleteMany({ video: videoId });
   await Playlist.updateMany({ videos: videoId }, { $pull: { videos: videoId } });
 
-  // Cleanup Cloudinary
   if (video.videoFile) await deleteFromCloudinary(video.videoFile, "video").catch(() => {});
   if (video.thumbnail) await deleteFromCloudinary(video.thumbnail, "image").catch(() => {});
 
   await Video.findByIdAndDelete(videoId);
-
-  // Notify the video owner
   try {
     await Notification.create({
       recipient: video.owner,

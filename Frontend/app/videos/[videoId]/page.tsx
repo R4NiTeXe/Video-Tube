@@ -692,12 +692,10 @@ export default function VideoPlayerPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const hlsRef = useRef<Hls | null>(null);
 
-  // Redirect if not authenticated
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
   }, [isAuthenticated, authLoading, router]);
 
-  // Fetch video details
   const { data: videoRes, isLoading: videoLoading } = useQuery({
     queryKey: ["video", videoId, isAuthenticated],
     queryFn: async () => {
@@ -707,7 +705,6 @@ export default function VideoPlayerPage() {
     enabled: isAuthenticated && !!videoId,
   });
 
-  // Fetch comments
   const { data: commentsRes, isLoading: commentsLoading } = useQuery({
     queryKey: ["comments", videoId, isAuthenticated],
     queryFn: async () => {
@@ -723,7 +720,6 @@ export default function VideoPlayerPage() {
 
 
 
-  // Toggle like mutation
   const likeMutation = useMutation({
     mutationFn: async () => {
       await api.post(`/likes/toggle/v/${videoId}`);
@@ -743,7 +739,6 @@ export default function VideoPlayerPage() {
     },
   });
 
-  // Toggle subscribe mutation
   const subscribeMutation = useMutation({
     mutationFn: async () => {
       if (!video?.owner?._id) return;
@@ -772,10 +767,6 @@ export default function VideoPlayerPage() {
     },
   });
 
-  // Toggle watch later mutation
-
-
-  // Post comment
   const postCommentMutation = useMutation({
     mutationFn: async () => {
       await api.post(`/comments/${videoId}`, { content: commentText });
@@ -786,14 +777,12 @@ export default function VideoPlayerPage() {
     },
   });
 
-  // Copy URL to clipboard
   const handleShare = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback for older browsers
       const textarea = document.createElement("textarea");
       textarea.value = window.location.href;
       document.body.appendChild(textarea);

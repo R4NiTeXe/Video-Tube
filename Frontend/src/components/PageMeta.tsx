@@ -14,7 +14,7 @@ interface PageMetaProps {
 }
 
 const SITE_NAME = "VideoTube";
-const DEFAULT_DESCRIPTION = "Discover, watch, and share videos on VideoTube — a premium video sharing platform.";
+const DEFAULT_DESCRIPTION = "Watch, share, and connect on VideoTube.";
 const DEFAULT_OG_IMAGE = "/opengraph-image";
 
 export function PageMeta({
@@ -31,7 +31,6 @@ export function PageMeta({
   const currentDesc = description || DEFAULT_DESCRIPTION;
   const currentOgImage = ogImage || DEFAULT_OG_IMAGE;
 
-  // We need to reliably grab window.location only on the client
   const [currentUrl, setCurrentUrl] = useState("");
   useEffect(() => {
     setCurrentUrl(`${window.location.origin}${window.location.pathname}${window.location.search}`);

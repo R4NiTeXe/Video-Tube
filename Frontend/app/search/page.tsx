@@ -166,9 +166,9 @@ export default function SearchPage() {
     enabled: activeTab === "users" && !!debouncedQuery.trim(),
   });
 
-  const videos: VideoResult[] = videosResp?.data?.docs || [];
-  const channels: ChannelResult[] = channelsResp?.data || [];
-  const users: UserResult[] = usersResp?.data || [];
+  const videos: VideoResult[] = Array.isArray(videosResp?.data?.docs) ? videosResp.data.docs : [];
+  const channels: ChannelResult[] = Array.isArray(channelsResp?.data) ? channelsResp.data : [];
+  const users: UserResult[] = Array.isArray(usersResp?.data) ? usersResp.data : [];
 
   const showSuggestions = !debouncedQuery.trim();
 

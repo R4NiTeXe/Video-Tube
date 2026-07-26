@@ -33,6 +33,10 @@ const CSRF_EXEMPT_ROUTES = [
   "/api/v1/users/update-identifier/send-otp",
   // Sessions — GET is safe, but add as exempt for safety
   "/api/v1/sessions",
+  // Logout is exempted for UX — CSRF token may be missing/stale during logout flow.
+  // The risk is Logout CSRF (forced logout by a malicious site), but the alternative
+  // is users getting stuck unable to log out, which generates more support issues.
+  "/api/v1/users/logout",
 ];
 
 export const csrfMiddleware = (req, res, next) => {

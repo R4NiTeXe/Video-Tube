@@ -148,10 +148,10 @@ export default function EditProfilePage() {
   return (
     <main style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
       <PageMeta title="Edit Profile" description="Update your VideoTube profile." noIndex />
-      <div className="edit-profile-wrapper" style={{ width: "100%", padding: "2rem", boxSizing: "border-box" }}>
+      <div className="edit-profile-wrapper content-max" style={{ width: "100%", boxSizing: "border-box" }}>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ display: "block" }}>
           <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.25rem" }}>Edit Profile</h1>
-          <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1.5rem" }}>This is how others see you on VideoTube</p>
+          <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1.5rem" }}>This is how others see you</p>
 
           {error && (
             <div style={{ padding: "0.7rem 1rem", backgroundColor: "var(--accent-warm-light)", color: "var(--accent-warm)", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem", border: "1px solid rgba(244,63,94,0.15)" }}>{error}</div>
@@ -175,7 +175,7 @@ export default function EditProfilePage() {
               {/* Profile Images — Full Width */}
               <div className="form-card card-full" style={{ padding: "1.5rem" }}>
                 <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.3rem" }}>Profile Images</h2>
-                <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginBottom: "1.25rem" }}>Your avatar and cover image appear on your channel page</p>
+                <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginBottom: "1.25rem" }}>Your avatar and cover image</p>
 
                 <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", flexWrap: "wrap" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.6rem", zIndex: 1, flexShrink: 0 }}>
@@ -226,7 +226,7 @@ export default function EditProfilePage() {
               {/* Personal Info */}
               <div className="form-card" style={{ padding: "1.5rem" }}>
                 <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.3rem" }}>Personal Information</h2>
-                <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginBottom: "1.25rem" }}>Manage your public profile details</p>
+                <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginBottom: "1.25rem" }}>Your public profile details</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                     <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>Full Name</label>
@@ -261,7 +261,7 @@ export default function EditProfilePage() {
               {/* Social Links */}
               <div className="form-card" style={{ padding: "1.5rem" }}>
                 <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.3rem" }}>Social Links</h2>
-                <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginBottom: "1.25rem" }}>Add links to your social profiles — they&apos;ll appear on your channel page</p>
+                <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginBottom: "1.25rem" }}>Links to your social profiles</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                   {socialFields.map((field) => {
                     const handle = field.value ? extractHandle(field.value) : "";

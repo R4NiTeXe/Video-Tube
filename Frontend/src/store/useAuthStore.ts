@@ -57,9 +57,6 @@ export const useAuthStore = create<AuthState>()(
       name: "auth-storage",
       storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
-      // Do NOT set isLoading=false here — let AuthProvider.init() control the loading state.
-      // Otherwise, stale sessionStorage data can trigger SSE connects and API calls
-      // before the backend has verified the session (race condition → 401 storm).
     }
   )
 );

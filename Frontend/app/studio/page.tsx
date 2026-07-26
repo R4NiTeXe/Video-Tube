@@ -212,7 +212,7 @@ function CreatorStudioContent() {
   });
 
   const stats = statsRes?.data || { totalViews: 0, totalSubscribers: 0, totalLikes: 0, totalVideos: 0 };
-  const sortedVideos = videosRes?.data || [];
+  const sortedVideos = Array.isArray(videosRes?.data?.docs) ? videosRes.data.docs : [];
 
   const deleteMutation = useMutation({
     mutationFn: async (videoId: string) => {

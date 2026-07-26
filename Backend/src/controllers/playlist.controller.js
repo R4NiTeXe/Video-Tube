@@ -68,7 +68,6 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
     {
       $addFields: {
         totalVideos: { $size: "$videos" },
-        // get the thumbnail of the first video to represent the playlist cover
         coverImage: { $first: "$videos.thumbnail" },
       },
     },
@@ -331,7 +330,6 @@ const reorderPlaylist = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Not authorized");
   }
 
-  // Validate all IDs are in the playlist
   const playlistVideoIds = playlist.videos.map((id) => id.toString());
   const reorderedIds = videoIds.filter((id) => playlistVideoIds.includes(id));
 

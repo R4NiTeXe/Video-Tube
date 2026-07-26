@@ -230,12 +230,12 @@ const deleteVideo = asyncHandler(async (req, res) => {
     await Comment.deleteMany({ video: videoId });
   }
 
-  // Remove video from playlists, watch later, and watch history (best-effort)
+  // Best-effort cleanup of playlists/watch later/history
   try { await Playlist.updateMany({ videos: videoId }, { $pull: { videos: videoId } }); } catch { logger.warn("Failed to clean up playlists for video", { videoId }); }
   try { await User.updateMany({ watchLater: videoId }, { $pull: { watchLater: videoId } }); } catch { logger.warn("Failed to clean up watchLater for video", { videoId }); }
   try { await User.updateMany({ watchHistory: videoId }, { $pull: { watchHistory: videoId } }); } catch { logger.warn("Failed to clean up watchHistory for video", { videoId }); }
 
-  // Delete polls and notifications associated with this video (best-effort)
+  // Best-effort cleanup of polls/notifications
   try { await Poll.deleteMany({ video: videoId }); } catch { logger.warn("Failed to clean up polls for video", { videoId }); }
   try { if (mongoose.modelNames().includes("Notification")) { await Notification.deleteMany({ video: videoId }); } } catch { logger.warn("Failed to clean up notifications for video", { videoId }); }
 

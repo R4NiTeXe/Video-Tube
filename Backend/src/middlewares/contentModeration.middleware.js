@@ -42,7 +42,6 @@ const getBannedWords = () => {
   return DEFAULT_BANNED_WORDS;
 };
 
-// Module level regex caching
 const BANNED_WORDS = getBannedWords();
 const ESCAPED = BANNED_WORDS.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
 const BANNED_PATTERN = new RegExp(`\\b(${ESCAPED.join("|")})\\b`, "i");

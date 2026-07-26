@@ -29,7 +29,6 @@ function CallbackContent() {
     const accessToken = searchParams.get("accessToken");
     const refreshToken = searchParams.get("refreshToken");
 
-    // Store tokens so subsequent api calls can use them
     if (accessToken) {
       localStorage.setItem("accessToken", accessToken);
     }

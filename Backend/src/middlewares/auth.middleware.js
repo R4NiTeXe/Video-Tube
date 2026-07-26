@@ -20,7 +20,6 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
       throw new ApiError(401, "Unauthorized request");
     }
 
-    // Check if token was blacklisted after logout
     if (await isTokenBlacklisted(token)) {
       logger.warn("verifyJWT: token blacklisted", { path: req.path });
       throw new ApiError(401, "Token expired. Please log in again.");

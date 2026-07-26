@@ -15,7 +15,6 @@ if (!process.env.NODE_ENV) {
   logger.warn(`Unrecognized NODE_ENV value: ${process.env.NODE_ENV}. Expected 'production', 'development', or 'test'.`);
 }
 
-// Validate LOG_LEVEL if set
 if (process.env.LOG_LEVEL && !["error", "warn", "info", "debug"].includes(process.env.LOG_LEVEL)) {
   logger.warn(`Invalid LOG_LEVEL "${process.env.LOG_LEVEL}". Falling back to "info".`);
 }

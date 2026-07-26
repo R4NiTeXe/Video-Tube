@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useRef, useEffect, useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/src/store/useAuthStore";
@@ -20,6 +20,7 @@ import {
 
 export default function TopNav() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, logout } = useAuthStore();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -130,7 +131,6 @@ export default function TopNav() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        <kbd className="topnav-search-kbd" aria-hidden="true">&#8984;K</kbd>
       </form>
 
       <div className="topnav-actions">
@@ -174,8 +174,8 @@ export default function TopNav() {
 
             <Link
               href={`/channel/${user.username}`}
-              className="dropdown-item"
-              style={{ color: "var(--accent)", fontWeight: 500 }}
+              className={`dropdown-item${pathname === `/channel/${user.username}` ? " active" : ""}`}
+              style={pathname === `/channel/${user.username}` ? { color: "var(--accent)", fontWeight: 500 } : undefined}
               onClick={() => setIsDropdownOpen(false)}
             >
               <UserIcon size={16} />

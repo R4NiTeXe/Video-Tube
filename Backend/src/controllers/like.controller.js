@@ -89,10 +89,9 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     if (error.code !== 11000) {
       throw error;
     }
-    // If it's a duplicate key, it means another request already liked it. We just continue.
+    // Duplicate key - already liked
   }
 
-  // Create notification for comment owner
   try {
     const comment = await Comment.findById(commentId).select("owner video").lean();
     if (comment && comment.owner.toString() !== req.user._id.toString()) {

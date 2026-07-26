@@ -141,7 +141,7 @@ export default function CommunityPage() {
     createPostMutation.mutate();
   };
 
-  const allPosts: CommunityPost[] = data?.pages?.flatMap((page) => page?.data?.docs || []) || [];
+  const allPosts: CommunityPost[] = Array.isArray(data?.pages) ? data.pages.flatMap((page) => page?.data?.docs || []) : [];
 
   if (authLoading || !isAuthenticated) {
     return (

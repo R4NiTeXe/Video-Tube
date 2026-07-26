@@ -10,7 +10,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   useSSE();
 
   useEffect(() => {
-    // Fetch CSRF token first so the cookie is set before any POST/PATCH/DELETE
     const init = async () => {
       try {
         const res = await api.get("/csrf-token");

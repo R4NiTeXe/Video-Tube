@@ -322,8 +322,8 @@ export default function SettingsPage() {
   );
 
   return (
-    <div style={{ width: "100%", padding: "2rem" }}>
-      <PageMeta title="Settings" description="Manage your VideoTube account settings, profile, and preferences." noIndex />
+    <div className="content-max">
+      <PageMeta title="Settings" description="Manage your VideoTube account and preferences." noIndex />
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
         <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "1.5rem" }}>Settings</h1>
 
@@ -333,7 +333,7 @@ export default function SettingsPage() {
           <SectionHeader
             icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
             title="Change Password"
-            description={forgotPasswordMode ? "Reset your password via OTP" : "Update your account password securely"}
+            description={forgotPasswordMode ? "Reset your password via OTP" : "Update your account password"}
           />
 
           {!forgotPasswordMode ? (
@@ -544,15 +544,15 @@ export default function SettingsPage() {
             <SectionHeader
               icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>}
               title="Notifications"
-              description="Choose what notifications you receive"
+              description="Choose which notifications to receive"
             />
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               {[
-                { label: "Likes on my videos", desc: "Get notified when someone likes your video", checked: notifLikes, onChange: setNotifLikes },
-                { label: "Comments on my videos", desc: "Get notified when someone comments", checked: notifComments, onChange: setNotifComments },
-                { label: "Replies to my comments", desc: "Get notified when someone replies to you", checked: notifReplies, onChange: setNotifReplies },
-                { label: "New subscribers", desc: "Get notified when someone subscribes", checked: notifSubscribers, onChange: setNotifSubscribers },
-                { label: "Mentions", desc: "Get notified when someone mentions you", checked: notifMentions, onChange: setNotifMentions },
+                { label: "Likes on my videos", desc: "Someone liked your video", checked: notifLikes, onChange: setNotifLikes },
+                { label: "Comments on my videos", desc: "Someone commented on your video", checked: notifComments, onChange: setNotifComments },
+                { label: "Replies to my comments", desc: "Someone replied to your comment", checked: notifReplies, onChange: setNotifReplies },
+                { label: "New subscribers", desc: "Someone subscribed to your channel", checked: notifSubscribers, onChange: setNotifSubscribers },
+                { label: "Mentions", desc: "Someone mentioned you", checked: notifMentions, onChange: setNotifMentions },
               ].map((item) => (
                 <label key={item.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.6rem 0", cursor: "pointer", borderBottom: "1px solid var(--border)" }}>
                   <div>
@@ -584,7 +584,7 @@ export default function SettingsPage() {
             <SectionHeader
               icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>}
               title="Language"
-              description="Select your preferred language for the interface"
+              description="Select your preferred language"
             />
             <select id="settings-language" value={language} onChange={(e) => setLanguage(e.target.value)}
               className="input" style={{ width: "100%", boxSizing: "border-box", cursor: "pointer" }}>
@@ -603,7 +603,7 @@ export default function SettingsPage() {
             <SectionHeader
               icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>}
               title="Active Sessions"
-              description="Manage devices where you're logged in"
+              description="Manage your active sessions"
             />
             {sessionError && <div style={{ padding: "0.7rem 1rem", backgroundColor: "var(--accent-warm-light)", color: "var(--accent-warm)", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem", border: "1px solid rgba(244,63,94,0.15)" }}>{sessionError}</div>}
             {sessionsLoading ? (
@@ -666,7 +666,7 @@ export default function SettingsPage() {
             <SectionHeader
               icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
               title="OTP Usage"
-              description="Track your daily OTP limit and remaining requests"
+              description="Track your daily OTP usage"
             />
             {otpUsageLoading ? (
               <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-muted)" }}>Loading OTP usage...</div>
@@ -690,14 +690,26 @@ export default function SettingsPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem 1rem", backgroundColor: "var(--accent-subtle)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-focus)" }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
                   <div style={{ fontSize: "0.82rem", color: "var(--accent)", lineHeight: 1.5 }}>
-                    <strong>Daily OTP Limit:</strong> {otpUsage.dailyLimit} per day across all OTP actions (login, password reset, email verification, etc.). Resets at midnight UTC.
+                    <strong>Daily OTP Limit:</strong> {otpUsage.dailyLimit} per day across all OTP actions (login, password reset, email verification, etc.).
                   </div>
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem 1rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                   <div style={{ fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.5 }}>
-                    Resets at <strong>{new Date(otpUsage.resetAt).toLocaleDateString("en-GB")} {new Date(otpUsage.resetAt).toLocaleTimeString()}</strong> (your local time)
+                    {(() => {
+                      const now = new Date();
+                      const nextLocalMidnight = new Date(now);
+                      nextLocalMidnight.setDate(nextLocalMidnight.getDate() + 1);
+                      nextLocalMidnight.setHours(0, 0, 0, 0);
+                      const diffMs = nextLocalMidnight.getTime() - now.getTime();
+                      const diffHrs = Math.floor(diffMs / 3600000);
+                      const diffMins = Math.floor((diffMs % 3600000) / 60000);
+                      if (diffHrs < 1) {
+                        return <>Resets in <strong>{diffMins} minutes</strong> (12:00 AM local time)</>;
+                      }
+                      return <>Resets in <strong>{diffHrs}h {diffMins}m</strong> (12:00 AM local time)</>;
+                    })()}
                   </div>
                 </div>
               </>

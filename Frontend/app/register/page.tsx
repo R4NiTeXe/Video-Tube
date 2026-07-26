@@ -367,17 +367,17 @@ export default function RegisterPage() {
   const stepTitle = step === "details"
     ? "Create an account"
     : step === "otp"
-      ? "Verify your identity"
+      ? "Verify your email or phone"
       : "Welcome aboard!";
   const stepSub = step === "details"
-    ? "Join VideoTube today — it is free"
+    ? "Join VideoTube — it's free"
     : step === "otp"
-      ? "We sent a code to your email and phone"
+      ? "We sent a code to your email or phone"
       : "Your account is ready. Redirecting...";
 
   return (
     <>
-      <PageMeta title="Create Account" description="Join VideoTube today — create your account and start sharing videos." noIndex />
+      <PageMeta title="Create Account" description="Join VideoTube — create your account." noIndex />
       <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)", display: "flex", overflow: "hidden" }}>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", zIndex: 10, backgroundColor: "var(--bg-primary)", overflowY: "auto" }}>
 
@@ -528,9 +528,9 @@ export default function RegisterPage() {
                       animate={{ opacity: 1, y: 0 }}
                       style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
                     >
-                      <p style={{ fontSize: "0.88rem", color: "var(--text-secondary)", textAlign: "center", marginBottom: "0.5rem" }}>
-                        Choose how to verify your account:
-                      </p>
+        <p style={{ fontSize: "0.88rem", color: "var(--text-secondary)", textAlign: "center", marginBottom: "0.5rem" }}>
+                         Choose how to verify:
+                       </p>
                       <button
                         type="button"
                         onClick={() => { setVerifyChannel("email"); sendOtps("email"); }}
@@ -551,7 +551,7 @@ export default function RegisterPage() {
                           <MailIcon />
                         </div>
                         <div style={{ textAlign: "left" }}>
-                          <p style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>Verify via Email</p>
+                          <p style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>Email</p>
                           <p style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>OTP sent to {formData.email}</p>
                         </div>
                       </button>
@@ -575,7 +575,7 @@ export default function RegisterPage() {
                           <PhoneIcon />
                         </div>
                         <div style={{ textAlign: "left" }}>
-                          <p style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>Verify via WhatsApp</p>
+                          <p style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>WhatsApp</p>
                           <p style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>OTP sent to {fullMobile}</p>
                         </div>
                       </button>
@@ -665,7 +665,7 @@ export default function RegisterPage() {
                         <button type="button" disabled={mobileVerifying || mobileOtp.join("").length < OTP_LENGTH}
                           onClick={() => verifyOtp(fullMobile, mobileOtp.join(""), false)}
                           className="btn btn-primary" style={{ flex: 1, padding: "0.7rem", fontSize: "0.82rem", backgroundColor: "#25D366" }}>
-                          {mobileVerifying ? "Verifying..." : "Verify WhatsApp"}
+                          {mobileVerifying ? "Verifying..." : "Verify"}
                         </button>
                         <button type="button" disabled={mobileCooldown > 0 || sendingOtp}
                           onClick={() => { sendOtps("whatsapp"); setMobileOtp(Array(OTP_LENGTH).fill("")); setMobileOtpError(""); }}

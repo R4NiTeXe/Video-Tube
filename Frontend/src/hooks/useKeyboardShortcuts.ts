@@ -14,7 +14,6 @@ interface ShortcutConfig {
 export function useKeyboardShortcuts(shortcuts: ShortcutConfig[]) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      // Don't trigger shortcuts when typing in inputs
       const target = e.target as HTMLElement;
       if (
         target.tagName === "INPUT" ||

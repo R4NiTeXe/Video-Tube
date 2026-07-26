@@ -3,26 +3,20 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// ═══════════════════════════════════════════════
-// TIMING — cinematic pacing (~5.2s total)
-// ═══════════════════════════════════════════════
 const T = {
-  ambientStart:  0.0,   // ambient orbs begin breathing
-  iconEntry:     0.4,   // logo icon springs in
-  iconDraw:      0.9,   // play icon starts drawing itself
-  orbitalStart:  1.0,   // orbiting dots begin
-  shimmer:       1.2,   // shimmer line sweeps across icon
-  videoWord:     1.4,   // first letter of "Video"
-  tubeWord:      2.0,   // first letter of "Tube"
-  tagline:       2.8,   // tagline text appears
-  holdPause:     3.8,   // pause to let it all breathe
-  exitStart:     4.2,   // fade-out begins
-  done:          5.0,   // page content fades in
+  ambientStart:  0.0,   
+  iconEntry:     0.4,   
+  iconDraw:      0.9,   
+  orbitalStart:  1.0,   
+  shimmer:       1.2,   
+  videoWord:     1.4,   
+  tubeWord:      2.0,   
+  tagline:       2.8,   
+  holdPause:     3.8,   
+  exitStart:     4.2,   
+  done:          5.0,  
 };
 
-// ═══════════════════════════════════════════════
-// Orbiting dot that circles the logo
-// ═══════════════════════════════════════════════
 function OrbitalDot({
   index,
   total,
@@ -74,9 +68,6 @@ function OrbitalDot({
   );
 }
 
-// ═══════════════════════════════════════════════
-// Animated letter with 3D flip + blur + glow
-// ═══════════════════════════════════════════════
 function Letter({
   char,
   delay,
@@ -106,9 +97,6 @@ function Letter({
   );
 }
 
-// ═══════════════════════════════════════════════
-// Ambient floating orb (background atmosphere)
-// ═══════════════════════════════════════════════
 function AmbientOrb({
   color,
   size,
@@ -151,9 +139,6 @@ function AmbientOrb({
   );
 }
 
-// ═══════════════════════════════════════════════
-// MAIN SPLASH SCREEN
-// ═══════════════════════════════════════════════
 interface Props {
   onDone: () => void;
 }
@@ -269,7 +254,7 @@ export default function SplashScreen({ onDone }: Props) {
                 textTransform: "uppercase",
               }}
             >
-              Watch · Create · Connect
+              Your videos, your voice
             </p>
           </motion.div>
 

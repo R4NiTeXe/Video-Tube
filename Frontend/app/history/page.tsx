@@ -106,9 +106,9 @@ export default function HistoryPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
+    <>
       <PageMeta title="Watch History" description="Your video watch history on VideoTube." noIndex />
-      <div style={{ width: "100%", padding: "2rem" }}>
+      <div className="content-max">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} style={{ marginBottom: "2rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
           <div style={{ width: 44, height: 44, borderRadius: "50%", backgroundColor: "var(--accent-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)" }}>
             <HistoryIcon />
@@ -194,6 +194,6 @@ export default function HistoryPage() {
           </>
         )}
       </div>
-    </div>
+    </>
   );
 }

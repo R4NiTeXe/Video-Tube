@@ -2,10 +2,8 @@ import { Resend } from "resend";
 import logger from "./logger.js";
 import { checkMessagingLimit, incrementMessagingLimit } from "../services/messagingLimit.service.js";
 
-// Check if Brevo API is configured (Requires an API key, not an SMTP key)
 const isBrevoConfigured = Boolean(process.env.BREVO_API_KEY);
 
-// Resend fallback
 const isResendConfigured = Boolean(process.env.RESEND_API_KEY);
 let resend = null;
 if (isResendConfigured) {
@@ -27,7 +25,7 @@ const sendEmail = async ({ to, subject, html }) => {
     logger.warn("Messaging limit check failed (skipping):", { error: limitError?.message });
   }
 
-  // 1. Try Brevo API first
+  // Try Brevo API first
   if (isBrevoConfigured) {
     try {
       const fromAddress = process.env.MAIL_FROM || process.env.SMTP_USER || "noreply@videotube.com";
@@ -67,7 +65,7 @@ const sendEmail = async ({ to, subject, html }) => {
     }
   }
 
-  // 2. Fallback to Resend
+  // Fallback to Resend
   if (isResendConfigured && resend) {
     try {
       const result = await resend.emails.send({
@@ -99,7 +97,7 @@ const sendEmail = async ({ to, subject, html }) => {
     throw new Error(`Failed to send email: ${lastError.message}`);
   }
 
-  // 3. Console fallback (dev mode)
+  // Console fallback (dev mode)
   if (process.env.NODE_ENV === "production") throw new Error("No email provider configured");
   logger.debug("--- Development Email (No provider configured) ---");
   logger.debug(`To: ${maskEmail(to)}`);

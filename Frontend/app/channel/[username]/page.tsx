@@ -261,8 +261,8 @@ export default function ChannelPage() {
     );
   }
 
-  const videos: ChannelVideo[] = videosRes?.data?.docs || videosRes?.data || [];
-  const playlists: Playlist[] = playlistsRes?.data || [];
+  const videos: ChannelVideo[] = Array.isArray(videosRes?.data?.docs) ? videosRes.data.docs : Array.isArray(videosRes?.data) ? videosRes.data : [];
+  const playlists: Playlist[] = Array.isArray(playlistsRes?.data) ? playlistsRes.data : [];
 
   return (
     <>
@@ -572,7 +572,7 @@ export default function ChannelPage() {
                       </div>
                     ) : (
                       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                        {postsRes.data.map((post: ChannelPost, i: number) => (
+                        {(Array.isArray(postsRes?.data) ? postsRes.data : []).map((post: ChannelPost, i: number) => (
                           <motion.div
                             key={post._id}
                             initial={{ opacity: 0, y: 12 }}

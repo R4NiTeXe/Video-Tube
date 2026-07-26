@@ -28,7 +28,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
   const pipeline = [];
 
-  // search by title, description, or tags (escape regex to prevent ReDoS)
+  // Search + regex escape (prevent ReDoS)
   if (query && query.trim().length > 0) {
     const safeQuery = escapeRegex(query);
     if (safeQuery) {
@@ -44,7 +44,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
     }
   }
 
-  // filter by userId if provided
   if (queryUserId) {
     if (!mongoose.isValidObjectId(queryUserId)) {
       throw new ApiError(400, "Invalid userId");
@@ -57,7 +56,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
     });
   }
 
-  // filter by category
   if (category?.trim()) {
     pipeline.push({
       $match: {
@@ -66,7 +64,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
     });
   }
 
-  // filter by tag
   if (tag?.trim()) {
     pipeline.push({
       $match: {
@@ -82,7 +79,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
     },
   });
 
-  // exclude videos from blocked users
   if (req.user?._id) {
     const currentUser = await mongoose.model("User").findById(req.user._id).select("blockedUsers").lean();
     if (currentUser?.blockedUsers?.length) {
@@ -94,14 +90,12 @@ const getAllVideos = asyncHandler(async (req, res) => {
     }
   }
 
-  // sort
   const ALLOWED_SORT_FIELDS = ["createdAt", "views", "title", "duration"];
   const safeSortBy = ALLOWED_SORT_FIELDS.includes(sortBy) ? sortBy : "createdAt";
   const sortStage = {};
   sortStage[safeSortBy] = sortType === "asc" ? 1 : -1;
   pipeline.push({ $sort: sortStage });
 
-  // lookup owner details
   pipeline.push(
     {
       $lookup: {
@@ -215,7 +209,6 @@ const publishAVideo = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Error while uploading thumbnail");
   }
 
-  // Parse tags
   let parsedTags = [];
   if (tags) {
     if (typeof tags === "string") {
@@ -225,7 +218,6 @@ const publishAVideo = asyncHandler(async (req, res) => {
     }
   }
 
-  // Parse chapters
   let parsedChapters = [];
   if (chapters) {
     try {
@@ -239,7 +231,6 @@ const publishAVideo = asyncHandler(async (req, res) => {
     }
   }
 
-  // Validate scheduledAt
   let scheduledDate = null;
   if (scheduledAt) {
     scheduledDate = new Date(scheduledAt);
@@ -536,7 +527,6 @@ const updateVideo = asyncHandler(async (req, res) => {
     updateFields.category = typeof category === "string" ? category.trim() : "General";
   }
 
-  // handle thumbnail update
   const thumbnailLocalPath = req.file?.path;
 
   if (thumbnailLocalPath) {
@@ -546,7 +536,6 @@ const updateVideo = asyncHandler(async (req, res) => {
       throw new ApiError(400, "Error while uploading thumbnail");
     }
 
-    // delete old thumbnail from cloudinary
     if (video.thumbnail) {
       await deleteFromCloudinary(video.thumbnail);
     }
@@ -857,7 +846,6 @@ const getRelatedVideos = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Video not found");
   }
 
-  // Find related videos by tags, category, or same owner — exclude current
   const orConditions = [];
   if (currentVideo.tags?.length) {
     orConditions.push({ tags: { $in: currentVideo.tags } });

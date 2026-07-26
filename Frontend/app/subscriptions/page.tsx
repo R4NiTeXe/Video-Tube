@@ -146,7 +146,7 @@ export default function SubscriptionsPage() {
 
 
 
-  const subscriptions = response || [];
+  const subscriptions = Array.isArray(response) ? response : [];
 
   const allVideos = subscriptions
     .filter((s) => s.subscribedChannel.latestVideo)

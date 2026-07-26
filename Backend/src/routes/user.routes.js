@@ -169,7 +169,6 @@ router.route("/mobile/register").post(
   })
 );
 
-// secured routes
 router.route("/logout").post(verifyJWT, logoutUser);
 router.route("/current-user").get(verifyJWT, getCurrentUser);
 router.route("/change-password").post(verifyJWT, validateBody(userSchemas.changePassword.body), changeCurrentPassword);

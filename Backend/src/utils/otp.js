@@ -1,12 +1,9 @@
 import { otpService } from "../services/otp.service.js";
 
-// Generate 6-digit numeric OTP (delegates to service)
+// Generate 6-digit OTP
 export const generateOTP = () => otpService.generateOtp();
 
-// Store OTP in database (expires in 10 minutes)
-// identifier: email or mobile number
-// channel: "email" | "whatsapp"
-// userId: optional, for tracking user daily limit
+// Store OTP (10min expiry)
 export const storeOTP = async (identifier, purpose, channel = "email", userId = null) => {
   const { otp } = await otpService.storeOtp({
     identifier: identifier.toLowerCase(),

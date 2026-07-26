@@ -14,14 +14,11 @@ interface ApiErrorBody {
   errors?: string[];
 }
 
-// In-memory CSRF token — cross-origin cookies on the backend domain
-// are not readable via document.cookie on the frontend domain
 let _csrfToken: string | null = null;
 
 export const setCsrfToken = (token: string) => { _csrfToken = token; };
 export const getCsrfToken = () => _csrfToken;
 
-// Create an Axios instance with base configuration
 export const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
@@ -30,8 +27,6 @@ export const api = axios.create({
   },
 });
 
-// Request interceptor — adds Bearer token fallback from localStorage
-// and CSRF header for mutating methods
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const stored = localStorage.getItem("accessToken");
@@ -58,13 +53,11 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response Interceptor — handles CSRF 403 and 401 with token refresh
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<ApiErrorBody>) => {
     const originalRequest = error.config as RetryableRequestConfig | undefined;
 
-    // Handle CSRF token missing / expired — re-fetch CSRF and retry once
     if (
       error.response?.status === 403 &&
       originalRequest &&
@@ -95,7 +88,6 @@ api.interceptors.response.use(
       }
     }
 
-    // Handle 401 — attempt token refresh and retry once
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       if (DEBUG) console.log("[API] 401 — attempting token refresh");
       originalRequest._retry = true;
@@ -129,8 +121,6 @@ api.interceptors.response.use(
           localStorage.removeItem("refreshToken");
         }
 
-        // Redirect to login to break React Query retry loops.
-        // AuthProvider will handle the auth store cleanup on next mount.
         if (typeof window !== "undefined") {
           const publicPaths = ["/", "/login", "/register", "/forgot-password", "/auth/callback"];
           const isPublicPath = publicPaths.some(

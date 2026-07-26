@@ -57,7 +57,6 @@ export const otpEmailTemplate = (otp, purpose, userName, locationInfo = null) =>
   const label = purposeLabels[purpose] || "Verification";
   const expiryMinutes = 10;
   
-  // Use standard theme for OTPs unless it's destructive (delete-account)
   const theme = getThemeConfig(purpose === "delete-account" ? "destructive" : "standard");
 
   const locationHtml = locationInfo ? `

@@ -37,7 +37,6 @@ const createReport = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Description must be under 1000 characters");
   }
 
-  // Verify the target exists
   const targetModel = targetType === "video" ? Video : targetType === "comment" ? Comment : User;
   const targetExists = await targetModel.findById(target).lean();
   if (!targetExists) {

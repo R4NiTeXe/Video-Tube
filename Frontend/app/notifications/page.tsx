@@ -40,14 +40,8 @@ export default function NotificationsPage() {
         const res = await api.get("/notifications");
         const body = res.data;
 
-        // Log the response shape in dev for debugging
-        if (process.env.NODE_ENV === "development") {
-          console.log("[Notifications] typeof data:", typeof body, "data:", body);
-        }
-
         return body;
       } catch (err: unknown) {
-        // If 401 / session expired, don't crash — just show empty
         if (err && typeof err === "object" && "response" in err) {
           const axiosErr = err as { response?: { status?: number } };
           if (axiosErr.response?.status === 401) {

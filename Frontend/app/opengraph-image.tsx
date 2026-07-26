@@ -55,7 +55,7 @@ export default function OgImage() {
             marginTop: 8,
           }}
         >
-          Discover, watch, and share videos
+          Watch, share, and connect
         </p>
       </div>
     ),

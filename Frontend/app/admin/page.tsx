@@ -118,7 +118,7 @@ export default function AdminPage() {
             <button onClick={() => queryClient.invalidateQueries({ queryKey: ["admin-users"] })} className="btn btn-primary" style={{ borderRadius: "var(--radius-md)", padding: "0.5rem 1rem" }}>Search</button>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-            {users?.docs.map((u) => (
+            {(Array.isArray(users?.docs) ? users.docs : []).map((u) => (
               <div key={u._id} className="form-card" style={{ padding: "0.75rem 1rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
                 <img src={u.avatar} alt={u.fullName} style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover" }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -158,7 +158,7 @@ export default function AdminPage() {
           <div>
             <h2 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.75rem" }}>Recent Users</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-              {activity?.recentUsers?.map((u) => (
+              {(Array.isArray(activity?.recentUsers) ? activity.recentUsers : []).map((u) => (
                 <div key={u._id} style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.4rem 0.6rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-sm)" }}>
                   <img src={u.avatar} alt={u.fullName} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} />
                   <span style={{ fontSize: "0.82rem", color: "var(--text-primary)", fontWeight: 500 }}>{u.fullName}</span>
@@ -170,7 +170,7 @@ export default function AdminPage() {
           <div>
             <h2 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.75rem" }}>Recent Videos</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-              {activity?.recentVideos?.map((v) => (
+              {(Array.isArray(activity?.recentVideos) ? activity.recentVideos : []).map((v) => (
                 <div key={v._id} style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.4rem 0.6rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-sm)" }}>
                   <div style={{ width: 40, height: 24, borderRadius: 4, overflow: "hidden", flexShrink: 0, backgroundColor: "var(--elevated)" }}>
                     {v.thumbnail && <img src={v.thumbnail} alt={v.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}

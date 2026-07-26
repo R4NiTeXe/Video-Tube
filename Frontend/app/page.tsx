@@ -363,7 +363,7 @@ function HomeContent() {
   if (authLoading) {
     return (
       <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
-        <PageMeta title="Home" description="Discover, watch, and share videos on VideoTube." />
+        <PageMeta title="Home" description="Watch, share, and connect on VideoTube." />
         Loading...
       </div>
     );
@@ -452,7 +452,7 @@ function HomeContent() {
             marginBottom: "1.8rem",
           }}
         >
-          Discover, watch, and share videos.
+          Watch, share, and connect.
         </motion.p>
 
         
@@ -542,10 +542,10 @@ function HomeContent() {
         </AnimatePresence>
       </div>
 
-      <PageMeta title="Home" description="Discover, watch, and share videos on VideoTube." />
+      <PageMeta title="Home" description="Watch, share, and connect on VideoTube." />
 
       {videosLoading ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1.5rem", padding: "2rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1.5rem" }}>
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
               <div className="skeleton" style={{ aspectRatio: "16/9", borderRadius: "var(--radius-md)" }} />
@@ -560,7 +560,7 @@ function HomeContent() {
           <p style={{ fontSize: "0.88rem", color: "var(--text-muted)" }}>Upload your first video to get started</p>
         </div>
       ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.5rem", padding: "1.5rem 2rem" }}>
+          <div className="content-max" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.5rem" }}>
             {(Array.isArray(videos) ? videos : []).map((v) => (
               <div key={v._id}>
                 <VideoCard video={v} />

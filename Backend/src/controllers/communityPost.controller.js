@@ -49,7 +49,6 @@ const createCommunityPost = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while creating the post");
   }
 
-  // Create poll if question and options provided
   if (pollQuestion?.trim() && Array.isArray(pollOptions) && pollOptions.length >= 2) {
     const cleanOptions = pollOptions
       .map((o) => ({ text: String(o).trim() }))
@@ -304,9 +303,7 @@ const updateCommunityPost = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You are not authorized to update this post");
   }
 
-  // Handle optional image swap
   if (req.files && req.files.image && req.files.image[0]) {
-    // Delete old image if exists
     if (post.imagePublicId) {
       await deleteFromCloudinary(post.imagePublicId, "image");
     }
@@ -341,17 +338,14 @@ const deleteCommunityPost = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You are not authorized to delete this post");
   }
 
-  // Delete cloudinary image if exists
   if (post.imagePublicId) {
     await deleteFromCloudinary(post.imagePublicId, "image");
   }
 
-  // Delete linked poll if exists
   if (post.poll) {
     await Poll.findByIdAndDelete(post.poll);
   }
 
-  // Cleanup related post likes first
   await PostLike.deleteMany({ post: postId });
 
   await CommunityPost.findByIdAndDelete(postId);

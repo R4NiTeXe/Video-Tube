@@ -164,7 +164,7 @@ export default function LibraryPage() {
     : activeTab === "watchLater"
     ? watchLaterVideos
     : [];
-  const playlists: Playlist[] = playlistsRes?.data || [];
+  const playlists: Playlist[] = Array.isArray(playlistsRes?.data) ? playlistsRes.data : [];
   const isLoading = activeTab === "history" ? historyLoading : activeTab === "liked" ? likedLoading : activeTab === "watchLater" ? watchLaterLoading : playlistsLoading;
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
@@ -181,7 +181,7 @@ export default function LibraryPage() {
       <div style={{ position: "fixed", top: "5%", left: "30%", width: "50vw", height: "50vw", background: "var(--accent)", filter: "blur(250px)", opacity: 0.035, borderRadius: "50%", pointerEvents: "none", zIndex: 0 }} />
 
       
-      <div style={{ width: "100%", padding: "2rem" }}>
+      <div className="content-max">
         
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} style={{ marginBottom: "2rem" }}>
           <h1 style={{ fontSize: "1.8rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.25rem" }}>

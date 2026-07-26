@@ -151,7 +151,7 @@ export default function PlaylistDetailPage() {
         )}
       </header>
 
-      <div style={{ width: "100%", padding: "2rem" }}>
+      <div className="content-max">
         
         {videos.length === 0 ? (
           <div style={{ textAlign: "center", padding: "4rem 2rem" }}>

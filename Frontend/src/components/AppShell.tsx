@@ -13,7 +13,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    // Explicitly scroll to top on route change to fix any Next.js scroll restoration bugs
     window.scrollTo(0, 0);
   }, [pathname]);
 

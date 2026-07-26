@@ -814,7 +814,13 @@ body {
 .page-content {
   flex: 1;
   min-width: 0;
-  padding: var(--sp-8) var(--sp-8) var(--sp-16);
+  padding: var(--sp-8) var(--sp-6) var(--sp-16);
+}
+
+@media (min-width: 769px) {
+  .page-content {
+    max-width: calc(var(--content-max) - var(--sidebar-w) + var(--sp-6));
+  }
 }
 
 .page-content-compact {
@@ -1722,11 +1728,11 @@ body {
     padding: 8px;
   }
   .page-content {
-    padding: var(--sp-4) var(--sp-4) var(--sp-16);
+    padding: var(--sp-5) var(--sp-5) var(--sp-16);
   }
   .video-grid {
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: var(--sp-6) var(--sp-3);
+    gap: var(--sp-5) var(--sp-3);
   }
   .hero {
     height: 260px;
@@ -1758,11 +1764,18 @@ body {
     font-size: 12px;
     padding: 6px 10px;
   }
+  .content-padding {
+    padding: var(--sp-4) var(--sp-4);
+  }
+  .card-info {
+    padding: var(--sp-3) var(--sp-3) var(--sp-3);
+  }
 }
 
 @media (max-width: 480px) {
   .video-grid {
     grid-template-columns: 1fr;
+    gap: var(--sp-4);
   }
   .hero {
     height: 220px;

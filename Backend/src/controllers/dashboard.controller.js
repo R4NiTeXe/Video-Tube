@@ -36,7 +36,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
   const totalViews = videoStats[0]?.totalViews || 0;
   const publishedVideos = videoStats[0]?.publishedVideos || 0;
 
-  // Get user's video IDs once, then count likes/comments with a simple $in query
+  // Single $in query for likes/comments
   const videoIds = await Video.find({ owner: userId }).distinct("_id");
   const [totalLikesResult, totalCommentsResult] = await Promise.all([
     videoIds.length > 0
@@ -205,7 +205,6 @@ const getVideoDetailedStats = asyncHandler(async (req, res) => {
     Comment.countDocuments({ video: videoId }),
   ]);
 
-  // Estimate watch time (views * duration in seconds)
   const estimatedWatchTimeSeconds = video.views * video.duration;
   const estimatedWatchTimeMinutes = Math.round(estimatedWatchTimeSeconds / 60);
 

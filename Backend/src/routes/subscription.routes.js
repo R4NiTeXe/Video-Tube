@@ -12,7 +12,6 @@ import { subscriptionSchemas } from "../validators/index.js";
 
 const router = Router();
 
-// all routes require authentication
 router.use(verifyJWT);
 
 router

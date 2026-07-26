@@ -42,8 +42,7 @@ export const getLocationInfo = async (req) => {
       };
     }
 
-    // Call IP-API for physical location
-    const response = await fetch(`http://ip-api.com/json/${ip}`);
+      const response = await fetch(`http://ip-api.com/json/${ip}`);
     const data = await response.json();
     
     let locationStr = "Unknown Location";

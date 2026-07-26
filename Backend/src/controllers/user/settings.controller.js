@@ -441,7 +441,6 @@ const sendIdentifierUpdateOTP = asyncHandler(async (req, res) => {
     targetIdentifier = targetType === "email" ? user.mobile : user.email;
     isMobile = targetType === "email"; // Since we send OTP to the other
   } else {
-    // Add/Edit: target is the new identifier
     isMobile = /^\+?[1-9]\d{9,14}$/.test(targetIdentifier.trim());
     if (!isMobile && !isValidEmail(targetIdentifier)) {
       throw new ApiError(400, "Invalid email or mobile format");
@@ -496,7 +495,6 @@ const verifyAndAddIdentifier = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  // Send notification
   try {
     const notifyIdentifier = isMobile ? user.mobile : user.email;
     const notifyChannel = isMobile ? "whatsapp" : "email";
@@ -533,7 +531,6 @@ const verifyAndDeleteIdentifier = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  // Send notification to the remaining identifier
   try {
     const notifyIdentifier = targetType === "email" ? user.mobile : user.email;
     const notifyChannel = targetType === "email" ? "whatsapp" : "email";

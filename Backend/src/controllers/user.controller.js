@@ -194,7 +194,6 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
   user.password = newPassword;
   await user.save();
 
-  // Deactivate all sessions for this user (logout everywhere)
   await Session.updateMany({ user: req.user._id }, { isActive: false });
 
   const options = getCookieOptions();
@@ -545,7 +544,6 @@ const deleteCurrentUser = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found");
   }
 
-  // delete all videos of the user from cloudinary
   const userVideos = await Video.find({ owner: userId }).select(
     "videoFile thumbnail"
   );
@@ -559,7 +557,6 @@ const deleteCurrentUser = asyncHandler(async (req, res) => {
     }
   }
 
-  // delete user's avatar and cover image from cloudinary
   if (user.avatarPublicId) {
     await deleteFromCloudinary(user.avatarPublicId);
   }
@@ -567,43 +564,32 @@ const deleteCurrentUser = asyncHandler(async (req, res) => {
     await deleteFromCloudinary(user.coverImagePublicId);
   }
 
-  // delete subscriptions (as subscriber and as channel)
   await Subscription.deleteMany({
     $or: [{ subscriber: userId }, { channel: userId }],
   });
 
-  // delete videos (from db)
   await Video.deleteMany({ owner: userId });
 
-  // delete comments
   await Comment.deleteMany({ owner: userId });
 
-  // delete likes
   await Like.deleteMany({ likedBy: userId });
 
-  // delete playlists
   await Playlist.deleteMany({ owner: userId });
 
-  // delete notifications (as recipient or sender)
   await Notification.deleteMany({
     $or: [{ recipient: userId }, { sender: userId }],
   });
 
-  // delete community posts
   await CommunityPost.deleteMany({ owner: userId });
 
-  // delete polls created by user
   await Poll.deleteMany({ createdBy: userId });
-  // remove user from poll voters
   await Poll.updateMany(
     { voters: userId },
     { $pull: { voters: userId } }
   );
 
-  // delete post likes
   await PostLike.deleteMany({ likedBy: userId });
 
-  // delete OTP records
   await OTP.deleteMany({ user: userId });
 
   // remove user reference from other users' blocked/muted/watchLater/watchHistory arrays
@@ -613,10 +599,8 @@ const deleteCurrentUser = asyncHandler(async (req, res) => {
   await User.updateMany({ watchLater: userId }, { $pull: { watchLater: userId } });
   await User.updateMany({ watchHistory: userId }, { $pull: { watchHistory: userId } });
 
-  // delete active sessions
   await Session.deleteMany({ user: userId });
 
-  // delete user
   await User.findByIdAndDelete(userId);
 
   const options = getCookieOptions();
@@ -812,7 +796,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
       html: `<p>You requested a password reset. Click the link below to reset your password:</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>This link expires in 15 minutes.</p><p>If you did not request this, please ignore this email.</p>`,
     });
   } catch (error) {
-    // In production, SMTP credentials should be set in .env (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS)
+    // SMTP credentials required in production
     logger.error("Failed to send reset email:", error.message);
   }
 
@@ -845,7 +829,6 @@ const resetPassword = asyncHandler(async (req, res) => {
   user.passwordResetExpires = undefined;
   await user.save();
 
-  // Deactivate all sessions for this user (logout everywhere)
   await Session.updateMany({ user: user._id }, { isActive: false });
 
   return res.status(200).json(new ApiResponse(200, {}, "Password reset successfully"));
@@ -963,7 +946,6 @@ const addSearchHistory = asyncHandler(async (req, res) => {
 
   const user = await User.findById(req.user._id);
   if (!user) throw new ApiError(404, "User not found");
-  // Remove duplicate and add to front
   user.searchHistory = user.searchHistory.filter((q) => q !== query.trim());
   user.searchHistory.unshift(query.trim());
   // Keep only last 50
@@ -1131,7 +1113,6 @@ const resetPasswordWithOTP = asyncHandler(async (req, res) => {
   user.password = newPassword;
   await user.save();
 
-  // Deactivate all sessions for this user (logout everywhere)
   await Session.updateMany({ user: user._id }, { isActive: false });
 
   try {
@@ -1278,7 +1259,6 @@ const verifyAndChangePassword = asyncHandler(async (req, res) => {
   user.password = newPassword;
   await user.save();
 
-  // Deactivate all sessions for this user (logout everywhere)
   await Session.updateMany({ user: req.user._id }, { isActive: false });
 
   try {
@@ -1387,14 +1367,12 @@ const socialLogin = asyncHandler(async (req, res) => {
 
 const isValidMobile = (mobile) => /^\+?[1-9]\d{9,14}$/.test(mobile);
 
-// Determine channel for a given identifier
 const detectChannel = (identifier) => {
   if (/^\+?[1-9]\d{9,14}$/.test(identifier.trim())) return "whatsapp";
   return "email";
 };
 
 
-// Step 1: Send OTPs to both email and mobile
 const sendRegistrationOTP = asyncHandler(async (req, res) => {
   const { email, mobile } = req.body;
 
@@ -1412,7 +1390,6 @@ const sendRegistrationOTP = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid mobile number format. Use +91XXXXXXXXXX format");
   }
 
-  // Check if email or mobile already registered
   const existingUser = await User.findOne({
     $or: [{ email: normalizedEmail }, { mobile: normalizedMobile }],
   });
@@ -1445,7 +1422,6 @@ const sendRegistrationOTP = asyncHandler(async (req, res) => {
   );
 });
 
-// Step 2: Verify OTP for a specific channel
 const verifyRegistrationOTP = asyncHandler(async (req, res) => {
   const { identifier, otp: otpValue } = req.body;
 
@@ -1468,7 +1444,6 @@ const verifyRegistrationOTP = asyncHandler(async (req, res) => {
   );
 });
 
-// Step 3: Complete registration (requires at least ONE OTP verified - email OR mobile)
 const registerUnified = asyncHandler(async (req, res) => {
   const { email, mobile, fullName, username, password, emailOtp, mobileOtp } = req.body;
 
@@ -1492,11 +1467,9 @@ const registerUnified = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Password must contain uppercase, lowercase, number, and special character");
   }
 
-  // Verify at least ONE OTP is verified (email OR mobile)
   let emailVerified = false;
   let mobileVerified = false;
 
-  // Check email OTP (passed inline or already verified in DB)
   if (emailOtp) {
     const result = await verifyOTP(normalizedEmail, emailOtp, "registration");
     if (result.valid) emailVerified = true;
@@ -1505,7 +1478,6 @@ const registerUnified = asyncHandler(async (req, res) => {
     if (emailRecord?.verified) emailVerified = true;
   }
 
-  // Check mobile OTP (passed inline or already verified in DB)
   if (mobileOtp) {
     const result = await verifyOTP(normalizedMobile, mobileOtp, "registration");
     if (result.valid) mobileVerified = true;
@@ -1518,7 +1490,6 @@ const registerUnified = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Please verify at least one OTP (email or mobile)");
   }
 
-  // Check uniqueness
   const existingEmail = await User.findOne({ email: normalizedEmail });
   if (existingEmail) throw new ApiError(409, "Email already registered");
 
@@ -1528,7 +1499,6 @@ const registerUnified = asyncHandler(async (req, res) => {
   const existingUsername = await User.findOne({ username: username.toLowerCase() });
   if (existingUsername) throw new ApiError(409, "Username already taken");
 
-  // Upload avatar to Cloudinary
   let avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=6366f1&color=fff`;
   let coverUrl = "";
 
@@ -1575,7 +1545,6 @@ const registerUnified = asyncHandler(async (req, res) => {
 });
 
 
-// Step 1: Send login OTP
 const sendLoginOTP = asyncHandler(async (req, res) => {
   const { identifier } = req.body;
 
@@ -1586,7 +1555,6 @@ const sendLoginOTP = asyncHandler(async (req, res) => {
   const normalizedIdentifier = identifier.trim().toLowerCase();
   const channel = detectChannel(normalizedIdentifier);
 
-  // Find user by email or mobile
   let user;
   if (channel === "email") {
     user = await User.findOne({ email: normalizedIdentifier });
@@ -1599,7 +1567,6 @@ const sendLoginOTP = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, {}, "If the account exists, an OTP has been sent"));
   }
 
-  // Send OTP via appropriate channel
   if (channel === "email") {
     const otp = await storeOTP(normalizedIdentifier, "login", "email", user._id);
     try {
@@ -1625,7 +1592,6 @@ const sendLoginOTP = asyncHandler(async (req, res) => {
   );
 });
 
-// Step 2: Verify login OTP and get tokens
 const verifyLoginOTP = asyncHandler(async (req, res) => {
   const { identifier, otp: otpValue } = req.body;
 
@@ -1641,7 +1607,6 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
     throw new ApiError(400, result.message);
   }
 
-  // Find user
   let user;
   if (channel === "email") {
     user = await User.findOne({ email: normalizedIdentifier });
@@ -1935,7 +1900,6 @@ export {
   verifyAndDeleteAccount,
   sendForgotPasswordChangeOTP,
   verifyAndResetPasswordViaOTP,
-  // Unified auth flows
   sendRegistrationOTP,
   verifyRegistrationOTP,
   registerUnified,

@@ -28,7 +28,6 @@ const DANGEROUS_EXTENSIONS = new Set([
   ".jar", ".class", ".swf",
 ]);
 
-// Magic bytes for file signature validation
 const MAGIC_BYTES = {
   "image/jpeg": [0xFF, 0xD8, 0xFF],
   "image/png": [0x89, 0x50, 0x4E, 0x47],

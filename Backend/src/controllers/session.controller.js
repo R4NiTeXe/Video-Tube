@@ -4,39 +4,58 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Session } from "../models/session.model.js";
 import jwt from "jsonwebtoken";
 import logger from "../utils/logger.js";
+import UAParser from "ua-parser-js";
+
+// Simple in-memory GeoIP cache: ip -> { location, expiresAt }
+const geoIpCache = new Map();
+const GEOIP_CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
 function parseUserAgent(ua) {
-  if (!ua) return { deviceName: "Unknown Device", browser: "", os: "" };
-  let device;
-  let browser = "";
-  let os = "";
+  if (!ua) return { deviceName: "Unknown Device", browser: "", os: "", browserVersion: "", deviceType: "desktop", deviceModel: "" };
+  const parser = new UAParser(ua);
+  const browser = parser.getBrowser();
+  const os = parser.getOS();
+  const device = parser.getDevice();
 
-  if (/windows/i.test(ua)) { os = "Windows"; }
-  else if (/mac os/i.test(ua)) { os = "macOS"; }
-  else if (/linux/i.test(ua)) { os = "Linux"; }
-  else if (/android/i.test(ua)) { os = "Android"; }
-  else if (/iphone|ipad/i.test(ua)) { os = "iOS"; }
+  const browserName = browser.name || "Browser";
+  const browserVersion = browser.version || "";
+  const osName = os.name || "OS";
+  const deviceType = device.type || "desktop";
+  const deviceModel = device.model || "";
+  const deviceVendor = device.vendor || "";
 
-  if (/chrome/i.test(ua) && !/edge|opr|edg/i.test(ua)) { browser = "Chrome"; }
-  else if (/safari/i.test(ua) && !/chrome/i.test(ua)) { browser = "Safari"; }
-  else if (/firefox/i.test(ua)) { browser = "Firefox"; }
-  else if (/edge|edg/i.test(ua)) { browser = "Edge"; }
-  else if (/opr|opera/i.test(ua)) { browser = "Opera"; }
-
-  if (/mobile|android/i.test(ua) && /phone/i.test(ua)) {
-    device = `${browser || "Mobile"} on ${os || "Phone"}`;
-  } else if (/iphone/i.test(ua)) {
-    device = `Safari on iPhone`;
-  } else if (/ipad/i.test(ua)) {
-    device = `Safari on iPad`;
-  } else if (/android/i.test(ua)) {
-    device = `${browser || "Browser"} on Android`;
+  let deviceName;
+  if (deviceType === "mobile" || deviceType === "tablet") {
+    deviceName = `${browserName} on ${deviceModel ? `${deviceVendor ? `${deviceVendor} ` : ""}${deviceModel}` : osName}`;
   } else {
-    device = `${browser || "Browser"} on ${os || "Desktop"}`;
+    deviceName = `${browserName} on ${osName}`;
   }
 
-  return { deviceName: device, browser, os };
+  return { deviceName, browser: browserName, browserVersion, os: osName, deviceType, deviceModel };
 }
+
+const getLocationFromIp = async (ip) => {
+  const cached = geoIpCache.get(ip);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.location;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 2000);
+    const resp = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,country`, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (resp.ok) {
+      const geo = await resp.json();
+      const location = geo.city ? [geo.city, geo.regionName, geo.country].filter(Boolean).join(", ") : "Unknown Location";
+      geoIpCache.set(ip, { location, expiresAt: Date.now() + GEOIP_CACHE_TTL });
+      return location;
+    }
+  } catch {
+    // GeoIP lookup failed
+  }
+  return "Unknown Location";
+};
 
 export const createSession = async (userId, refreshToken, req) => {
   try {
@@ -46,18 +65,7 @@ export const createSession = async (userId, refreshToken, req) => {
 
     let location = "Unknown Location";
     if (ip && ip !== "::1" && ip !== "127.0.0.1" && ip !== "Unknown") {
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 2000);
-        const resp = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,country`, { signal: controller.signal });
-        clearTimeout(timeout);
-        if (resp.ok) {
-          const geo = await resp.json();
-          if (geo.city) location = [geo.city, geo.regionName, geo.country].filter(Boolean).join(", ");
-        }
-      } catch {
-        // GeoIP lookup failed, keep "Unknown Location"
-      }
+      location = await getLocationFromIp(ip);
     }
 
     await Session.create({

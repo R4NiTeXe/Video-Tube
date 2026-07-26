@@ -12,11 +12,9 @@ const resetViews = async () => {
 
     const db = mongoose.connection.db;
 
-    // Reset views in videos collection
     const videoResult = await db.collection("videos").updateMany({}, { $set: { views: 0 } });
     console.log(`Reset views for ${videoResult.modifiedCount} videos.`);
 
-    // Reset watchHistory in users collection
     const userResult = await db.collection("users").updateMany({}, { $set: { watchHistory: [] } });
     console.log(`Cleared watch history for ${userResult.modifiedCount} users.`);
 

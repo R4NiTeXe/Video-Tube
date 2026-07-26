@@ -106,7 +106,7 @@ export default function PlaylistsPage() {
         </button>
       </header>
 
-      <div style={{ width: "100%", padding: "2rem" }}>
+      <div className="content-max">
         <div style={{ marginBottom: "1.5rem" }}>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.25rem" }}>Your Playlists</h1>
           <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>

@@ -28,28 +28,29 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "VideoTube — Discover, Watch, and Share Videos",
+    default: "VideoTube — Watch, Share, and Connect",
     template: "%s | VideoTube",
   },
-  description: "Discover, watch, and share videos on VideoTube — a premium video sharing platform with high-quality streaming, community features, and creator tools.",
+  description: "Watch, share, and connect on VideoTube — a video platform for everyone.",
   keywords: ["video sharing", "streaming", "VideoTube", "watch videos", "upload videos", "video platform"],
   metadataBase: new URL(SITE_URL),
   openGraph: {
     type: "website",
     locale: "en_US",
     siteName: "VideoTube",
-    title: "VideoTube — Discover, Watch, and Share Videos",
-    description: "Discover, watch, and share videos on VideoTube — a premium video sharing platform.",
+    title: "VideoTube — Watch, Share, and Connect",
+    description: "Watch, share, and connect on VideoTube.",
     images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "VideoTube — Discover, Watch, and Share Videos",
-    description: "Discover, watch, and share videos on VideoTube — a premium video sharing platform.",
+    title: "VideoTube — Watch, Share, and Connect",
+    description: "Watch, share, and connect on VideoTube.",
     images: ["/opengraph-image"],
   },
   icons: {
-    icon: "/logo.png",
+    icon: [{ url: "/logo.png", type: "image/png" }],
+    shortcut: "/logo.png",
   },
   robots: {
     index: true,

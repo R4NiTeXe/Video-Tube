@@ -39,7 +39,6 @@ import { videoSchemas } from "../validators/index.js";
 
 const router = Router();
 
-// public routes
 router.route("/trending").get(verifyJWT, validateQuery(videoSchemas.getTrendingVideos.query), getTrendingVideos);
 router.route("/categories").get(verifyJWT, getVideoCategories);
 router.route("/scheduled/publish").post(verifyJWT, verifyAdmin, publishScheduledVideos);
@@ -47,7 +46,6 @@ router.route("/search/channels").get(verifyJWT, searchLimiter, validateQuery(vid
 router.route("/shorts/feed").get(verifyJWT, validateQuery(videoSchemas.getShortsFeed.query), getShortsFeed);
 router.route("/channel/:username/about").get(verifyJWT, validateParams(videoSchemas.getChannelAbout.params), getChannelAbout);
 
-// all routes require authentication
 router.use(verifyJWT);
 
 router

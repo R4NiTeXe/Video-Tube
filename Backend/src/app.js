@@ -135,7 +135,6 @@ app.use(compression({ level: 6, threshold: 1024 }));
 
 
 
-// Collect allowed origins from CORS_ORIGIN (comma-separated) and FRONTEND_URL
 const rawOrigins = [
   ...(process.env.CORS_ORIGIN?.split(",").map((o) => o.trim()).filter(Boolean) || []),
   ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL.trim()] : []),
