@@ -46,7 +46,7 @@ function SectionText({ children }: { children: React.ReactNode }) {
 }
 
 function FormField({ label, name, type = "text", value, onChange, error, placeholder, multiline }: {
-  label: string; name: string; type?: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void; error?: string; placeholder?: string; multiline?: boolean;
+  label: string; name: string; type?: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void; error: string | undefined; placeholder?: string; multiline?: boolean;
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
