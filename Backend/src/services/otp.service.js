@@ -65,11 +65,12 @@ const checkGlobalLimit = () => {
   return { allowed: true, remaining: OTP_CONSTANTS.GLOBAL_DAILY_LIMIT - current };
 };
 
-const checkUserLimit = async (userId) => {
-  const user = await User.findById(userId).select("otpDailyCount otpDailyCountDate");
+const checkUserLimit = async (userId, timezone) => {
+  const user = await User.findById(userId).select("otpDailyCount otpDailyCountDate timezone");
   if (!user) return { allowed: false, message: "User not found." };
 
-  const today = OTP.getStartOfDay();
+  const tz = timezone || user.timezone;
+  const today = OTP.getStartOfDay(tz);
   const userDate = user.otpDailyCountDate ? new Date(user.otpDailyCountDate) : null;
   const currentCount = (userDate && userDate.getTime() === today.getTime()) ? (user.otpDailyCount || 0) : 0;
 
@@ -91,8 +92,8 @@ const checkUserLimit = async (userId) => {
   };
 };
 
-const incrementUserDailyCount = async (userId) => {
-  const today = OTP.getStartOfDay();
+const incrementUserDailyCount = async (userId, timezone) => {
+  const today = OTP.getStartOfDay(timezone);
   await User.findByIdAndUpdate(
     userId,
     [
@@ -113,11 +114,12 @@ const incrementUserDailyCount = async (userId) => {
   );
 };
 
-const getUserOtpUsage = async (userId) => {
-  const user = await User.findById(userId).select("otpDailyCount otpDailyCountDate");
+const getUserOtpUsage = async (userId, timezone) => {
+  const user = await User.findById(userId).select("otpDailyCount otpDailyCountDate timezone");
   if (!user) return { used: 0, limit: OTP_CONSTANTS.USER_DAILY_LIMIT, remaining: OTP_CONSTANTS.USER_DAILY_LIMIT };
 
-  const today = OTP.getStartOfDay();
+  const tz = timezone || user.timezone;
+  const today = OTP.getStartOfDay(tz);
   const userDate = user.otpDailyCountDate ? new Date(user.otpDailyCountDate) : null;
   const used = (userDate && userDate.getTime() === today.getTime()) ? (user.otpDailyCount || 0) : 0;
 
@@ -174,23 +176,26 @@ const storeOtp = async ({ identifier, userId, purpose, channel = "email" }) => {
     { upsert: true, returnDocument: "after" }
   );
 
-  if (userId) {
-    await incrementUserDailyCount(userId);
-  }
-
-  incrementGlobalDailyCount();
-
   logger.info(`OTP generated`, {
     identifier: identifier.replace(/^(.{1,2}).*(@.+)/, "$1***$2"),
     purpose,
     channel,
     userId,
-    globalCount: getGlobalDailyCount(),
   });
 
-  const usage = userId ? await getUserOtpUsage(userId) : { used: 0, limit: OTP_CONSTANTS.USER_DAILY_LIMIT, remaining: OTP_CONSTANTS.USER_DAILY_LIMIT };
-  const globalUsage = getGlobalDailyCount();
-  return { otp, otpDoc, remainingGlobal: OTP_CONSTANTS.GLOBAL_DAILY_LIMIT - globalUsage, remainingUser: usage.remaining };
+  return { otp, otpDoc };
+};
+
+const confirmOtpDelivery = async (userId, timezone) => {
+  if (userId) {
+    await incrementUserDailyCount(userId, timezone);
+  }
+  incrementGlobalDailyCount();
+
+  logger.info(`OTP delivery confirmed`, {
+    userId,
+    globalCount: getGlobalDailyCount(),
+  });
 };
 
 const sendOtpEmail = async ({ identifier, otp, purpose, userName }) => {
@@ -383,6 +388,7 @@ export const otpService = {
   generateOtp,
   hashOtp,
   storeOtp,
+  confirmOtpDelivery,
   sendOtpEmail,
   verifyOtp,
   checkGlobalLimit,

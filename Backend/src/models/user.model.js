@@ -187,6 +187,10 @@ const userSchema = new Schema(
     passwordResetExpires: {
       type: Date,
     },
+    timezone: {
+      type: String,
+      default: "UTC",
+    },
     otpDailyCount: {
       type: Number,
       default: 0,

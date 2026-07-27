@@ -27,6 +27,10 @@ const sessionSchema = new Schema(
       type: String,
       default: "Unknown Location",
     },
+    timezone: {
+      type: String,
+      default: "",
+    },
     lastActiveAt: {
       type: Date,
       default: Date.now,

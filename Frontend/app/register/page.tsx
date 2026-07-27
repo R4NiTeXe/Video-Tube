@@ -311,12 +311,14 @@ export default function RegisterPage() {
       return;
     }
 
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const data = new FormData();
     data.append("fullName", formData.fullName);
     data.append("username", formData.username.toLowerCase());
     data.append("email", formData.email);
     data.append("mobile", fullMobile);
     data.append("password", formData.password);
+    data.append("timezone", tz);
     data.append("avatar", avatarFile);
     if (coverFile) data.append("coverImage", coverFile);
 

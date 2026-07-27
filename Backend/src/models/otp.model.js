@@ -47,7 +47,18 @@ otpSchema.statics.hashOtp = function (otp) {
   return crypto.createHash("sha256").update(otp).digest("hex");
 };
 
-otpSchema.statics.getStartOfDay = function () {
+otpSchema.statics.getStartOfDay = function (timezone) {
+  if (timezone) {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const dateStr = formatter.format(now);
+    return new Date(dateStr + "T00:00:00.000Z");
+  }
   const now = new Date();
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 };

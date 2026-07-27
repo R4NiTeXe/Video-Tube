@@ -25,41 +25,52 @@ const sendOtp = asyncHandler(async (req, res) => {
   let user = null;
 
   if (targetUserId) {
-    user = await User.findById(targetUserId).select("fullName username email");
+    user = await User.findById(targetUserId).select("fullName username email timezone");
   } else if (isEmail) {
-    user = await User.findOne({ email: identifier.toLowerCase() }).select("fullName username email");
+    user = await User.findOne({ email: identifier.toLowerCase() }).select("fullName username email timezone");
   }
 
-  const { otp, remainingGlobal, remainingUser } = await otpService.storeOtp({
+  const { otp } = await otpService.storeOtp({
     identifier: identifier.toLowerCase(),
     userId: user?._id,
     purpose,
     channel,
   });
 
-  if (channel === "email") {
-    await otpService.sendOtpEmail({
-      identifier: identifier.toLowerCase(),
-      otp,
-      purpose,
-      userName: user?.fullName,
-    });
-  } else if (channel === "whatsapp") {
-    logger.warn(`WhatsApp OTP delivery not implemented, falling back to email for ${identifier}`);
-    await otpService.sendOtpEmail({
-      identifier: identifier.toLowerCase(),
-      otp,
-      purpose,
-      userName: user?.fullName,
-    });
+  const userIdParam = user?._id;
+  const timezone = user?.timezone;
+
+  try {
+    if (channel === "email") {
+      await otpService.sendOtpEmail({
+        identifier: identifier.toLowerCase(),
+        otp,
+        purpose,
+        userName: user?.fullName,
+      });
+    } else if (channel === "whatsapp") {
+      logger.warn(`WhatsApp OTP delivery not implemented, falling back to email for ${identifier}`);
+      await otpService.sendOtpEmail({
+        identifier: identifier.toLowerCase(),
+        otp,
+        purpose,
+        userName: user?.fullName,
+      });
+    }
+    await otpService.confirmOtpDelivery(userIdParam, timezone);
+  } catch (error) {
+    throw error;
   }
+
+  const usage = userIdParam ? await otpService.getUserOtpUsage(userIdParam, timezone) : null;
+  const globalCount = otpService.checkGlobalLimit().remaining || 0;
 
   return res.status(200).json(
     new ApiResponse(200, {
       message: `OTP sent via ${channel === "whatsapp" ? "email (WhatsApp unavailable)" : channel}.`,
       expiresIn: otpService.OTP_CONSTANTS.OTP_EXPIRY_MINUTES * 60,
-      remainingGlobal,
-      remainingUser,
+      remainingGlobal: globalCount,
+      remainingUser: usage?.remaining,
     }, "OTP sent successfully.")
   );
 });
@@ -118,11 +129,17 @@ const resendOtp = asyncHandler(async (req, res) => {
 });
 
 const getOtpUsage = asyncHandler(async (req, res) => {
-  const usage = await otpService.getUserOtpUsage(req.user._id);
+  const user = await User.findById(req.user._id).select("timezone").lean();
+  const usage = await otpService.getUserOtpUsage(req.user._id, user?.timezone);
   const globalCount = otpService.checkGlobalLimit().remaining || 0;
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(0, 0, 0, 0);
+
+  const now = new Date();
+  const tz = user?.timezone || "UTC";
+  const resetInTz = new Date(new Date().toLocaleString("en-US", { timeZone: tz }));
+  const nextMidnight = new Date(resetInTz);
+  nextMidnight.setDate(nextMidnight.getDate() + 1);
+  nextMidnight.setHours(0, 0, 0, 0);
+  const resetAt = new Date(nextMidnight.toLocaleString("en-US", { timeZone: "UTC" }));
 
   return res.status(200).json(
     new ApiResponse(200, {
@@ -132,7 +149,7 @@ const getOtpUsage = asyncHandler(async (req, res) => {
       globalDailyLimit: otpService.OTP_CONSTANTS.GLOBAL_DAILY_LIMIT,
       globalUsedToday: otpService.OTP_CONSTANTS.GLOBAL_DAILY_LIMIT - globalCount,
       globalRemaining: globalCount,
-      resetAt: tomorrow.toISOString(),
+      resetAt: resetAt.toISOString(),
     }, "OTP usage retrieved.")
   );
 });

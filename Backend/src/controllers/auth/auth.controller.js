@@ -65,6 +65,7 @@ const registerUser = asyncHandler(async (req, res) => {
       password,
       username: normalizedUsername,
       isEmailVerified: true,
+      timezone: req.body?.timezone || "UTC",
     });
   } catch (dbError) {
     await deleteFromCloudinary(avatar.public_id, "image");

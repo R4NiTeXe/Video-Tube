@@ -139,7 +139,7 @@ export default function SettingsPage() {
 
 
   // Sessions
-  const [sessions, setSessions] = useState<Array<{ _id: string; deviceName: string; location: string; lastActiveAt: string; isCurrent: boolean }>>([]);
+  const [sessions, setSessions] = useState<Array<{ _id: string; deviceName: string; location: string; timezone: string; lastActiveAt: string; isCurrent: boolean }>>([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [sessionError, setSessionError] = useState("");
 
@@ -670,7 +670,7 @@ export default function SettingsPage() {
                         </div>
                         <div>
                           <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>{session.deviceName}</p>
-                          <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{session.location} &middot; {session.isCurrent ? new Date(session.lastActiveAt).toLocaleString("en-GB") : timeAgo}</p>
+                          <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{session.location}{session.timezone ? ` \u00b7 ${session.timezone}` : ""} &middot; {session.isCurrent ? new Date(session.lastActiveAt).toLocaleString("en-GB", { timeZone: session.timezone || undefined }) : timeAgo}</p>
                         </div>
                       </div>
                       {session.isCurrent ? (
@@ -736,11 +736,23 @@ export default function SettingsPage() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                   <div style={{ fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.5 }}>
                     {(() => {
+                      if (otpUsage.resetAt) {
+                        const resetDate = new Date(otpUsage.resetAt);
+                        const now = new Date();
+                        const diffMs = resetDate.getTime() - now.getTime();
+                        if (diffMs <= 0) return <>Resets <strong>now</strong></>;
+                        const diffHrs = Math.floor(diffMs / 3600000);
+                        const diffMins = Math.floor((diffMs % 3600000) / 60000);
+                        if (diffHrs < 1) {
+                          return <>Resets in <strong>{diffMins} minutes</strong></>;
+                        }
+                        return <>Resets in <strong>{diffHrs}h {diffMins}m</strong></>;
+                      }
                       const now = new Date();
-                      const nextLocalMidnight = new Date(now);
-                      nextLocalMidnight.setDate(nextLocalMidnight.getDate() + 1);
-                      nextLocalMidnight.setHours(0, 0, 0, 0);
-                      const diffMs = nextLocalMidnight.getTime() - now.getTime();
+                      const nextMidnight = new Date(now);
+                      nextMidnight.setDate(nextMidnight.getDate() + 1);
+                      nextMidnight.setHours(0, 0, 0, 0);
+                      const diffMs = nextMidnight.getTime() - now.getTime();
                       const diffHrs = Math.floor(diffMs / 3600000);
                       const diffMins = Math.floor((diffMs % 3600000) / 60000);
                       if (diffHrs < 1) {

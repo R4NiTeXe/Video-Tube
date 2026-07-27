@@ -19,7 +19,7 @@ import {
 import { escapeRegex } from "../utils/sanitizer.js";
 import { verifyOAuthToken } from "../utils/verifyOAuthToken.js";
 import { sendEmail } from "../utils/email.js";
-import { storeOTP, verifyOTP } from "../utils/otp.js";
+import { storeOTP, verifyOTP, otpService } from "../utils/otp.js";
 import { OTP } from "../models/otp.model.js";
 import { otpEmailTemplate, passwordChangedEmailTemplate, accountRecoveryTemplate } from "../utils/emailTemplates.js";
 import { sendWhatsAppOTP } from "../utils/whatsappOtp.js";
@@ -1053,6 +1053,7 @@ const forgotPasswordOTP = asyncHandler(async (req, res) => {
     html: otpEmailTemplate(otp, "forgot-password"),
   });
   logger.info("[forgotPasswordOTP] Email sent successfully via provider");
+  await otpService.confirmOtpDelivery(user._id, user.timezone);
 
   return res.status(200).json(
     new ApiResponse(200, {}, "If the email exists, an OTP has been sent")
@@ -1198,29 +1199,35 @@ const sendChangePasswordOTP = asyncHandler(async (req, res) => {
   const email = user.email;
   const mobile = user.mobile;
 
+  const userId = req.user._id;
+
   if (channel === "whatsapp") {
     if (!mobile) {
       throw new ApiError(400, "No mobile number linked. Please add one in your profile first.");
     }
-    const otp = await storeOTP(mobile, "change-password", "whatsapp", req.user._id);
+    const otp = await storeOTP(mobile, "change-password", "whatsapp", userId);
     try {
       await sendWhatsAppOTP(mobile, otp);
+      await otpService.confirmOtpDelivery(userId, user.timezone);
     } catch (error) {
       logger.error("Failed to send OTP WhatsApp:", error.message);
+      throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);
     }
     return res.status(200).json(
       new ApiResponse(200, { channel: "whatsapp" }, "OTP sent to your WhatsApp")
     );
   } else {
-    const otp = await storeOTP(email, "change-password", "email", req.user._id);
+    const otp = await storeOTP(email, "change-password", "email", userId);
     try {
       await sendEmail({
         to: email,
         subject: "Your VideoTube Password Change Code",
         html: otpEmailTemplate(otp, "change-password"),
       });
+      await otpService.confirmOtpDelivery(userId, user.timezone);
     } catch (error) {
       logger.error("Failed to send OTP email:", error.message);
+      throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
     }
     return res.status(200).json(
       new ApiResponse(200, { channel: "email" }, "OTP sent to your email")
@@ -1332,6 +1339,7 @@ const socialLogin = asyncHandler(async (req, res) => {
       password: randomPassword,
       avatar: verifiedAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(verifiedName)}&background=6366f1&color=fff`,
       socialAccounts: socialMap,
+      timezone: req.body?.timezone || "UTC",
         });
         break;
       } catch (err) {
@@ -1405,7 +1413,7 @@ const sendRegistrationOTP = asyncHandler(async (req, res) => {
     storeOTP(normalizedMobile, "registration", "whatsapp"),
   ]);
 
-  await Promise.allSettled([
+  const results = await Promise.allSettled([
     sendEmail({
       to: normalizedEmail,
       subject: "Welcome to VideoTube — Verify Your Email",
@@ -1417,6 +1425,10 @@ const sendRegistrationOTP = asyncHandler(async (req, res) => {
       });
     }),
   ]);
+
+  if (results[0].status === "fulfilled") {
+    await otpService.confirmOtpDelivery();
+  }
 
   return res.status(200).json(
     new ApiResponse(200, { email: normalizedEmail, mobile: normalizedMobile }, "OTPs sent to both email and mobile number")
@@ -1525,6 +1537,7 @@ const registerUnified = asyncHandler(async (req, res) => {
     password,
     avatar: avatarUrl,
     ...(coverUrl && { coverImage: coverUrl }),
+    timezone: req.body?.timezone || "UTC",
   });
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
@@ -1575,15 +1588,19 @@ const sendLoginOTP = asyncHandler(async (req, res) => {
         subject: "Your VideoTube Sign-In Code",
         html: otpEmailTemplate(otp, "login"),
       });
+      await otpService.confirmOtpDelivery(user._id, user.timezone);
     } catch (error) {
       logger.error("Failed to send login OTP email:", error.message);
+      throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
     }
   } else {
     const otp = await storeOTP(normalizedIdentifier, "login", "whatsapp", user._id);
     try {
       await sendWhatsAppOTP(normalizedIdentifier, otp);
+      await otpService.confirmOtpDelivery(user._id, user.timezone);
     } catch (error) {
       logger.error("Failed to send login OTP WhatsApp:", error.message);
+      throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);
     }
   }
 
@@ -1663,8 +1680,10 @@ const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
     const otp = await storeOTP(user.mobile, "delete-account", "whatsapp", req.user._id);
     try {
       await sendWhatsAppOTP(user.mobile, otp);
+      await otpService.confirmOtpDelivery(req.user._id, user.timezone);
     } catch (error) {
       logger.error("Failed to send delete OTP WhatsApp:", error.message);
+      throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);
     }
     return res.status(200).json(
       new ApiResponse(200, { channel: "whatsapp" }, "OTP sent to your WhatsApp for account deletion")
@@ -1677,8 +1696,10 @@ const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
         subject: "Your VideoTube Account Deletion Code",
         html: otpEmailTemplate(otp, "delete-account"),
       });
+      await otpService.confirmOtpDelivery(req.user._id, user.timezone);
     } catch (error) {
       logger.error("Failed to send delete account OTP email:", error.message);
+      throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
     }
     return res.status(200).json(
       new ApiResponse(200, { channel: "email" }, "OTP sent to your email for account deletion")
@@ -1779,8 +1800,10 @@ const sendForgotPasswordChangeOTP = asyncHandler(async (req, res) => {
     const otp = await storeOTP(mobile, "forgot-password-change", "whatsapp", req.user._id);
     try {
       await sendWhatsAppOTP(mobile, otp);
+      await otpService.confirmOtpDelivery(req.user._id, user.timezone);
     } catch (error) {
       logger.error("Failed to send forgot password change OTP WhatsApp:", error.message);
+      throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);
     }
     return res.status(200).json(
       new ApiResponse(200, { channel: "whatsapp" }, "OTP sent to your WhatsApp")
@@ -1793,8 +1816,10 @@ const sendForgotPasswordChangeOTP = asyncHandler(async (req, res) => {
         subject: "Your VideoTube Password Reset Code",
         html: otpEmailTemplate(otp, "forgot-password-change"),
       });
+      await otpService.confirmOtpDelivery(req.user._id, user.timezone);
     } catch (error) {
       logger.error("Failed to send forgot password change OTP:", error.message);
+      throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
     }
     return res.status(200).json(
       new ApiResponse(200, { channel: "email" }, "OTP sent to your email")

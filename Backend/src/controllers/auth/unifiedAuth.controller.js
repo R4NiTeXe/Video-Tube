@@ -3,7 +3,7 @@ import { ApiError } from "../../utils/ApiError.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { User } from "../../models/user.model.js";
 import { OTP } from "../../models/otp.model.js";
-import { storeOTP, verifyOTP } from "../../utils/otp.js";
+import { storeOTP, verifyOTP, otpService } from "../../utils/otp.js";
 import { sendEmail } from "../../utils/email.js";
 import { sendWhatsAppOTP } from "../../utils/whatsappOtp.js";
 import { getLocationInfo } from "../../utils/location.js";
@@ -62,6 +62,8 @@ const sendRegistrationOTP = asyncHandler(async (req, res) => {
   if (emailResult.status === "rejected") {
     throw new ApiError(500, `Failed to send email OTP: ${emailResult.reason?.message || "Unknown error"}`);
   }
+
+  await otpService.confirmOtpDelivery();
 
   return res.status(200).json(
     new ApiResponse(200, { email: normalizedEmail, mobile: normalizedMobile }, "OTPs sent to both email and mobile number")
@@ -180,6 +182,7 @@ const registerUnified = asyncHandler(async (req, res) => {
       password,
       avatar: avatarUrl,
       ...(coverUrl && { coverImage: coverUrl }),
+      timezone: req.body?.timezone || "UTC",
     });
   } catch (dbError) {
     if (uploadedAvatar?.public_id) await deleteFromCloudinary(uploadedAvatar.public_id, "image");
@@ -248,6 +251,7 @@ const sendLoginOTP = asyncHandler(async (req, res) => {
         subject: "Your VideoTube Sign-In Code",
         html: otpEmailTemplate(otp, "login"),
       });
+      await otpService.confirmOtpDelivery(user._id, user.timezone);
     } catch (error) {
       logger.error("Failed to send login OTP email:", error.message);
       throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
@@ -256,6 +260,7 @@ const sendLoginOTP = asyncHandler(async (req, res) => {
     const otp = await storeOTP(normalizedIdentifier, "login", "whatsapp", user._id);
     try {
       await sendWhatsAppOTP(normalizedIdentifier, otp);
+      await otpService.confirmOtpDelivery(user._id, user.timezone);
     } catch (error) {
       logger.error("Failed to send login OTP WhatsApp:", error.message);
       throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);

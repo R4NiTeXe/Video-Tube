@@ -19,7 +19,7 @@ import validator from "validator";
 import { getCookieOptions } from "../user.controller.js";
 import logger from "../../utils/logger.js";
 import { sendEmail } from "../../utils/email.js";
-import { storeOTP, verifyOTP } from "../../utils/otp.js";
+import { storeOTP, verifyOTP, otpService } from "../../utils/otp.js";
 import { otpEmailTemplate, passwordChangedEmailTemplate, accountDeletedTemplate, identifierUpdatedTemplate, identifierDeletedTemplate } from "../../utils/emailTemplates.js";
 import { sendWhatsAppOTP } from "../../utils/whatsappOtp.js";
 import jwt from "jsonwebtoken";
@@ -43,6 +43,7 @@ const sendChangePasswordOTP = asyncHandler(async (req, res) => {
     const otp = await storeOTP(mobile, "change-password", "whatsapp", req.user._id);
     try {
       await sendWhatsAppOTP(mobile, otp);
+      await otpService.confirmOtpDelivery(req.user._id, user.timezone);
     } catch (error) {
       logger.error("Failed to send OTP WhatsApp:", error.message);
       throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);
@@ -56,6 +57,7 @@ const sendChangePasswordOTP = asyncHandler(async (req, res) => {
         subject: "Your VideoTube Password Change Code",
         html: otpEmailTemplate(otp, "change-password"),
       });
+      await otpService.confirmOtpDelivery(req.user._id, user.timezone);
     } catch (error) {
       logger.error("Failed to send OTP email:", error.message);
       throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
@@ -136,6 +138,7 @@ const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
     const otp = await storeOTP(mobile, "delete-account", "whatsapp", req.user._id);
     try {
       await sendWhatsAppOTP(mobile, otp);
+      await otpService.confirmOtpDelivery(req.user._id, user.timezone);
     } catch (error) {
       logger.error("Failed to send delete account OTP WhatsApp:", error.message);
       throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);
@@ -149,6 +152,7 @@ const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
         subject: "Confirm Account Deletion",
         html: otpEmailTemplate(otp, "delete-account"),
       });
+      await otpService.confirmOtpDelivery(req.user._id, user.timezone);
     } catch (error) {
       logger.error("Failed to send delete account OTP email:", error.message);
       throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
@@ -232,6 +236,7 @@ const sendForgotPasswordChangeOTP = asyncHandler(async (req, res) => {
     const otp = await storeOTP(mobile, "forgot-password-change", "whatsapp", req.user._id);
     try {
       await sendWhatsAppOTP(mobile, otp);
+      await otpService.confirmOtpDelivery(req.user._id, user.timezone);
     } catch (error) {
       logger.error("Failed to send forgot password OTP WhatsApp:", error.message);
       throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);
@@ -245,6 +250,7 @@ const sendForgotPasswordChangeOTP = asyncHandler(async (req, res) => {
         subject: "Your VideoTube Password Reset Code",
         html: otpEmailTemplate(otp, "forgot-password-change"),
       });
+      await otpService.confirmOtpDelivery(req.user._id, user.timezone);
     } catch (error) {
       logger.error("Failed to send forgot password OTP email:", error.message);
       throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
@@ -469,6 +475,7 @@ const sendIdentifierUpdateOTP = asyncHandler(async (req, res) => {
         html: otpEmailTemplate(otp, "verify-email", user.fullName || user.username),
       });
     }
+    await otpService.confirmOtpDelivery(user._id, user.timezone);
   } catch (error) {
     logger.error(`Failed to send OTP to ${targetIdentifier}:`, error.message);
     throw new ApiError(500, `Failed to send OTP to ${channel}`);

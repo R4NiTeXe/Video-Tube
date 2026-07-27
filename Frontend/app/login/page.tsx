@@ -42,10 +42,11 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const inputType = detectInputType(trimmed);
-      const payload =
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const payload: Record<string, string> =
         inputType === "mobile"
-          ? { mobile: trimmed, password }
-          : { email: trimmed, password };
+          ? { mobile: trimmed, password, timezone: tz }
+          : { email: trimmed, password, timezone: tz };
       const response = await api.post("/users/login", payload);
       const { user, accessToken, refreshToken } = response.data.data;
       if (accessToken) localStorage.setItem("accessToken", accessToken);

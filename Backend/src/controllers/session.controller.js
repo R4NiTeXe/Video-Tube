@@ -2,6 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Session } from "../models/session.model.js";
+import { User } from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import logger from "../utils/logger.js";
 import { UAParser } from "ua-parser-js";
@@ -57,7 +58,7 @@ const getLocationFromIp = async (ip) => {
   return "Unknown Location";
 };
 
-export const createSession = async (userId, refreshToken, req) => {
+export const createSession = async (userId, refreshToken, req, timezone) => {
   try {
     const ua = req?.headers?.["user-agent"] || "";
     const ip = req?.ip || req?.socket?.remoteAddress || "Unknown";
@@ -68,6 +69,8 @@ export const createSession = async (userId, refreshToken, req) => {
       location = await getLocationFromIp(ip);
     }
 
+    const tz = timezone || req?.body?.timezone || "";
+
     await Session.create({
       user: userId,
       refreshToken,
@@ -75,6 +78,7 @@ export const createSession = async (userId, refreshToken, req) => {
       ipAddress: ip,
       deviceName,
       location,
+      timezone: tz,
       lastActiveAt: new Date(),
       isActive: true,
     });
@@ -133,6 +137,14 @@ export const getActiveSessions = asyncHandler(async (req, res) => {
     ...rest,
     isCurrent: decodedToken ? refreshToken === req.cookies?.refreshToken : false,
   }));
+
+  // Update user's timezone from current session if provided
+  if (enriched.some(s => s.isCurrent && s.timezone)) {
+    const currentSession = enriched.find(s => s.isCurrent);
+    if (currentSession?.timezone) {
+      await User.findByIdAndUpdate(userId, { timezone: currentSession.timezone });
+    }
+  }
 
   return res
     .status(200)
