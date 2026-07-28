@@ -6,6 +6,9 @@ import {
   updateCommunityPost,
   deleteCommunityPost,
   togglePostLike,
+  addPostComment,
+  getPostComments,
+  deletePostComment,
 } from "../controllers/communityPost.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { upload, validateFileSize } from "../middlewares/multer.middleware.js";
@@ -23,5 +26,7 @@ router.use(verifyJWT);
 router.route("/").post(upload.fields([{ name: "image", maxCount: 1 }]), validateFileSize, contentModerator, validateBody(communityPostSchemas.createCommunityPost.body), createCommunityPost);
 router.route("/:postId").patch(upload.fields([{ name: "image", maxCount: 1 }]), validateFileSize, contentModerator, validateParams(communityPostSchemas.updateCommunityPost.params), validateBody(communityPostSchemas.updateCommunityPost.body), updateCommunityPost).delete(validateParams(communityPostSchemas.deleteCommunityPost.params), deleteCommunityPost);
 router.route("/:postId/like").post(validateParams(communityPostSchemas.togglePostLike.params), togglePostLike);
+router.route("/:postId/comments").get(validateParams(communityPostSchemas.getPostComments.params), getPostComments).post(contentModerator, validateParams(communityPostSchemas.addPostComment.params), addPostComment);
+router.route("/:postId/comments/:commentId").delete(validateParams(communityPostSchemas.deletePostComment.params), deletePostComment);
 
 export default router;

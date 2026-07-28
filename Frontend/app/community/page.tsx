@@ -1,6 +1,6 @@
 "use client";
 
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useRef, useState, useEffect } from "react";
@@ -21,9 +21,9 @@ interface CommunityPost {
   content: string;
   image?: string;
   owner: PostOwner;
-  likes: number;
+  likesCount: number;
   isLiked: boolean;
-  commentCount: number;
+  commentsCount: number;
   createdAt: string;
 }
 
@@ -65,6 +65,116 @@ const SkeletonPost = () => (
   </div>
 );
 
+function PostComments({ postId }: { postId: string }) {
+  const { user } = useAuthStore();
+  const queryClient = useQueryClient();
+  const [commentText, setCommentText] = useState("");
+
+  const { data: commentsRes, isLoading: commentsLoading } = useQuery({
+    queryKey: ["post-comments", postId],
+    queryFn: async () => {
+      const res = await api.get(`/community/${postId}/comments?limit=20`);
+      return res.data;
+    },
+    enabled: !!postId,
+  });
+
+  const addCommentMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post(`/community/${postId}/comments`, { content: commentText });
+      return res.data;
+    },
+    onSuccess: () => {
+      setCommentText("");
+      queryClient.invalidateQueries({ queryKey: ["post-comments", postId] });
+      queryClient.invalidateQueries({ queryKey: ["community-posts"] });
+    },
+  });
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      await api.delete(`/community/${postId}/comments/${commentId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["post-comments", postId] });
+      queryClient.invalidateQueries({ queryKey: ["community-posts"] });
+    },
+  });
+
+  const comments: { _id: string; content: string; owner: { _id: string; fullName: string; avatar: string }; createdAt: string }[] = commentsRes?.data?.docs || [];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+      style={{ overflow: "hidden" }}
+    >
+      <div style={{ borderTop: "1px solid var(--border)", marginTop: "0.75rem", paddingTop: "0.75rem" }}>
+        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
+          <input
+            type="text"
+            placeholder="Write a comment..."
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && commentText.trim()) addCommentMutation.mutate(); }}
+            style={{
+              flex: 1, padding: "0.5rem 0.75rem", fontSize: "0.85rem",
+              borderRadius: "var(--radius-md)", border: "1px solid var(--border)",
+              backgroundColor: "var(--input)", color: "var(--text-primary)", outline: "none",
+            }}
+          />
+          <button
+            onClick={() => addCommentMutation.mutate()}
+            disabled={!commentText.trim() || addCommentMutation.isPending}
+            className="btn btn-primary btn-pill"
+            style={{ padding: "0.4rem 0.85rem", fontSize: "0.8rem" }}
+          >
+            {addCommentMutation.isPending ? "..." : "Post"}
+          </button>
+        </div>
+
+        {commentsLoading ? (
+          <div style={{ padding: "0.5rem 0", color: "var(--text-muted)", fontSize: "0.8rem" }}>Loading comments...</div>
+        ) : comments.length === 0 ? (
+          <div style={{ padding: "0.5rem 0", color: "var(--text-muted)", fontSize: "0.8rem" }}>No comments yet.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", maxHeight: 300, overflow: "auto" }}>
+            {comments.map((comment) => (
+              <div key={comment._id} style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
+                <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", backgroundColor: "var(--accent-subtle)", flexShrink: 0 }}>
+                  {comment.owner?.avatar ? (
+                    <img src={comment.owner.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)", fontSize: 11, fontWeight: 700 }}>
+                      {(comment.owner?.fullName?.[0] || "U").toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginBottom: "0.1rem" }}>
+                    <span style={{ fontWeight: 600, fontSize: "0.78rem", color: "var(--text-primary)" }}>{comment.owner?.fullName || "Anonymous"}</span>
+                    <span style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>{timeAgo(comment.createdAt)}</span>
+                  </div>
+                  <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.4 }}>{comment.content}</p>
+                </div>
+                {comment.owner?._id === user?._id && (
+                  <button
+                    onClick={() => deleteCommentMutation.mutate(comment._id)}
+                    style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "0.15rem", fontSize: "0.7rem", flexShrink: 0 }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 export default function CommunityPage() {
   const { isAuthenticated, isLoading: authLoading, user } = useAuthStore();
   const router = useRouter();
@@ -73,6 +183,7 @@ export default function CommunityPage() {
   const [newPostImage, setNewPostImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [openComments, setOpenComments] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
@@ -325,14 +436,30 @@ export default function CommunityPage() {
                       }}
                     >
                       <ThumbsUpIcon filled={post.isLiked} />
-                      {post.likes > 0 && post.likes}
+                      {post.likesCount > 0 && post.likesCount}
                     </button>
 
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
+                    <button
+                      onClick={() => setOpenComments(openComments === post._id ? null : post._id)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: "0.4rem",
+                        padding: "0.4rem 0.75rem", borderRadius: 99,
+                        border: "none", cursor: "pointer", background: "none",
+                        color: openComments === post._id ? "var(--accent)" : "var(--text-muted)",
+                        fontWeight: 500, fontSize: "0.85rem",
+                        transition: "color 0.2s",
+                      }}
+                    >
                       <CommentIcon />
-                      {post.commentCount > 0 && post.commentCount}
-                    </div>
+                      {post.commentsCount > 0 && post.commentsCount}
+                    </button>
                   </div>
+
+                  <AnimatePresence>
+                    {openComments === post._id && (
+                      <PostComments postId={post._id} />
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               ))}
             </AnimatePresence>

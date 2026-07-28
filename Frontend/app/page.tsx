@@ -88,22 +88,9 @@ function VideoCard({ video }: { video: VideoResult }) {
     stopPreview();
   }, [stopPreview]);
 
-  // Mobile: tap to toggle preview
-  const handleTap = useCallback((_e: React.TouchEvent) => {
+  // Mobile: tap to navigate to video page
+  const handleTap = useCallback(() => {
     isTouchDevice.current = true;
-    if (previewing) {
-      stopPreview();
-    } else {
-      startPreview();
-    }
-  }, [previewing, startPreview, stopPreview]);
-
-  // Also handle click for non-touch devices that don't have hover
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    if (isTouchDevice.current) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
   }, []);
 
   useEffect(() => {
@@ -124,7 +111,6 @@ function VideoCard({ video }: { video: VideoResult }) {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onTouchStart={handleTap}
-      onClick={handleClick}
     >
       <div className="thumb-wrapper">
         

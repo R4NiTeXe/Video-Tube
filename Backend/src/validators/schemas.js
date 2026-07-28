@@ -758,6 +758,29 @@ export const communityPostSchemas = {
       postId: mongoId,
     }),
   },
+
+  addPostComment: {
+    params: z.object({
+      postId: mongoId,
+    }),
+    body: z.object({
+      content: z.string().min(1).max(5000).trim(),
+    }),
+  },
+
+  getPostComments: {
+    params: z.object({
+      postId: mongoId,
+    }),
+    query: pagination,
+  },
+
+  deletePostComment: {
+    params: z.object({
+      postId: mongoId,
+      commentId: mongoId,
+    }),
+  },
 };
 
 export const dashboardSchemas = {

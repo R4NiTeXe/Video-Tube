@@ -994,14 +994,16 @@ export default function VideoPlayerPage() {
                       {formatViews(video.owner?.subscribersCount || 0)} subscribers
                     </p>
                   </div>
-                  <button
-                    onClick={() => subscribeMutation.mutate()}
-                    disabled={subscribeMutation.isPending}
-                    className={`btn ${isSubscribed ? "btn-secondary" : "btn-primary"} btn-pill`}
-                    style={{ marginLeft: "0.5rem", padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: 600 }}
-                  >
-                    {isSubscribed ? "Subscribed" : "Subscribe"}
-                  </button>
+                  {video.owner?._id !== user?._id && (
+                    <button
+                      onClick={() => subscribeMutation.mutate()}
+                      disabled={subscribeMutation.isPending}
+                      className={`btn ${isSubscribed ? "btn-secondary" : "btn-primary"} btn-pill`}
+                      style={{ marginLeft: "0.5rem", padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: 600 }}
+                    >
+                      {isSubscribed ? "Subscribed" : "Subscribe"}
+                    </button>
+                  )}
                 </div>
 
                 {/* ACTION BUTTONS */}

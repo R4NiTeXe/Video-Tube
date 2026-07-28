@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { CommunityPost } from "../models/communityPost.model.js";
 import { Poll } from "../models/poll.model.js";
 import { PostLike } from "../models/postLike.model.js";
+import { Comment } from "../models/comment.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -399,6 +400,116 @@ const togglePostLike = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { isLiked: true }, "Post liked"));
 });
 
+const addPostComment = asyncHandler(async (req, res) => {
+  const { postId } = req.params;
+  const { content } = req.body;
+
+  if (!mongoose.isValidObjectId(postId)) {
+    throw new ApiError(400, "Invalid post id");
+  }
+
+  if (!content?.trim()) {
+    throw new ApiError(400, "Comment content is required");
+  }
+
+  const post = await CommunityPost.findById(postId);
+  if (!post) {
+    throw new ApiError(404, "Post not found");
+  }
+
+  const comment = await Comment.create({
+    content: content.trim(),
+    post: postId,
+    owner: req.user._id,
+  });
+
+  if (!comment) {
+    throw new ApiError(500, "Something went wrong while adding the comment");
+  }
+
+  await CommunityPost.findByIdAndUpdate(postId, { $inc: { commentsCount: 1 } });
+
+  return res
+    .status(201)
+    .json(new ApiResponse(201, comment, "Comment added successfully"));
+});
+
+const getPostComments = asyncHandler(async (req, res) => {
+  const { postId } = req.params;
+  const { page = 1, limit = 10 } = req.query;
+
+  if (!mongoose.isValidObjectId(postId)) {
+    throw new ApiError(400, "Invalid post id");
+  }
+
+  const pageNumber = Math.max(parseInt(page, 10) || 1, 1);
+  const limitNumber = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 50);
+  const skip = (pageNumber - 1) * limitNumber;
+
+  const [{ data, metadata } = { data: [], metadata: [{ total: 0 }] }] = await Comment.aggregate([
+    {
+      $match: {
+        post: new mongoose.Types.ObjectId(postId),
+      },
+    },
+    {
+      $facet: {
+        metadata: [{ $count: "total" }],
+        data: [
+          { $sort: { createdAt: -1 } },
+          { $skip: skip },
+          { $limit: limitNumber },
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [{ $project: { fullName: 1, username: 1, avatar: 1 } }],
+            },
+          },
+          {
+            $addFields: {
+              owner: { $first: "$owner" },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { docs: data, total: metadata[0]?.total || 0, page: pageNumber, limit: limitNumber }, "Comments fetched successfully"));
+});
+
+const deletePostComment = asyncHandler(async (req, res) => {
+  const { commentId } = req.params;
+
+  if (!mongoose.isValidObjectId(commentId)) {
+    throw new ApiError(400, "Invalid comment id");
+  }
+
+  const comment = await Comment.findById(commentId);
+  if (!comment) {
+    throw new ApiError(404, "Comment not found");
+  }
+
+  if (comment.owner.toString() !== req.user._id.toString() && req.user.role !== "admin") {
+    throw new ApiError(403, "You are not authorized to delete this comment");
+  }
+
+  if (comment.post) {
+    await CommunityPost.findByIdAndUpdate(comment.post, { $inc: { commentsCount: -1 } });
+  }
+
+  await Comment.findByIdAndDelete(commentId);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Comment deleted successfully"));
+});
+
 export {
   createCommunityPost,
   getAllCommunityPosts,
@@ -406,4 +517,7 @@ export {
   updateCommunityPost,
   deleteCommunityPost,
   togglePostLike,
+  addPostComment,
+  getPostComments,
+  deletePostComment,
 };

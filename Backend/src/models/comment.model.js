@@ -10,7 +10,6 @@ const commentSchema = new Schema(
     video: {
       type: Schema.Types.ObjectId,
       ref: "Video",
-      required: true,
     },
     owner: {
       type: Schema.Types.ObjectId,
@@ -22,6 +21,10 @@ const commentSchema = new Schema(
       ref: "Comment",
       default: null,
     },
+    post: {
+      type: Schema.Types.ObjectId,
+      ref: "CommunityPost",
+    },
     isPinned: {
       type: Boolean,
       default: false,
@@ -32,10 +35,18 @@ const commentSchema = new Schema(
   }
 );
 
+commentSchema.pre("validate", function () {
+  const targetCount = [this.video, this.post].filter(Boolean).length;
+  if (targetCount !== 1) {
+    throw new Error("Comment must target exactly one resource (video or post)");
+  }
+});
+
 commentSchema.index({ video: 1, createdAt: -1 });
 commentSchema.index({ owner: 1, createdAt: -1 });
 commentSchema.index({ parentComment: 1 });
 commentSchema.index({ video: 1, parentComment: 1, createdAt: -1 });
+commentSchema.index({ post: 1, createdAt: -1 });
 
 commentSchema.plugin(mongooseAggregatePaginate);
 

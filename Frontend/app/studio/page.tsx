@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
@@ -10,7 +11,7 @@ import {
   UploadCloud, Plus, MessageCircle, TrendingUp, ArrowUpRight,
   ArrowDownRight, CircleCheck, CircleAlert,
   Edit3, Trash2, Search, ChartNoAxesCombined, ListVideo,
-  Play, Pencil,
+  Play, Pencil, TriangleAlert,
 } from "lucide-react";
 
 import { api } from "@/src/services/api";
@@ -139,6 +140,71 @@ function EmptyChart() {
   );
 }
 
+function DeleteConfirmDialog({
+  videoId, videoTitle, onConfirm, onCancel, isPending,
+}: {
+  videoId: string; videoTitle: string; onConfirm: (id: string) => void; onCancel: () => void; isPending: boolean;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+      onKeyDown={(e) => { if (e.key === "Escape") onCancel(); }}
+      style={{
+        position: "fixed", inset: 0, zIndex: 1000,
+        backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)",
+        display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem",
+      }}
+    >
+      <motion.div
+        initial={{ scale: 0.92, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 28 }}
+        style={{
+          width: "100%", maxWidth: 420,
+          borderRadius: "var(--radius-xl)", padding: "1.5rem",
+          backgroundColor: "var(--card)", border: "1px solid var(--border)",
+          boxShadow: "var(--shadow-lg)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
+          <div style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "rgba(239,68,68,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#ef4444", flexShrink: 0 }}>
+            <TriangleAlert size={18} />
+          </div>
+          <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
+            Delete video
+          </h2>
+        </div>
+
+        <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)", marginBottom: "1rem", lineHeight: 1.5 }}>
+          Are you sure you want to delete <strong style={{ color: "var(--text-primary)" }}>{videoTitle}</strong>? This action cannot be undone.
+        </p>
+
+        <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+          <button onClick={onCancel} disabled={isPending}
+            className="btn btn-ghost btn-pill"
+            style={{ padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: 600 }}
+          >
+            Cancel
+          </button>
+          <button onClick={() => onConfirm(videoId)} disabled={isPending}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: "0.4rem",
+              padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: 600,
+              borderRadius: 99, border: "none", cursor: isPending ? "not-allowed" : "pointer",
+              backgroundColor: "#ef4444", color: "#fff", opacity: isPending ? 0.5 : 1,
+            }}
+          >
+            {isPending ? "Deleting..." : "Delete"}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 function CreatorStudioContent() {
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
   const router = useRouter();
@@ -146,6 +212,7 @@ function CreatorStudioContent() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingVideo, setEditingVideo] = useState<any>(null);
+  const [deletingVideo, setDeletingVideo] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "views">("newest");
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -380,6 +447,13 @@ function CreatorStudioContent() {
                           </div>
                           <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: isMobile ? "0.7rem" : "0.78rem" }}>{timeAgo(video.createdAt)}</div>
                           <div style={{ display: "flex", gap: "0.15rem", justifyContent: "center" }}>
+                            <Link href={`/videos/${video._id}`} target="_blank" rel="noopener noreferrer"
+                              style={{ width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "var(--radius-sm)", color: "var(--text-muted)", textDecoration: "none", transition: "color 0.15s" }}
+                              onMouseEnter={(e) => e.currentTarget.style.color = "var(--accent)"}
+                              onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-muted)"}
+                            >
+                              <Play size={12} />
+                            </Link>
                             <button onClick={() => { setEditingVideo(video); setShowEditModal(true); }}
                               style={{ width: 26, height: 26, padding: 0, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "var(--radius-sm)", border: "none", background: "none", cursor: "pointer", color: "var(--text-muted)", transition: "color 0.15s" }}
                               onMouseEnter={(e) => e.currentTarget.style.color = "var(--text-primary)"}
@@ -387,7 +461,7 @@ function CreatorStudioContent() {
                             >
                               <Edit3 size={12} />
                             </button>
-                            <button onClick={() => deleteMutation.mutate(video._id)}
+                            <button onClick={() => setDeletingVideo(video._id)}
                               style={{ width: 26, height: 26, padding: 0, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "var(--radius-sm)", border: "none", background: "none", cursor: "pointer", color: "var(--text-muted)", transition: "color 0.15s" }}
                               onMouseEnter={(e) => e.currentTarget.style.color = "var(--error)"}
                               onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-muted)"}
@@ -412,6 +486,20 @@ function CreatorStudioContent() {
         )}
         {showEditModal && editingVideo && (
           <EditModal videoId={editingVideo._id} onClose={() => { setShowEditModal(false); setEditingVideo(null); }} onSuccess={() => { setShowEditModal(false); setEditingVideo(null); queryClient.invalidateQueries({ queryKey: ["dashboard-videos"] }); }} />
+        )}
+        {deletingVideo && (
+          <DeleteConfirmDialog
+            videoId={deletingVideo}
+            videoTitle={sortedVideos.find((v: any) => v._id === deletingVideo)?.title || "this video"}
+            onConfirm={(id) => {
+              deleteMutation.mutate(id, {
+                onSuccess: () => { setDeletingVideo(null); },
+                onError: () => { setDeletingVideo(null); },
+              });
+            }}
+            onCancel={() => setDeletingVideo(null)}
+            isPending={deleteMutation.isPending}
+          />
         )}
       </AnimatePresence>
     </>

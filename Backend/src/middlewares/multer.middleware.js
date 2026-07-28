@@ -106,7 +106,7 @@ const GLOBAL_MAX_FILE_SIZE = Math.max(MAX_VIDEO_SIZE, MAX_THUMBNAIL_SIZE, MAX_IM
 export const upload = multer({
   storage,
   limits: {
-    fileSize: GLOBAL_MAX_FILE_SIZE,
+    fileSize: GLOBAL_MAX_FILE_SIZE * 10,
   },
   fileFilter,
 });

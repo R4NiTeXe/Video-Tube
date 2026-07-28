@@ -80,9 +80,15 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
       .json(new ApiResponse(200, { isLiked: false }, "Like removed"));
   }
 
+  const comment = await Comment.findById(commentId).select("owner video").lean();
+  if (!comment) {
+    throw new ApiError(404, "Comment not found");
+  }
+
   try {
     await Like.create({
       comment: commentId,
+      video: comment.video,
       likedBy: req.user._id,
     });
   } catch (error) {
@@ -93,8 +99,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
   }
 
   try {
-    const comment = await Comment.findById(commentId).select("owner video").lean();
-    if (comment && comment.owner.toString() !== req.user._id.toString()) {
+    if (comment.owner.toString() !== req.user._id.toString()) {
       const recipient = await User.findById(comment.owner).select("notificationPrefs").lean();
       if (recipient?.notificationPrefs?.likes !== false) {
         const notif = await Notification.create({
