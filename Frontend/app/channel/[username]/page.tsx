@@ -122,6 +122,8 @@ export default function ChannelPage() {
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [openComments, setOpenComments] = useState<string | null>(null);
+  const [deletePostId, setDeletePostId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
@@ -190,7 +192,8 @@ export default function ChannelPage() {
   const createPostMutation = useMutation({
     mutationFn: async () => {
       const fd = new FormData();
-      fd.append("content", postContent.trim());
+      const content = postContent.trim() || (pollQuestion.trim() || "");
+      fd.append("content", content);
       if (pollQuestion.trim() && pollOptions.filter((o) => o.trim()).length >= 2) {
         fd.append("pollQuestion", pollQuestion.trim());
         pollOptions.filter((o) => o.trim()).forEach((o) => fd.append("pollOptions", o.trim()));
@@ -220,15 +223,6 @@ export default function ChannelPage() {
   const togglePostLikeMutation = useMutation({
     mutationFn: async (postId: string) => {
       await api.post(`/community/${postId}/like`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["channel-posts", username] });
-    },
-  });
-
-  const deletePostMutation = useMutation({
-    mutationFn: async (postId: string) => {
-      await api.delete(`/community/${postId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["channel-posts", username] });
@@ -607,13 +601,15 @@ export default function ChannelPage() {
                                 >
                                   <HeartIcon filled={post.isLiked} /> {post.likesCount}
                                 </button>
-                                <span style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                                <button onClick={() => setOpenComments(openComments === post._id ? null : post._id)}
+                                  style={{ display: "flex", alignItems: "center", gap: "0.35rem", background: "none", border: "none", cursor: "pointer", color: openComments === post._id ? "var(--accent)" : "var(--text-muted)", padding: 0, fontSize: "0.82rem" }}
+                                >
                                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                                   {post.commentsCount}
-                                </span>
+                                </button>
                               </div>
                               {isOwnChannel && (
-                                <button onClick={() => { if (confirm("Delete this post?")) deletePostMutation.mutate(post._id); }}
+                                <button onClick={() => setDeletePostId(post._id)}
                                   style={{ display: "flex", alignItems: "center", gap: "0.35rem", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 0, fontSize: "0.82rem" }}
                                   title="Delete post"
                                 >
@@ -622,6 +618,11 @@ export default function ChannelPage() {
                                 </button>
                               )}
                             </div>
+                            <AnimatePresence>
+                              {openComments === post._id && (
+                                <PostComments postId={post._id} channelUsername={username} />
+                              )}
+                            </AnimatePresence>
                           </motion.div>
                         ))}
                       </div>
@@ -634,7 +635,207 @@ export default function ChannelPage() {
         </div>
       )}
       {showReportModal && <ReportModal targetId={channel?._id || ""} onClose={() => setShowReportModal(false)} />}
+      <AnimatePresence>
+        {deletePostId && (
+          <DeletePostModal postId={deletePostId} channelUsername={username} onClose={() => setDeletePostId(null)} />
+        )}
+      </AnimatePresence>
     </>
+  );
+}
+
+function PostComments({ postId, channelUsername }: { postId: string; channelUsername: string }) {
+  const { user } = useAuthStore();
+  const queryClient = useQueryClient();
+  const [commentText, setCommentText] = useState("");
+
+  const { data: commentsRes, isLoading: commentsLoading } = useQuery({
+    queryKey: ["post-comments", postId],
+    queryFn: async () => {
+      const res = await api.get(`/community/${postId}/comments?limit=20`);
+      return res.data;
+    },
+    enabled: !!postId,
+  });
+
+  const addCommentMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post(`/community/${postId}/comments`, { content: commentText });
+      return res.data;
+    },
+    onSuccess: () => {
+      setCommentText("");
+      queryClient.invalidateQueries({ queryKey: ["post-comments", postId] });
+      queryClient.invalidateQueries({ queryKey: ["channel-posts", channelUsername] });
+    },
+  });
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      await api.delete(`/community/${postId}/comments/${commentId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["post-comments", postId] });
+      queryClient.invalidateQueries({ queryKey: ["channel-posts", channelUsername] });
+    },
+  });
+
+  const comments: { _id: string; content: string; owner: { _id: string; fullName: string; avatar: string }; createdAt: string }[] = commentsRes?.data?.docs || [];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+      style={{ overflow: "hidden" }}
+    >
+      <div style={{ borderTop: "1px solid var(--border)", marginTop: "0.75rem", paddingTop: "0.75rem" }}>
+        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
+          <input
+            type="text"
+            placeholder="Write a comment..."
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && commentText.trim()) addCommentMutation.mutate(); }}
+            style={{
+              flex: 1, padding: "0.5rem 0.75rem", fontSize: "0.85rem",
+              borderRadius: "var(--radius-md)", border: "1px solid var(--border)",
+              backgroundColor: "var(--input)", color: "var(--text-primary)", outline: "none",
+            }}
+          />
+          <button
+            onClick={() => addCommentMutation.mutate()}
+            disabled={!commentText.trim() || addCommentMutation.isPending}
+            className="btn btn-primary btn-pill"
+            style={{ padding: "0.4rem 0.85rem", fontSize: "0.8rem" }}
+          >
+            {addCommentMutation.isPending ? "..." : "Post"}
+          </button>
+        </div>
+
+        {commentsLoading ? (
+          <div style={{ padding: "0.5rem 0", color: "var(--text-muted)", fontSize: "0.8rem" }}>Loading comments...</div>
+        ) : comments.length === 0 ? (
+          <div style={{ padding: "0.5rem 0", color: "var(--text-muted)", fontSize: "0.8rem" }}>No comments yet.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", maxHeight: 300, overflow: "auto" }}>
+            {comments.map((comment) => (
+              <div key={comment._id} style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
+                <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", backgroundColor: "var(--accent-subtle)", flexShrink: 0 }}>
+                  {comment.owner?.avatar ? (
+                    <img src={comment.owner.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)", fontSize: 11, fontWeight: 700 }}>
+                      {(comment.owner?.fullName?.[0] || "U").toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginBottom: "0.1rem" }}>
+                    <span style={{ fontWeight: 600, fontSize: "0.78rem", color: "var(--text-primary)" }}>{comment.owner?.fullName || "Anonymous"}</span>
+                    <span style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>{timeAgo(comment.createdAt)}</span>
+                  </div>
+                  <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.4 }}>{comment.content}</p>
+                </div>
+                {comment.owner?._id === user?._id && (
+                  <button
+                    onClick={() => deleteCommentMutation.mutate(comment._id)}
+                    style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "0.15rem", fontSize: "0.7rem", flexShrink: 0 }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+function DeletePostModal({ postId, channelUsername, onClose }: { postId: string; channelUsername: string; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await api.delete(`/community/${postId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["channel-posts", channelUsername] });
+      onClose();
+    },
+  });
+
+  return (
+    <motion.div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-post-title"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+      style={{
+        position: "fixed", inset: 0, zIndex: 1000,
+        backgroundColor: "rgba(0,0,0,0.6)",
+        backdropFilter: "blur(8px)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "1rem",
+      }}
+    >
+      <motion.div
+        initial={{ scale: 0.92, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.92, opacity: 0, y: 20 }}
+        transition={{ type: "spring", stiffness: 300, damping: 28 }}
+        style={{
+          width: "100%", maxWidth: 420,
+          borderRadius: "var(--radius-xl)", padding: "2rem",
+          backgroundColor: "var(--card)",
+          border: "1px solid var(--border)",
+          boxShadow: "var(--shadow-lg)",
+        }}
+      >
+        <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: "50%",
+            backgroundColor: "var(--error-subtle)",
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            marginBottom: "1rem", color: "var(--error)",
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+          </div>
+          <h2 id="delete-post-title" style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.5rem" }}>Delete this post?</h2>
+          <p style={{ fontSize: "0.9rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+            This action cannot be undone. The post and all its comments will be permanently removed.
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: "0.75rem" }}>
+          <button
+            onClick={onClose}
+            className="btn btn-ghost"
+            style={{ flex: 1, borderRadius: "var(--radius-md)", padding: "0.65rem 1rem", fontSize: "0.9rem" }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => deleteMutation.mutate()}
+            disabled={deleteMutation.isPending}
+            style={{
+              flex: 1, borderRadius: "var(--radius-md)", padding: "0.65rem 1rem", fontSize: "0.9rem",
+              fontWeight: 600, border: "none", cursor: deleteMutation.isPending ? "not-allowed" : "pointer",
+              backgroundColor: "var(--error)", color: "#fff", opacity: deleteMutation.isPending ? 0.6 : 1,
+              transition: "opacity 0.2s",
+            }}
+          >
+            {deleteMutation.isPending ? "Deleting..." : "Delete"}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
 

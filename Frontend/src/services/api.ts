@@ -14,9 +14,11 @@ interface ApiErrorBody {
 }
 
 let _csrfToken: string | null = null;
+let _serverTimeOffset = 0;
 
 export const setCsrfToken = (token: string) => { _csrfToken = token; };
 export const getCsrfToken = () => _csrfToken;
+export const getServerTimeOffset = () => _serverTimeOffset;
 
 export const refreshCsrfToken = async (): Promise<string | null> => {
   try {
@@ -73,7 +75,16 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const dateHeader = response.headers["date"];
+    if (dateHeader) {
+      const serverTime = new Date(dateHeader).getTime();
+      if (!isNaN(serverTime)) {
+        _serverTimeOffset = serverTime - Date.now();
+      }
+    }
+    return response;
+  },
   async (error: AxiosError<ApiErrorBody>) => {
     const originalRequest = error.config as RetryableRequestConfig | undefined;
 

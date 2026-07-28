@@ -9,7 +9,8 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
   try {
     const tokenFromCookie = req.cookies?.accessToken;
     const tokenFromHeader = req.header("Authorization")?.replace("Bearer ", "");
-    const token = tokenFromCookie || tokenFromHeader;
+    const tokenFromQuery = req.query?.token;
+    const token = tokenFromCookie || tokenFromHeader || tokenFromQuery;
 
     if (!token) {
       logger.warn("verifyJWT: no token found", {

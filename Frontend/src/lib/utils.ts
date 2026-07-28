@@ -11,7 +11,8 @@ export function formatDuration(sec: number): string {
 }
 
 export function timeAgo(dateStr: string): string {
-  const now = Date.now();
+  const { getServerTimeOffset } = require("@/src/services/api");
+  const now = Date.now() + getServerTimeOffset();
   const then = new Date(dateStr).getTime();
   const seconds = Math.floor((now - then) / 1000);
   if (seconds < 60) return "just now";

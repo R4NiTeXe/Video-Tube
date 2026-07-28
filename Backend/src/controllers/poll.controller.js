@@ -26,19 +26,21 @@ const voteOnPoll = asyncHandler(async (req, res) => {
 
   const userId = req.user._id;
 
-  const result = await Poll.updateOne(
-    {
-      _id: pollId,
-      isActive: true,
-      "options.voters": { $not: { $elemMatch: { $eq: userId } } },
-    },
-    {
-      $push: { [`options.${optionIndex}.voters`]: userId },
-    }
+  const existingVoteIndex = poll.options.findIndex((opt) =>
+    opt.voters.some((v) => v.toString() === userId.toString())
   );
 
-  if (result.modifiedCount === 0) {
-    throw new ApiError(400, "You have already voted on this poll");
+  if (existingVoteIndex === optionIndex) {
+    await Poll.updateOne(
+      { _id: pollId, isActive: true },
+      { $pull: { [`options.${optionIndex}.voters`]: userId } }
+    );
+  } else {
+    const pullEntries = poll.options.map((_, i) => [`options.${i}.voters`, userId]);
+    await Poll.updateOne(
+      { _id: pollId, isActive: true },
+      { $pull: Object.fromEntries(pullEntries), $push: { [`options.${optionIndex}.voters`]: userId } }
+    );
   }
 
   const updatedPoll = await Poll.findById(pollId);

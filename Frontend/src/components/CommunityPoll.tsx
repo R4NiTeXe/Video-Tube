@@ -47,8 +47,8 @@ export default function CommunityPoll({ poll, channelUsername }: { poll: PollDat
         return (
           <button
             key={opt._id}
-            onClick={() => poll.isActive && userVotedIndex === -1 && voteMutation.mutate(i)}
-            disabled={!poll.isActive || userVotedIndex !== -1 || voteMutation.isPending}
+            onClick={() => poll.isActive && voteMutation.mutate(i)}
+            disabled={!poll.isActive || voteMutation.isPending}
             style={{
               width: "100%",
               display: "flex",
@@ -59,7 +59,7 @@ export default function CommunityPoll({ poll, channelUsername }: { poll: PollDat
               borderRadius: "var(--radius-sm)",
               border: `1.5px solid ${isSelected ? "var(--accent)" : "var(--border)"}`,
               backgroundColor: isSelected ? "var(--accent-subtle)" : "var(--bg-primary)",
-              cursor: poll.isActive && userVotedIndex === -1 ? "pointer" : "default",
+              cursor: poll.isActive ? "pointer" : "default",
               position: "relative",
               overflow: "hidden",
               transition: "all 0.2s",

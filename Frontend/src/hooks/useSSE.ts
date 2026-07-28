@@ -35,7 +35,8 @@ export function useSSE() {
       esRef.current = null;
     }
 
-    const url = `${API_BASE_URL}/sse/notifications`;
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    const url = `${API_BASE_URL}/sse/notifications${token ? `?token=${encodeURIComponent(token)}` : ""}`;
     const es = new EventSource(url, { withCredentials: true });
     esRef.current = es;
 
@@ -84,7 +85,9 @@ export function useSSE() {
           if (!isMountedRef.current || !authRef.current) return;
 
           try {
-            const res = await fetch(`${API_BASE_URL}/users/current-user`, {
+            const sessionToken = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+            const sessionUrl = `${API_BASE_URL}/users/current-user${sessionToken ? `?token=${encodeURIComponent(sessionToken)}` : ""}`;
+            const res = await fetch(sessionUrl, {
               credentials: "include",
             });
             if (res.ok && isMountedRef.current) {

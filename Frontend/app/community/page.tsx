@@ -223,7 +223,8 @@ export default function CommunityPage() {
   const createPostMutation = useMutation({
     mutationFn: async () => {
       const formData = new FormData();
-      formData.append("content", newPostContent);
+      const postContent = newPostContent.trim() || (pollQuestion.trim() || "");
+      formData.append("content", postContent);
       if (newPostImage) formData.append("image", newPostImage);
       if (pollQuestion.trim() && pollOptions.filter((o) => o.trim()).length >= 2) {
         formData.append("pollQuestion", pollQuestion.trim());
