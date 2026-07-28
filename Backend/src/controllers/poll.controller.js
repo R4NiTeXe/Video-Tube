@@ -36,10 +36,15 @@ const voteOnPoll = asyncHandler(async (req, res) => {
       { $pull: { [`options.${optionIndex}.voters`]: userId } }
     );
   } else {
-    const pullEntries = poll.options.map((_, i) => [`options.${i}.voters`, userId]);
+    for (let i = 0; i < poll.options.length; i++) {
+      await Poll.updateOne(
+        { _id: pollId, isActive: true },
+        { $pull: { [`options.${i}.voters`]: userId } }
+      );
+    }
     await Poll.updateOne(
       { _id: pollId, isActive: true },
-      { $pull: Object.fromEntries(pullEntries), $push: { [`options.${optionIndex}.voters`]: userId } }
+      { $push: { [`options.${optionIndex}.voters`]: userId } }
     );
   }
 

@@ -15,21 +15,24 @@ if (!isTest) {
   });
 }
 
-const uploadOnCloudinary = async (localFilePath) => {
+const uploadOnCloudinary = async (localFilePath, resourceType = "auto") => {
   if (isTest) {
-    return { 
-      secure_url: "http://test.cloudinary.com/test.jpg", 
+    return {
+      secure_url: "https://res.cloudinary.com/test/image/upload/v1/test.jpg",
       public_id: "test_public_id",
-      url: "http://test.cloudinary.com/test.jpg",
-      duration: 300
+      url: "https://res.cloudinary.com/test/image/upload/v1/test.jpg",
+      duration: 300,
     };
   }
   try {
     if (!localFilePath) return null;
 
-    const response = await cloudinary.uploader.upload(localFilePath, {
-      resource_type: "auto",
-    });
+    const uploadOptions = { resource_type: resourceType };
+    if (resourceType === "video") {
+      uploadOptions.eager = [{ streaming_profile: "auto", format: "m3u8" }];
+      uploadOptions.eager_async = true;
+    }
+    const response = await cloudinary.uploader.upload(localFilePath, uploadOptions);
 
     await fs.promises.unlink(localFilePath);
 
@@ -44,7 +47,7 @@ const uploadOnCloudinary = async (localFilePath) => {
 };
 
 const generateHlsManifest = async (publicId) => {
-  if (isTest) return "http://test.cloudinary.com/test.m3u8";
+  if (isTest) return "https://res.cloudinary.com/test/video/upload/sp_auto/v1/test.m3u8";
   try {
     if (!publicId) return null;
 

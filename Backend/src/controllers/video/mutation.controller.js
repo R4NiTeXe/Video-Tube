@@ -32,7 +32,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Thumbnail is required");
   }
 
-  const videoUpload = await uploadOnCloudinary(videoFileLocalPath);
+  const videoUpload = await uploadOnCloudinary(videoFileLocalPath, "video");
   if (!videoUpload) {
     throw new ApiError(400, "Error while uploading video file");
   }
