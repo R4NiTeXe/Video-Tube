@@ -103,7 +103,7 @@ function DropZone({
       ) : (
         <>
           <p style={{ fontSize: "0.85rem", color: "#f0f0f0", fontWeight: 500, margin: "0 0 0.2rem" }}>
-            {label === "Video" ? "Drag & drop or browse files" : "Drag & drop or browse"}
+            {label === "Video" ? "Choose Video" : "Choose Thumbnail"}
           </p>
           <p style={{ fontSize: "0.72rem", color: "#5c5c62", margin: 0 }}>{hint}</p>
         </>

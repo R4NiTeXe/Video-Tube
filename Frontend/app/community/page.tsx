@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { timeAgo } from "@/src/lib/utils";
 import { PageMeta } from "@/src/components/PageMeta";
+import CommunityPoll from "@/src/components/CommunityPoll";
 
 interface PostOwner {
   _id: string;
@@ -25,6 +26,14 @@ interface CommunityPost {
   isLiked: boolean;
   commentsCount: number;
   createdAt: string;
+  poll?: {
+    _id: string;
+    question: string;
+    options: Array<{ _id: string; text: string; voters: string[] }>;
+    isActive: boolean;
+    endsAt?: string;
+    createdAt: string;
+  };
 }
 
 
@@ -184,6 +193,8 @@ export default function CommunityPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [openComments, setOpenComments] = useState<string | null>(null);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
@@ -214,6 +225,10 @@ export default function CommunityPage() {
       const formData = new FormData();
       formData.append("content", newPostContent);
       if (newPostImage) formData.append("image", newPostImage);
+      if (pollQuestion.trim() && pollOptions.filter((o) => o.trim()).length >= 2) {
+        formData.append("pollQuestion", pollQuestion.trim());
+        pollOptions.filter((o) => o.trim()).forEach((o) => formData.append("pollOptions", o.trim()));
+      }
       const res = await api.post("/community", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -223,6 +238,8 @@ export default function CommunityPage() {
       setNewPostContent("");
       setNewPostImage(null);
       setImagePreview(null);
+      setPollQuestion("");
+      setPollOptions(["", ""]);
       queryClient.invalidateQueries({ queryKey: ["community-posts"] });
     },
   });
@@ -247,8 +264,17 @@ export default function CommunityPage() {
     }
   };
 
+  const handlePollOptionChange = (i: number, val: string) => {
+    const next = [...pollOptions];
+    next[i] = val;
+    setPollOptions(next);
+    if (i === pollOptions.length - 1 && val.trim() && pollOptions.length < 10) {
+      setPollOptions([...next, ""]);
+    }
+  };
+
   const handleCreatePost = () => {
-    if (!newPostContent.trim() && !newPostImage) return;
+    if (!newPostContent.trim() && !newPostImage && !pollQuestion.trim()) return;
     createPostMutation.mutate();
   };
 
@@ -331,6 +357,25 @@ export default function CommunityPage() {
                   </button>
                 </div>
               )}
+              <div style={{ marginTop: "0.75rem", padding: "0.75rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-sm)" }}>
+                <input
+                  placeholder="Ask a question (optional poll)"
+                  value={pollQuestion}
+                  onChange={(e) => setPollQuestion(e.target.value)}
+                  className="input"
+                  style={{ width: "100%", marginBottom: "0.5rem", fontSize: "0.85rem" }}
+                />
+                {pollQuestion.trim() && pollOptions.map((opt, i) => (
+                  <input
+                    key={i}
+                    placeholder={`Option ${i + 1}`}
+                    value={opt}
+                    onChange={(e) => handlePollOptionChange(i, e.target.value)}
+                    className="input"
+                    style={{ width: "100%", marginBottom: "0.3rem", fontSize: "0.85rem" }}
+                  />
+                ))}
+              </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.75rem" }}>
                 <input type="file" ref={fileInputRef} accept="image/*" onChange={handleImageChange} style={{ display: "none" }} />
                 <button
@@ -342,7 +387,7 @@ export default function CommunityPage() {
                 </button>
                 <button
                   onClick={handleCreatePost}
-                  disabled={createPostMutation.isPending || (!newPostContent.trim() && !newPostImage)}
+                  disabled={createPostMutation.isPending || (!newPostContent.trim() && !newPostImage && !pollQuestion.trim())}
                   className="btn btn-primary btn-pill"
                   style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.5rem 1.25rem", fontSize: "0.85rem" }}
                 >
@@ -411,8 +456,12 @@ export default function CommunityPage() {
 
                   {post.image && (
                     <div style={{ marginBottom: "1rem", borderRadius: "var(--radius-md)", overflow: "hidden" }}>
-                      <img src={post.image} alt="Post image" style={{ width: "100%", maxHeight: 400, objectFit: "cover" }} />
+                      <img src={post.image} alt="Post image" style={{ width: "100%", maxHeight: 400, objectFit: "contain", backgroundColor: "#000" }} />
                     </div>
+                  )}
+
+                  {post.poll && (
+                    <CommunityPoll poll={post.poll} channelUsername="" />
                   )}
 
                   <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", paddingTop: "0.5rem", borderTop: "1px solid var(--border)" }}>

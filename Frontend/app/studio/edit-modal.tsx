@@ -14,6 +14,7 @@ export default function EditModal({ videoId, onClose, onSuccess }: { videoId: st
   const [description, setDescription] = useState("");
   const [tagsInput, setTagsInput] = useState("");
   const [category, setCategory] = useState<string>(CATEGORIES[0]);
+  const [visibility, setVisibility] = useState<"public" | "private">("public");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [thumbnailName, setThumbnailName] = useState("");
@@ -49,6 +50,7 @@ export default function EditModal({ videoId, onClose, onSuccess }: { videoId: st
       setDescription(video.description || "");
       setTagsInput((video.tags || []).join(", "));
       setCategory(video.category || CATEGORIES[0]);
+      setVisibility(video.visibility || "public");
     }
   }, [video]);
 
@@ -65,6 +67,7 @@ export default function EditModal({ videoId, onClose, onSuccess }: { videoId: st
       formData.append("description", description.trim());
       formData.append("tags", tagsInput.split(",").map((t) => t.trim()).filter(Boolean).join(","));
       formData.append("category", category);
+      formData.append("visibility", visibility);
 
       const thumbnailFile = thumbnailRef.current?.files?.[0];
       if (thumbnailFile) {
@@ -152,6 +155,28 @@ export default function EditModal({ videoId, onClose, onSuccess }: { videoId: st
               <select className="input select" value={category} onChange={(e) => setCategory(e.target.value)} disabled={saving}>
                 {CATEGORIES.map((c) => (<option key={c} value={c}>{c}</option>))}
               </select>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+              <label className="text-caption" style={{ color: "var(--text-secondary)" }}>Visibility</label>
+              <div style={{ display: "flex", gap: "var(--sp-2)" }}>
+                {(["public", "private"] as const).map((v) => (
+                  <label
+                    key={v}
+                    style={{
+                      flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "var(--sp-1)",
+                      padding: "0.5rem", borderRadius: "var(--radius-md)", cursor: "pointer", fontSize: "0.82rem", fontWeight: 500,
+                      border: `1.5px solid ${visibility === v ? "var(--accent)" : "var(--border)"}`,
+                      backgroundColor: visibility === v ? "var(--accent-subtle)" : "transparent",
+                      color: visibility === v ? "var(--accent)" : "var(--text-secondary)",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    <input type="radio" name="visibility" value={v} checked={visibility === v} onChange={() => setVisibility(v)} style={{ display: "none" }} />
+                    {v === "public" ? "Public" : "Private"}
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div className="upload-zone">

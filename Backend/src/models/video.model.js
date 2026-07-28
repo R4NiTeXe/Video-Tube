@@ -51,7 +51,7 @@ const videoSchema = new Schema(
     },
     visibility:{
         type:String,
-        enum:["public","unlisted","private"],
+        enum:["public","private"],
         default:"public",
     },
     tags:{

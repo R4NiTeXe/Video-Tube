@@ -150,7 +150,7 @@ export const userSchemas = {
 
   updateContentDefaults: {
     body: z.object({
-      defaultVisibility: z.enum(["public", "unlisted", "private"]).optional(),
+      defaultVisibility: z.enum(["public", "private"]).optional(),
       defaultCategory: z.string().optional(),
     }).refine((data) => Object.keys(data).length > 0, {
       message: "At least one field is required",
@@ -382,7 +382,7 @@ export const videoSchemas = {
       description: z.string().max(5000).trim().optional(),
       tags: z.union([z.string(), z.array(z.string())]).optional(),
       category: z.string().max(50).optional(),
-      visibility: z.enum(["public", "unlisted", "private"]).optional(),
+      visibility: z.enum(["public", "private"]).optional(),
     }).refine((data) => Object.keys(data).length > 0, {
       message: "At least one field is required",
     }),
@@ -569,7 +569,7 @@ export const playlistSchemas = {
     body: z.object({
       name: z.string().min(1).max(100).trim(),
       description: z.string().max(500).trim().optional(),
-      visibility: z.enum(["public", "unlisted", "private"]).default("public"),
+      visibility: z.enum(["public", "private"]).default("public"),
     }),
   },
 
@@ -580,7 +580,7 @@ export const playlistSchemas = {
     body: z.object({
       name: z.string().min(1).max(100).trim().optional(),
       description: z.string().max(500).trim().optional(),
-      visibility: z.enum(["public", "unlisted", "private"]).optional(),
+      visibility: z.enum(["public", "private"]).optional(),
     }).refine((data) => Object.keys(data).length > 0, {
       message: "At least one field is required",
     }),

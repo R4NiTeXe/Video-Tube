@@ -173,6 +173,7 @@ export default function ChannelPage() {
       return res.data;
     },
     enabled: isAuthenticated && !!username && activeTab === "community",
+    select: (data) => data?.data,
   });
 
   const aboutData = aboutRes?.data;
@@ -564,7 +565,7 @@ export default function ChannelPage() {
                       <div style={{ display: "flex", justifyContent: "center", padding: "4rem" }}>
                         <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ color: "var(--text-muted)" }}>Loading posts...</motion.div>
                       </div>
-                    ) : !postsRes?.data?.length ? (
+                    ) : !postsRes?.docs?.length ? (
                       <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
                         <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1" opacity="0.4"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                         <p style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--text-primary)", margin: "1rem 0 0.5rem" }}>No community posts yet</p>
@@ -572,7 +573,7 @@ export default function ChannelPage() {
                       </div>
                     ) : (
                       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                        {(Array.isArray(postsRes?.data) ? postsRes.data : []).map((post: ChannelPost, i: number) => (
+                        {(Array.isArray(postsRes?.docs) ? postsRes.docs : []).map((post: ChannelPost, i: number) => (
                           <motion.div
                             key={post._id}
                             initial={{ opacity: 0, y: 12 }}
@@ -592,7 +593,7 @@ export default function ChannelPage() {
                             <p style={{ fontSize: "0.92rem", color: "var(--text-primary)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{post.content}</p>
 
                             {post.image && (
-                              <img src={post.image} alt="Post image" style={{ width: "100%", maxHeight: 400, objectFit: "cover", borderRadius: "var(--radius-md)", marginTop: "0.75rem" }} />
+                              <img src={post.image} alt="Post image" style={{ width: "100%", maxHeight: 400, objectFit: "contain", borderRadius: "var(--radius-md)", marginTop: "0.75rem", backgroundColor: "#000" }} />
                             )}
 
                             {post.poll && (

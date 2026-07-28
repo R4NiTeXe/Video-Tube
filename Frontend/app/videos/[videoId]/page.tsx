@@ -53,6 +53,19 @@ interface Video {
   isSubscribed?: boolean;
   isLiked?: boolean;
   chapters?: Chapter[];
+  hlsUrl?: string;
+  isShort?: boolean;
+}
+
+interface RelatedVideo {
+  _id: string;
+  title: string;
+  thumbnail: string;
+  duration: number;
+  views: number;
+  createdAt: string;
+  likesCount: number;
+  owner: { _id: string; fullName: string; username: string; avatar: string };
 }
 
 interface Comment {
@@ -714,6 +727,14 @@ export default function VideoPlayerPage() {
     enabled: isAuthenticated && !!videoId,
   });
 
+  const { data: relatedRes, isLoading: relatedLoading } = useQuery({
+    queryKey: ["relatedVideos", videoId, isAuthenticated],
+    queryFn: async () => {
+      const res = await api.get(`/videos/${videoId}/related?limit=8`);
+      return res.data;
+    },
+    enabled: isAuthenticated && !!videoId,
+  });
 
 
 
@@ -876,6 +897,8 @@ export default function VideoPlayerPage() {
   const comments: Comment[] = commentsRes?.data?.docs || [];
 
   const isSubscribed = video?.owner?.isSubscribed ?? false;
+  const relatedVideos: RelatedVideo[] = relatedRes?.data ?? [];
+  const isShort = !!video?.isShort;
 
   const videoJsonLd = (() => {
     if (!video) return undefined;
@@ -942,7 +965,7 @@ export default function VideoPlayerPage() {
               style={{
                 position: "relative",
                 width: "100%",
-                paddingTop: "56.25%",
+                paddingTop: isShort ? "177.78%" : "56.25%",
                 backgroundColor: "#000",
                 borderRadius: isFullscreen ? 0 : "var(--radius-lg)",
                 overflow: "hidden",
@@ -953,6 +976,7 @@ export default function VideoPlayerPage() {
                 src={videoSrc || video.videoFile}
                 poster={video.thumbnail}
                 controls
+                crossOrigin="anonymous"
                 style={{
                   position: "absolute",
                   top: 0,
@@ -1141,13 +1165,59 @@ export default function VideoPlayerPage() {
                       </p>
                     )}
                   </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <AnimatePresence>
+            {/* RELATED VIDEOS SIDEBAR */}
+            <div className="video-page-sidebar" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
+              <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "var(--sp-2)" }}>
+                {relatedLoading ? "Related Videos" : `Related Videos`}
+              </h3>
+              {relatedLoading
+                ? Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} style={{ display: "flex", gap: "var(--sp-3)" }}>
+                      <div className="skeleton" style={{ width: 160, height: 90, borderRadius: "var(--radius-sm)", flexShrink: 0 }} />
+                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+                        <div className="skeleton" style={{ width: "90%", height: 14, borderRadius: 4 }} />
+                        <div className="skeleton" style={{ width: "60%", height: 12, borderRadius: 4 }} />
+                      </div>
+                    </div>
+                  ))
+                : relatedVideos.map((rv) => (
+                    <Link
+                      key={rv._id}
+                      href={`/videos/${rv._id}`}
+                      style={{ display: "flex", gap: "var(--sp-3)", textDecoration: "none" }}
+                    >
+                      <div style={{ width: 160, height: 90, borderRadius: "var(--radius-sm)", overflow: "hidden", flexShrink: 0, backgroundColor: "#000", position: "relative" }}>
+                        {rv.thumbnail ? (
+                          <img src={rv.thumbnail} alt={rv.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        ) : null}
+                        {rv.duration ? (
+                          <div style={{ position: "absolute", bottom: 4, right: 4, backgroundColor: "rgba(0,0,0,0.8)", color: "#fff", fontSize: "0.72rem", padding: "1px 5px", borderRadius: 4 }}>
+                            {Math.floor(rv.duration / 60)}:{String(Math.floor(rv.duration % 60)).padStart(2, "0")}
+                          </div>
+                        ) : null}
+                      </div>
+                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "var(--sp-1)", minWidth: 0 }}>
+                        <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)", margin: 0, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                          {rv.title}
+                        </p>
+                        <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>
+                          {rv.owner?.fullName || rv.owner?.username}
+                        </p>
+                        <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>
+                          {formatViews(rv.views)} views
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+            </div>
+          </div>
+
+          <AnimatePresence>
           {showReportModal && <ReportModal videoId={videoId} onClose={() => setShowReportModal(false)} />}
         </AnimatePresence>
       </div>

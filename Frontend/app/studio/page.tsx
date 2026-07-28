@@ -447,7 +447,7 @@ function CreatorStudioContent() {
                           </div>
                           <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: isMobile ? "0.7rem" : "0.78rem" }}>{timeAgo(video.createdAt)}</div>
                           <div style={{ display: "flex", gap: "0.15rem", justifyContent: "center" }}>
-                            <Link href={`/videos/${video._id}`} target="_blank" rel="noopener noreferrer"
+                            <Link href={`/videos/${video._id}`}
                               style={{ width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "var(--radius-sm)", color: "var(--text-muted)", textDecoration: "none", transition: "color 0.15s" }}
                               onMouseEnter={(e) => e.currentTarget.style.color = "var(--accent)"}
                               onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-muted)"}

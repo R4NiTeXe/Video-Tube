@@ -129,7 +129,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
 const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  const { title, description, tags, category } = req.body;
+  const { title, description, tags, category, visibility } = req.body;
 
   if (!mongoose.isValidObjectId(videoId)) {
     throw new ApiError(400, "Invalid video id");
@@ -172,6 +172,14 @@ const updateVideo = asyncHandler(async (req, res) => {
 
   if (category !== undefined) {
     updateFields.category = typeof category === "string" ? category.trim() : "General";
+  }
+
+  if (visibility !== undefined) {
+    const valid = ["public", "private"];
+    if (!valid.includes(visibility)) {
+      throw new ApiError(400, "Visibility must be one of: public, unlisted, private");
+    }
+    updateFields.visibility = visibility;
   }
 
   let oldThumbnail = null;
