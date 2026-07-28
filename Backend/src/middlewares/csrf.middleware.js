@@ -9,8 +9,8 @@ const CSRF_HEADER_NAME = "x-csrf-token";
 // This allows the cookie to be sent cross-origin on POST requests.
 const getCookieOptions = () => ({
   httpOnly: false,
-  secure: true,
-  sameSite: "none",
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   maxAge: 24 * 60 * 60 * 1000,
   path: "/",
 });

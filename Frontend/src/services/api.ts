@@ -127,6 +127,15 @@ api.interceptors.response.use(
           localStorage.setItem("accessToken", newAccessToken);
         }
 
+        const newRefreshToken = refreshRes.data?.data?.refreshToken;
+        if (newRefreshToken && typeof window !== "undefined") {
+          localStorage.setItem("refreshToken", newRefreshToken);
+        }
+
+        if (originalRequest.headers) {
+          delete originalRequest.headers["Authorization"];
+        }
+
         if (DEBUG) console.log("[API] Token refreshed, retrying original request");
         return api(originalRequest);
       } catch (refreshError) {

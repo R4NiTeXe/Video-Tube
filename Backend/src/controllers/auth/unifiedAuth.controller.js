@@ -155,19 +155,19 @@ const registerUnified = asyncHandler(async (req, res) => {
   const avatarLocalPath = req.files?.avatar?.[0]?.path;
   if (avatarLocalPath) {
     uploadedAvatar = await uploadOnCloudinary(avatarLocalPath);
-    if (uploadedAvatar?.url) avatarUrl = uploadedAvatar.url;
+    if (uploadedAvatar?.secure_url || uploadedAvatar?.url) avatarUrl = uploadedAvatar.secure_url || uploadedAvatar.url;
   }
 
   const coverLocalPath = req.files?.coverImage?.[0]?.path;
   if (coverLocalPath) {
     uploadedCover = await uploadOnCloudinary(coverLocalPath);
-    if (!uploadedCover?.url) {
+    if (!uploadedCover?.secure_url && !uploadedCover?.url) {
       if (uploadedAvatar?.public_id) {
         await deleteFromCloudinary(uploadedAvatar.public_id, "image");
       }
       throw new ApiError(400, "Error while uploading cover image");
     }
-    coverUrl = uploadedCover.url;
+    coverUrl = uploadedCover.secure_url || uploadedCover.url;
   }
 
   let user;

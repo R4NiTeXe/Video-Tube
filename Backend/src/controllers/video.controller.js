@@ -242,8 +242,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
   const video = await Video.create({
     title: title.trim(),
     description: description.trim(),
-    videoFile: videoFile.url,
-    thumbnail: thumbnail.url,
+    videoFile: videoFile.secure_url || videoFile.url,
+    thumbnail: thumbnail.secure_url || thumbnail.url,
     duration: videoFile.duration,
     owner: req.user._id,
     tags: parsedTags,
@@ -261,7 +261,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
   }
 
   // Trigger HLS transcoding in background
-  const publicId = getPublicIdFromCloudinaryUrl(videoFile.url);
+  const publicId = getPublicIdFromCloudinaryUrl(videoFile.secure_url || videoFile.url);
   if (publicId) {
     Video.findByIdAndUpdate(video._id, { transcodingStatus: "processing" }).then(() => {
       Promise.all([
@@ -532,15 +532,17 @@ const updateVideo = asyncHandler(async (req, res) => {
   if (thumbnailLocalPath) {
     const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
 
-    if (!thumbnail?.url) {
+    if (!thumbnail?.secure_url && !thumbnail?.url) {
       throw new ApiError(400, "Error while uploading thumbnail");
     }
+
+    const thumbnailUrl = thumbnail.secure_url || thumbnail.url;
 
     if (video.thumbnail) {
       await deleteFromCloudinary(video.thumbnail);
     }
 
-    updateFields.thumbnail = thumbnail.url;
+    updateFields.thumbnail = thumbnailUrl;
   }
 
   if (!Object.keys(updateFields).length) {

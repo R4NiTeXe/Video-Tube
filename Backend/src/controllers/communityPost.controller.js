@@ -32,7 +32,7 @@ const createCommunityPost = asyncHandler(async (req, res) => {
   try {
     post = await CommunityPost.create({
       content: content.trim(),
-      image: imageData?.url || "",
+      image: imageData?.secure_url || imageData?.url || "",
       imagePublicId: imageData?.public_id || "",
       owner: req.user._id,
     });

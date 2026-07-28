@@ -58,6 +58,7 @@ const generateHlsManifest = async (publicId) => {
       resource_type: "video",
       format: "m3u8",
       streaming_profile: "auto",
+      secure: true,
       transformation: [{ flags: "streaming_attachment" }],
     });
 
@@ -86,6 +87,7 @@ const generateVideoQualities = async (publicId) => {
     try {
       const url = cloudinary.url(publicId, {
         resource_type: "video",
+        secure: true,
         transformation: [
           { width: res.width, crop: "scale", quality: "auto" },
         ],

@@ -35,8 +35,8 @@ import { createSession, deactivateSession } from "./session.controller.js";
 
 const getCookieOptions = () => ({
   httpOnly: true,
-  secure: true,
-  sameSite: "none",
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   path: "/",
 });
 
@@ -1518,13 +1518,13 @@ const registerUnified = asyncHandler(async (req, res) => {
   const avatarLocalPath = req.files?.avatar?.[0]?.path;
   if (avatarLocalPath) {
     const uploaded = await uploadOnCloudinary(avatarLocalPath);
-    if (uploaded?.url) avatarUrl = uploaded.url;
+    if (uploaded?.secure_url || uploaded?.url) avatarUrl = uploaded.secure_url || uploaded.url;
   }
 
   const coverLocalPath = req.files?.coverImage?.[0]?.path;
   if (coverLocalPath) {
     const uploaded = await uploadOnCloudinary(coverLocalPath);
-    if (uploaded?.url) coverUrl = uploaded.url;
+    if (uploaded?.secure_url || uploaded?.url) coverUrl = uploaded.secure_url || uploaded.url;
   }
 
   const user = await User.create({

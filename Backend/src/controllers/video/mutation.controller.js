@@ -39,7 +39,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
   const thumbnailUpload = await uploadOnCloudinary(thumbnailLocalPath);
   if (!thumbnailUpload) {
-    await deleteFromCloudinary(videoUpload.url, "video");
+    await deleteFromCloudinary(videoUpload.secure_url || videoUpload.url, "video");
     throw new ApiError(400, "Error while uploading thumbnail");
   }
 
@@ -67,8 +67,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
   if (scheduledAt) {
     scheduledDate = new Date(scheduledAt);
     if (isNaN(scheduledDate.getTime()) || scheduledDate <= new Date()) {
-      await deleteFromCloudinary(videoUpload.url, "video");
-      await deleteFromCloudinary(thumbnailUpload.url, "image");
+      await deleteFromCloudinary(videoUpload.secure_url || videoUpload.url, "video");
+      await deleteFromCloudinary(thumbnailUpload.secure_url || thumbnailUpload.url, "image");
       throw new ApiError(400, "scheduledAt must be a valid future date");
     }
   }
@@ -78,8 +78,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
     video = await Video.create({
       title: title.trim(),
       description: description.trim(),
-      videoFile: videoUpload.url,
-      thumbnail: thumbnailUpload.url,
+      videoFile: videoUpload.secure_url || videoUpload.url,
+      thumbnail: thumbnailUpload.secure_url || thumbnailUpload.url,
       duration: videoUpload.duration,
       owner: req.user._id,
       tags: parsedTags,
@@ -90,20 +90,20 @@ const publishAVideo = asyncHandler(async (req, res) => {
       transcodingStatus: "pending",
     });
   } catch (dbError) {
-    await deleteFromCloudinary(videoUpload.url, "video");
-    await deleteFromCloudinary(thumbnailUpload.url, "image");
+    await deleteFromCloudinary(videoUpload.secure_url || videoUpload.url, "video");
+    await deleteFromCloudinary(thumbnailUpload.secure_url || thumbnailUpload.url, "image");
     throw dbError;
   }
 
   const createdVideo = await Video.findById(video._id).lean();
 
   if (!createdVideo) {
-    await deleteFromCloudinary(videoUpload.url, "video");
-    await deleteFromCloudinary(thumbnailUpload.url, "image");
+    await deleteFromCloudinary(videoUpload.secure_url || videoUpload.url, "video");
+    await deleteFromCloudinary(thumbnailUpload.secure_url || thumbnailUpload.url, "image");
     throw new ApiError(500, "Something went wrong while publishing the video");
   }
 
-  const publicId = getPublicIdFromCloudinaryUrl(videoUpload.url);
+  const publicId = getPublicIdFromCloudinaryUrl(videoUpload.secure_url || videoUpload.url);
   if (publicId) {
     Video.findByIdAndUpdate(video._id, { transcodingStatus: "processing" }).then(() => {
       Promise.all([generateHlsManifest(publicId), generateVideoQualities(publicId)])
@@ -178,11 +178,11 @@ const updateVideo = asyncHandler(async (req, res) => {
   const thumbnailLocalPath = req.file?.path;
   if (thumbnailLocalPath) {
     const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
-    if (!thumbnail?.url) {
+    if (!thumbnail?.secure_url && !thumbnail?.url) {
       throw new ApiError(400, "Error while uploading thumbnail");
     }
     oldThumbnail = video.thumbnail;
-    updateFields.thumbnail = thumbnail.url;
+    updateFields.thumbnail = thumbnail.secure_url || thumbnail.url;
   }
 
   if (!Object.keys(updateFields).length) {
