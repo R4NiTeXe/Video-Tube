@@ -60,7 +60,7 @@ const generateHlsManifest = async (publicId) => {
     const hlsUrl = cloudinary.url(publicId, {
       resource_type: "video",
       format: "m3u8",
-      streaming_profile: "auto",
+      streaming_profile: "full_hd",
       secure: true,
     });
 

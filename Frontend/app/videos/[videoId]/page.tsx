@@ -67,6 +67,11 @@ interface RelatedVideo {
   owner: { _id: string; fullName: string; username: string; avatar: string };
 }
 
+const forceHttps = (url?: string) => {
+  if (!url) return url;
+  return url.replace("http://", "https://");
+};
+
 interface Comment {
   _id: string;
   content: string;
@@ -729,7 +734,14 @@ export default function VideoPlayerPage() {
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [isSwitchingQuality, setIsSwitchingQuality] = useState(false);
+  const [availableQualities, setAvailableQualities] = useState<string[]>([]);
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Refs to store playback state during quality switch
+  const savedTimeRef = useRef<number>(0);
+  const wasPlayingRef = useRef<boolean>(false);
 
   const [commentText, setCommentText] = useState("");
   const [showDescription, setShowDescription] = useState(false);
@@ -792,8 +804,9 @@ export default function VideoPlayerPage() {
   };
 
   const handleTimeUpdate = () => {
-    if (videoRef.current) {
-      setProgress((videoRef.current.currentTime / videoRef.current.duration) * 100);
+    if (videoRef.current && !isSwitchingQuality) {
+      const duration = videoRef.current.duration || 1;
+      setProgress((videoRef.current.currentTime / duration) * 100);
     }
   };
 
@@ -969,12 +982,12 @@ export default function VideoPlayerPage() {
       hlsRef.current = null;
     }
 
-    if (video.qualities && video.qualities.length > 0) {
-      // Use explicit qualities provided by backend, start with original file or auto
-      setVideoSrc(videoQuality === "auto" ? video.videoFile : (video.qualities.find((q: any) => q.resolution === videoQuality)?.url || video.videoFile));
-    } else if (video.hlsUrl && Hls.isSupported()) {
+    if (video.hlsUrl && Hls.isSupported()) {
       setVideoSrc("");
-      const hls = new Hls();
+      const hls = new Hls({
+        maxBufferLength: 30,
+        maxMaxBufferLength: 60,
+      });
       hlsRef.current = hls;
       hls.loadSource(video.hlsUrl);
       hls.attachMedia(videoRef.current);
@@ -984,6 +997,7 @@ export default function VideoPlayerPage() {
           height: l.height,
           name: l.height >= 1080 ? "1080p" : l.height >= 720 ? "720p" : l.height >= 480 ? "480p" : l.height >= 360 ? "360p" : l.height >= 240 ? "240p" : "144p",
         }));
+        setAvailableQualities(levels.map(l => l.name));
         const autoLevel = hls.autoLevelEnabled;
         setVideoQuality(autoLevel ? "auto" : levels[levels.length - 1]?.name || "auto");
       });
@@ -993,10 +1007,12 @@ export default function VideoPlayerPage() {
           hls.destroy();
           hlsRef.current = null;
           setVideoSrc(video.videoFile);
+          if (video.qualities?.length) setAvailableQualities(video.qualities.map((q: any) => q.resolution));
         }
       });
     } else {
       setVideoSrc(video.videoFile);
+      if (video.qualities?.length) setAvailableQualities(video.qualities.map((q: any) => q.resolution));
     }
   }, [videoRes?.data]);
 
@@ -1005,32 +1021,7 @@ export default function VideoPlayerPage() {
     const video = videoRes?.data;
     if (!video || !videoRef.current) return;
 
-    if (video.qualities && video.qualities.length > 0) {
-      // Handle native URL switching for explicit qualities
-      const currentTime = videoRef.current.currentTime;
-      const wasPlaying = !videoRef.current.paused;
-
-      const newUrl = videoQuality === "auto" 
-        ? video.videoFile 
-        : (video.qualities.find((q: any) => q.resolution === videoQuality)?.url || video.videoFile);
-
-      // Only switch if URL is different to avoid unnecessary reloads
-      if (videoSrc !== newUrl) {
-        setVideoSrc(newUrl);
-        
-        const handleLoadedData = () => {
-          if (videoRef.current) {
-            videoRef.current.currentTime = currentTime;
-            if (wasPlaying) {
-              videoRef.current.play().catch(() => {});
-              setIsPlaying(true);
-            }
-            videoRef.current.removeEventListener("loadeddata", handleLoadedData);
-          }
-        };
-        videoRef.current.addEventListener("loadeddata", handleLoadedData);
-      }
-    } else if (hlsRef.current) {
+    if (hlsRef.current) {
       const hls = hlsRef.current;
       if (videoQuality === "auto") {
         hls.currentLevel = -1;
@@ -1040,6 +1031,19 @@ export default function VideoPlayerPage() {
           return l.height === targetHeight;
         });
         if (index >= 0) hls.currentLevel = index;
+      }
+    } else if (video.qualities && video.qualities.length > 0) {
+      // Fallback native URL switching for explicit qualities if HLS fails
+      const newUrl = videoQuality === "auto" 
+        ? video.videoFile 
+        : (video.qualities.find((q: any) => q.resolution === videoQuality)?.url || video.videoFile);
+
+      // Only switch if URL is different
+      if (videoSrc !== newUrl) {
+        savedTimeRef.current = videoRef.current.currentTime;
+        wasPlayingRef.current = !videoRef.current.paused;
+        setIsSwitchingQuality(true);
+        setVideoSrc(newUrl);
       }
     }
   }, [videoQuality]);
@@ -1065,11 +1069,26 @@ export default function VideoPlayerPage() {
   }, [videoRes?.data?.isLiked]);
 
   
-  const video: Video | undefined = videoRes?.data;
+  const video: Video | undefined = videoRes?.data ? {
+    ...videoRes.data,
+    thumbnail: forceHttps(videoRes.data.thumbnail),
+    videoFile: forceHttps(videoRes.data.videoFile),
+    hlsUrl: forceHttps(videoRes.data.hlsUrl),
+    qualities: videoRes.data.qualities?.map((q: any) => ({ ...q, url: forceHttps(q.url) })),
+    owner: {
+      ...videoRes.data.owner,
+      avatar: forceHttps(videoRes.data.owner?.avatar)
+    }
+  } : undefined;
+  
   const comments: Comment[] = commentsRes?.data?.docs || [];
 
   const isSubscribed = video?.isSubscribed ?? false;
-  const relatedVideos: RelatedVideo[] = relatedRes?.data ?? [];
+  const relatedVideos: RelatedVideo[] = relatedRes?.data?.map((rv: any) => ({
+    ...rv,
+    thumbnail: forceHttps(rv.thumbnail),
+    owner: { ...rv.owner, avatar: forceHttps(rv.owner?.avatar) }
+  })) ?? [];
   const isShort = !!video?.isShort;
 
   const videoJsonLd = (() => {
@@ -1151,6 +1170,16 @@ export default function VideoPlayerPage() {
                 poster={video.thumbnail}
                 onTimeUpdate={handleTimeUpdate}
                 onClick={togglePlay}
+                onLoadedData={() => {
+                  if (isSwitchingQuality && videoRef.current) {
+                    videoRef.current.currentTime = savedTimeRef.current;
+                    if (wasPlayingRef.current) {
+                      videoRef.current.play().catch(() => {});
+                      setIsPlaying(true);
+                    }
+                    setIsSwitchingQuality(false);
+                  }
+                }}
                 style={{
                   position: "absolute",
                   top: 0,
@@ -1209,25 +1238,62 @@ export default function VideoPlayerPage() {
                         </span>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                        <select 
-                          value={videoQuality} 
-                          onChange={(e) => setVideoQuality(e.target.value)}
-                          style={{ background: "transparent", color: "white", border: "none", outline: "none", cursor: "pointer", fontWeight: 600, fontSize: "0.9rem" }}
-                        >
-                          <option value="auto" style={{ color: "black" }}>Auto</option>
-                          {video?.qualities && video.qualities.length > 0 ? (
-                            video.qualities.map((q: any) => (
-                              <option key={q.resolution} value={q.resolution} style={{ color: "black" }}>{q.resolution}</option>
-                            ))
-                          ) : (
-                            <>
-                              <option value="1080p" style={{ color: "black" }}>1080p</option>
-                              <option value="720p" style={{ color: "black" }}>720p</option>
-                              <option value="480p" style={{ color: "black" }}>480p</option>
-                              <option value="360p" style={{ color: "black" }}>360p</option>
-                            </>
-                          )}
-                        </select>
+                        <div style={{ position: "relative" }}>
+                          <button 
+                            onClick={() => setShowQualityMenu(!showQualityMenu)} 
+                            style={{ background: "none", border: "none", color: "white", cursor: "pointer", fontWeight: 600, fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.5rem", borderRadius: "4px" }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)"}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+                          >
+                            {videoQuality === "auto" ? "Auto" : videoQuality}
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                          </button>
+                          
+                          <AnimatePresence>
+                            {showQualityMenu && (
+                              <motion.div
+                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                transition={{ duration: 0.15 }}
+                                style={{
+                                  position: "absolute",
+                                  bottom: "100%",
+                                  right: 0,
+                                  marginBottom: "0.5rem",
+                                  backgroundColor: "rgba(28,28,28,0.95)",
+                                  borderRadius: "var(--radius-md)",
+                                  padding: "0.5rem 0",
+                                  minWidth: 120,
+                                  boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+                                  border: "1px solid rgba(255,255,255,0.1)",
+                                  backdropFilter: "blur(10px)",
+                                  zIndex: 50,
+                                }}
+                              >
+                                <button
+                                  onClick={() => { setVideoQuality("auto"); setShowQualityMenu(false); }}
+                                  style={{ width: "100%", textAlign: "left", padding: "0.5rem 1rem", background: videoQuality === "auto" ? "rgba(255,255,255,0.1)" : "transparent", border: "none", color: videoQuality === "auto" ? "var(--accent)" : "white", cursor: "pointer", fontSize: "0.85rem", fontWeight: videoQuality === "auto" ? 600 : 400 }}
+                                  onMouseEnter={(e) => { if (videoQuality !== "auto") e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.05)"; }}
+                                  onMouseLeave={(e) => { if (videoQuality !== "auto") e.currentTarget.style.backgroundColor = "transparent"; }}
+                                >
+                                  Auto
+                                </button>
+                                {availableQualities.map((q: string) => (
+                                  <button
+                                    key={q}
+                                    onClick={() => { setVideoQuality(q); setShowQualityMenu(false); }}
+                                    style={{ width: "100%", textAlign: "left", padding: "0.5rem 1rem", background: videoQuality === q ? "rgba(255,255,255,0.1)" : "transparent", border: "none", color: videoQuality === q ? "var(--accent)" : "white", cursor: "pointer", fontSize: "0.85rem", fontWeight: videoQuality === q ? 600 : 400 }}
+                                    onMouseEnter={(e) => { if (videoQuality !== q) e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.05)"; }}
+                                    onMouseLeave={(e) => { if (videoQuality !== q) e.currentTarget.style.backgroundColor = "transparent"; }}
+                                  >
+                                    {q}
+                                  </button>
+                                ))}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
                         <button onClick={toggleFullscreen} style={{ background: "none", border: "none", color: "white", cursor: "pointer" }}>
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
                         </button>
