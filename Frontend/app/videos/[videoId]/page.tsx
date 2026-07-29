@@ -18,9 +18,7 @@ import {
   PlusIcon,
   CheckIcon,
   ShareIcon,
-
 } from "@/src/components/icons";
-
 
 interface VideoOwner {
   _id: string;
@@ -93,22 +91,11 @@ type FullscreenDocument = Document & {
   webkitExitFullscreen?: () => Promise<void> | void;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const ThumbsUpIcon = ({ filled }: { filled?: boolean }) => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+);
+const ThumbsDownIcon = ({ filled }: { filled?: boolean }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10zM17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"/></svg>
 );
 const FlagIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
@@ -118,12 +105,13 @@ const BookmarkIcon = ({ filled }: { filled?: boolean }) => (
 );
 const ReplyIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
-);const ChevronDownIcon = () => (
+);
+const ChevronDownIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-);const ReportModalIcon = () => (
+);
+const ReportModalIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
 );
-
 
 const SkeletonVideoPage = () => (
   <div style={{ width: "100%", padding: "var(--sp-6) var(--sp-8)", display: "flex", gap: "var(--sp-6)" }}>
@@ -146,7 +134,6 @@ const SkeletonVideoPage = () => (
     </div>
   </div>
 );
-
 
 const REPORT_REASONS = [
   { value: "spam", label: "Spam or misleading" },
@@ -285,7 +272,6 @@ function ReportModal({ videoId, onClose }: { videoId: string; onClose: () => voi
     </motion.div>
   );
 }
-
 
 function PlaylistDropdown({ videoId, ownerId }: { videoId: string; ownerId: string }) {
   const queryClient = useQueryClient();
@@ -462,7 +448,6 @@ function PlaylistDropdown({ videoId, ownerId }: { videoId: string; ownerId: stri
   );
 }
 
-
 function CommentItem({
   comment,
   videoId,
@@ -487,7 +472,42 @@ function CommentItem({
     mutationFn: async () => {
       await api.post(`/likes/toggle/c/${comment._id}`);
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["comments", videoId] });
+      const previousComments = queryClient.getQueryData(["comments", videoId]);
+      queryClient.setQueryData(["comments", videoId], (old: any) => {
+        if (!old?.data) return old;
+        
+        const updateCommentLikes = (commentsList: Comment[]) => {
+          return commentsList.map(c => {
+            if (c._id === comment._id) {
+              const wasLiked = c.isLiked;
+              return {
+                ...c,
+                isLiked: !wasLiked,
+                likesCount: Math.max(0, (c.likesCount || 0) + (wasLiked ? -1 : 1))
+              };
+            }
+            return c;
+          });
+        };
+        
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            docs: updateCommentLikes(old.data.docs || [])
+          }
+        };
+      });
+      return { previousComments };
+    },
+    onError: (err, newLike, context) => {
+      if (context?.previousComments) {
+        queryClient.setQueryData(["comments", videoId], context.previousComments);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["comments", videoId] });
     },
   });
@@ -592,7 +612,13 @@ function CommentItem({
           <button
             onClick={() => likeMutation.mutate()}
             className="btn btn-sm btn-ghost btn-pill"
-            style={{ padding: "0.25rem 0.5rem", color: comment.isLiked ? "var(--accent)" : "var(--text-muted)" }}
+            style={{ padding: "0.25rem 0.5rem", color: comment.isLiked ? "red" : "var(--text-muted)", transition: "color 0.2s" }}
+            onMouseEnter={(e) => {
+              if (!comment.isLiked) e.currentTarget.style.color = "red";
+            }}
+            onMouseLeave={(e) => {
+              if (!comment.isLiked) e.currentTarget.style.color = "var(--text-muted)";
+            }}
           >
             <ThumbsUpIcon filled={!!comment.isLiked} />
             <span style={{ fontSize: "0.8rem", marginLeft: "0.25rem" }}>{formatViews(comment.likesCount || 0)}</span>
@@ -681,7 +707,6 @@ function CommentItem({
   );
 }
 
-
 export default function VideoPlayerPage() {
   const params = useParams();
   const router = useRouter();
@@ -691,15 +716,22 @@ export default function VideoPlayerPage() {
 
   const [theaterMode, _setTheaterMode] = useState(false);
   const [liked, setLiked] = useState(false);
+  const [disliked, setDisliked] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [videoQuality, setVideoQuality] = useState("auto");
   const [videoSrc, setVideoSrc] = useState("");
 
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const [commentText, setCommentText] = useState("");
   const [showDescription, setShowDescription] = useState(false);
-
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -708,6 +740,72 @@ export default function VideoPlayerPage() {
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
   }, [isAuthenticated, authLoading, router]);
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) videoRef.current.pause();
+      else videoRef.current.play();
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setProgress((videoRef.current.currentTime / videoRef.current.duration) * 100);
+    }
+  };
+
+  const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTime = (Number(e.target.value) / 100) * (videoRef.current?.duration || 0);
+    if (videoRef.current) {
+      videoRef.current.currentTime = newTime;
+      setProgress(Number(e.target.value));
+    }
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = Number(e.target.value);
+    setVolume(val);
+    if (videoRef.current) {
+      videoRef.current.volume = val;
+      videoRef.current.muted = val === 0;
+      setIsMuted(val === 0);
+    }
+  };
+
+  const toggleMute = () => {
+    setIsMuted(!isMuted);
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      if (isMuted && volume === 0) setVolume(1);
+    }
+  };
+
+  const toggleFullscreen = () => {
+    const container = containerRef.current;
+    if (!container) return;
+    const fullscreenDocument = document as FullscreenDocument;
+    if (!fullscreenDocument.fullscreenElement && !fullscreenDocument.webkitFullscreenElement) {
+      if (container.requestFullscreen) {
+        container.requestFullscreen();
+      } else if ((container as any).webkitRequestFullscreen) {
+        (container as any).webkitRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (fullscreenDocument.webkitExitFullscreen) {
+        fullscreenDocument.webkitExitFullscreen();
+      }
+    }
+  };
+
+  const handleMouseMove = () => {
+    setShowControls(true);
+    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 2500);
+  };
+
 
   const { data: videoRes, isLoading: videoLoading } = useQuery({
     queryKey: ["video", videoId, isAuthenticated],
@@ -736,23 +834,19 @@ export default function VideoPlayerPage() {
     enabled: isAuthenticated && !!videoId,
   });
 
-
-
-
-
-
   const likeMutation = useMutation({
     mutationFn: async () => {
       await api.post(`/likes/toggle/v/${videoId}`);
     },
     onMutate: () => {
-      const cached = queryClient.getQueryData<{ data: { isLiked: boolean; likesCount: number } }>(["video", videoId]);
+      const cached = queryClient.getQueryData<{ data: { isLiked: boolean; likesCount: number } }>(["video", videoId, isAuthenticated]);
       const wasLiked = cached?.data?.isLiked ?? liked;
       setLiked(!wasLiked);
+      if (!wasLiked) setDisliked(false);
 
-      queryClient.setQueryData(["video", videoId], (old: { data?: { isLiked?: boolean; likesCount?: number } } | undefined) => {
+      queryClient.setQueryData(["video", videoId, isAuthenticated], (old: any) => {
         if (!old?.data) return old;
-        return { ...old, data: { ...old.data, isLiked: !wasLiked, likesCount: (old.data.likesCount ?? 0) + (wasLiked ? -1 : 1) } };
+        return { ...old, data: { ...old.data, isLiked: !wasLiked, likesCount: Math.max(0, (old.data.likesCount ?? 0) + (wasLiked ? -1 : 1)) } };
       });
     },
     onError: () => {
@@ -760,24 +854,33 @@ export default function VideoPlayerPage() {
     },
   });
 
+  const handleDislike = () => {
+    const newDisliked = !disliked;
+    setDisliked(newDisliked);
+    if (newDisliked && liked) {
+      likeMutation.mutate();
+    }
+  };
+
   const subscribeMutation = useMutation({
     mutationFn: async () => {
       if (!video?.owner?._id) return;
       await api.post(`/subscriptions/c/${video.owner._id}`);
     },
     onMutate: () => {
-      const cached = queryClient.getQueryData<{ data: { owner: { isSubscribed: boolean; subscribersCount: number } } }>(["video", videoId]);
-      const wasSubscribed = cached?.data?.owner?.isSubscribed ?? isSubscribed;
-      queryClient.setQueryData(["video", videoId], (old: Record<string, unknown> | undefined) => {
+      const cached = queryClient.getQueryData<{ data: { isSubscribed: boolean; owner: { subscribersCount: number } } }>(["video", videoId, isAuthenticated]);
+      const wasSubscribed = cached?.data?.isSubscribed ?? isSubscribed;
+      
+      queryClient.setQueryData(["video", videoId, isAuthenticated], (old: any) => {
         if (!old?.data) return old;
         return {
           ...old,
           data: {
             ...old.data,
+            isSubscribed: !wasSubscribed,
             owner: {
-              ...(old.data as Record<string, unknown>).owner as Record<string, unknown>,
-              isSubscribed: !wasSubscribed,
-              subscribersCount: (((old.data as Record<string, unknown>).owner as Record<string, unknown>)?.subscribersCount as number || 0) + (wasSubscribed ? -1 : 1),
+              ...old.data.owner,
+              subscribersCount: Math.max(0, (old.data.owner?.subscribersCount || 0) + (wasSubscribed ? -1 : 1)),
             },
           },
         };
@@ -897,7 +1000,7 @@ export default function VideoPlayerPage() {
   const video: Video | undefined = videoRes?.data;
   const comments: Comment[] = commentsRes?.data?.docs || [];
 
-  const isSubscribed = video?.owner?.isSubscribed ?? false;
+  const isSubscribed = video?.isSubscribed ?? false;
   const relatedVideos: RelatedVideo[] = relatedRes?.data ?? [];
   const isShort = !!video?.isShort;
 
@@ -957,12 +1060,14 @@ export default function VideoPlayerPage() {
         {...(videoJsonLd ? { jsonLd: videoJsonLd } : {})}
       />
       <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
-        <div className="video-page-wrap content-padding" style={{ width: "100%", maxWidth: theaterMode ? "100%" : 1280, margin: "0 auto", padding: "1.5rem 1rem" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+        <div className="video-page-wrap content-padding" style={{ width: "100%", maxWidth: theaterMode ? "100%" : 1280, margin: "0 auto", padding: "1.5rem 1rem", display: "flex", flexDirection: "row", gap: "2rem", alignItems: "flex-start" }}>
+          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "1.5rem" }}>
             
             {/* VIDEO PLAYER CONTAINER */}
             <div
               ref={containerRef}
+              onMouseMove={handleMouseMove}
+              onMouseLeave={() => setShowControls(false)}
               style={{
                 position: "relative",
                 width: "100%",
@@ -976,7 +1081,8 @@ export default function VideoPlayerPage() {
                 ref={videoRef}
                 {...(videoSrc ? { src: videoSrc } : {})}
                 poster={video.thumbnail}
-                controls
+                onTimeUpdate={handleTimeUpdate}
+                onClick={togglePlay}
                 style={{
                   position: "absolute",
                   top: 0,
@@ -986,6 +1092,74 @@ export default function VideoPlayerPage() {
                   objectFit: "contain",
                 }}
               />
+              
+              <AnimatePresence>
+                {showControls && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    style={{
+                      position: "absolute",
+                      bottom: 0, left: 0, right: 0,
+                      background: "linear-gradient(to top, rgba(0,0,0,0.8), transparent)",
+                      padding: "1rem",
+                      display: "flex", flexDirection: "column", gap: "0.5rem"
+                    }}
+                  >
+                    <input 
+                      type="range" min="0" max="100" value={progress} 
+                      onChange={handleProgressChange}
+                      style={{ width: "100%", cursor: "pointer", accentColor: "red" }} 
+                    />
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                        <button onClick={togglePlay} style={{ background: "none", border: "none", color: "white", cursor: "pointer" }}>
+                          {isPlaying ? (
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                          ) : (
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                          )}
+                        </button>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <button onClick={toggleMute} style={{ background: "none", border: "none", color: "white", cursor: "pointer" }}>
+                            {isMuted || volume === 0 ? (
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+                            ) : (
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                            )}
+                          </button>
+                          <input 
+                            type="range" min="0" max="1" step="0.05" value={isMuted ? 0 : volume} 
+                            onChange={handleVolumeChange}
+                            style={{ width: 80, cursor: "pointer", accentColor: "white" }} 
+                          />
+                        </div>
+                        <span style={{ color: "white", fontSize: "0.85rem", fontWeight: 500 }}>
+                          {videoRef.current ? `${Math.floor(videoRef.current.currentTime / 60)}:${String(Math.floor(videoRef.current.currentTime % 60)).padStart(2, '0')} / ${Math.floor(videoRef.current.duration / 60 || 0)}:${String(Math.floor(videoRef.current.duration % 60 || 0)).padStart(2, '0')}` : "0:00 / 0:00"}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                        <select 
+                          value={videoQuality} 
+                          onChange={(e) => setVideoQuality(e.target.value)}
+                          style={{ background: "transparent", color: "white", border: "none", outline: "none", cursor: "pointer", fontWeight: 600, fontSize: "0.9rem" }}
+                        >
+                          <option value="auto" style={{ color: "black" }}>Auto</option>
+                          <option value="1080p" style={{ color: "black" }}>1080p</option>
+                          <option value="720p" style={{ color: "black" }}>720p</option>
+                          <option value="480p" style={{ color: "black" }}>480p</option>
+                          <option value="360p" style={{ color: "black" }}>360p</option>
+                        </select>
+                        <button onClick={toggleFullscreen} style={{ background: "none", border: "none", color: "white", cursor: "pointer" }}>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* VIDEO METADATA & ACTIONS */}
@@ -1032,14 +1206,40 @@ export default function VideoPlayerPage() {
 
                 {/* ACTION BUTTONS */}
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                  <button
-                    onClick={() => likeMutation.mutate()}
-                    className="btn btn-secondary btn-pill"
-                    style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.45rem 0.9rem", fontSize: "0.85rem", color: liked ? "var(--accent)" : "var(--text-primary)" }}
-                  >
-                    <ThumbsUpIcon filled={liked} />
-                    <span>{formatViews(video.likesCount || 0)}</span>
-                  </button>
+                  <div style={{ display: "flex", backgroundColor: "var(--card)", borderRadius: "var(--radius-full)", border: "1px solid var(--border)" }}>
+                    <button
+                      onClick={() => likeMutation.mutate()}
+                      className="btn btn-ghost btn-pill"
+                      style={{ 
+                        display: "flex", 
+                        alignItems: "center", 
+                        gap: "0.4rem", 
+                        padding: "0.45rem 0.9rem", 
+                        fontSize: "0.85rem", 
+                        color: liked ? "red" : "var(--text-primary)",
+                        borderTopRightRadius: 0,
+                        borderBottomRightRadius: 0,
+                      }}
+                    >
+                      <ThumbsUpIcon filled={liked} />
+                      <span style={{ fontWeight: 600 }}>{formatViews(video.likesCount || 0)}</span>
+                    </button>
+                    <div style={{ width: 1, backgroundColor: "var(--border)", margin: "0.45rem 0" }} />
+                    <button
+                      onClick={handleDislike}
+                      className="btn btn-ghost btn-pill"
+                      style={{ 
+                        display: "flex", 
+                        alignItems: "center", 
+                        padding: "0.45rem 0.9rem", 
+                        color: disliked ? "red" : "var(--text-primary)",
+                        borderTopLeftRadius: 0,
+                        borderBottomLeftRadius: 0,
+                      }}
+                    >
+                      <ThumbsDownIcon filled={disliked} />
+                    </button>
+                  </div>
 
                   <button
                     onClick={handleShare}
@@ -1165,59 +1365,59 @@ export default function VideoPlayerPage() {
                       </p>
                     )}
                   </div>
-                  )}
-                </div>
+                )}
               </div>
-            </div>
-
-            {/* RELATED VIDEOS SIDEBAR */}
-            <div className="video-page-sidebar" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
-              <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "var(--sp-2)" }}>
-                {relatedLoading ? "Related Videos" : `Related Videos`}
-              </h3>
-              {relatedLoading
-                ? Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} style={{ display: "flex", gap: "var(--sp-3)" }}>
-                      <div className="skeleton" style={{ width: 160, height: 90, borderRadius: "var(--radius-sm)", flexShrink: 0 }} />
-                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                        <div className="skeleton" style={{ width: "90%", height: 14, borderRadius: 4 }} />
-                        <div className="skeleton" style={{ width: "60%", height: 12, borderRadius: 4 }} />
-                      </div>
-                    </div>
-                  ))
-                : relatedVideos.map((rv) => (
-                    <Link
-                      key={rv._id}
-                      href={`/videos/${rv._id}`}
-                      style={{ display: "flex", gap: "var(--sp-3)", textDecoration: "none" }}
-                    >
-                      <div style={{ width: 160, height: 90, borderRadius: "var(--radius-sm)", overflow: "hidden", flexShrink: 0, backgroundColor: "#000", position: "relative" }}>
-                        {rv.thumbnail ? (
-                          <img src={rv.thumbnail} alt={rv.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                        ) : null}
-                        {rv.duration ? (
-                          <div style={{ position: "absolute", bottom: 4, right: 4, backgroundColor: "rgba(0,0,0,0.8)", color: "#fff", fontSize: "0.72rem", padding: "1px 5px", borderRadius: 4 }}>
-                            {Math.floor(rv.duration / 60)}:{String(Math.floor(rv.duration % 60)).padStart(2, "0")}
-                          </div>
-                        ) : null}
-                      </div>
-                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "var(--sp-1)", minWidth: 0 }}>
-                        <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)", margin: 0, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                          {rv.title}
-                        </p>
-                        <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>
-                          {rv.owner?.fullName || rv.owner?.username}
-                        </p>
-                        <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>
-                          {formatViews(rv.views)} views
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
             </div>
           </div>
 
-          <AnimatePresence>
+          {/* RELATED VIDEOS SIDEBAR */}
+          <div className="video-page-sidebar" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)", width: 380, flexShrink: 0 }}>
+            <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "var(--sp-2)" }}>
+              {relatedLoading ? "Related Videos" : `Related Videos`}
+            </h3>
+            {relatedLoading
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} style={{ display: "flex", gap: "var(--sp-3)" }}>
+                    <div className="skeleton" style={{ width: 160, height: 90, borderRadius: "var(--radius-sm)", flexShrink: 0 }} />
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
+                      <div className="skeleton" style={{ width: "90%", height: 14, borderRadius: 4 }} />
+                      <div className="skeleton" style={{ width: "60%", height: 12, borderRadius: 4 }} />
+                    </div>
+                  </div>
+                ))
+              : relatedVideos.map((rv) => (
+                  <Link
+                    key={rv._id}
+                    href={`/videos/${rv._id}`}
+                    style={{ display: "flex", gap: "var(--sp-3)", textDecoration: "none" }}
+                  >
+                    <div style={{ width: 160, height: 90, borderRadius: "var(--radius-sm)", overflow: "hidden", flexShrink: 0, backgroundColor: "#000", position: "relative" }}>
+                      {rv.thumbnail ? (
+                        <img src={rv.thumbnail} alt={rv.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : null}
+                      {rv.duration ? (
+                        <div style={{ position: "absolute", bottom: 4, right: 4, backgroundColor: "rgba(0,0,0,0.8)", color: "#fff", fontSize: "0.72rem", padding: "1px 5px", borderRadius: 4 }}>
+                          {Math.floor(rv.duration / 60)}:{String(Math.floor(rv.duration % 60)).padStart(2, "0")}
+                        </div>
+                      ) : null}
+                    </div>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "var(--sp-1)", minWidth: 0 }}>
+                      <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)", margin: 0, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                        {rv.title}
+                      </p>
+                      <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>
+                        {rv.owner?.fullName || rv.owner?.username}
+                      </p>
+                      <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>
+                        {formatViews(rv.views)} views
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+          </div>
+        </div>
+
+        <AnimatePresence>
           {showReportModal && <ReportModal videoId={videoId} onClose={() => setShowReportModal(false)} />}
         </AnimatePresence>
       </div>

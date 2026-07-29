@@ -247,10 +247,42 @@ export default function CommunityPage() {
 
   const likeMutation = useMutation({
     mutationFn: async (postId: string) => {
-      const res = await api.post(`/community/${postId}/like`);
-      return res.data;
+      await api.post(`/community/${postId}/like`);
     },
-    onSuccess: () => {
+    onMutate: async (postId) => {
+      await queryClient.cancelQueries({ queryKey: ["community-posts"] });
+      const previousPosts = queryClient.getQueryData(["community-posts"]);
+      queryClient.setQueryData(["community-posts"], (old: any) => {
+        if (!old?.pages) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            data: {
+              ...page.data,
+              docs: page.data.docs.map((p: any) => {
+                if (p._id === postId) {
+                  const wasLiked = p.isLiked;
+                  return {
+                    ...p,
+                    isLiked: !wasLiked,
+                    likesCount: Math.max(0, (p.likesCount || 0) + (wasLiked ? -1 : 1))
+                  };
+                }
+                return p;
+              })
+            }
+          }))
+        };
+      });
+      return { previousPosts };
+    },
+    onError: (err, postId, context) => {
+      if (context?.previousPosts) {
+        queryClient.setQueryData(["community-posts"], context.previousPosts);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["community-posts"] });
     },
   });
@@ -474,12 +506,12 @@ export default function CommunityPage() {
                         padding: "0.4rem 0.75rem", borderRadius: 99,
                         border: "none", cursor: "pointer",
                         backgroundColor: post.isLiked ? "var(--accent-subtle)" : "transparent",
-                        color: post.isLiked ? "var(--accent)" : "var(--text-muted)",
+                        color: post.isLiked ? "red" : "var(--text-muted)",
                         fontWeight: 500, fontSize: "0.85rem",
                         transition: "all 0.2s",
                       }}
                       onMouseEnter={(e) => {
-                        if (!post.isLiked) e.currentTarget.style.color = "var(--accent)";
+                        if (!post.isLiked) e.currentTarget.style.color = "red";
                       }}
                       onMouseLeave={(e) => {
                         if (!post.isLiked) e.currentTarget.style.color = "var(--text-muted)";
