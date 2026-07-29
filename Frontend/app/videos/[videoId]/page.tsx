@@ -1358,16 +1358,6 @@ export default function VideoPlayerPage() {
     }
   };
 
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Number(e.target.value);
-    setVolume(val);
-    if (videoRef.current) {
-      videoRef.current.volume = val;
-      videoRef.current.muted = val === 0;
-      setIsMuted(val === 0);
-    }
-  };
-
   const toggleMute = () => {
     setIsMuted(!isMuted);
     if (videoRef.current) {
@@ -1553,7 +1543,7 @@ export default function VideoPlayerPage() {
       hls.attachMedia(videoRef.current);
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        const levels = hls.levels.map((l: { height: number }, _i: number) => ({
+        const levels = hls.levels.map((l) => ({
           height: l.height,
           name:
             l.height >= 1080
@@ -1587,7 +1577,7 @@ export default function VideoPlayerPage() {
             if (video.qualities?.length) {
               setAvailableQualities(
                 Array.from(
-                  new Set(video.qualities.map((q: any) => q.resolution)),
+                  new Set(video.qualities.map((q: { resolution: string; url: string; bitrate?: number }) => q.resolution)),
                 ),
               );
             }
@@ -1598,11 +1588,12 @@ export default function VideoPlayerPage() {
       setVideoSrc(video.videoFile);
       if (video.qualities?.length) {
         setAvailableQualities(
-          Array.from(new Set(video.qualities.map((q: any) => q.resolution))),
+          Array.from(new Set(video.qualities.map((q: { resolution: string; url: string; bitrate?: number }) => q.resolution))),
         );
       }
     }
-  }, [videoRes?.data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoRes?.data?.hlsUrl, videoRes?.data?.videoFile]);
 
   // Handle quality switching
   useEffect(() => {
@@ -1616,7 +1607,7 @@ export default function VideoPlayerPage() {
       if (videoQuality === "auto") {
         hls.currentLevel = -1;
       } else {
-        const index = hls.levels.findIndex((l: { height: number }) => {
+        const index = hls.levels.findIndex((l) => {
           const targetHeight = parseInt(videoQuality);
           return l.height === targetHeight;
         });
@@ -1627,7 +1618,7 @@ export default function VideoPlayerPage() {
       const newUrl =
         videoQuality === "auto"
           ? video.videoFile
-          : video.qualities.find((q: any) => q.resolution === videoQuality)
+          : video.qualities.find((q: { resolution: string; url: string; bitrate?: number }) => q.resolution === videoQuality)
               ?.url || video.videoFile;
 
       // Only switch if URL is different
@@ -1638,6 +1629,7 @@ export default function VideoPlayerPage() {
         setVideoSrc(newUrl);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoQuality, videoRes?.data?.hlsUrl, videoRes?.data?.videoFile]);
 
   useEffect(() => {
@@ -1669,7 +1661,7 @@ export default function VideoPlayerPage() {
         thumbnail: forceHttps(videoRes.data.thumbnail),
         videoFile: forceHttps(videoRes.data.videoFile),
         hlsUrl: forceHttps(videoRes.data.hlsUrl),
-        qualities: videoRes.data.qualities?.map((q: any) => ({
+        qualities: videoRes.data.qualities?.map((q: { resolution: string; url: string; bitrate?: number }) => ({
           ...q,
           url: forceHttps(q.url),
         })),
@@ -1823,12 +1815,11 @@ export default function VideoPlayerPage() {
       />
       <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
         <div
-          className="video-page-wrap"
+          className="video-page-wrap video-page-container"
           style={{
             width: "100%",
             maxWidth: theaterMode ? "100%" : 1280,
             margin: "0 auto",
-            padding: "1.5rem 1rem",
           }}
         >
           <div
@@ -1843,6 +1834,7 @@ export default function VideoPlayerPage() {
             {/* VIDEO PLAYER CONTAINER */}
             <div
               ref={containerRef}
+              className="video-player-box"
               onMouseMove={handleMouseMove}
               onMouseLeave={() => setShowControls(false)}
               style={{
@@ -1876,10 +1868,12 @@ export default function VideoPlayerPage() {
                   left: 0,
                   width: "100%",
                   height: "100%",
-                  objectFit: "contain",
+                  objectFit: isShort ? "cover" : "contain",
+                  cursor: "pointer",
                 }}
               />
 
+              {/* VIDEO CONTROLS OVERLAY */}
               <AnimatePresence>
                 {showControls && (
                   <motion.div
@@ -1898,8 +1892,10 @@ export default function VideoPlayerPage() {
                       display: "flex",
                       flexDirection: "column",
                       gap: "0.5rem",
+                      zIndex: 10,
                     }}
                   >
+                    {/* Progress Bar */}
                     <input
                       type="range"
                       min="0"
@@ -1909,9 +1905,10 @@ export default function VideoPlayerPage() {
                       style={{
                         width: "100%",
                         cursor: "pointer",
-                        accentColor: "red",
+                        accentColor: "var(--accent)",
                       }}
                     />
+                    {/* Controls Row */}
                     <div
                       style={{
                         display: "flex",
@@ -1936,22 +1933,12 @@ export default function VideoPlayerPage() {
                           }}
                         >
                           {isPlaying ? (
-                            <svg
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
-                              fill="currentColor"
-                            >
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                               <rect x="6" y="4" width="4" height="16" />
                               <rect x="14" y="4" width="4" height="16" />
                             </svg>
                           ) : (
-                            <svg
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
-                              fill="currentColor"
-                            >
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                               <polygon points="5 3 19 12 5 21 5 3" />
                             </svg>
                           )}
@@ -1973,27 +1960,13 @@ export default function VideoPlayerPage() {
                             }}
                           >
                             {isMuted || volume === 0 ? (
-                              <svg
-                                width="20"
-                                height="20"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                              >
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                                 <line x1="23" y1="9" x2="17" y2="15" />
                                 <line x1="17" y1="9" x2="23" y2="15" />
                               </svg>
                             ) : (
-                              <svg
-                                width="20"
-                                height="20"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                              >
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                                 <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
                               </svg>
@@ -2005,12 +1978,12 @@ export default function VideoPlayerPage() {
                             max="1"
                             step="0.05"
                             value={isMuted ? 0 : volume}
-                            onChange={handleVolumeChange}
-                            style={{
-                              width: 80,
-                              cursor: "pointer",
-                              accentColor: "white",
+                            onChange={(e) => {
+                              const newVol = parseFloat(e.target.value);
+                              setVolume(newVol);
+                              if (newVol > 0 && isMuted) setIsMuted(false);
                             }}
+                            style={{ width: 80, cursor: "pointer" }}
                           />
                         </div>
                         <span
@@ -2021,55 +1994,22 @@ export default function VideoPlayerPage() {
                           }}
                         >
                           {videoRef.current
-                            ? `${Math.floor(videoRef.current.currentTime / 60)}:${String(Math.floor(videoRef.current.currentTime % 60)).padStart(2, "0")} / ${Math.floor(videoRef.current.duration / 60 || 0)}:${String(Math.floor(videoRef.current.duration % 60 || 0)).padStart(2, "0")}`
+                            ? `${Math.floor(videoRef.current.currentTime / 60)}:${Math.floor(videoRef.current.currentTime % 60).toString().padStart(2, "0")} / ${Math.floor(videoRef.current.duration / 60) || 0}:${Math.floor((videoRef.current.duration || 0) % 60).toString().padStart(2, "0")}`
                             : "0:00 / 0:00"}
                         </span>
                       </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "1rem",
-                        }}
-                      >
+                      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
                         <div style={{ position: "relative" }}>
-                          <button
-                            onClick={() => setShowQualityMenu(!showQualityMenu)}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: "white",
-                              cursor: "pointer",
-                              fontWeight: 600,
-                              fontSize: "0.85rem",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "0.25rem",
-                              padding: "0.25rem 0.5rem",
-                              borderRadius: "4px",
-                            }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.backgroundColor =
-                                "rgba(255,255,255,0.1)")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.backgroundColor =
-                                "transparent")
-                            }
+                          <button 
+                            onClick={() => setShowQualityMenu(!showQualityMenu)} 
+                            style={{ background: "none", border: "none", color: "white", cursor: "pointer", fontWeight: 600, fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.5rem", borderRadius: "4px" }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)"}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                           >
                             {videoQuality === "auto" ? "Auto" : videoQuality}
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                           </button>
-
+                          
                           <AnimatePresence>
                             {showQualityMenu && (
                               <motion.div
@@ -2093,76 +2033,20 @@ export default function VideoPlayerPage() {
                                 }}
                               >
                                 <button
-                                  onClick={() => {
-                                    setVideoQuality("auto");
-                                    setShowQualityMenu(false);
-                                  }}
-                                  style={{
-                                    width: "100%",
-                                    textAlign: "left",
-                                    padding: "0.5rem 1rem",
-                                    background:
-                                      videoQuality === "auto"
-                                        ? "rgba(255,255,255,0.1)"
-                                        : "transparent",
-                                    border: "none",
-                                    color:
-                                      videoQuality === "auto"
-                                        ? "var(--accent)"
-                                        : "white",
-                                    cursor: "pointer",
-                                    fontSize: "0.85rem",
-                                    fontWeight:
-                                      videoQuality === "auto" ? 600 : 400,
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    if (videoQuality !== "auto")
-                                      e.currentTarget.style.backgroundColor =
-                                        "rgba(255,255,255,0.05)";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    if (videoQuality !== "auto")
-                                      e.currentTarget.style.backgroundColor =
-                                        "transparent";
-                                  }}
+                                  onClick={() => { setVideoQuality("auto"); setShowQualityMenu(false); }}
+                                  style={{ width: "100%", textAlign: "left", padding: "0.5rem 1rem", background: videoQuality === "auto" ? "rgba(255,255,255,0.1)" : "transparent", border: "none", color: videoQuality === "auto" ? "var(--accent)" : "white", cursor: "pointer", fontSize: "0.85rem", fontWeight: videoQuality === "auto" ? 600 : 400 }}
+                                  onMouseEnter={(e) => { if (videoQuality !== "auto") e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.05)"; }}
+                                  onMouseLeave={(e) => { if (videoQuality !== "auto") e.currentTarget.style.backgroundColor = "transparent"; }}
                                 >
                                   Auto
                                 </button>
                                 {availableQualities.map((q: string) => (
                                   <button
                                     key={q}
-                                    onClick={() => {
-                                      setVideoQuality(q);
-                                      setShowQualityMenu(false);
-                                    }}
-                                    style={{
-                                      width: "100%",
-                                      textAlign: "left",
-                                      padding: "0.5rem 1rem",
-                                      background:
-                                        videoQuality === q
-                                          ? "rgba(255,255,255,0.1)"
-                                          : "transparent",
-                                      border: "none",
-                                      color:
-                                        videoQuality === q
-                                          ? "var(--accent)"
-                                          : "white",
-                                      cursor: "pointer",
-                                      fontSize: "0.85rem",
-                                      fontWeight:
-                                        videoQuality === q ? 600 : 400,
-                                    }}
-                                    onMouseEnter={(e) => {
-                                      if (videoQuality !== q)
-                                        e.currentTarget.style.backgroundColor =
-                                          "rgba(255,255,255,0.05)";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      if (videoQuality !== q)
-                                        e.currentTarget.style.backgroundColor =
-                                          "transparent";
-                                    }}
+                                    onClick={() => { setVideoQuality(q); setShowQualityMenu(false); }}
+                                    style={{ width: "100%", textAlign: "left", padding: "0.5rem 1rem", background: videoQuality === q ? "rgba(255,255,255,0.1)" : "transparent", border: "none", color: videoQuality === q ? "var(--accent)" : "white", cursor: "pointer", fontSize: "0.85rem", fontWeight: videoQuality === q ? 600 : 400 }}
+                                    onMouseEnter={(e) => { if (videoQuality !== q) e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.05)"; }}
+                                    onMouseLeave={(e) => { if (videoQuality !== q) e.currentTarget.style.backgroundColor = "transparent"; }}
                                   >
                                     {q}
                                   </button>
@@ -2171,25 +2055,8 @@ export default function VideoPlayerPage() {
                             )}
                           </AnimatePresence>
                         </div>
-                        <button
-                          onClick={toggleFullscreen}
-                          style={{
-                            background: "none",
-                            border: "none",
-                            color: "white",
-                            cursor: "pointer",
-                          }}
-                        >
-                          <svg
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                          >
-                            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-                          </svg>
+                        <button onClick={toggleFullscreen} style={{ background: "none", border: "none", color: "white", cursor: "pointer" }}>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
                         </button>
                       </div>
                     </div>
@@ -2198,11 +2065,11 @@ export default function VideoPlayerPage() {
               </AnimatePresence>
             </div>
 
-            {/* VIDEO METADATA & ACTIONS */}
-            <div>
+            {/* METADATA */}
+            <div className="mobile-pad">
               <h1
                 style={{
-                  fontSize: "1.35rem",
+                  fontSize: "1.25rem",
                   fontWeight: 700,
                   color: "var(--text-primary)",
                   marginBottom: "0.75rem",
@@ -2457,7 +2324,7 @@ export default function VideoPlayerPage() {
               </div>
 
               {/* COMMENTS SECTION */}
-              <div style={{ marginTop: "2rem" }}>
+              <div className="mobile-pad" style={{ marginTop: "2rem" }}>
                 <h3
                   style={{
                     fontSize: "1.1rem",
