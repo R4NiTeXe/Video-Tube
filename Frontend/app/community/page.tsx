@@ -277,7 +277,7 @@ export default function CommunityPage() {
       });
       return { previousPosts };
     },
-    onError: (err, postId, context) => {
+    onError: (_err, _postId, context) => {
       if (context?.previousPosts) {
         queryClient.setQueryData(["community-posts"], context.previousPosts);
       }

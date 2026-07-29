@@ -502,7 +502,7 @@ function CommentItem({
       });
       return { previousComments };
     },
-    onError: (err, newLike, context) => {
+    onError: (_err, _newLike, context) => {
       if (context?.previousComments) {
         queryClient.setQueryData(["comments", videoId], context.previousComments);
       }
