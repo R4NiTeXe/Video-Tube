@@ -52,6 +52,7 @@ interface Video {
   isLiked?: boolean;
   chapters?: Chapter[];
   hlsUrl?: string;
+  qualities?: { resolution: string; url: string; bitrate?: number }[];
   isShort?: boolean;
 }
 
@@ -741,6 +742,47 @@ export default function VideoPlayerPage() {
     if (!authLoading && !isAuthenticated) router.push("/login");
   }, [isAuthenticated, authLoading, router]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      
+      switch (e.key.toLowerCase()) {
+        case " ":
+        case "k":
+          e.preventDefault();
+          if (videoRef.current) {
+            if (videoRef.current.paused) videoRef.current.play();
+            else videoRef.current.pause();
+            setIsPlaying(!videoRef.current.paused);
+          }
+          break;
+        case "f":
+          e.preventDefault();
+          toggleFullscreen();
+          break;
+        case "m":
+          e.preventDefault();
+          if (videoRef.current) {
+            videoRef.current.muted = !videoRef.current.muted;
+            setIsMuted(videoRef.current.muted);
+          }
+          break;
+        case "arrowright":
+        case "l":
+          e.preventDefault();
+          if (videoRef.current) videoRef.current.currentTime = Math.min(videoRef.current.duration, videoRef.current.currentTime + 10);
+          break;
+        case "arrowleft":
+        case "j":
+          e.preventDefault();
+          if (videoRef.current) videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 10);
+          break;
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const togglePlay = () => {
     if (videoRef.current) {
       if (isPlaying) videoRef.current.pause();
@@ -920,7 +962,6 @@ export default function VideoPlayerPage() {
 
   useEffect(() => {
     if (!videoRes?.data || !videoRef.current) return;
-
     const video = videoRes.data;
 
     if (hlsRef.current) {
@@ -928,7 +969,10 @@ export default function VideoPlayerPage() {
       hlsRef.current = null;
     }
 
-    if (video.hlsUrl && Hls.isSupported()) {
+    if (video.qualities && video.qualities.length > 0) {
+      // Use explicit qualities provided by backend, start with original file or auto
+      setVideoSrc(videoQuality === "auto" ? video.videoFile : (video.qualities.find((q: any) => q.resolution === videoQuality)?.url || video.videoFile));
+    } else if (video.hlsUrl && Hls.isSupported()) {
       setVideoSrc("");
       const hls = new Hls();
       hlsRef.current = hls;
@@ -944,14 +988,6 @@ export default function VideoPlayerPage() {
         setVideoQuality(autoLevel ? "auto" : levels[levels.length - 1]?.name || "auto");
       });
 
-      hls.on(Hls.Events.LEVEL_SWITCHED, (_event: unknown, data: { level: number }) => {
-        const level = hls.levels[data.level];
-        if (level) {
-          const name = level.height >= 1080 ? "1080p" : level.height >= 720 ? "720p" : level.height >= 480 ? "480p" : level.height >= 360 ? "360p" : level.height >= 240 ? "240p" : "144p";
-          setVideoQuality(name);
-        }
-      });
-
       hls.on(Hls.Events.ERROR, (_event: unknown, data: { type: string; fatal: boolean }) => {
         if (data.fatal) {
           hls.destroy();
@@ -964,15 +1000,47 @@ export default function VideoPlayerPage() {
     }
   }, [videoRes?.data]);
 
+  // Handle quality switching
   useEffect(() => {
-    if (!hlsRef.current || videoQuality === "auto") return;
-    const hls = hlsRef.current;
-    const index = hls.levels.findIndex((l: { height: number }) => {
-      const targetHeight = parseInt(videoQuality);
-      return l.height === targetHeight;
-    });
-    if (index >= 0) {
-      hls.currentLevel = index;
+    const video = videoRes?.data;
+    if (!video || !videoRef.current) return;
+
+    if (video.qualities && video.qualities.length > 0) {
+      // Handle native URL switching for explicit qualities
+      const currentTime = videoRef.current.currentTime;
+      const wasPlaying = !videoRef.current.paused;
+
+      const newUrl = videoQuality === "auto" 
+        ? video.videoFile 
+        : (video.qualities.find((q: any) => q.resolution === videoQuality)?.url || video.videoFile);
+
+      // Only switch if URL is different to avoid unnecessary reloads
+      if (videoSrc !== newUrl) {
+        setVideoSrc(newUrl);
+        
+        const handleLoadedData = () => {
+          if (videoRef.current) {
+            videoRef.current.currentTime = currentTime;
+            if (wasPlaying) {
+              videoRef.current.play().catch(() => {});
+              setIsPlaying(true);
+            }
+            videoRef.current.removeEventListener("loadeddata", handleLoadedData);
+          }
+        };
+        videoRef.current.addEventListener("loadeddata", handleLoadedData);
+      }
+    } else if (hlsRef.current) {
+      const hls = hlsRef.current;
+      if (videoQuality === "auto") {
+        hls.currentLevel = -1;
+      } else {
+        const index = hls.levels.findIndex((l: { height: number }) => {
+          const targetHeight = parseInt(videoQuality);
+          return l.height === targetHeight;
+        });
+        if (index >= 0) hls.currentLevel = index;
+      }
     }
   }, [videoQuality]);
 
@@ -1060,7 +1128,7 @@ export default function VideoPlayerPage() {
         {...(videoJsonLd ? { jsonLd: videoJsonLd } : {})}
       />
       <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
-        <div className="video-page-wrap content-padding" style={{ width: "100%", maxWidth: theaterMode ? "100%" : 1280, margin: "0 auto", padding: "1.5rem 1rem", display: "flex", flexDirection: "row", gap: "2rem", alignItems: "flex-start" }}>
+        <div className="video-page-wrap" style={{ width: "100%", maxWidth: theaterMode ? "100%" : 1280, margin: "0 auto", padding: "1.5rem 1rem" }}>
           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "1.5rem" }}>
             
             {/* VIDEO PLAYER CONTAINER */}
@@ -1147,10 +1215,18 @@ export default function VideoPlayerPage() {
                           style={{ background: "transparent", color: "white", border: "none", outline: "none", cursor: "pointer", fontWeight: 600, fontSize: "0.9rem" }}
                         >
                           <option value="auto" style={{ color: "black" }}>Auto</option>
-                          <option value="1080p" style={{ color: "black" }}>1080p</option>
-                          <option value="720p" style={{ color: "black" }}>720p</option>
-                          <option value="480p" style={{ color: "black" }}>480p</option>
-                          <option value="360p" style={{ color: "black" }}>360p</option>
+                          {video?.qualities && video.qualities.length > 0 ? (
+                            video.qualities.map((q: any) => (
+                              <option key={q.resolution} value={q.resolution} style={{ color: "black" }}>{q.resolution}</option>
+                            ))
+                          ) : (
+                            <>
+                              <option value="1080p" style={{ color: "black" }}>1080p</option>
+                              <option value="720p" style={{ color: "black" }}>720p</option>
+                              <option value="480p" style={{ color: "black" }}>480p</option>
+                              <option value="360p" style={{ color: "black" }}>360p</option>
+                            </>
+                          )}
                         </select>
                         <button onClick={toggleFullscreen} style={{ background: "none", border: "none", color: "white", cursor: "pointer" }}>
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
@@ -1371,7 +1447,7 @@ export default function VideoPlayerPage() {
           </div>
 
           {/* RELATED VIDEOS SIDEBAR */}
-          <div className="video-page-sidebar" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)", width: 380, flexShrink: 0 }}>
+          <div className="video-page-sidebar" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
             <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "var(--sp-2)" }}>
               {relatedLoading ? "Related Videos" : `Related Videos`}
             </h3>
