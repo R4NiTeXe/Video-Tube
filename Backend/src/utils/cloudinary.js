@@ -32,7 +32,10 @@ const uploadOnCloudinary = async (localFilePath, resourceType = "auto") => {
       uploadOptions.eager = [{ streaming_profile: "auto", format: "m3u8" }];
       uploadOptions.eager_async = true;
     }
-    const response = await cloudinary.uploader.upload(localFilePath, uploadOptions);
+    const response = await cloudinary.uploader.upload(
+      localFilePath,
+      uploadOptions
+    );
 
     await fs.promises.unlink(localFilePath);
 
@@ -47,7 +50,8 @@ const uploadOnCloudinary = async (localFilePath, resourceType = "auto") => {
 };
 
 const generateHlsManifest = async (publicId) => {
-  if (isTest) return "https://res.cloudinary.com/test/video/upload/sp_auto/v1/test.m3u8";
+  if (isTest)
+    return "https://res.cloudinary.com/test/video/upload/sp_auto/v1/test.m3u8";
   try {
     if (!publicId) return null;
 
@@ -81,7 +85,14 @@ const resolutions = [
 ];
 
 const generateVideoQualities = async (publicId) => {
-  if (isTest) return [{ resolution: "720p", url: "http://test.cloudinary.com/test.mp4", bitrate: 2500 }];
+  if (isTest)
+    return [
+      {
+        resolution: "720p",
+        url: "http://test.cloudinary.com/test.mp4",
+        bitrate: 2500,
+      },
+    ];
 
   const qualities = [];
 
@@ -90,9 +101,7 @@ const generateVideoQualities = async (publicId) => {
       const url = cloudinary.url(publicId, {
         resource_type: "video",
         secure: true,
-        transformation: [
-          { width: res.width, crop: "scale", quality: "auto" },
-        ],
+        transformation: [{ width: res.width, crop: "scale", quality: "auto" }],
       });
       qualities.push({
         resolution: res.resolution,
@@ -100,7 +109,9 @@ const generateVideoQualities = async (publicId) => {
         bitrate: res.bitrate,
       });
     } catch (error) {
-      logger.error(`Error generating quality ${res.resolution}`, { error: error.message });
+      logger.error(`Error generating quality ${res.resolution}`, {
+        error: error.message,
+      });
     }
   }
 
@@ -155,7 +166,9 @@ const checkCloudinaryConnection = async () => {
     const result = await cloudinary.api.ping();
     return { connected: result.status === "ok", status: result.status };
   } catch (error) {
-    logger.error("Cloudinary connection check failed", { error: error.message });
+    logger.error("Cloudinary connection check failed", {
+      error: error.message,
+    });
     return { connected: false, status: error.message };
   }
 };

@@ -7,7 +7,11 @@ const voteOnPoll = asyncHandler(async (req, res) => {
   const { pollId } = req.params;
   const { optionIndex } = req.body;
 
-  if (optionIndex === undefined || optionIndex === null || typeof optionIndex !== "number") {
+  if (
+    optionIndex === undefined ||
+    optionIndex === null ||
+    typeof optionIndex !== "number"
+  ) {
     throw new ApiError(400, "Option index is required");
   }
 
@@ -50,7 +54,9 @@ const voteOnPoll = asyncHandler(async (req, res) => {
 
   const updatedPoll = await Poll.findById(pollId);
 
-  return res.status(200).json(new ApiResponse(200, updatedPoll, "Vote recorded"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedPoll, "Vote recorded"));
 });
 
 export { voteOnPoll };

@@ -34,21 +34,21 @@ export const getThemeConfig = (themeType) => {
         gradient: "linear-gradient(135deg, #16a34a 0%, #22c55e 100%)",
         border: "#86efac",
         bgLight: "#f0fdf4",
-        textAlert: "#166534"
+        textAlert: "#166534",
       };
     case "warning":
       return {
         gradient: "linear-gradient(135deg, #ca8a04 0%, #eab308 100%)",
         border: "#fef08a",
         bgLight: "#fefce8",
-        textAlert: "#854d0e"
+        textAlert: "#854d0e",
       };
     case "destructive":
       return {
         gradient: "linear-gradient(135deg, #dc2626 0%, #ef4444 100%)",
         border: "#fecaca",
         bgLight: "#fef2f2",
-        textAlert: "#991b1b"
+        textAlert: "#991b1b",
       };
     case "standard":
     default:
@@ -56,12 +56,17 @@ export const getThemeConfig = (themeType) => {
         gradient: "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)",
         border: "#c7d2fe",
         bgLight: "#eef2ff",
-        textAlert: "#3730a3"
+        textAlert: "#3730a3",
       };
   }
 };
 
-export const otpEmailTemplate = (otp, purpose, userName, locationInfo = null) => {
+export const otpEmailTemplate = (
+  otp,
+  purpose,
+  userName,
+  locationInfo = null
+) => {
   const purposeLabels = {
     registration: "Account Registration",
     "forgot-password": "Password Reset",
@@ -77,15 +82,19 @@ export const otpEmailTemplate = (otp, purpose, userName, locationInfo = null) =>
 
   const label = purposeLabels[purpose] || "Verification";
   const expiryMinutes = 10;
-  
-  const theme = getThemeConfig(purpose === "delete-account" ? "destructive" : "standard");
 
-  const locationHtml = locationInfo ? `
+  const theme = getThemeConfig(
+    purpose === "delete-account" ? "destructive" : "standard"
+  );
+
+  const locationHtml = locationInfo
+    ? `
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 20px 0; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
-      <tr><td style="padding: 12px 16px;"><strong style="color:#374151; font-size: 13px;">Location:</strong> <span style="color:#6b7280; font-size: 13px;">${locationInfo.location || 'Unknown'}</span></td></tr>
-      <tr><td style="padding: 12px 16px; border-top: 1px solid #e5e7eb;"><strong style="color:#374151; font-size: 13px;">Device:</strong> <span style="color:#6b7280; font-size: 13px;">${locationInfo.device || 'Unknown'}</span></td></tr>
+      <tr><td style="padding: 12px 16px;"><strong style="color:#374151; font-size: 13px;">Location:</strong> <span style="color:#6b7280; font-size: 13px;">${locationInfo.location || "Unknown"}</span></td></tr>
+      <tr><td style="padding: 12px 16px; border-top: 1px solid #e5e7eb;"><strong style="color:#374151; font-size: 13px;">Device:</strong> <span style="color:#6b7280; font-size: 13px;">${locationInfo.device || "Unknown"}</span></td></tr>
     </table>
-  ` : "";
+  `
+    : "";
 
   return `
 <!DOCTYPE html>
@@ -170,9 +179,18 @@ export const otpEmailTemplate = (otp, purpose, userName, locationInfo = null) =>
   `;
 };
 
-export const notificationEmailTemplate = ({ title, message, userName, actionUrl, actionText, details = [], warning = false, themeType = "standard" }) => {
+export const notificationEmailTemplate = ({
+  title,
+  message,
+  userName,
+  actionUrl,
+  actionText,
+  details = [],
+  warning = false,
+  themeType = "standard",
+}) => {
   const theme = getThemeConfig(themeType);
-  
+
   return `
 <!DOCTYPE html>
 <html>
@@ -203,20 +221,30 @@ export const notificationEmailTemplate = ({ title, message, userName, actionUrl,
                 ${message}
               </p>
 
-              ${details.length > 0 ? `
+              ${
+                details.length > 0
+                  ? `
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 24px 0; border: 1px solid #e5e7eb; border-radius: 8px;">
-                ${details.map((d, index) => `
+                ${details
+                  .map(
+                    (d, index) => `
                 <tr>
-                  <td style="padding: 12px 16px; ${index < details.length - 1 ? 'border-bottom: 1px solid #e5e7eb;' : ''}">
+                  <td style="padding: 12px 16px; ${index < details.length - 1 ? "border-bottom: 1px solid #e5e7eb;" : ""}">
                     <strong style="color: #374151; font-size: 13px;">${d.label}:</strong>
                     <span style="color: #6b7280; font-size: 13px; margin-left: 8px;">${d.value}</span>
                   </td>
                 </tr>
-                `).join("")}
+                `
+                  )
+                  .join("")}
               </table>
-              ` : ""}
+              `
+                  : ""
+              }
 
-              ${actionUrl && actionText ? `
+              ${
+                actionUrl && actionText
+                  ? `
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top: 16px;">
                 <tr>
                   <td align="center">
@@ -224,15 +252,21 @@ export const notificationEmailTemplate = ({ title, message, userName, actionUrl,
                   </td>
                 </tr>
               </table>
-              ` : ""}
+              `
+                  : ""
+              }
 
-              ${warning ? `
+              ${
+                warning
+                  ? `
               <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-top: 24px;">
                 <p style="margin: 0; font-size: 13px; color: #991b1b; line-height: 1.6;">
                   <strong>⚠ Security Alert:</strong> If you did not perform this action, please secure your account immediately by changing your password and contacting support.
                 </p>
               </div>
-              ` : ""}
+              `
+                  : ""
+              }
             </td>
           </tr>
           <tr>
@@ -252,79 +286,101 @@ export const notificationEmailTemplate = ({ title, message, userName, actionUrl,
 
 export const accountRegisteredTemplate = (user, locationInfo) => {
   const details = [];
-  if (locationInfo?.location) details.push({ label: "Location", value: locationInfo.location });
-  if (locationInfo?.device) details.push({ label: "Device", value: locationInfo.device });
-  
+  if (locationInfo?.location)
+    details.push({ label: "Location", value: locationInfo.location });
+  if (locationInfo?.device)
+    details.push({ label: "Device", value: locationInfo.device });
+
   return notificationEmailTemplate({
     title: "Welcome to VideoTube!",
-    message: "Your account was successfully registered. We're excited to have you on board.",
+    message:
+      "Your account was successfully registered. We're excited to have you on board.",
     userName: user.fullName || user.username,
     actionUrl: `${process.env.FRONTEND_URL || "http://localhost:3000"}`,
     actionText: "Explore VideoTube",
     details,
     warning: false,
-    themeType: "success"
+    themeType: "success",
   });
 };
 
 export const accountDeletedTemplate = (user, timezone) => {
   return notificationEmailTemplate({
     title: "Account Deletion Confirmed",
-    message: "Your VideoTube account has been permanently deleted as requested. We're sad to see you go.",
+    message:
+      "Your VideoTube account has been permanently deleted as requested. We're sad to see you go.",
     userName: user.fullName || user.username,
     details: [
       { label: "Deletion Date", value: formatDate(undefined, timezone) },
-      { label: "Status", value: "Permanently Deleted" }
+      { label: "Status", value: "Permanently Deleted" },
     ],
     warning: false,
-    themeType: "destructive"
+    themeType: "destructive",
   });
 };
 
-export const suspiciousLoginTemplate = (user, locationInfo, platform, lastLoginDate = null) => {
+export const suspiciousLoginTemplate = (
+  user,
+  locationInfo,
+  platform,
+  lastLoginDate = null
+) => {
   const tz = locationInfo?.timezone;
   const details = [
     { label: "Login Method", value: platform },
-    { label: "Last Login", value: lastLoginDate ? formatDate(new Date(lastLoginDate), tz) : formatDate(undefined, tz) }
+    {
+      label: "Last Login",
+      value: lastLoginDate
+        ? formatDate(new Date(lastLoginDate), tz)
+        : formatDate(undefined, tz),
+    },
   ];
-  if (locationInfo?.location) details.push({ label: "Location", value: locationInfo.location });
-  if (locationInfo?.device) details.push({ label: "Device", value: locationInfo.device });
+  if (locationInfo?.location)
+    details.push({ label: "Location", value: locationInfo.location });
+  if (locationInfo?.device)
+    details.push({ label: "Device", value: locationInfo.device });
 
   return notificationEmailTemplate({
     title: "New Sign-In Detected",
-    message: "We noticed a sign-in to your VideoTube account after a long period of inactivity.",
+    message:
+      "We noticed a sign-in to your VideoTube account after a long period of inactivity.",
     userName: user.fullName || user.username,
     details,
     warning: true,
-    themeType: "warning"
+    themeType: "warning",
   });
 };
 
 export const accountRecoveryTemplate = (user, locationInfo, platform) => {
   const details = [
     { label: "Recovery Method", value: platform },
-    { label: "Time", value: formatDate(undefined, locationInfo?.timezone) }
+    { label: "Time", value: formatDate(undefined, locationInfo?.timezone) },
   ];
-  if (locationInfo?.location) details.push({ label: "Location", value: locationInfo.location });
-  if (locationInfo?.device) details.push({ label: "Device", value: locationInfo.device });
+  if (locationInfo?.location)
+    details.push({ label: "Location", value: locationInfo.location });
+  if (locationInfo?.device)
+    details.push({ label: "Device", value: locationInfo.device });
 
   return notificationEmailTemplate({
     title: "Account Recovery Successful",
-    message: "Your VideoTube account was successfully accessed via Skip & Login recovery.",
+    message:
+      "Your VideoTube account was successfully accessed via Skip & Login recovery.",
     userName: user.fullName || user.username,
     details,
     warning: true,
-    themeType: "warning"
+    themeType: "warning",
   });
 };
 
 export const passwordChangedEmailTemplate = (user, locationInfo) => {
   const details = [
     { label: "Action", value: "Password Changed" },
-    { label: "Time", value: formatDate(undefined, locationInfo?.timezone) }
+    { label: "Time", value: formatDate(undefined, locationInfo?.timezone) },
   ];
-  if (locationInfo?.location) details.push({ label: "Location", value: locationInfo.location });
-  if (locationInfo?.device) details.push({ label: "Device", value: locationInfo.device });
+  if (locationInfo?.location)
+    details.push({ label: "Location", value: locationInfo.location });
+  if (locationInfo?.device)
+    details.push({ label: "Device", value: locationInfo.device });
 
   return notificationEmailTemplate({
     title: "Password Changed Successfully",
@@ -332,43 +388,62 @@ export const passwordChangedEmailTemplate = (user, locationInfo) => {
     userName: user.fullName || user.username,
     details,
     warning: false,
-    themeType: "success"
+    themeType: "success",
   });
 };
 
-export const identifierUpdatedTemplate = (user, identifierType, newIdentifier, timezone) => {
+export const identifierUpdatedTemplate = (
+  user,
+  identifierType,
+  newIdentifier,
+  timezone
+) => {
   return notificationEmailTemplate({
-    title: `${identifierType === 'email' ? 'Email' : 'Mobile Number'} Updated`,
+    title: `${identifierType === "email" ? "Email" : "Mobile Number"} Updated`,
     message: `Your VideoTube profile was successfully updated. Your new ${identifierType} is ${newIdentifier}.`,
     userName: user.fullName || user.username,
     actionUrl: `${process.env.FRONTEND_URL || "http://localhost:3000"}/edit-profile`,
     actionText: "View Profile",
     details: [
-      { label: "Action", value: `${identifierType === 'email' ? 'Email' : 'Mobile'} Updated` },
-      { label: "Time", value: formatDate(undefined, timezone) }
+      {
+        label: "Action",
+        value: `${identifierType === "email" ? "Email" : "Mobile"} Updated`,
+      },
+      { label: "Time", value: formatDate(undefined, timezone) },
     ],
     warning: false,
-    themeType: "success"
+    themeType: "success",
   });
 };
 
 export const identifierDeletedTemplate = (user, identifierType, timezone) => {
   return notificationEmailTemplate({
-    title: `${identifierType === 'email' ? 'Email' : 'Mobile Number'} Removed`,
+    title: `${identifierType === "email" ? "Email" : "Mobile Number"} Removed`,
     message: `A ${identifierType} was successfully removed from your VideoTube account.`,
     userName: user.fullName || user.username,
     actionUrl: `${process.env.FRONTEND_URL || "http://localhost:3000"}/edit-profile`,
     actionText: "View Profile",
     details: [
-      { label: "Action", value: `${identifierType === 'email' ? 'Email' : 'Mobile'} Removed` },
-      { label: "Time", value: formatDate(undefined, timezone) }
+      {
+        label: "Action",
+        value: `${identifierType === "email" ? "Email" : "Mobile"} Removed`,
+      },
+      { label: "Time", value: formatDate(undefined, timezone) },
     ],
     warning: true,
-    themeType: "warning"
+    themeType: "warning",
   });
 };
 
-export const contactOwnerTemplate = ({ name, email, subject, message, time, ip, userAgent }) => {
+export const contactOwnerTemplate = ({
+  name,
+  email,
+  subject,
+  message,
+  time,
+  ip,
+  userAgent,
+}) => {
   const details = [
     { label: "Name", value: name },
     { label: "Email", value: email },
@@ -405,14 +480,18 @@ export const contactOwnerTemplate = ({ name, email, subject, message, time, ip, 
               <p style="margin: 0 0 24px; font-size: 14px; color: #6b7280; text-align: center;">A user has submitted a contact form.</p>
 
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border: 1px solid #e5e7eb; border-radius: 8px;">
-                ${details.map((d, index) => `
+                ${details
+                  .map(
+                    (d, index) => `
                 <tr>
-                  <td style="padding: 12px 16px; ${index < details.length - 1 ? 'border-bottom: 1px solid #e5e7eb;' : ''}">
+                  <td style="padding: 12px 16px; ${index < details.length - 1 ? "border-bottom: 1px solid #e5e7eb;" : ""}">
                     <strong style="color: #374151; font-size: 13px; display: block; margin-bottom: 2px;">${d.label}:</strong>
                     <span style="color: #6b7280; font-size: 13px; word-break: break-word;">${d.value}</span>
                   </td>
                 </tr>
-                `).join("")}
+                `
+                  )
+                  .join("")}
               </table>
             </td>
           </tr>

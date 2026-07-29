@@ -12,96 +12,113 @@ const qualitySchema = new Schema(
 
 const videoSchema = new Schema(
   {
-    videoFile:{
-        type: String,   
-        required:true,
+    videoFile: {
+      type: String,
+      required: true,
     },
-    thumbnail:{
-        type:String,
-        required:true,
+    thumbnail: {
+      type: String,
+      required: true,
     },
-    title:{
-        type:String,
-        required:true,
-        index:true,
+    title: {
+      type: String,
+      required: true,
+      index: true,
     },
-    description:{
-        type:String,
-        required:true,
-        maxlength: 5000,
+    description: {
+      type: String,
+      required: true,
+      maxlength: 5000,
     },
-    duration:{
-        type:Number,
-        required:true,
-        min:0,
+    duration: {
+      type: Number,
+      required: true,
+      min: 0,
     },
-    views:{
-        type:Number,
-        default:0,
-        min:0,
+    views: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
-    owner:{
-        type:Schema.Types.ObjectId,
-        ref:"User",
-        required:true,
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
-    isPublished:{
-        type:Boolean,
-        default:true,
+    isPublished: {
+      type: Boolean,
+      default: true,
     },
-    visibility:{
-        type:String,
-        enum:["public","private"],
-        default:"public",
+    visibility: {
+      type: String,
+      enum: ["public", "private"],
+      default: "public",
     },
-    tags:{
-        type:[String],
-        default:[],
-        validate: {
-            validator: (v) => !v || v.every((t) => t.length <= 50),
-            message: "Each tag must be 50 characters or less",
-        },
+    tags: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: (v) => !v || v.every((t) => t.length <= 50),
+        message: "Each tag must be 50 characters or less",
+      },
     },
-    category:{
-        type:String,
-        enum: ["General", "Gaming", "Music", "Education", "Entertainment", "Sports", "News", "Technology", "Science", "Travel", "Food", "Fashion", "Art", "Podcasts"],
-        default:"General",
+    category: {
+      type: String,
+      enum: [
+        "General",
+        "Gaming",
+        "Music",
+        "Education",
+        "Entertainment",
+        "Sports",
+        "News",
+        "Technology",
+        "Science",
+        "Travel",
+        "Food",
+        "Fashion",
+        "Art",
+        "Podcasts",
+      ],
+      default: "General",
     },
-    chapters:[{
-        title:{ type:String },
-        startTime:{ type:Number },
-    }],
-    scheduledAt:{
-        type:Date,
+    chapters: [
+      {
+        title: { type: String },
+        startTime: { type: Number },
+      },
+    ],
+    scheduledAt: {
+      type: Date,
     },
-    likesCount:{
-        type:Number,
-        default:0,
-        min:0,
+    likesCount: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
-    commentsCount:{
-        type:Number,
-        default:0,
-        min:0,
+    commentsCount: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
-    isShort:{
-        type:Boolean,
-        default:false,
+    isShort: {
+      type: Boolean,
+      default: false,
     },
-    hlsUrl:{
-        type:String,
-        default:"",
+    hlsUrl: {
+      type: String,
+      default: "",
     },
-    qualities:[qualitySchema],
-    transcodingStatus:{
-        type:String,
-        enum:["pending","processing","completed","failed"],
-        default:"pending",
+    qualities: [qualitySchema],
+    transcodingStatus: {
+      type: String,
+      enum: ["pending", "processing", "completed", "failed"],
+      default: "pending",
     },
-    trendingScore:{
-        type:Number,
-        default:0,
-        min:0,
+    trendingScore: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
   },
   {

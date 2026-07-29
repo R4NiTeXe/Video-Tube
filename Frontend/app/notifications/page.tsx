@@ -20,9 +20,20 @@ interface Notification {
 }
 
 const BellIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+  </svg>
 );
-
 
 export default function NotificationsPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
@@ -46,7 +57,9 @@ export default function NotificationsPage() {
           const axiosErr = err as { response?: { status?: number } };
           if (axiosErr.response?.status === 401) {
             if (process.env.NODE_ENV === "development") {
-              console.warn("[Notifications] 401 fetching notifications — showing empty");
+              console.warn(
+                "[Notifications] 401 fetching notifications — showing empty",
+              );
             }
             return { data: { notifications: [] } };
           }
@@ -86,8 +99,20 @@ export default function NotificationsPage() {
 
   if (authLoading || !isAuthenticated) {
     return (
-      <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
-        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ color: "var(--text-secondary)", fontWeight: 500 }}>
+      <div
+        style={{
+          display: "flex",
+          minHeight: "100vh",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "var(--bg-primary)",
+        }}
+      >
+        <motion.div
+          animate={{ opacity: [0.3, 1, 0.3] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          style={{ color: "var(--text-secondary)", fontWeight: 500 }}
+        >
           Loading...
         </motion.div>
       </div>
@@ -95,50 +120,108 @@ export default function NotificationsPage() {
   }
 
   const rawNotifications = response?.data?.notifications;
-  const notifications: Notification[] = Array.isArray(rawNotifications) ? rawNotifications : [];
+  const notifications: Notification[] = Array.isArray(rawNotifications)
+    ? rawNotifications
+    : [];
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
-      <PageMeta title="Notifications" description="Your VideoTube notifications." noIndex />
+      <PageMeta
+        title="Notifications"
+        description="Your VideoTube notifications."
+        noIndex
+      />
       <div style={{ width: "100%", padding: "1.5rem 2rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem" }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: "50%",
-            backgroundColor: "var(--accent-subtle)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "var(--accent)",
-          }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.75rem",
+            marginBottom: "1.5rem",
+          }}
+        >
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: "50%",
+              backgroundColor: "var(--accent-subtle)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "var(--accent)",
+            }}
+          >
             <BellIcon />
           </div>
           <div>
-            <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)" }}>Notifications</h1>
+            <h1
+              style={{
+                fontSize: "1.5rem",
+                fontWeight: 800,
+                color: "var(--text-primary)",
+              }}
+            >
+              Notifications
+            </h1>
             <p style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
-              {notifications.length} notification{notifications.length !== 1 ? "s" : ""}
+              {notifications.length} notification
+              {notifications.length !== 1 ? "s" : ""}
             </p>
           </div>
         </div>
 
         {isLoading ? (
-          <div style={{ display: "flex", justifyContent: "center", padding: "4rem 2rem" }}>
-            <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ color: "var(--text-muted)" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              padding: "4rem 2rem",
+            }}
+          >
+            <motion.div
+              animate={{ opacity: [0.3, 1, 0.3] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              style={{ color: "var(--text-muted)" }}
+            >
               Loading notifications...
             </motion.div>
           </div>
         ) : notifications.length === 0 ? (
           <div style={{ textAlign: "center", padding: "5rem 2rem" }}>
-            <div style={{
-              width: 72, height: 72, borderRadius: "50%",
-              backgroundColor: "var(--elevated)",
-              display: "inline-flex", alignItems: "center", justifyContent: "center",
-              marginBottom: "1.25rem", color: "var(--text-muted)",
-            }}>
+            <div
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: "50%",
+                backgroundColor: "var(--elevated)",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: "1.25rem",
+                color: "var(--text-muted)",
+              }}
+            >
               <BellIcon />
             </div>
-            <p style={{ fontWeight: 600, fontSize: "1.05rem", color: "var(--text-secondary)", marginBottom: "0.4rem" }}>No notifications yet</p>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>When someone interacts with your content, you&apos;ll see it here.</p>
+            <p
+              style={{
+                fontWeight: 600,
+                fontSize: "1.05rem",
+                color: "var(--text-secondary)",
+                marginBottom: "0.4rem",
+              }}
+            >
+              No notifications yet
+            </p>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+              When someone interacts with your content, you&apos;ll see it here.
+            </p>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
+          >
             <AnimatePresence mode="popLayout">
               {notifications.map((n) => (
                 <motion.div
@@ -152,16 +235,28 @@ export default function NotificationsPage() {
                     if (!n.isRead) markRead.mutate(n._id);
                   }}
                   style={{
-                    display: "flex", alignItems: "center", gap: "1rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "1rem",
                     padding: "1rem 1.25rem",
                     borderRadius: "var(--radius-lg)",
-                    backgroundColor: n.isRead ? "transparent" : "var(--accent-subtle)",
+                    backgroundColor: n.isRead
+                      ? "transparent"
+                      : "var(--accent-subtle)",
                     border: `1px solid ${n.isRead ? "var(--border)" : "var(--accent)"}`,
                     cursor: "pointer",
                     transition: "background-color 0.2s, border-color 0.2s",
                   }}
-                  onMouseEnter={(e) => { if (n.isRead) (e.currentTarget as HTMLElement).style.backgroundColor = "var(--elevated)"; }}
-                  onMouseLeave={(e) => { if (n.isRead) (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
+                  onMouseEnter={(e) => {
+                    if (n.isRead)
+                      (e.currentTarget as HTMLElement).style.backgroundColor =
+                        "var(--elevated)";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (n.isRead)
+                      (e.currentTarget as HTMLElement).style.backgroundColor =
+                        "transparent";
+                  }}
                 >
                   {/* Unread dot */}
                   <div style={{ position: "relative", flexShrink: 0 }}>
@@ -169,25 +264,51 @@ export default function NotificationsPage() {
                     <img
                       src={n.sender?.avatar || undefined}
                       alt={n.sender?.fullName || "User"}
-                      style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border)" }}
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                        border: "2px solid var(--border)",
+                      }}
                     />
                     {!n.isRead && (
-                      <div style={{
-                        position: "absolute", top: 0, right: 0,
-                        width: 12, height: 12, borderRadius: "50%",
-                        backgroundColor: "#3B82F6",
-                        border: "2px solid var(--bg-primary)",
-                      }} />
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          right: 0,
+                          width: 12,
+                          height: 12,
+                          borderRadius: "50%",
+                          backgroundColor: "#3B82F6",
+                          border: "2px solid var(--bg-primary)",
+                        }}
+                      />
                     )}
                   </div>
 
                   {/* Content */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: "0.88rem", color: "var(--text-primary)", lineHeight: 1.5 }}>
-                      <span style={{ fontWeight: 600 }}>{n.sender?.fullName || "Someone"}</span>{" "}
+                    <p
+                      style={{
+                        fontSize: "0.88rem",
+                        color: "var(--text-primary)",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      <span style={{ fontWeight: 600 }}>
+                        {n.sender?.fullName || "Someone"}
+                      </span>{" "}
                       {n.message}
                     </p>
-                    <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>
+                    <p
+                      style={{
+                        fontSize: "0.75rem",
+                        color: "var(--text-muted)",
+                        marginTop: "0.2rem",
+                      }}
+                    >
                       {timeAgo(n.createdAt)}
                     </p>
                   </div>
@@ -203,7 +324,13 @@ export default function NotificationsPage() {
                       <img
                         src={n.video.thumbnail}
                         alt={n.video.title}
-                        style={{ width: 72, height: 44, objectFit: "cover", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)" }}
+                        style={{
+                          width: 72,
+                          height: 44,
+                          objectFit: "cover",
+                          borderRadius: "var(--radius-sm)",
+                          border: "1px solid var(--border)",
+                        }}
                       />
                     </Link>
                   )}

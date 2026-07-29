@@ -12,7 +12,15 @@ const geoIpCache = new Map();
 const GEOIP_CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
 function parseUserAgent(ua) {
-  if (!ua) return { deviceName: "Unknown Device", browser: "", os: "", browserVersion: "", deviceType: "desktop", deviceModel: "" };
+  if (!ua)
+    return {
+      deviceName: "Unknown Device",
+      browser: "",
+      os: "",
+      browserVersion: "",
+      deviceType: "desktop",
+      deviceModel: "",
+    };
   const parser = new UAParser(ua);
   const browser = parser.getBrowser();
   const os = parser.getOS();
@@ -32,7 +40,14 @@ function parseUserAgent(ua) {
     deviceName = `${browserName} on ${osName}`;
   }
 
-  return { deviceName, browser: browserName, browserVersion, os: osName, deviceType, deviceModel };
+  return {
+    deviceName,
+    browser: browserName,
+    browserVersion,
+    os: osName,
+    deviceType,
+    deviceModel,
+  };
 }
 
 const getLocationFromIp = async (ip) => {
@@ -44,11 +59,16 @@ const getLocationFromIp = async (ip) => {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 2000);
-    const resp = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,country`, { signal: controller.signal });
+    const resp = await fetch(
+      `http://ip-api.com/json/${ip}?fields=city,regionName,country`,
+      { signal: controller.signal }
+    );
     clearTimeout(timeout);
     if (resp.ok) {
       const geo = await resp.json();
-      const location = geo.city ? [geo.city, geo.regionName, geo.country].filter(Boolean).join(", ") : "Unknown Location";
+      const location = geo.city
+        ? [geo.city, geo.regionName, geo.country].filter(Boolean).join(", ")
+        : "Unknown Location";
       geoIpCache.set(ip, { location, expiresAt: Date.now() + GEOIP_CACHE_TTL });
       return location;
     }
@@ -94,16 +114,15 @@ export const updateSessionActivity = async (refreshToken) => {
       { lastActiveAt: new Date() }
     );
   } catch (error) {
-    logger.error("Failed to update session activity:", { error: error.message });
+    logger.error("Failed to update session activity:", {
+      error: error.message,
+    });
   }
 };
 
 export const deactivateSession = async (refreshToken) => {
   try {
-    await Session.findOneAndUpdate(
-      { refreshToken },
-      { isActive: false }
-    );
+    await Session.findOneAndUpdate({ refreshToken }, { isActive: false });
   } catch (error) {
     logger.error("Failed to deactivate session:", { error: error.message });
   }
@@ -111,13 +130,19 @@ export const deactivateSession = async (refreshToken) => {
 
 export const getActiveSessions = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  logger.info("getActiveSessions called", { userId: userId.toString(), path: req.path });
+  logger.info("getActiveSessions called", {
+    userId: userId.toString(),
+    path: req.path,
+  });
 
   let decodedToken;
   try {
     const incomingRefreshToken = req.cookies?.refreshToken;
     if (incomingRefreshToken) {
-      decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+      decodedToken = jwt.verify(
+        incomingRefreshToken,
+        process.env.REFRESH_TOKEN_SECRET
+      );
     }
   } catch (err) {
     logger.warn("Failed to decode refresh token", { error: err.message });
@@ -135,20 +160,26 @@ export const getActiveSessions = asyncHandler(async (req, res) => {
 
   const enriched = sessions.map(({ refreshToken, ...rest }) => ({
     ...rest,
-    isCurrent: decodedToken ? refreshToken === req.cookies?.refreshToken : false,
+    isCurrent: decodedToken
+      ? refreshToken === req.cookies?.refreshToken
+      : false,
   }));
 
   // Update user's timezone from current session if provided
-  if (enriched.some(s => s.isCurrent && s.timezone)) {
-    const currentSession = enriched.find(s => s.isCurrent);
+  if (enriched.some((s) => s.isCurrent && s.timezone)) {
+    const currentSession = enriched.find((s) => s.isCurrent);
     if (currentSession?.timezone) {
-      await User.findByIdAndUpdate(userId, { timezone: currentSession.timezone });
+      await User.findByIdAndUpdate(userId, {
+        timezone: currentSession.timezone,
+      });
     }
   }
 
   return res
     .status(200)
-    .json(new ApiResponse(200, enriched, "Active sessions fetched successfully"));
+    .json(
+      new ApiResponse(200, enriched, "Active sessions fetched successfully")
+    );
 });
 
 export const revokeSession = asyncHandler(async (req, res) => {
@@ -166,7 +197,10 @@ export const revokeSession = asyncHandler(async (req, res) => {
 
   const incomingRefreshToken = req.cookies?.refreshToken;
   if (session.refreshToken === incomingRefreshToken) {
-    throw new ApiError(400, "Cannot revoke your current session. Use logout instead.");
+    throw new ApiError(
+      400,
+      "Cannot revoke your current session. Use logout instead."
+    );
   }
 
   session.isActive = false;
@@ -186,12 +220,20 @@ export const revokeAllSessions = asyncHandler(async (req, res) => {
     {
       user: userId,
       isActive: true,
-      ...(incomingRefreshToken ? { refreshToken: { $ne: incomingRefreshToken } } : {}),
+      ...(incomingRefreshToken
+        ? { refreshToken: { $ne: incomingRefreshToken } }
+        : {}),
     },
     { isActive: false }
   );
 
   return res
     .status(200)
-    .json(new ApiResponse(200, { revokedCount: result.modifiedCount }, "All other sessions revoked successfully"));
+    .json(
+      new ApiResponse(
+        200,
+        { revokedCount: result.modifiedCount },
+        "All other sessions revoked successfully"
+      )
+    );
 });

@@ -7,11 +7,25 @@ import { storeOTP, verifyOTP, otpService } from "../../utils/otp.js";
 import { sendEmail } from "../../utils/email.js";
 import { sendWhatsAppOTP } from "../../utils/whatsappOtp.js";
 import { getLocationInfo } from "../../utils/location.js";
-import { accountRegisteredTemplate, suspiciousLoginTemplate, otpEmailTemplate } from "../../utils/emailTemplates.js";
-import { generateAccessAndRefreshToken, getCookieOptions } from "../user.controller.js";
+import {
+  accountRegisteredTemplate,
+  suspiciousLoginTemplate,
+  otpEmailTemplate,
+} from "../../utils/emailTemplates.js";
+import {
+  generateAccessAndRefreshToken,
+  getCookieOptions,
+} from "../user.controller.js";
 import { createSession } from "../session.controller.js";
-import { uploadOnCloudinary, deleteFromCloudinary } from "../../utils/cloudinary.js";
-import { isValidEmail, isValidMobile, detectChannel } from "../../utils/validators.js";
+import {
+  uploadOnCloudinary,
+  deleteFromCloudinary,
+} from "../../utils/cloudinary.js";
+import {
+  isValidEmail,
+  isValidMobile,
+  detectChannel,
+} from "../../utils/validators.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { assertPasswordStrength } from "../../utils/passwordValidation.js";
@@ -31,14 +45,18 @@ const sendRegistrationOTP = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Please provide a valid email");
   }
   if (!isValidMobile(normalizedMobile)) {
-    throw new ApiError(400, "Invalid mobile number format. Use +91XXXXXXXXXX format");
+    throw new ApiError(
+      400,
+      "Invalid mobile number format. Use +91XXXXXXXXXX format"
+    );
   }
 
   const existingUser = await User.findOne({
     $or: [{ email: normalizedEmail }, { mobile: normalizedMobile }],
   });
   if (existingUser) {
-    const field = existingUser.email === normalizedEmail ? "Email" : "Mobile number";
+    const field =
+      existingUser.email === normalizedEmail ? "Email" : "Mobile number";
     throw new ApiError(409, `${field} already registered. Please login.`);
   }
   const [emailOtp, mobileOtp] = await Promise.all([
@@ -56,25 +74,39 @@ const sendRegistrationOTP = asyncHandler(async (req, res) => {
   ]);
 
   if (mobileResult.status === "rejected") {
-    logger.warn("WhatsApp OTP send failed, falling back to email-only", { error: mobileResult.reason?.message });
+    logger.warn("WhatsApp OTP send failed, falling back to email-only", {
+      error: mobileResult.reason?.message,
+    });
   }
 
   if (emailResult.status === "rejected") {
-    throw new ApiError(500, `Failed to send email OTP: ${emailResult.reason?.message || "Unknown error"}`);
+    throw new ApiError(
+      500,
+      `Failed to send email OTP: ${emailResult.reason?.message || "Unknown error"}`
+    );
   }
 
   await otpService.confirmOtpDelivery();
 
-  return res.status(200).json(
-    new ApiResponse(200, { email: normalizedEmail, mobile: normalizedMobile }, "OTPs sent to both email and mobile number")
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { email: normalizedEmail, mobile: normalizedMobile },
+        "OTPs sent to both email and mobile number"
+      )
+    );
 });
 
 const verifyRegistrationOTP = asyncHandler(async (req, res) => {
   const { identifier, otp: otpValue } = req.body;
 
   if (!identifier || !otpValue) {
-    throw new ApiError(400, "Identifier (email or mobile) and OTP are required");
+    throw new ApiError(
+      400,
+      "Identifier (email or mobile) and OTP are required"
+    );
   }
 
   const normalizedIdentifier = identifier.trim().toLowerCase();
@@ -87,16 +119,26 @@ const verifyRegistrationOTP = asyncHandler(async (req, res) => {
     throw new ApiError(400, result.message);
   }
 
-  return res.status(200).json(
-    new ApiResponse(200, { verified: true, identifier: normalizedIdentifier, channel }, `${channel} verified successfully`)
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { verified: true, identifier: normalizedIdentifier, channel },
+        `${channel} verified successfully`
+      )
+    );
 });
 
 const registerUnified = asyncHandler(async (req, res) => {
-  const { email, mobile, fullName, username, password, emailOtp, mobileOtp } = req.body;
+  const { email, mobile, fullName, username, password, emailOtp, mobileOtp } =
+    req.body;
 
   if (!email || !mobile || !fullName || !username || !password) {
-    throw new ApiError(400, "All fields are required: email, mobile, fullName, username, password");
+    throw new ApiError(
+      400,
+      "All fields are required: email, mobile, fullName, username, password"
+    );
   }
 
   const normalizedEmail = email.trim().toLowerCase();
@@ -111,8 +153,16 @@ const registerUnified = asyncHandler(async (req, res) => {
   if (password.length < 8 || password.length > 16) {
     throw new ApiError(400, "Password must be 8-16 characters");
   }
-  if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
-    throw new ApiError(400, "Password must contain uppercase, lowercase, number, and special character");
+  if (
+    !/[A-Z]/.test(password) ||
+    !/[a-z]/.test(password) ||
+    !/[0-9]/.test(password) ||
+    !/[^A-Za-z0-9]/.test(password)
+  ) {
+    throw new ApiError(
+      400,
+      "Password must contain uppercase, lowercase, number, and special character"
+    );
   }
 
   let emailVerified = false;
@@ -122,7 +172,10 @@ const registerUnified = asyncHandler(async (req, res) => {
     const result = await verifyOTP(normalizedEmail, emailOtp, "registration");
     if (result.valid) emailVerified = true;
   } else {
-    const emailRecord = await OTP.findOne({ identifier: normalizedEmail, purpose: "registration" });
+    const emailRecord = await OTP.findOne({
+      identifier: normalizedEmail,
+      purpose: "registration",
+    });
     if (emailRecord?.verified) emailVerified = true;
   }
 
@@ -130,7 +183,10 @@ const registerUnified = asyncHandler(async (req, res) => {
     const result = await verifyOTP(normalizedMobile, mobileOtp, "registration");
     if (result.valid) mobileVerified = true;
   } else {
-    const mobileRecord = await OTP.findOne({ identifier: normalizedMobile, purpose: "registration" });
+    const mobileRecord = await OTP.findOne({
+      identifier: normalizedMobile,
+      purpose: "registration",
+    });
     if (mobileRecord?.verified) mobileVerified = true;
   }
 
@@ -142,9 +198,12 @@ const registerUnified = asyncHandler(async (req, res) => {
   if (existingEmail) throw new ApiError(409, "Email already registered");
 
   const existingMobile = await User.findOne({ mobile: normalizedMobile });
-  if (existingMobile) throw new ApiError(409, "Mobile number already registered");
+  if (existingMobile)
+    throw new ApiError(409, "Mobile number already registered");
 
-  const existingUsername = await User.findOne({ username: username.toLowerCase() });
+  const existingUsername = await User.findOne({
+    username: username.toLowerCase(),
+  });
   if (existingUsername) throw new ApiError(409, "Username already taken");
 
   let avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=6366f1&color=fff`;
@@ -155,7 +214,8 @@ const registerUnified = asyncHandler(async (req, res) => {
   const avatarLocalPath = req.files?.avatar?.[0]?.path;
   if (avatarLocalPath) {
     uploadedAvatar = await uploadOnCloudinary(avatarLocalPath);
-    if (uploadedAvatar?.secure_url || uploadedAvatar?.url) avatarUrl = uploadedAvatar.secure_url || uploadedAvatar.url;
+    if (uploadedAvatar?.secure_url || uploadedAvatar?.url)
+      avatarUrl = uploadedAvatar.secure_url || uploadedAvatar.url;
   }
 
   const coverLocalPath = req.files?.coverImage?.[0]?.path;
@@ -185,8 +245,10 @@ const registerUnified = asyncHandler(async (req, res) => {
       timezone: req.body?.timezone || "UTC",
     });
   } catch (dbError) {
-    if (uploadedAvatar?.public_id) await deleteFromCloudinary(uploadedAvatar.public_id, "image");
-    if (uploadedCover?.public_id) await deleteFromCloudinary(uploadedCover.public_id, "image");
+    if (uploadedAvatar?.public_id)
+      await deleteFromCloudinary(uploadedAvatar.public_id, "image");
+    if (uploadedCover?.public_id)
+      await deleteFromCloudinary(uploadedCover.public_id, "image");
     throw dbError;
   }
 
@@ -198,14 +260,20 @@ const registerUnified = asyncHandler(async (req, res) => {
       html: accountRegisteredTemplate(user, locationInfo),
     });
   } catch (err) {
-    logger.error("Failed to send welcome email in registerUnified: " + err.message);
+    logger.error(
+      "Failed to send welcome email in registerUnified: " + err.message
+    );
   }
 
   user.lastLogin = new Date();
   await user.save({ validateBeforeSave: false });
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
-  const loggedInUser = await User.findById(user._id).select("-password -refreshToken").lean();
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user._id
+  );
+  const loggedInUser = await User.findById(user._id)
+    .select("-password -refreshToken")
+    .lean();
 
   const options = getCookieOptions();
 
@@ -240,11 +308,20 @@ const sendLoginOTP = asyncHandler(async (req, res) => {
   }
 
   if (!user) {
-    return res.status(200).json(new ApiResponse(200, {}, "If the account exists, an OTP has been sent"));
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, {}, "If the account exists, an OTP has been sent")
+      );
   }
 
   if (channel === "email") {
-    const otp = await storeOTP(normalizedIdentifier, "login", "email", user._id);
+    const otp = await storeOTP(
+      normalizedIdentifier,
+      "login",
+      "email",
+      user._id
+    );
     try {
       await sendEmail({
         to: normalizedIdentifier,
@@ -257,7 +334,12 @@ const sendLoginOTP = asyncHandler(async (req, res) => {
       throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
     }
   } else {
-    const otp = await storeOTP(normalizedIdentifier, "login", "whatsapp", user._id);
+    const otp = await storeOTP(
+      normalizedIdentifier,
+      "login",
+      "whatsapp",
+      user._id
+    );
     try {
       await sendWhatsAppOTP(normalizedIdentifier, otp);
       await otpService.confirmOtpDelivery(user._id, user.timezone);
@@ -267,7 +349,11 @@ const sendLoginOTP = asyncHandler(async (req, res) => {
     }
   }
 
-  return res.status(200).json(new ApiResponse(200, {}, "If the account exists, an OTP has been sent"));
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, {}, "If the account exists, an OTP has been sent")
+    );
 });
 
 const verifyLoginOTP = asyncHandler(async (req, res) => {
@@ -287,23 +373,32 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
   }
 
   const user = await User.findOne(
-    channel === "email" ? { email: normalizedIdentifier } : { mobile: normalizedIdentifier }
+    channel === "email"
+      ? { email: normalizedIdentifier }
+      : { mobile: normalizedIdentifier }
   );
 
   if (!user) {
     throw new ApiError(404, "User not found");
   }
 
-  const lastLoginTime = user.lastLogin ? new Date(user.lastLogin).getTime() : Date.now();
+  const lastLoginTime = user.lastLogin
+    ? new Date(user.lastLogin).getTime()
+    : Date.now();
   const FIFTEEN_DAYS = 15 * 24 * 60 * 60 * 1000;
-  
+
   if (user.lastLogin && Date.now() - lastLoginTime > FIFTEEN_DAYS) {
     const locationInfo = await getLocationInfo(req);
     try {
       await sendEmail({
         to: user.email,
         subject: "New Sign-In Detected",
-        html: suspiciousLoginTemplate(user, locationInfo, channel, user.lastLogin),
+        html: suspiciousLoginTemplate(
+          user,
+          locationInfo,
+          channel,
+          user.lastLogin
+        ),
       });
     } catch (err) {
       logger.error("Failed to send suspicious login alert: " + err.message);
@@ -313,11 +408,15 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
   user.lastLogin = new Date();
   await user.save({ validateBeforeSave: false });
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user._id
+  );
 
   await createSession(user._id, refreshToken, req);
 
-  const loggedInUser = await User.findById(user._id).select("-password -refreshToken").lean();
+  const loggedInUser = await User.findById(user._id)
+    .select("-password -refreshToken")
+    .lean();
 
   const options = getCookieOptions();
 

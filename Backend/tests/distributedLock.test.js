@@ -1,5 +1,17 @@
-import { describe, it, beforeAll, afterAll, beforeEach, expect } from "@jest/globals";
-import { acquireLock, releaseLock, initRedis, isRedisAvailable } from "../src/utils/redis.js";
+import {
+  describe,
+  it,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  expect,
+} from "@jest/globals";
+import {
+  acquireLock,
+  releaseLock,
+  initRedis,
+  isRedisAvailable,
+} from "../src/utils/redis.js";
 
 describe("Distributed Lock", () => {
   beforeAll(async () => {
@@ -14,7 +26,7 @@ describe("Distributed Lock", () => {
 
     const lockKey = "test:lock:1";
     const release = await acquireLock(lockKey, 5);
-    
+
     expect(release).toBeInstanceOf(Function);
 
     const release2 = await acquireLock(lockKey, 5);
@@ -37,14 +49,16 @@ describe("Distributed Lock", () => {
     const attempts = 20;
     let acquired = 0;
 
-    const promises = Array(attempts).fill().map(async () => {
-      const release = await acquireLock(lockKey, 2);
-      if (release) {
-        acquired++;
-        await new Promise(r => setTimeout(r, 10));
-        await release();
-      }
-    });
+    const promises = Array(attempts)
+      .fill()
+      .map(async () => {
+        const release = await acquireLock(lockKey, 2);
+        if (release) {
+          acquired++;
+          await new Promise((r) => setTimeout(r, 10));
+          await release();
+        }
+      });
 
     await Promise.all(promises);
     expect(acquired).toBeLessThanOrEqual(attempts);
@@ -58,11 +72,11 @@ describe("Distributed Lock", () => {
 
     const lockKey = "test:lock:ttl";
     const release = await acquireLock(lockKey, 1); // 1 second TTL
-    
+
     expect(release).toBeInstanceOf(Function);
-    
-    await new Promise(r => setTimeout(r, 1500));
-    
+
+    await new Promise((r) => setTimeout(r, 1500));
+
     const release2 = await acquireLock(lockKey, 1);
     expect(release2).toBeInstanceOf(Function);
     await release2();

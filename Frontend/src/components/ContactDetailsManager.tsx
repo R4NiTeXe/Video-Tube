@@ -14,7 +14,7 @@ export default function ContactDetailsManager() {
   const [action, setAction] = useState<ModalAction>("add");
   const [targetType, setTargetType] = useState<TargetType>("email");
   const [step, setStep] = useState<"input" | "otp">("input");
-  
+
   const [inputValue, setInputValue] = useState("");
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -74,7 +74,8 @@ export default function ContactDetailsManager() {
       if (action === "delete") {
         const res = await api.post("/users/update-identifier/verify-delete", {
           targetType,
-          verificationIdentifier: targetType === "email" ? (user?.mobile || "") : (user?.email || ""),
+          verificationIdentifier:
+            targetType === "email" ? user?.mobile || "" : user?.email || "",
           otp: otpValue,
         });
         login(res.data.data.user);
@@ -110,10 +111,15 @@ export default function ContactDetailsManager() {
 
   const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
     if (pasted) {
       const next = Array(6).fill("");
-      pasted.split("").forEach((char, i) => { next[i] = char; });
+      pasted.split("").forEach((char, i) => {
+        next[i] = char;
+      });
       setOtp(next);
       const focusIndex = Math.min(pasted.length, 5);
       otpRefs.current[focusIndex]?.focus();
@@ -124,25 +130,95 @@ export default function ContactDetailsManager() {
 
   return (
     <div className="form-card" style={{ padding: "1.5rem" }}>
-      <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.3rem" }}>Contact Details</h2>
-      <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginBottom: "1.25rem" }}>Manage your email address and mobile number. OTP verification is required for any changes.</p>
-      
+      <h2
+        style={{
+          fontSize: "1rem",
+          fontWeight: 700,
+          color: "var(--text-primary)",
+          marginBottom: "0.3rem",
+        }}
+      >
+        Contact Details
+      </h2>
+      <p
+        style={{
+          fontSize: "0.78rem",
+          color: "var(--text-muted)",
+          marginBottom: "1.25rem",
+        }}
+      >
+        Manage your email address and mobile number. OTP verification is
+        required for any changes.
+      </p>
+
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-        
         {/* Email Row */}
         <div className="contact-detail-row">
           <div className="contact-detail-info">
-            <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "0.2rem" }}>Email Address</div>
-            <div style={{ fontSize: "0.95rem", color: "var(--text-primary)", wordBreak: "break-all" }}>{hasEmail ? user.email : "Not added"}</div>
+            <div
+              style={{
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                color: "var(--text-secondary)",
+                marginBottom: "0.2rem",
+              }}
+            >
+              Email Address
+            </div>
+            <div
+              style={{
+                fontSize: "0.95rem",
+                color: "var(--text-primary)",
+                wordBreak: "break-all",
+              }}
+            >
+              {hasEmail ? user.email : "Not added"}
+            </div>
           </div>
           <div className="contact-detail-actions">
             {hasEmail ? (
               <>
-                <button type="button" onClick={() => openModal("edit", "email")} className="btn btn-secondary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem", whiteSpace: "nowrap" }}>Edit</button>
-                <button type="button" onClick={() => openModal("delete", "email")} className="btn" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem", whiteSpace: "nowrap", backgroundColor: "var(--accent-warm-light)", color: "var(--accent-warm)", border: "1px solid rgba(244,63,94,0.2)" }}>Delete</button>
+                <button
+                  type="button"
+                  onClick={() => openModal("edit", "email")}
+                  className="btn btn-secondary"
+                  style={{
+                    padding: "0.4rem 0.8rem",
+                    fontSize: "0.8rem",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openModal("delete", "email")}
+                  className="btn"
+                  style={{
+                    padding: "0.4rem 0.8rem",
+                    fontSize: "0.8rem",
+                    whiteSpace: "nowrap",
+                    backgroundColor: "var(--accent-warm-light)",
+                    color: "var(--accent-warm)",
+                    border: "1px solid rgba(244,63,94,0.2)",
+                  }}
+                >
+                  Delete
+                </button>
               </>
             ) : (
-              <button type="button" onClick={() => openModal("add", "email")} className="btn btn-primary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem", whiteSpace: "nowrap" }}>Add Email</button>
+              <button
+                type="button"
+                onClick={() => openModal("add", "email")}
+                className="btn btn-primary"
+                style={{
+                  padding: "0.4rem 0.8rem",
+                  fontSize: "0.8rem",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Add Email
+              </button>
             )}
           </div>
         </div>
@@ -150,51 +226,185 @@ export default function ContactDetailsManager() {
         {/* Mobile Row */}
         <div className="contact-detail-row">
           <div className="contact-detail-info">
-            <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "0.2rem" }}>Mobile Number</div>
-            <div style={{ fontSize: "0.95rem", color: "var(--text-primary)" }}>{hasMobile ? user.mobile : "Not added"}</div>
+            <div
+              style={{
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                color: "var(--text-secondary)",
+                marginBottom: "0.2rem",
+              }}
+            >
+              Mobile Number
+            </div>
+            <div style={{ fontSize: "0.95rem", color: "var(--text-primary)" }}>
+              {hasMobile ? user.mobile : "Not added"}
+            </div>
           </div>
           <div className="contact-detail-actions">
             {hasMobile ? (
               <>
-                <button type="button" onClick={() => openModal("edit", "mobile")} className="btn btn-secondary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem", whiteSpace: "nowrap" }}>Edit</button>
-                <button type="button" onClick={() => openModal("delete", "mobile")} className="btn" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem", whiteSpace: "nowrap", backgroundColor: "var(--accent-warm-light)", color: "var(--accent-warm)", border: "1px solid rgba(244,63,94,0.2)" }}>Delete</button>
+                <button
+                  type="button"
+                  onClick={() => openModal("edit", "mobile")}
+                  className="btn btn-secondary"
+                  style={{
+                    padding: "0.4rem 0.8rem",
+                    fontSize: "0.8rem",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openModal("delete", "mobile")}
+                  className="btn"
+                  style={{
+                    padding: "0.4rem 0.8rem",
+                    fontSize: "0.8rem",
+                    whiteSpace: "nowrap",
+                    backgroundColor: "var(--accent-warm-light)",
+                    color: "var(--accent-warm)",
+                    border: "1px solid rgba(244,63,94,0.2)",
+                  }}
+                >
+                  Delete
+                </button>
               </>
             ) : (
-              <button type="button" onClick={() => openModal("add", "mobile")} className="btn btn-primary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem", whiteSpace: "nowrap" }}>Add Mobile</button>
+              <button
+                type="button"
+                onClick={() => openModal("add", "mobile")}
+                className="btn btn-primary"
+                style={{
+                  padding: "0.4rem 0.8rem",
+                  fontSize: "0.8rem",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Add Mobile
+              </button>
             )}
           </div>
         </div>
-
       </div>
 
       <AnimatePresence>
         {modalOpen && (
-          <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.6)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-              style={{ backgroundColor: "var(--bg-primary)", padding: "2rem", borderRadius: "var(--radius-lg)", maxWidth: 400, width: "100%", border: "1px solid var(--border)", boxShadow: "0 10px 30px rgba(0,0,0,0.3)" }}>
-              
-              <h3 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: "1rem", color: "var(--text-primary)" }}>
-                {action === "add" ? `Add ${targetType}` : action === "edit" ? `Edit ${targetType}` : `Delete ${targetType}`}
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0,0,0,0.6)",
+              zIndex: 999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              style={{
+                backgroundColor: "var(--bg-primary)",
+                padding: "2rem",
+                borderRadius: "var(--radius-lg)",
+                maxWidth: 400,
+                width: "100%",
+                border: "1px solid var(--border)",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+              }}
+            >
+              <h3
+                style={{
+                  fontSize: "1.2rem",
+                  fontWeight: 700,
+                  marginBottom: "1rem",
+                  color: "var(--text-primary)",
+                }}
+              >
+                {action === "add"
+                  ? `Add ${targetType}`
+                  : action === "edit"
+                    ? `Edit ${targetType}`
+                    : `Delete ${targetType}`}
               </h3>
-              
-              {error && <div style={{ padding: "0.6rem", backgroundColor: "var(--accent-warm-light)", color: "var(--accent-warm)", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem" }}>{error}</div>}
-              {success && <div style={{ padding: "0.6rem", backgroundColor: "var(--accent-subtle)", color: "var(--accent)", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem" }}>{success}</div>}
+
+              {error && (
+                <div
+                  style={{
+                    padding: "0.6rem",
+                    backgroundColor: "var(--accent-warm-light)",
+                    color: "var(--accent-warm)",
+                    borderRadius: "var(--radius-md)",
+                    marginBottom: "1rem",
+                    fontSize: "0.85rem",
+                  }}
+                >
+                  {error}
+                </div>
+              )}
+              {success && (
+                <div
+                  style={{
+                    padding: "0.6rem",
+                    backgroundColor: "var(--accent-subtle)",
+                    color: "var(--accent)",
+                    borderRadius: "var(--radius-md)",
+                    marginBottom: "1rem",
+                    fontSize: "0.85rem",
+                  }}
+                >
+                  {success}
+                </div>
+              )}
 
               {step === "input" && (
                 <div>
-                  <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
-                    Enter your new {targetType} below. We'll send an OTP to verify it.
+                  <p
+                    style={{
+                      fontSize: "0.85rem",
+                      color: "var(--text-muted)",
+                      marginBottom: "1rem",
+                    }}
+                  >
+                    Enter your new {targetType} below. We'll send an OTP to
+                    verify it.
                   </p>
-                  <input 
-                    type="text" 
-                    placeholder={targetType === "email" ? "hello@example.com" : "+1234567890"}
+                  <input
+                    type="text"
+                    placeholder={
+                      targetType === "email"
+                        ? "hello@example.com"
+                        : "+1234567890"
+                    }
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    style={{ width: "100%", padding: "0.75rem", borderRadius: "var(--radius-md)", border: "1.5px solid var(--border)", backgroundColor: "var(--bg-secondary)", color: "var(--text-primary)", marginBottom: "1rem" }}
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      borderRadius: "var(--radius-md)",
+                      border: "1.5px solid var(--border)",
+                      backgroundColor: "var(--bg-secondary)",
+                      color: "var(--text-primary)",
+                      marginBottom: "1rem",
+                    }}
                   />
                   <div style={{ display: "flex", gap: "0.5rem" }}>
-                    <button onClick={() => setModalOpen(false)} className="btn btn-secondary" style={{ flex: 1, padding: "0.75rem" }}>Cancel</button>
-                    <button onClick={() => handleSendOTP(action, inputValue)} disabled={loading || !inputValue} className="btn btn-primary" style={{ flex: 1, padding: "0.75rem" }}>
+                    <button
+                      onClick={() => setModalOpen(false)}
+                      className="btn btn-secondary"
+                      style={{ flex: 1, padding: "0.75rem" }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleSendOTP(action, inputValue)}
+                      disabled={loading || !inputValue}
+                      className="btn btn-primary"
+                      style={{ flex: 1, padding: "0.75rem" }}
+                    >
                       {loading ? "Sending..." : "Send OTP"}
                     </button>
                   </div>
@@ -203,17 +413,31 @@ export default function ContactDetailsManager() {
 
               {step === "otp" && (
                 <div>
-                  <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
-                    {action === "delete" 
+                  <p
+                    style={{
+                      fontSize: "0.85rem",
+                      color: "var(--text-muted)",
+                      marginBottom: "1rem",
+                    }}
+                  >
+                    {action === "delete"
                       ? `We sent an OTP to your ${targetType === "email" ? "mobile number" : "email"} to verify this deletion.`
-                      : `Enter the OTP sent to ${inputValue}`
-                    }
+                      : `Enter the OTP sent to ${inputValue}`}
                   </p>
-                  <div style={{ display: "flex", gap: "8px", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      justifyContent: "space-between",
+                      marginBottom: "1.5rem",
+                    }}
+                  >
                     {otp.map((digit, i) => (
                       <input
                         key={i}
-                        ref={(el) => { otpRefs.current[i] = el; }}
+                        ref={(el) => {
+                          otpRefs.current[i] = el;
+                        }}
                         type="text"
                         inputMode="numeric"
                         maxLength={1}
@@ -221,21 +445,42 @@ export default function ContactDetailsManager() {
                         onChange={(e) => handleOtpChange(i, e.target.value)}
                         onPaste={handleOtpPaste}
                         onKeyDown={(e) => {
-                          if (e.key === "Backspace" && !digit && i > 0) otpRefs.current[i - 1]?.focus();
+                          if (e.key === "Backspace" && !digit && i > 0)
+                            otpRefs.current[i - 1]?.focus();
                         }}
-                        style={{ width: "100%", aspectRatio: "1", textAlign: "center", fontSize: "1.25rem", fontWeight: 700, backgroundColor: "var(--bg-secondary)", border: "1.5px solid var(--border)", borderRadius: "var(--radius-md)", color: "var(--text-primary)" }}
+                        style={{
+                          width: "100%",
+                          aspectRatio: "1",
+                          textAlign: "center",
+                          fontSize: "1.25rem",
+                          fontWeight: 700,
+                          backgroundColor: "var(--bg-secondary)",
+                          border: "1.5px solid var(--border)",
+                          borderRadius: "var(--radius-md)",
+                          color: "var(--text-primary)",
+                        }}
                       />
                     ))}
                   </div>
                   <div style={{ display: "flex", gap: "0.5rem" }}>
-                    <button onClick={() => setModalOpen(false)} className="btn btn-secondary" style={{ flex: 1, padding: "0.75rem" }}>Cancel</button>
-                    <button onClick={handleVerify} disabled={loading || otp.join("").length !== 6} className="btn btn-primary" style={{ flex: 1, padding: "0.75rem" }}>
+                    <button
+                      onClick={() => setModalOpen(false)}
+                      className="btn btn-secondary"
+                      style={{ flex: 1, padding: "0.75rem" }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleVerify}
+                      disabled={loading || otp.join("").length !== 6}
+                      className="btn btn-primary"
+                      style={{ flex: 1, padding: "0.75rem" }}
+                    >
                       {loading ? "Verifying..." : "Verify & Save"}
                     </button>
                   </div>
                 </div>
               )}
-
             </motion.div>
           </div>
         )}

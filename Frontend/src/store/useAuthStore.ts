@@ -27,11 +27,12 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  
+
   // Actions
   login: (user: User) => void;
   logout: () => void;
   setLoading: (status: boolean) => void;
+  updateUser: (updates: Partial<User>) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -39,10 +40,10 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       isAuthenticated: false,
-      isLoading: true, // Initially true while we check auth status on mount
+      isLoading: true,
 
       login: (user) => set({ user, isAuthenticated: true, isLoading: false }),
-      
+
       logout: () => {
         if (typeof window !== "undefined") {
           localStorage.removeItem("accessToken");
@@ -50,14 +51,23 @@ export const useAuthStore = create<AuthState>()(
         }
         set({ user: null, isAuthenticated: false, isLoading: false });
       },
-      
+
       setLoading: (status) => set({ isLoading: status }),
+      updateUser: (updates) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...updates } : null,
+        })),
     }),
     {
       name: "auth-storage",
       storage: createJSONStorage(() => sessionStorage),
-      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
-    }
-  )
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
+      onRehydrateStorage: () => (state) => {
+        state?.setLoading(false);
+      },
+    },
+  ),
 );
-

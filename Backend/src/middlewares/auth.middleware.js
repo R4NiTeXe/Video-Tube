@@ -8,9 +8,10 @@ import logger from "../utils/logger.js";
 export const verifyJWT = asyncHandler(async (req, res, next) => {
   try {
     const tokenFromCookie = req.cookies?.accessToken;
-    const tokenFromHeader = req.header("Authorization")?.replace("Bearer ", "");
-    const tokenFromQuery = req.query?.token;
-    const token = tokenFromCookie || tokenFromHeader || tokenFromQuery;
+    const tokenFromHeader = req
+      .header("Authorization")
+      ?.replace(/^Bearer\s+/i, "");
+    const token = tokenFromCookie || tokenFromHeader;
 
     if (!token) {
       logger.warn("verifyJWT: no token found", {
@@ -21,12 +22,26 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
       throw new ApiError(401, "Unauthorized request");
     }
 
+    if (!process.env.ACCESS_TOKEN_SECRET) {
+      logger.error("verifyJWT: ACCESS_TOKEN_SECRET not configured");
+      throw new ApiError(500, "Internal server error");
+    }
+
     if (await isTokenBlacklisted(token)) {
       logger.warn("verifyJWT: token blacklisted", { path: req.path });
       throw new ApiError(401, "Token expired. Please log in again.");
     }
 
-    const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    let decodedToken;
+    try {
+      decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    } catch (jwtError) {
+      logger.warn("verifyJWT: token verification failed", {
+        path: req.path,
+        error: jwtError.message,
+      });
+      throw new ApiError(401, "Invalid access token");
+    }
 
     const user = await User.findById(decodedToken?._id).select(
       "-password -refreshToken"
@@ -38,7 +53,10 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
     }
 
     if (user.banned) {
-      logger.warn("verifyJWT: user banned", { userId: user._id, path: req.path });
+      logger.warn("verifyJWT: user banned", {
+        userId: user._id,
+        path: req.path,
+      });
       throw new ApiError(403, "Your account has been banned");
     }
 
@@ -46,6 +64,7 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
     next();
   } catch (error) {
     if (error instanceof ApiError) throw error;
-    throw new ApiError(401, "Invalid access token");
+    logger.error("verifyJWT: unexpected error", { error: error.message });
+    throw new ApiError(500, "Internal server error");
   }
 });

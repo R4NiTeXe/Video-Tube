@@ -25,9 +25,13 @@ const sendOtp = asyncHandler(async (req, res) => {
   let user = null;
 
   if (targetUserId) {
-    user = await User.findById(targetUserId).select("fullName username email timezone");
+    user = await User.findById(targetUserId).select(
+      "fullName username email timezone"
+    );
   } else if (isEmail) {
-    user = await User.findOne({ email: identifier.toLowerCase() }).select("fullName username email timezone");
+    user = await User.findOne({ email: identifier.toLowerCase() }).select(
+      "fullName username email timezone"
+    );
   }
 
   const { otp } = await otpService.storeOtp({
@@ -49,7 +53,9 @@ const sendOtp = asyncHandler(async (req, res) => {
         userName: user?.fullName,
       });
     } else if (channel === "whatsapp") {
-      logger.warn(`WhatsApp OTP delivery not implemented, falling back to email for ${identifier}`);
+      logger.warn(
+        `WhatsApp OTP delivery not implemented, falling back to email for ${identifier}`
+      );
       await otpService.sendOtpEmail({
         identifier: identifier.toLowerCase(),
         otp,
@@ -62,16 +68,22 @@ const sendOtp = asyncHandler(async (req, res) => {
     throw error;
   }
 
-  const usage = userId ? await otpService.getUserOtpUsage(userId, timezone) : null;
+  const usage = userId
+    ? await otpService.getUserOtpUsage(userId, timezone)
+    : null;
   const globalCount = otpService.checkGlobalLimit().remaining || 0;
 
   return res.status(200).json(
-    new ApiResponse(200, {
-      message: `OTP sent via ${channel === "whatsapp" ? "email (WhatsApp unavailable)" : channel}.`,
-      expiresIn: otpService.OTP_CONSTANTS.OTP_EXPIRY_MINUTES * 60,
-      remainingGlobal: globalCount,
-      remainingUser: usage?.remaining,
-    }, "OTP sent successfully.")
+    new ApiResponse(
+      200,
+      {
+        message: `OTP sent via ${channel === "whatsapp" ? "email (WhatsApp unavailable)" : channel}.`,
+        expiresIn: otpService.OTP_CONSTANTS.OTP_EXPIRY_MINUTES * 60,
+        remainingGlobal: globalCount,
+        remainingUser: usage?.remaining,
+      },
+      "OTP sent successfully."
+    )
   );
 });
 
@@ -95,11 +107,15 @@ const verifyOtp = asyncHandler(async (req, res) => {
   }
 
   return res.status(200).json(
-    new ApiResponse(200, {
-      verified: true,
-      channel: result.channel,
-      userId: result.userId,
-    }, result.message)
+    new ApiResponse(
+      200,
+      {
+        verified: true,
+        channel: result.channel,
+        userId: result.userId,
+      },
+      result.message
+    )
   );
 });
 
@@ -110,9 +126,15 @@ const resendOtp = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Identifier and purpose are required.");
   }
 
-  const existing = await OTP.findOne({ identifier: identifier.toLowerCase(), purpose });
+  const existing = await OTP.findOne({
+    identifier: identifier.toLowerCase(),
+    purpose,
+  });
   if (!existing) {
-    throw new ApiError(404, "No previous OTP found for this identifier and purpose.");
+    throw new ApiError(
+      404,
+      "No previous OTP found for this identifier and purpose."
+    );
   }
 
   if (!existing.verified && new Date() < existing.expiresAt) {
@@ -120,7 +142,10 @@ const resendOtp = asyncHandler(async (req, res) => {
     const timeSinceCreated = Date.now() - existing.createdAt.getTime();
     if (timeSinceCreated < cooldownMs) {
       const waitSeconds = Math.ceil((cooldownMs - timeSinceCreated) / 1000);
-      throw new ApiError(429, `Please wait ${waitSeconds} seconds before requesting a new OTP.`);
+      throw new ApiError(
+        429,
+        `Please wait ${waitSeconds} seconds before requesting a new OTP.`
+      );
     }
   }
 
@@ -135,22 +160,31 @@ const getOtpUsage = asyncHandler(async (req, res) => {
 
   const now = new Date();
   const tz = user?.timezone || "UTC";
-  const resetInTz = new Date(new Date().toLocaleString("en-US", { timeZone: tz }));
+  const resetInTz = new Date(
+    new Date().toLocaleString("en-US", { timeZone: tz })
+  );
   const nextMidnight = new Date(resetInTz);
   nextMidnight.setDate(nextMidnight.getDate() + 1);
   nextMidnight.setHours(0, 0, 0, 0);
-  const resetAt = new Date(nextMidnight.toLocaleString("en-US", { timeZone: "UTC" }));
+  const resetAt = new Date(
+    nextMidnight.toLocaleString("en-US", { timeZone: "UTC" })
+  );
 
   return res.status(200).json(
-    new ApiResponse(200, {
-      dailyLimit: usage.limit,
-      usedToday: usage.used,
-      remaining: usage.remaining,
-      globalDailyLimit: otpService.OTP_CONSTANTS.GLOBAL_DAILY_LIMIT,
-      globalUsedToday: otpService.OTP_CONSTANTS.GLOBAL_DAILY_LIMIT - globalCount,
-      globalRemaining: globalCount,
-      resetAt: resetAt.toISOString(),
-    }, "OTP usage retrieved.")
+    new ApiResponse(
+      200,
+      {
+        dailyLimit: usage.limit,
+        usedToday: usage.used,
+        remaining: usage.remaining,
+        globalDailyLimit: otpService.OTP_CONSTANTS.GLOBAL_DAILY_LIMIT,
+        globalUsedToday:
+          otpService.OTP_CONSTANTS.GLOBAL_DAILY_LIMIT - globalCount,
+        globalRemaining: globalCount,
+        resetAt: resetAt.toISOString(),
+      },
+      "OTP usage retrieved."
+    )
   );
 });
 

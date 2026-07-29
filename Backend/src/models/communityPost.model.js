@@ -38,4 +38,7 @@ const communityPostSchema = new Schema(
 
 communityPostSchema.index({ owner: 1, createdAt: -1 });
 
-export const CommunityPost = mongoose.model("CommunityPost", communityPostSchema);
+export const CommunityPost = mongoose.model(
+  "CommunityPost",
+  communityPostSchema
+);

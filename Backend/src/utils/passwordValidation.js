@@ -7,8 +7,10 @@ export const validatePasswordStrength = (password) => {
     errors.push("at least 8 characters");
     return errors;
   }
-  if (password.length < MIN_PASSWORD_LENGTH) errors.push("at least 8 characters");
-  if (password.length > MAX_PASSWORD_LENGTH) errors.push(`no more than ${MAX_PASSWORD_LENGTH} characters`);
+  if (password.length < MIN_PASSWORD_LENGTH)
+    errors.push("at least 8 characters");
+  if (password.length > MAX_PASSWORD_LENGTH)
+    errors.push(`no more than ${MAX_PASSWORD_LENGTH} characters`);
   if (!/[A-Z]/.test(password)) errors.push("one uppercase letter");
   if (!/[a-z]/.test(password)) errors.push("one lowercase letter");
   if (!/[0-9]/.test(password)) errors.push("one number");

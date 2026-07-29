@@ -12,7 +12,10 @@ import { CommunityPost } from "../../models/communityPost.model.js";
 import { Poll } from "../../models/poll.model.js";
 import { Session } from "../../models/session.model.js";
 import { getLocationInfo } from "../../utils/location.js";
-import { uploadOnCloudinary, deleteFromCloudinary } from "../../utils/cloudinary.js";
+import {
+  uploadOnCloudinary,
+  deleteFromCloudinary,
+} from "../../utils/cloudinary.js";
 import { escapeRegex } from "../../utils/sanitizer.js";
 import mongoose from "mongoose";
 import validator from "validator";
@@ -20,7 +23,13 @@ import { getCookieOptions } from "../user.controller.js";
 import logger from "../../utils/logger.js";
 import { sendEmail } from "../../utils/email.js";
 import { storeOTP, verifyOTP, otpService } from "../../utils/otp.js";
-import { otpEmailTemplate, passwordChangedEmailTemplate, accountDeletedTemplate, identifierUpdatedTemplate, identifierDeletedTemplate } from "../../utils/emailTemplates.js";
+import {
+  otpEmailTemplate,
+  passwordChangedEmailTemplate,
+  accountDeletedTemplate,
+  identifierUpdatedTemplate,
+  identifierDeletedTemplate,
+} from "../../utils/emailTemplates.js";
 import { sendWhatsAppOTP } from "../../utils/whatsappOtp.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -28,7 +37,8 @@ import { assertPasswordStrength } from "../../utils/passwordValidation.js";
 
 const isValidEmail = (email) => validator.isEmail(email);
 const isValidMobile = (mobile) => /^\+?[1-9]\d{9,14}$/.test(mobile);
-const detectChannel = (identifier) => /^\+?[1-9]\d{9,14}$/.test(identifier.trim()) ? "whatsapp" : "email";
+const detectChannel = (identifier) =>
+  /^\+?[1-9]\d{9,14}$/.test(identifier.trim()) ? "whatsapp" : "email";
 
 const sendChangePasswordOTP = asyncHandler(async (req, res) => {
   const { channel = "email" } = req.body;
@@ -38,9 +48,17 @@ const sendChangePasswordOTP = asyncHandler(async (req, res) => {
 
   if (channel === "whatsapp") {
     if (!mobile) {
-      throw new ApiError(400, "No mobile number linked. Please add one in your profile first.");
+      throw new ApiError(
+        400,
+        "No mobile number linked. Please add one in your profile first."
+      );
     }
-    const otp = await storeOTP(mobile, "change-password", "whatsapp", req.user._id);
+    const otp = await storeOTP(
+      mobile,
+      "change-password",
+      "whatsapp",
+      req.user._id
+    );
     try {
       await sendWhatsAppOTP(mobile, otp);
       await otpService.confirmOtpDelivery(req.user._id, user.timezone);
@@ -48,7 +66,15 @@ const sendChangePasswordOTP = asyncHandler(async (req, res) => {
       logger.error("Failed to send OTP WhatsApp:", error.message);
       throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);
     }
-    return res.status(200).json(new ApiResponse(200, { channel: "whatsapp" }, "OTP sent to your WhatsApp"));
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { channel: "whatsapp" },
+          "OTP sent to your WhatsApp"
+        )
+      );
   } else {
     const otp = await storeOTP(email, "change-password", "email", req.user._id);
     try {
@@ -62,7 +88,11 @@ const sendChangePasswordOTP = asyncHandler(async (req, res) => {
       logger.error("Failed to send OTP email:", error.message);
       throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
     }
-    return res.status(200).json(new ApiResponse(200, { channel: "email" }, "OTP sent to your email"));
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { channel: "email" }, "OTP sent to your email")
+      );
   }
 });
 
@@ -133,17 +163,36 @@ const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
 
   if (channel === "whatsapp") {
     if (!mobile) {
-      throw new ApiError(400, "No mobile number linked. Please add one in your profile first.");
+      throw new ApiError(
+        400,
+        "No mobile number linked. Please add one in your profile first."
+      );
     }
-    const otp = await storeOTP(mobile, "delete-account", "whatsapp", req.user._id);
+    const otp = await storeOTP(
+      mobile,
+      "delete-account",
+      "whatsapp",
+      req.user._id
+    );
     try {
       await sendWhatsAppOTP(mobile, otp);
       await otpService.confirmOtpDelivery(req.user._id, user.timezone);
     } catch (error) {
-      logger.error("Failed to send delete account OTP WhatsApp:", error.message);
+      logger.error(
+        "Failed to send delete account OTP WhatsApp:",
+        error.message
+      );
       throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);
     }
-    return res.status(200).json(new ApiResponse(200, { channel: "whatsapp" }, "OTP sent to your WhatsApp"));
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { channel: "whatsapp" },
+          "OTP sent to your WhatsApp"
+        )
+      );
   } else {
     const otp = await storeOTP(email, "delete-account", "email", req.user._id);
     try {
@@ -157,7 +206,11 @@ const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
       logger.error("Failed to send delete account OTP email:", error.message);
       throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
     }
-    return res.status(200).json(new ApiResponse(200, { channel: "email" }, "OTP sent to your email"));
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { channel: "email" }, "OTP sent to your email")
+      );
   }
 });
 
@@ -182,26 +235,35 @@ const verifyAndDeleteAccount = asyncHandler(async (req, res) => {
 
   const userId = req.user._id;
 
-  const userVideos = await Video.find({ owner: userId }).select("videoFile thumbnail");
+  const userVideos = await Video.find({ owner: userId }).select(
+    "videoFile thumbnail"
+  );
   for (const video of userVideos) {
     if (video.videoFile) await deleteFromCloudinary(video.videoFile);
     if (video.thumbnail) await deleteFromCloudinary(video.thumbnail);
   }
 
   if (user.avatarPublicId) await deleteFromCloudinary(user.avatarPublicId);
-  if (user.coverImagePublicId) await deleteFromCloudinary(user.coverImagePublicId);
+  if (user.coverImagePublicId)
+    await deleteFromCloudinary(user.coverImagePublicId);
 
-  await Subscription.deleteMany({ $or: [{ subscriber: userId }, { channel: userId }] });
+  await Subscription.deleteMany({
+    $or: [{ subscriber: userId }, { channel: userId }],
+  });
   await Video.deleteMany({ owner: userId });
   await Comment.deleteMany({ owner: userId });
   await Like.deleteMany({ likedBy: userId });
   await Playlist.deleteMany({ owner: userId });
-  await Notification.deleteMany({ $or: [{ recipient: userId }, { sender: userId }] });
+  await Notification.deleteMany({
+    $or: [{ recipient: userId }, { sender: userId }],
+  });
   await CommunityPost.deleteMany({ owner: userId });
   await Poll.deleteMany({ createdBy: userId });
   await Poll.updateMany({ voters: userId }, { $pull: { voters: userId } });
   await Session.deleteMany({ user: userId });
-  const deleteLoc = await getLocationInfo(req).catch(() => ({ timezone: undefined }));
+  const deleteLoc = await getLocationInfo(req).catch(() => ({
+    timezone: undefined,
+  }));
   try {
     await sendEmail({
       to: user.email,
@@ -231,19 +293,43 @@ const sendForgotPasswordChangeOTP = asyncHandler(async (req, res) => {
 
   if (channel === "whatsapp") {
     if (!mobile) {
-      throw new ApiError(400, "No mobile number linked. Please add one in your profile first.");
+      throw new ApiError(
+        400,
+        "No mobile number linked. Please add one in your profile first."
+      );
     }
-    const otp = await storeOTP(mobile, "forgot-password-change", "whatsapp", req.user._id);
+    const otp = await storeOTP(
+      mobile,
+      "forgot-password-change",
+      "whatsapp",
+      req.user._id
+    );
     try {
       await sendWhatsAppOTP(mobile, otp);
       await otpService.confirmOtpDelivery(req.user._id, user.timezone);
     } catch (error) {
-      logger.error("Failed to send forgot password OTP WhatsApp:", error.message);
+      logger.error(
+        "Failed to send forgot password OTP WhatsApp:",
+        error.message
+      );
       throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);
     }
-    return res.status(200).json(new ApiResponse(200, { channel: "whatsapp" }, "OTP sent to your WhatsApp"));
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { channel: "whatsapp" },
+          "OTP sent to your WhatsApp"
+        )
+      );
   } else {
-    const otp = await storeOTP(email, "forgot-password-change", "email", req.user._id);
+    const otp = await storeOTP(
+      email,
+      "forgot-password-change",
+      "email",
+      req.user._id
+    );
     try {
       await sendEmail({
         to: email,
@@ -255,7 +341,11 @@ const sendForgotPasswordChangeOTP = asyncHandler(async (req, res) => {
       logger.error("Failed to send forgot password OTP email:", error.message);
       throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
     }
-    return res.status(200).json(new ApiResponse(200, { channel: "email" }, "OTP sent to your email"));
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { channel: "email" }, "OTP sent to your email")
+      );
   }
 });
 
@@ -272,7 +362,10 @@ const verifyAndResetPasswordViaOTP = asyncHandler(async (req, res) => {
   const identifier = channel === "whatsapp" ? user.mobile : user.email;
 
   if (!identifier) {
-    throw new ApiError(400, `No ${channel === "whatsapp" ? "mobile number" : "email"} linked to this account`);
+    throw new ApiError(
+      400,
+      `No ${channel === "whatsapp" ? "mobile number" : "email"} linked to this account`
+    );
   }
 
   const result = await verifyOTP(identifier, otp, "forgot-password-change");
@@ -292,7 +385,9 @@ const verifyAndResetPasswordViaOTP = asyncHandler(async (req, res) => {
       html: passwordChangedEmailTemplate(user),
     });
   } catch (error) {
-    logger.error("Failed to send password changed email:", { error: error.message });
+    logger.error("Failed to send password changed email:", {
+      error: error.message,
+    });
   }
 
   const options = getCookieOptions();
@@ -311,19 +406,34 @@ const verifyAndResetPasswordViaOTP = asyncHandler(async (req, res) => {
 });
 
 const getNotificationPrefs = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id).select("notificationPrefs").lean();
-  return res.status(200).json(new ApiResponse(200, user.notificationPrefs, "Notification preferences fetched"));
+  const user = await User.findById(req.user._id)
+    .select("notificationPrefs")
+    .lean();
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        user.notificationPrefs,
+        "Notification preferences fetched"
+      )
+    );
 });
 
 const updateNotificationPrefs = asyncHandler(async (req, res) => {
   const { likes, comments, replies, subscriptions, mentions } = req.body;
 
   const updateFields = {};
-  if (likes !== undefined) updateFields["notificationPrefs.likes"] = Boolean(likes);
-  if (comments !== undefined) updateFields["notificationPrefs.comments"] = Boolean(comments);
-  if (replies !== undefined) updateFields["notificationPrefs.replies"] = Boolean(replies);
-  if (subscriptions !== undefined) updateFields["notificationPrefs.subscriptions"] = Boolean(subscriptions);
-  if (mentions !== undefined) updateFields["notificationPrefs.mentions"] = Boolean(mentions);
+  if (likes !== undefined)
+    updateFields["notificationPrefs.likes"] = Boolean(likes);
+  if (comments !== undefined)
+    updateFields["notificationPrefs.comments"] = Boolean(comments);
+  if (replies !== undefined)
+    updateFields["notificationPrefs.replies"] = Boolean(replies);
+  if (subscriptions !== undefined)
+    updateFields["notificationPrefs.subscriptions"] = Boolean(subscriptions);
+  if (mentions !== undefined)
+    updateFields["notificationPrefs.mentions"] = Boolean(mentions);
 
   if (!Object.keys(updateFields).length) {
     throw new ApiError(400, "At least one preference is required");
@@ -333,9 +443,19 @@ const updateNotificationPrefs = asyncHandler(async (req, res) => {
     req.user._id,
     { $set: updateFields },
     { new: true }
-  ).select("notificationPrefs").lean();
+  )
+    .select("notificationPrefs")
+    .lean();
 
-  return res.status(200).json(new ApiResponse(200, user.notificationPrefs, "Notification preferences updated"));
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        user.notificationPrefs,
+        "Notification preferences updated"
+      )
+    );
 });
 
 const updatePrivacySettings = asyncHandler(async (req, res) => {
@@ -349,9 +469,13 @@ const updatePrivacySettings = asyncHandler(async (req, res) => {
     req.user._id,
     { $set: { isPrivate } },
     { new: true }
-  ).select("isPrivate").lean();
+  )
+    .select("isPrivate")
+    .lean();
 
-  return res.status(200).json(new ApiResponse(200, user, "Privacy settings updated"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Privacy settings updated"));
 });
 
 const addSearchHistory = asyncHandler(async (req, res) => {
@@ -369,7 +493,9 @@ const addSearchHistory = asyncHandler(async (req, res) => {
   }
   await user.save({ validateBeforeSave: false });
 
-  return res.status(200).json(new ApiResponse(200, user.searchHistory, "Search history updated"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user.searchHistory, "Search history updated"));
 });
 
 const getSearchHistory = asyncHandler(async (req, res) => {
@@ -383,19 +509,29 @@ const getSearchHistory = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
   const docs = user?.searchHistory?.slice(skip, skip + limit) || [];
 
-  return res.status(200).json(
-    new ApiResponse(200, { docs, total, page, limit, totalPages }, "Search history fetched")
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { docs, total, page, limit, totalPages },
+        "Search history fetched"
+      )
+    );
 });
 
 const clearSearchHistory = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(req.user._id, { $set: { searchHistory: [] } });
-  return res.status(200).json(new ApiResponse(200, {}, "Search history cleared"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Search history cleared"));
 });
 
 const clearWatchHistory = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(req.user._id, { $set: { watchHistory: [] } });
-  return res.status(200).json(new ApiResponse(200, {}, "Watch history cleared"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Watch history cleared"));
 });
 
 const getWatchLater = asyncHandler(async (req, res) => {
@@ -410,22 +546,33 @@ const getWatchLater = asyncHandler(async (req, res) => {
 
   const watchLaterIds = user?.watchLater?.slice(skip, skip + limit) || [];
 
-  const videos = await Video.find({ _id: { $in: watchLaterIds }, isPublished: true })
+  const videos = await Video.find({
+    _id: { $in: watchLaterIds },
+    isPublished: true,
+  })
     .select("title thumbnail views duration createdAt")
     .populate("owner", "fullName username avatar")
     .sort({ createdAt: -1 })
     .lean();
 
-  const ordered = watchLaterIds.map((id) => videos.find((v) => v._id.toString() === id.toString())).filter(Boolean);
+  const ordered = watchLaterIds
+    .map((id) => videos.find((v) => v._id.toString() === id.toString()))
+    .filter(Boolean);
 
-  return res.status(200).json(
-    new ApiResponse(200, { docs: ordered, total, page, limit, totalPages }, "Watch later fetched")
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { docs: ordered, total, page, limit, totalPages },
+        "Watch later fetched"
+      )
+    );
 });
 
 const sendIdentifierUpdateOTP = asyncHandler(async (req, res) => {
   const { identifier, action } = req.body;
-  
+
   if (!["add", "edit", "delete"].includes(action)) {
     throw new ApiError(400, "Invalid action");
   }
@@ -440,10 +587,16 @@ const sendIdentifierUpdateOTP = asyncHandler(async (req, res) => {
     // We send OTP to the OTHER identifier.
     const targetType = identifier; // "email" or "mobile"
     if (targetType === "email" && !user.mobile) {
-      throw new ApiError(400, "Cannot delete email because you have no mobile number linked.");
+      throw new ApiError(
+        400,
+        "Cannot delete email because you have no mobile number linked."
+      );
     }
     if (targetType === "mobile" && !user.email) {
-      throw new ApiError(400, "Cannot delete mobile because you have no email linked.");
+      throw new ApiError(
+        400,
+        "Cannot delete mobile because you have no email linked."
+      );
     }
 
     targetIdentifier = targetType === "email" ? user.mobile : user.email;
@@ -454,16 +607,27 @@ const sendIdentifierUpdateOTP = asyncHandler(async (req, res) => {
       throw new ApiError(400, "Invalid email or mobile format");
     }
 
-    const existing = await User.findOne({ 
-      $or: [{ email: targetIdentifier.toLowerCase() }, { mobile: targetIdentifier.trim() }] 
+    const existing = await User.findOne({
+      $or: [
+        { email: targetIdentifier.toLowerCase() },
+        { mobile: targetIdentifier.trim() },
+      ],
     });
     if (existing && existing._id.toString() !== user._id.toString()) {
-      throw new ApiError(409, "This identifier is already in use by another account.");
+      throw new ApiError(
+        409,
+        "This identifier is already in use by another account."
+      );
     }
   }
 
   const channel = isMobile ? "whatsapp" : "email";
-  const otp = await storeOTP(targetIdentifier, "identifier-update", channel, user._id);
+  const otp = await storeOTP(
+    targetIdentifier,
+    "identifier-update",
+    channel,
+    user._id
+  );
 
   try {
     if (channel === "whatsapp") {
@@ -472,7 +636,11 @@ const sendIdentifierUpdateOTP = asyncHandler(async (req, res) => {
       await sendEmail({
         to: targetIdentifier,
         subject: "Verification Code for Profile Update",
-        html: otpEmailTemplate(otp, "verify-email", user.fullName || user.username),
+        html: otpEmailTemplate(
+          otp,
+          "verify-email",
+          user.fullName || user.username
+        ),
       });
     }
     await otpService.confirmOtpDelivery(user._id, user.timezone);
@@ -481,7 +649,15 @@ const sendIdentifierUpdateOTP = asyncHandler(async (req, res) => {
     throw new ApiError(500, `Failed to send OTP to ${channel}`);
   }
 
-  return res.status(200).json(new ApiResponse(200, { channel, verificationIdentifier: targetIdentifier }, "OTP sent successfully"));
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { channel, verificationIdentifier: targetIdentifier },
+        "OTP sent successfully"
+      )
+    );
 });
 
 const verifyAndAddIdentifier = asyncHandler(async (req, res) => {
@@ -494,7 +670,7 @@ const verifyAndAddIdentifier = asyncHandler(async (req, res) => {
   }
 
   const user = await User.findById(req.user._id);
-  
+
   if (isMobile) {
     user.mobile = identifier.trim();
     user.isMobileVerified = true;
@@ -504,7 +680,9 @@ const verifyAndAddIdentifier = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  const idUpdateLoc = await getLocationInfo(req).catch(() => ({ timezone: undefined }));
+  const idUpdateLoc = await getLocationInfo(req).catch(() => ({
+    timezone: undefined,
+  }));
   try {
     const notifyIdentifier = isMobile ? user.mobile : user.email;
     const notifyChannel = isMobile ? "whatsapp" : "email";
@@ -512,20 +690,34 @@ const verifyAndAddIdentifier = asyncHandler(async (req, res) => {
       await sendEmail({
         to: notifyIdentifier,
         subject: "Profile Updated",
-        html: identifierUpdatedTemplate(user, isMobile ? "mobile" : "email", identifier.trim(), idUpdateLoc.timezone),
+        html: identifierUpdatedTemplate(
+          user,
+          isMobile ? "mobile" : "email",
+          identifier.trim(),
+          idUpdateLoc.timezone
+        ),
       });
     }
   } catch (error) {
-    logger.error("Failed to send identifier update notification:", error.message);
+    logger.error(
+      "Failed to send identifier update notification:",
+      error.message
+    );
   }
 
-  return res.status(200).json(new ApiResponse(200, { user }, "Identifier updated successfully"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { user }, "Identifier updated successfully"));
 });
 
 const verifyAndDeleteIdentifier = asyncHandler(async (req, res) => {
   const { targetType, verificationIdentifier, otp } = req.body; // targetType: "email" or "mobile"
 
-  const result = await verifyOTP(verificationIdentifier, otp, "identifier-update");
+  const result = await verifyOTP(
+    verificationIdentifier,
+    otp,
+    "identifier-update"
+  );
   if (!result.valid) {
     throw new ApiError(400, result.message);
   }
@@ -541,7 +733,9 @@ const verifyAndDeleteIdentifier = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  const idDelLoc = await getLocationInfo(req).catch(() => ({ timezone: undefined }));
+  const idDelLoc = await getLocationInfo(req).catch(() => ({
+    timezone: undefined,
+  }));
   try {
     const notifyIdentifier = targetType === "email" ? user.mobile : user.email;
     const notifyChannel = targetType === "email" ? "whatsapp" : "email";
@@ -553,10 +747,15 @@ const verifyAndDeleteIdentifier = asyncHandler(async (req, res) => {
       });
     }
   } catch (error) {
-    logger.error("Failed to send identifier deletion notification:", error.message);
+    logger.error(
+      "Failed to send identifier deletion notification:",
+      error.message
+    );
   }
 
-  return res.status(200).json(new ApiResponse(200, { user }, `${targetType} removed successfully`));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { user }, `${targetType} removed successfully`));
 });
 
 export {

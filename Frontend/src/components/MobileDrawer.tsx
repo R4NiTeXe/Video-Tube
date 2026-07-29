@@ -20,10 +20,25 @@ import {
 
 const mainNavItems = [
   { key: "home", href: "/", label: "Home", icon: HomeIcon },
-  { key: "subscriptions", href: "/subscriptions", label: "Subscriptions", icon: SubscriptionsIcon },
+  {
+    key: "subscriptions",
+    href: "/subscriptions",
+    label: "Subscriptions",
+    icon: SubscriptionsIcon,
+  },
   { key: "library", href: "/library", label: "Library", icon: LibraryIcon },
-  { key: "playlists", href: "/playlists", label: "Playlists", icon: PlaylistsIcon },
-  { key: "community", href: "/community", label: "Community", icon: CommunityIcon },
+  {
+    key: "playlists",
+    href: "/playlists",
+    label: "Playlists",
+    icon: PlaylistsIcon,
+  },
+  {
+    key: "community",
+    href: "/community",
+    label: "Community",
+    icon: CommunityIcon,
+  },
 ];
 
 export default function MobileDrawer() {
@@ -36,7 +51,7 @@ export default function MobileDrawer() {
     (e: KeyboardEvent) => {
       if (e.key === "Escape") close();
     },
-    [close]
+    [close],
   );
 
   useEffect(() => {
@@ -108,14 +123,26 @@ export default function MobileDrawer() {
             <div className="mobile-drawer-content">
               {user && (
                 <div className="mobile-drawer-profile">
-                  <Link href={`/channel/${user.username}`} className="mobile-drawer-profile-link" onClick={handleItemClick}>
+                  <Link
+                    href={`/channel/${user.username}`}
+                    className="mobile-drawer-profile-link"
+                    onClick={handleItemClick}
+                  >
                     <div style={{ position: "relative", flexShrink: 0 }}>
-                      <img src={user.avatar} alt="" className="mobile-drawer-avatar" />
+                      <img
+                        src={user.avatar}
+                        alt=""
+                        className="mobile-drawer-avatar"
+                      />
                       <span className="online-dot" aria-hidden="true" />
                     </div>
                     <div className="mobile-drawer-profile-info">
-                      <div className="mobile-drawer-profile-name">{user.fullName}</div>
-                      <div className="mobile-drawer-profile-handle">@{user.username}</div>
+                      <div className="mobile-drawer-profile-name">
+                        {user.fullName}
+                      </div>
+                      <div className="mobile-drawer-profile-handle">
+                        @{user.username}
+                      </div>
                     </div>
                   </Link>
                 </div>
@@ -130,7 +157,11 @@ export default function MobileDrawer() {
                     onClick={handleItemClick}
                     aria-current={isActive(item.href) ? "page" : undefined}
                   >
-                    <item.icon size={18} active={isActive(item.href)} aria-hidden="true" />
+                    <item.icon
+                      size={18}
+                      active={isActive(item.href)}
+                      aria-hidden="true"
+                    />
                     <span>{item.label}</span>
                   </Link>
                 ))}
@@ -139,7 +170,11 @@ export default function MobileDrawer() {
                   className="mobile-drawer-item"
                   aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
                 >
-                  {theme === "dark" ? <SunIcon size={18} /> : <MoonIcon size={18} />}
+                  {theme === "dark" ? (
+                    <SunIcon size={18} />
+                  ) : (
+                    <MoonIcon size={18} />
+                  )}
                   <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
                 </button>
               </nav>

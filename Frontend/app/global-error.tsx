@@ -38,13 +38,22 @@ export default function GlobalError({
           marginBottom: "1rem",
         }}
       >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#dc2626"
+          strokeWidth="2"
+        >
           <circle cx="12" cy="12" r="10" />
           <line x1="15" y1="9" x2="9" y2="15" />
           <line x1="9" y1="9" x2="15" y2="15" />
         </svg>
       </div>
-      <h2 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "0.5rem" }}>
+      <h2
+        style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "0.5rem" }}
+      >
         Critical error
       </h2>
       <p

@@ -24,8 +24,13 @@ export default function CommunityPoll({ poll }: { poll: PollData }) {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
 
-  const totalVotes = poll.options.reduce((sum, opt) => sum + opt.voters.length, 0);
-  const userVotedIndex = poll.options.findIndex((opt) => opt.voters.includes(user?._id || ""));
+  const totalVotes = poll.options.reduce(
+    (sum, opt) => sum + opt.voters.length,
+    0,
+  );
+  const userVotedIndex = poll.options.findIndex((opt) =>
+    opt.voters.includes(user?._id || ""),
+  );
 
   const voteMutation = useMutation({
     mutationFn: async (optionIndex: number) => {
@@ -35,14 +40,37 @@ export default function CommunityPoll({ poll }: { poll: PollData }) {
       queryClient.invalidateQueries({ queryKey: ["channel-posts"] });
       queryClient.invalidateQueries({ queryKey: ["community-posts"] });
     },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["channel-posts"] });
+      queryClient.invalidateQueries({ queryKey: ["community-posts"] });
+    },
   });
 
   return (
-    <div style={{ marginTop: "1rem", padding: "1rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)" }}>
-      <p style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.75rem" }}>{poll.question}</p>
+    <div
+      style={{
+        marginTop: "1rem",
+        padding: "1rem",
+        backgroundColor: "var(--bg-secondary)",
+        borderRadius: "var(--radius-md)",
+      }}
+    >
+      <p
+        style={{
+          fontSize: "0.95rem",
+          fontWeight: 700,
+          color: "var(--text-primary)",
+          marginBottom: "0.75rem",
+        }}
+      >
+        {poll.question}
+      </p>
 
       {poll.options.map((opt, i) => {
-        const pct = totalVotes > 0 ? Math.round((opt.voters.length / totalVotes) * 100) : 0;
+        const pct =
+          totalVotes > 0
+            ? Math.round((opt.voters.length / totalVotes) * 100)
+            : 0;
         const isSelected = userVotedIndex === i;
 
         return (
@@ -59,7 +87,9 @@ export default function CommunityPoll({ poll }: { poll: PollData }) {
               marginBottom: "0.4rem",
               borderRadius: "var(--radius-sm)",
               border: `1.5px solid ${isSelected ? "var(--accent)" : "var(--border)"}`,
-              backgroundColor: isSelected ? "var(--accent-subtle)" : "var(--bg-primary)",
+              backgroundColor: isSelected
+                ? "var(--accent-subtle)"
+                : "var(--bg-primary)",
               cursor: poll.isActive ? "pointer" : "default",
               position: "relative",
               overflow: "hidden",
@@ -72,7 +102,9 @@ export default function CommunityPoll({ poll }: { poll: PollData }) {
                 position: "absolute",
                 inset: 0,
                 width: `${pct}%`,
-                backgroundColor: isSelected ? "var(--accent-glow)" : "var(--elevated)",
+                backgroundColor: isSelected
+                  ? "var(--accent-glow)"
+                  : "var(--elevated)",
                 transition: "width 0.5s ease",
               }}
             />
@@ -103,13 +135,32 @@ export default function CommunityPoll({ poll }: { poll: PollData }) {
         );
       })}
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.5rem" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginTop: "0.5rem",
+        }}
+      >
         <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
           {totalVotes} vote{totalVotes !== 1 ? "s" : ""}
-          {!poll.isActive ? " · Final results" : userVotedIndex !== -1 ? "" : ""}
+          {!poll.isActive
+            ? " · Final results"
+            : userVotedIndex !== -1
+              ? ""
+              : ""}
         </span>
         {!poll.isActive && (
-          <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--accent-warm)" }}>Closed</span>
+          <span
+            style={{
+              fontSize: "0.72rem",
+              fontWeight: 600,
+              color: "var(--accent-warm)",
+            }}
+          >
+            Closed
+          </span>
         )}
       </div>
     </div>

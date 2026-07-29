@@ -73,20 +73,18 @@ const getNotifications = asyncHandler(async (req, res) => {
     recipient: req.user._id,
   });
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        {
-          notifications,
-          totalNotifications,
-          totalPages: Math.ceil(totalNotifications / limit),
-          currentPage: page,
-        },
-        "Notifications fetched successfully"
-      )
-    );
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        notifications,
+        totalNotifications,
+        totalPages: Math.ceil(totalNotifications / limit),
+        currentPage: page,
+      },
+      "Notifications fetched successfully"
+    )
+  );
 });
 
 const markAsRead = asyncHandler(async (req, res) => {
@@ -146,9 +144,7 @@ const getUnreadCount = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(
-      new ApiResponse(200, { unreadCount: count }, "Unread count fetched")
-    );
+    .json(new ApiResponse(200, { unreadCount: count }, "Unread count fetched"));
 });
 
 const deleteNotification = asyncHandler(async (req, res) => {

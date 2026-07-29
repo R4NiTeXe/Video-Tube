@@ -113,8 +113,12 @@ const getChannelVideos = asyncHandler(async (req, res) => {
           },
           {
             $addFields: {
-              likesCount: { $ifNull: [{ $arrayElemAt: ["$likes.count", 0] }, 0] },
-              commentsCount: { $ifNull: [{ $arrayElemAt: ["$videoComments.count", 0] }, 0] },
+              likesCount: {
+                $ifNull: [{ $arrayElemAt: ["$likes.count", 0] }, 0],
+              },
+              commentsCount: {
+                $ifNull: [{ $arrayElemAt: ["$videoComments.count", 0] }, 0],
+              },
             },
           },
           {
@@ -144,7 +148,19 @@ const getChannelVideos = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, { docs: videos[0]?.data || [], total, page, limit, totalPages: Math.ceil(total / limit) }, "Channel videos fetched successfully"));
+    .json(
+      new ApiResponse(
+        200,
+        {
+          docs: videos[0]?.data || [],
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+        "Channel videos fetched successfully"
+      )
+    );
 });
 
 const getSubscriberGrowth = asyncHandler(async (req, res) => {
@@ -181,10 +197,16 @@ const getSubscriberGrowth = asyncHandler(async (req, res) => {
   let cumulative = beforeStart;
   const result = growth.map((day) => {
     cumulative += day.count;
-    return { date: day._id, newSubscribers: day.count, totalSubscribers: cumulative };
+    return {
+      date: day._id,
+      newSubscribers: day.count,
+      totalSubscribers: cumulative,
+    };
   });
 
-  return res.status(200).json(new ApiResponse(200, result, "Subscriber growth fetched"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, result, "Subscriber growth fetched"));
 });
 
 const getVideoDetailedStats = asyncHandler(async (req, res) => {
@@ -194,7 +216,9 @@ const getVideoDetailedStats = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid video id");
   }
 
-  const video = await Video.findById(videoId).select("title views duration createdAt isPublished owner").lean();
+  const video = await Video.findById(videoId)
+    .select("title views duration createdAt isPublished owner")
+    .lean();
   if (!video) throw new ApiError(404, "Video not found");
   if (video.owner.toString() !== req.user._id.toString()) {
     throw new ApiError(403, "Not authorized");
@@ -209,12 +233,23 @@ const getVideoDetailedStats = asyncHandler(async (req, res) => {
   const estimatedWatchTimeMinutes = Math.round(estimatedWatchTimeSeconds / 60);
 
   return res.status(200).json(
-    new ApiResponse(200, {
-      video: { _id: video._id, title: video.title, views: video.views, duration: video.duration, createdAt: video.createdAt, isPublished: video.isPublished },
-      likesCount,
-      commentsCount,
-      estimatedWatchTimeMinutes,
-    }, "Video stats fetched")
+    new ApiResponse(
+      200,
+      {
+        video: {
+          _id: video._id,
+          title: video.title,
+          views: video.views,
+          duration: video.duration,
+          createdAt: video.createdAt,
+          isPublished: video.isPublished,
+        },
+        likesCount,
+        commentsCount,
+        estimatedWatchTimeMinutes,
+      },
+      "Video stats fetched"
+    )
   );
 });
 
@@ -251,9 +286,15 @@ const getChannelAnalytics = asyncHandler(async (req, res) => {
     },
   ]);
 
-  return res.status(200).json(
-    new ApiResponse(200, { viewsOverTime }, "Channel analytics fetched")
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { viewsOverTime }, "Channel analytics fetched"));
 });
 
-export { getChannelStats, getChannelVideos, getSubscriberGrowth, getVideoDetailedStats, getChannelAnalytics };
+export {
+  getChannelStats,
+  getChannelVideos,
+  getSubscriberGrowth,
+  getVideoDetailedStats,
+  getChannelAnalytics,
+};

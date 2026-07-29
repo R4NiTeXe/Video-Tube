@@ -12,10 +12,14 @@ const resetViews = async () => {
 
     const db = mongoose.connection.db;
 
-    const videoResult = await db.collection("videos").updateMany({}, { $set: { views: 0 } });
+    const videoResult = await db
+      .collection("videos")
+      .updateMany({}, { $set: { views: 0 } });
     console.log(`Reset views for ${videoResult.modifiedCount} videos.`);
 
-    const userResult = await db.collection("users").updateMany({}, { $set: { watchHistory: [] } });
+    const userResult = await db
+      .collection("users")
+      .updateMany({}, { $set: { watchHistory: [] } });
     console.log(`Cleared watch history for ${userResult.modifiedCount} users.`);
 
     console.log("Successfully removed fake views!");

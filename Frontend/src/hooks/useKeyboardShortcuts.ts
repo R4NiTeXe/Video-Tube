@@ -26,7 +26,9 @@ export function useKeyboardShortcuts(shortcuts: ShortcutConfig[]) {
 
       for (const shortcut of shortcuts) {
         const keyMatch = e.key.toLowerCase() === shortcut.key.toLowerCase();
-        const ctrlMatch = shortcut.ctrl ? e.ctrlKey || e.metaKey : !(e.ctrlKey || e.metaKey);
+        const ctrlMatch = shortcut.ctrl
+          ? e.ctrlKey || e.metaKey
+          : !(e.ctrlKey || e.metaKey);
         const shiftMatch = shortcut.shift ? e.shiftKey : !e.shiftKey;
         const altMatch = shortcut.alt ? e.altKey : !e.altKey;
 
@@ -37,7 +39,7 @@ export function useKeyboardShortcuts(shortcuts: ShortcutConfig[]) {
         }
       }
     },
-    [shortcuts]
+    [shortcuts],
   );
 
   useEffect(() => {
@@ -54,5 +56,10 @@ export const DEFAULT_SHORTCUTS = [
   { key: "l", description: "Go to library", action: "library" },
   { key: "s", description: "Go to subscriptions", action: "subscriptions" },
   { key: "n", description: "Go to notifications", action: "notifications" },
-  { key: "?", shift: true, description: "Show shortcuts", action: "showShortcuts" },
+  {
+    key: "?",
+    shift: true,
+    description: "Show shortcuts",
+    action: "showShortcuts",
+  },
 ] as const;

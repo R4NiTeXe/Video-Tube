@@ -69,7 +69,10 @@ export default function TopNav() {
 
   useEffect(() => {
     function handleClickOutside(e: Event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setIsDropdownOpen(false);
       }
     }
@@ -102,16 +105,32 @@ export default function TopNav() {
     return (
       <div className="topnav" style={{ pointerEvents: "none" }}>
         <div className="topnav-logo">
-          <div className="topnav-logo-icon skeleton" style={{ width: 32, height: 32 }} />
+          <div
+            className="topnav-logo-icon skeleton"
+            style={{ width: 32, height: 32 }}
+          />
           <div className="skeleton" style={{ width: 90, height: 16 }} />
         </div>
         <div className="topnav-search">
           <div className="skeleton" style={{ width: 200, height: 16 }} />
         </div>
         <div className="topnav-actions">
-          <div className="skeleton" style={{ width: 40, height: 40, borderRadius: "var(--radius-md)" }} />
-          <div className="skeleton" style={{ width: 40, height: 40, borderRadius: "var(--radius-md)" }} />
-          <div className="skeleton" style={{ width: 32, height: 32, borderRadius: "var(--radius-full)" }} />
+          <div
+            className="skeleton"
+            style={{ width: 40, height: 40, borderRadius: "var(--radius-md)" }}
+          />
+          <div
+            className="skeleton"
+            style={{ width: 40, height: 40, borderRadius: "var(--radius-md)" }}
+          />
+          <div
+            className="skeleton"
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: "var(--radius-full)",
+            }}
+          />
         </div>
       </div>
     );
@@ -129,10 +148,18 @@ export default function TopNav() {
 
       <Link href="/" className="topnav-logo" aria-label="VideoTube Home">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.png" alt="VideoTube" style={{ height: "32px", width: "auto", display: "block" }} />
+        <img
+          src="/logo.png"
+          alt="VideoTube"
+          style={{ height: "32px", width: "auto", display: "block" }}
+        />
       </Link>
 
-      <form className="topnav-search" onSubmit={handleSearchSubmit} role="search">
+      <form
+        className="topnav-search"
+        onSubmit={handleSearchSubmit}
+        role="search"
+      >
         <SearchIcon size={16} aria-hidden="true" />
         <input
           ref={searchInputRef}
@@ -150,10 +177,19 @@ export default function TopNav() {
           <span>Upload</span>
         </Link>
 
-        <Link href="/notifications" className="btn-icon" aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount > 99 ? "99+" : unreadCount} unread)` : ""}`} style={{ position: "relative" }}>
+        <Link
+          href="/notifications"
+          className="btn-icon"
+          aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount > 99 ? "99+" : unreadCount} unread)` : ""}`}
+          style={{ position: "relative" }}
+        >
           <BellIcon size={20} aria-hidden="true" />
           {unreadCount > 0 && (
-            <span className="badge" aria-hidden="true" style={{ position: "absolute", top: 2, right: 2 }}>
+            <span
+              className="badge"
+              aria-hidden="true"
+              style={{ position: "absolute", top: 2, right: 2 }}
+            >
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
@@ -174,7 +210,16 @@ export default function TopNav() {
           <div className={`dropdown${isDropdownOpen ? " open" : ""}`}>
             <div className="dropdown-header">
               <div style={{ position: "relative" }}>
-                <img src={user.avatar} alt={user.fullName} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover" }} />
+                <img
+                  src={user.avatar}
+                  alt={user.fullName}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                  }}
+                />
                 <span className="online-dot" />
               </div>
               <div style={{ minWidth: 0, flex: 1 }}>
@@ -186,7 +231,11 @@ export default function TopNav() {
             <Link
               href={`/channel/${user.username}`}
               className={`dropdown-item${pathname === `/channel/${user.username}` ? " active" : ""}`}
-              style={pathname === `/channel/${user.username}` ? { color: "var(--accent)", fontWeight: 500 } : undefined}
+              style={
+                pathname === `/channel/${user.username}`
+                  ? { color: "var(--accent)", fontWeight: 500 }
+                  : undefined
+              }
               onClick={() => setIsDropdownOpen(false)}
             >
               <UserIcon size={16} />
@@ -196,7 +245,11 @@ export default function TopNav() {
             <Link
               href="/edit-profile"
               className={`dropdown-item${pathname === "/edit-profile" ? " active" : ""}`}
-              style={pathname === "/edit-profile" ? { color: "var(--accent)", fontWeight: 500 } : undefined}
+              style={
+                pathname === "/edit-profile"
+                  ? { color: "var(--accent)", fontWeight: 500 }
+                  : undefined
+              }
               onClick={() => setIsDropdownOpen(false)}
             >
               <UserIcon size={16} />
@@ -206,7 +259,11 @@ export default function TopNav() {
             <Link
               href="/studio"
               className={`dropdown-item${pathname.startsWith("/studio") ? " active" : ""}`}
-              style={pathname.startsWith("/studio") ? { color: "var(--accent)", fontWeight: 500 } : undefined}
+              style={
+                pathname.startsWith("/studio")
+                  ? { color: "var(--accent)", fontWeight: 500 }
+                  : undefined
+              }
               onClick={() => setIsDropdownOpen(false)}
             >
               <StudioIcon size={16} />
@@ -216,7 +273,11 @@ export default function TopNav() {
             <Link
               href="/settings"
               className={`dropdown-item${pathname === "/settings" ? " active" : ""}`}
-              style={pathname === "/settings" ? { color: "var(--accent)", fontWeight: 500 } : undefined}
+              style={
+                pathname === "/settings"
+                  ? { color: "var(--accent)", fontWeight: 500 }
+                  : undefined
+              }
               onClick={() => setIsDropdownOpen(false)}
             >
               <SettingsIcon size={16} />
@@ -225,7 +286,11 @@ export default function TopNav() {
 
             <div className="dropdown-divider" />
 
-            <Link href="/about" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+            <Link
+              href="/about"
+              className="dropdown-item"
+              onClick={() => setIsDropdownOpen(false)}
+            >
               <UserIcon size={16} />
               About
             </Link>

@@ -16,7 +16,9 @@ let mongod;
 let server;
 let dbName;
 
-export const startTestServer = async (customDbName = `videotube_test_${Date.now()}_${Math.random().toString(36).slice(2)}`) => {
+export const startTestServer = async (
+  customDbName = `videotube_test_${Date.now()}_${Math.random().toString(36).slice(2)}`
+) => {
   dbName = customDbName;
   mongod = await MongoMemoryServer.create({
     instance: {
@@ -63,8 +65,15 @@ export const stopTestServer = async () => {
 
 export const clearDatabase = async () => {
   const collections = [
-    User, Video, Like, Subscription, Comment,
-    Playlist, CommunityPost, Notification, Session,
+    User,
+    Video,
+    Like,
+    Subscription,
+    Comment,
+    Playlist,
+    CommunityPost,
+    Notification,
+    Session,
   ];
   await Promise.all(collections.map((c) => c.deleteMany({})));
 };
@@ -99,20 +108,18 @@ export const loginTestUser = async (userOrEmail, password = "Test@1234") => {
     const user = await createTestUser();
     email = user.email;
   }
-  
-  const res = await request(app)
-    .post("/api/v1/users/login")
-    .send({
-      email,
-      password,
-    });
-  
+
+  const res = await request(app).post("/api/v1/users/login").send({
+    email,
+    password,
+  });
+
   // Parse set-cookie headers to extract just the key=value pairs
   const setCookie = res.headers["set-cookie"] || [];
   const cookiePairs = setCookie
-    .map(c => c.split(";")[0]) // Get just the key=value part before first semicolon
+    .map((c) => c.split(";")[0]) // Get just the key=value part before first semicolon
     .filter(Boolean);
-  
+
   // Find the user by email to return it
   const user = await User.findOne({ email });
   return { user, cookies: cookiePairs };

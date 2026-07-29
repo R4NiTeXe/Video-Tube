@@ -13,7 +13,9 @@ const router = Router();
 router.use(verifyJWT);
 
 router.route("/").get(getActiveSessions);
-router.route("/:sessionId").delete(validateParams(sessionSchemas.revokeSession.params), revokeSession);
+router
+  .route("/:sessionId")
+  .delete(validateParams(sessionSchemas.revokeSession.params), revokeSession);
 router.route("/").delete(revokeAllSessions);
 
 export default router;

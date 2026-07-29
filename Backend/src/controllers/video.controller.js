@@ -80,7 +80,11 @@ const getAllVideos = asyncHandler(async (req, res) => {
   });
 
   if (req.user?._id) {
-    const currentUser = await mongoose.model("User").findById(req.user._id).select("blockedUsers").lean();
+    const currentUser = await mongoose
+      .model("User")
+      .findById(req.user._id)
+      .select("blockedUsers")
+      .lean();
     if (currentUser?.blockedUsers?.length) {
       pipeline.push({
         $match: {
@@ -91,7 +95,9 @@ const getAllVideos = asyncHandler(async (req, res) => {
   }
 
   const ALLOWED_SORT_FIELDS = ["createdAt", "views", "title", "duration"];
-  const safeSortBy = ALLOWED_SORT_FIELDS.includes(sortBy) ? sortBy : "createdAt";
+  const safeSortBy = ALLOWED_SORT_FIELDS.includes(sortBy)
+    ? sortBy
+    : "createdAt";
   const sortStage = {};
   sortStage[safeSortBy] = sortType === "asc" ? 1 : -1;
   pipeline.push({ $sort: sortStage });
@@ -127,7 +133,10 @@ const getAllVideos = asyncHandler(async (req, res) => {
     {
       $lookup: {
         from: "likes",
-        let: { videoId: "$_id", userId: userId ? new mongoose.Types.ObjectId(userId) : null },
+        let: {
+          videoId: "$_id",
+          userId: userId ? new mongoose.Types.ObjectId(userId) : null,
+        },
         pipeline: [
           { $match: { $expr: { $eq: ["$video", "$$videoId"] } } },
           {
@@ -137,7 +146,9 @@ const getAllVideos = asyncHandler(async (req, res) => {
               userLiked: {
                 $max: {
                   $cond: {
-                    if: { $and: ["$$userId", { $eq: ["$likedBy", "$$userId"] }] },
+                    if: {
+                      $and: ["$$userId", { $eq: ["$likedBy", "$$userId"] }],
+                    },
                     then: true,
                     else: false,
                   },
@@ -152,7 +163,9 @@ const getAllVideos = asyncHandler(async (req, res) => {
     {
       $addFields: {
         likesCount: { $ifNull: [{ $arrayElemAt: ["$likeInfo.count", 0] }, 0] },
-        isLiked: { $ifNull: [{ $arrayElemAt: ["$likeInfo.userLiked", 0] }, false] },
+        isLiked: {
+          $ifNull: [{ $arrayElemAt: ["$likeInfo.userLiked", 0] }, false],
+        },
       },
     },
     {
@@ -177,7 +190,8 @@ const getAllVideos = asyncHandler(async (req, res) => {
 });
 
 const publishAVideo = asyncHandler(async (req, res) => {
-  const { title, description, tags, category, chapters, scheduledAt } = req.body;
+  const { title, description, tags, category, chapters, scheduledAt } =
+    req.body;
 
   if (
     [title, description].some(
@@ -212,7 +226,10 @@ const publishAVideo = asyncHandler(async (req, res) => {
   let parsedTags = [];
   if (tags) {
     if (typeof tags === "string") {
-      parsedTags = tags.split(",").map((t) => t.trim()).filter(Boolean);
+      parsedTags = tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
     } else if (Array.isArray(tags)) {
       parsedTags = tags.map((t) => String(t).trim()).filter(Boolean);
     }
@@ -221,7 +238,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
   let parsedChapters = [];
   if (chapters) {
     try {
-      parsedChapters = typeof chapters === "string" ? JSON.parse(chapters) : chapters;
+      parsedChapters =
+        typeof chapters === "string" ? JSON.parse(chapters) : chapters;
       if (!Array.isArray(parsedChapters)) parsedChapters = [];
       parsedChapters = parsedChapters.filter(
         (ch) => ch && ch.title && typeof ch.startTime === "number"
@@ -261,28 +279,44 @@ const publishAVideo = asyncHandler(async (req, res) => {
   }
 
   // Trigger HLS transcoding in background
-  const publicId = getPublicIdFromCloudinaryUrl(videoFile.secure_url || videoFile.url);
+  const publicId = getPublicIdFromCloudinaryUrl(
+    videoFile.secure_url || videoFile.url
+  );
   if (publicId) {
-    Video.findByIdAndUpdate(video._id, { transcodingStatus: "processing" }).then(() => {
-      Promise.all([
-        generateHlsManifest(publicId),
-        generateVideoQualities(publicId),
-      ]).then(([hlsUrl, qualities]) => {
-        const updateData = { transcodingStatus: "completed" };
-        if (hlsUrl) updateData.hlsUrl = hlsUrl;
-        if (qualities?.length) updateData.qualities = qualities;
-        Video.findByIdAndUpdate(video._id, { $set: updateData }).catch((err) => {
-          logger.error("Failed to update video with HLS data:", { error: err.message });
-        });
-      }).catch((err) => {
-        logger.error("HLS generation failed:", { error: err.message });
-        Video.findByIdAndUpdate(video._id, { transcodingStatus: "failed" }).catch((err) => {
-          logger.warn("Failed to update transcoding status", { error: err.message });
+    Video.findByIdAndUpdate(video._id, { transcodingStatus: "processing" })
+      .then(() => {
+        Promise.all([
+          generateHlsManifest(publicId),
+          generateVideoQualities(publicId),
+        ])
+          .then(([hlsUrl, qualities]) => {
+            const updateData = { transcodingStatus: "completed" };
+            if (hlsUrl) updateData.hlsUrl = hlsUrl;
+            if (qualities?.length) updateData.qualities = qualities;
+            Video.findByIdAndUpdate(video._id, { $set: updateData }).catch(
+              (err) => {
+                logger.error("Failed to update video with HLS data:", {
+                  error: err.message,
+                });
+              }
+            );
+          })
+          .catch((err) => {
+            logger.error("HLS generation failed:", { error: err.message });
+            Video.findByIdAndUpdate(video._id, {
+              transcodingStatus: "failed",
+            }).catch((err) => {
+              logger.warn("Failed to update transcoding status", {
+                error: err.message,
+              });
+            });
+          });
+      })
+      .catch((err) => {
+        logger.error("Video processing initialization failed:", {
+          error: err.message,
         });
       });
-    }).catch((err) => {
-      logger.error("Video processing initialization failed:", { error: err.message });
-    });
   }
 
   return res
@@ -343,7 +377,10 @@ const getVideoById = asyncHandler(async (req, res) => {
   }
 
   // If video is not published, only the owner can view it
-  if (!videoData.isPublished && videoData.owner?._id?.toString() !== req.user?._id?.toString()) {
+  if (
+    !videoData.isPublished &&
+    videoData.owner?._id?.toString() !== req.user?._id?.toString()
+  ) {
     throw new ApiError(403, "This video is private");
   }
 
@@ -363,7 +400,16 @@ const getVideoById = asyncHandler(async (req, res) => {
           from: "likes",
           let: { videoId: "$_id", userId: new mongoose.Types.ObjectId(userId) },
           pipeline: [
-            { $match: { $expr: { $and: [{ $eq: ["$video", "$$videoId"] }, { $eq: ["$likedBy", "$$userId"] }] } } },
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$video", "$$videoId"] },
+                    { $eq: ["$likedBy", "$$userId"] },
+                  ],
+                },
+              },
+            },
             { $limit: 1 },
           ],
           as: "userLike",
@@ -372,9 +418,21 @@ const getVideoById = asyncHandler(async (req, res) => {
       {
         $lookup: {
           from: "subscriptions",
-          let: { channelId: "$owner._id", userId: new mongoose.Types.ObjectId(userId) },
+          let: {
+            channelId: "$owner._id",
+            userId: new mongoose.Types.ObjectId(userId),
+          },
           pipeline: [
-            { $match: { $expr: { $and: [{ $eq: ["$channel", "$$channelId"] }, { $eq: ["$subscriber", "$$userId"] }] } } },
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$channel", "$$channelId"] },
+                    { $eq: ["$subscriber", "$$userId"] },
+                  ],
+                },
+              },
+            },
             { $limit: 1 },
           ],
           as: "userSubscription",
@@ -406,14 +464,19 @@ const getVideoById = asyncHandler(async (req, res) => {
         $project: {
           isLiked: { $gt: [{ $size: "$userLike" }, 0] },
           isSubscribed: { $gt: [{ $size: "$userSubscription" }, 0] },
-          likesCount: { $ifNull: [{ $arrayElemAt: ["$likesCount.count", 0] }, 0] },
-          subscribersCount: { $ifNull: [{ $arrayElemAt: ["$subscribersCount.count", 0] }, 0] },
+          likesCount: {
+            $ifNull: [{ $arrayElemAt: ["$likesCount.count", 0] }, 0],
+          },
+          subscribersCount: {
+            $ifNull: [{ $arrayElemAt: ["$subscribersCount.count", 0] }, 0],
+          },
         },
       },
     ]);
 
     if (userSpecific.length > 0) {
-      ({ isLiked, isSubscribed, likesCount, subscribersCount } = userSpecific[0]);
+      ({ isLiked, isSubscribed, likesCount, subscribersCount } =
+        userSpecific[0]);
     }
   } else {
     // Unauthenticated user - just get counts
@@ -423,7 +486,10 @@ const getVideoById = asyncHandler(async (req, res) => {
         $lookup: {
           from: "likes",
           let: { videoId: "$_id" },
-          pipeline: [{ $match: { $expr: { $eq: ["$video", "$$videoId"] } } }, { $count: "count" }],
+          pipeline: [
+            { $match: { $expr: { $eq: ["$video", "$$videoId"] } } },
+            { $count: "count" },
+          ],
           as: "likesCount",
         },
       },
@@ -431,14 +497,21 @@ const getVideoById = asyncHandler(async (req, res) => {
         $lookup: {
           from: "subscriptions",
           let: { channelId: "$owner._id" },
-          pipeline: [{ $match: { $expr: { $eq: ["$channel", "$$channelId"] } } }, { $count: "count" }],
+          pipeline: [
+            { $match: { $expr: { $eq: ["$channel", "$$channelId"] } } },
+            { $count: "count" },
+          ],
           as: "subscribersCount",
         },
       },
       {
         $project: {
-          likesCount: { $ifNull: [{ $arrayElemAt: ["$likesCount.count", 0] }, 0] },
-          subscribersCount: { $ifNull: [{ $arrayElemAt: ["$subscribersCount.count", 0] }, 0] },
+          likesCount: {
+            $ifNull: [{ $arrayElemAt: ["$likesCount.count", 0] }, 0],
+          },
+          subscribersCount: {
+            $ifNull: [{ $arrayElemAt: ["$subscribersCount.count", 0] }, 0],
+          },
         },
       },
     ]);
@@ -459,14 +532,14 @@ const getVideoById = asyncHandler(async (req, res) => {
   if (req.query.recordView === "true" && !isOwner && req.user?._id) {
     const userModel = mongoose.model("User");
     const videoModel = mongoose.model("Video");
-    
+
     try {
       const oldUser = await userModel.findByIdAndUpdate(
         req.user._id,
         { $addToSet: { watchHistory: videoId } },
         { new: false, projection: { watchHistory: 1 } }
       );
-      if (!oldUser?.watchHistory?.some(id => id.equals(videoId))) {
+      if (!oldUser?.watchHistory?.some((id) => id.equals(videoId))) {
         await videoModel.findByIdAndUpdate(videoId, { $inc: { views: 1 } });
       }
     } catch (err) {
@@ -515,7 +588,10 @@ const updateVideo = asyncHandler(async (req, res) => {
 
   if (tags !== undefined) {
     if (typeof tags === "string") {
-      updateFields.tags = tags.split(",").map((t) => t.trim()).filter(Boolean);
+      updateFields.tags = tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
     } else if (Array.isArray(tags)) {
       updateFields.tags = tags.map((t) => String(t).trim()).filter(Boolean);
     } else {
@@ -524,7 +600,8 @@ const updateVideo = asyncHandler(async (req, res) => {
   }
 
   if (category !== undefined) {
-    updateFields.category = typeof category === "string" ? category.trim() : "General";
+    updateFields.category =
+      typeof category === "string" ? category.trim() : "General";
   }
 
   const thumbnailLocalPath = req.file?.path;
@@ -567,7 +644,9 @@ const deleteVideo = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid video id");
   }
 
-  const video = await Video.findById(videoId).select("owner videoFile thumbnail").lean();
+  const video = await Video.findById(videoId)
+    .select("owner videoFile thumbnail")
+    .lean();
 
   if (!video) {
     throw new ApiError(404, "Video not found");
@@ -632,13 +711,22 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
 
 const getChannelVideos = asyncHandler(async (req, res) => {
   const { username } = req.params;
-  const { page = 1, limit = 10, sortBy = "createdAt", sortType = "desc" } = req.query;
+  const {
+    page = 1,
+    limit = 10,
+    sortBy = "createdAt",
+    sortType = "desc",
+  } = req.query;
 
   if (!username?.trim()) {
     throw new ApiError(400, "Username is required");
   }
 
-  const user = await mongoose.model("User").findOne({ username: username.toLowerCase().trim() }).select("_id").lean();
+  const user = await mongoose
+    .model("User")
+    .findOne({ username: username.toLowerCase().trim() })
+    .select("_id")
+    .lean();
 
   if (!user) {
     throw new ApiError(404, "Channel not found");
@@ -690,7 +778,10 @@ const getChannelVideos = asyncHandler(async (req, res) => {
     {
       $lookup: {
         from: "likes",
-        let: { videoId: "$_id", userId: userId ? new mongoose.Types.ObjectId(userId) : null },
+        let: {
+          videoId: "$_id",
+          userId: userId ? new mongoose.Types.ObjectId(userId) : null,
+        },
         pipeline: [
           { $match: { $expr: { $eq: ["$video", "$$videoId"] } } },
           {
@@ -700,7 +791,9 @@ const getChannelVideos = asyncHandler(async (req, res) => {
               userLiked: {
                 $max: {
                   $cond: {
-                    if: { $and: ["$$userId", { $eq: ["$likedBy", "$$userId"] }] },
+                    if: {
+                      $and: ["$$userId", { $eq: ["$likedBy", "$$userId"] }],
+                    },
                     then: true,
                     else: false,
                   },
@@ -715,7 +808,9 @@ const getChannelVideos = asyncHandler(async (req, res) => {
     {
       $addFields: {
         likesCount: { $ifNull: [{ $arrayElemAt: ["$likeInfo.count", 0] }, 0] },
-        isLiked: { $ifNull: [{ $arrayElemAt: ["$likeInfo.userLiked", 0] }, false] },
+        isLiked: {
+          $ifNull: [{ $arrayElemAt: ["$likeInfo.userLiked", 0] }, false],
+        },
       },
     },
     {
@@ -791,7 +886,12 @@ const searchChannels = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        { docs: result, totalDocs: totalCount, page: pageNumber, limit: limitNumber },
+        {
+          docs: result,
+          totalDocs: totalCount,
+          page: pageNumber,
+          limit: limitNumber,
+        },
         "Channels fetched successfully"
       )
     );
@@ -820,14 +920,25 @@ const getTrendingVideos = asyncHandler(async (req, res) => {
     { $addFields: { owner: { $first: "$owner" } } },
     {
       $project: {
-        videoFile: 1, title: 1, thumbnail: 1, views: 1, duration: 1,
-        createdAt: 1, owner: 1, likesCount: 1, category: 1, tags: 1,
+        videoFile: 1,
+        title: 1,
+        thumbnail: 1,
+        views: 1,
+        duration: 1,
+        createdAt: 1,
+        owner: 1,
+        likesCount: 1,
+        category: 1,
+        tags: 1,
       },
     },
   ];
 
   const videoAggregate = Video.aggregate(pipeline);
-  const options = { page: parseInt(page, 10) || 1, limit: Math.min(parseInt(limit, 10) || 20, 50) };
+  const options = {
+    page: parseInt(page, 10) || 1,
+    limit: Math.min(parseInt(limit, 10) || 20, 50),
+  };
   const videos = await Video.aggregatePaginate(videoAggregate, options);
 
   return res
@@ -843,7 +954,9 @@ const getRelatedVideos = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid video id");
   }
 
-  const currentVideo = await Video.findById(videoId).select("title description tags category owner").lean();
+  const currentVideo = await Video.findById(videoId)
+    .select("title description tags category owner")
+    .lean();
   if (!currentVideo) {
     throw new ApiError(404, "Video not found");
   }
@@ -870,7 +983,9 @@ const getRelatedVideos = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, relatedVideos, "Related videos fetched successfully"));
+    .json(
+      new ApiResponse(200, relatedVideos, "Related videos fetched successfully")
+    );
 });
 
 const getVideoCategories = asyncHandler(async (req, res) => {
@@ -912,42 +1027,39 @@ const runPublishScheduledVideos = async () => {
  */
 const runUpdateTrendingScores = async () => {
   const now = new Date();
-  const result = await Video.updateMany(
-    { isPublished: true },
-    [
-      {
-        $set: {
-          trendingScore: {
-            $add: [
-              { $multiply: ["$views", 0.4] },
-              { $multiply: ["$likesCount", 3] },
-              {
-                $multiply: [
-                  {
-                    $divide: [
-                      1,
-                      {
-                        $add: [
-                          1,
-                          {
-                            $divide: [
-                              { $subtract: [now, "$createdAt"] },
-                              86400000,
-                            ],
-                          },
-                        ],
-                      },
-                    ],
-                  },
-                  100,
-                ],
-              },
-            ],
-          },
+  const result = await Video.updateMany({ isPublished: true }, [
+    {
+      $set: {
+        trendingScore: {
+          $add: [
+            { $multiply: ["$views", 0.4] },
+            { $multiply: ["$likesCount", 3] },
+            {
+              $multiply: [
+                {
+                  $divide: [
+                    1,
+                    {
+                      $add: [
+                        1,
+                        {
+                          $divide: [
+                            { $subtract: [now, "$createdAt"] },
+                            86400000,
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+                100,
+              ],
+            },
+          ],
         },
       },
-    ]
-  );
+    },
+  ]);
   if (result.modifiedCount > 0) {
     logger.info(`Updated trending scores for ${result.modifiedCount} videos`);
   }
@@ -971,7 +1083,10 @@ const updateVideoTags = asyncHandler(async (req, res) => {
   let parsedTags = [];
   if (tags) {
     if (typeof tags === "string") {
-      parsedTags = tags.split(",").map((t) => t.trim()).filter(Boolean);
+      parsedTags = tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
     } else if (Array.isArray(tags)) {
       parsedTags = tags.map((t) => String(t).trim()).filter(Boolean);
     }
@@ -1002,7 +1117,8 @@ const updateVideoChapters = asyncHandler(async (req, res) => {
   let parsedChapters = [];
   if (chapters) {
     try {
-      parsedChapters = typeof chapters === "string" ? JSON.parse(chapters) : chapters;
+      parsedChapters =
+        typeof chapters === "string" ? JSON.parse(chapters) : chapters;
       if (!Array.isArray(parsedChapters)) parsedChapters = [];
       parsedChapters = parsedChapters.filter(
         (ch) => ch && ch.title && typeof ch.startTime === "number"
@@ -1038,19 +1154,29 @@ const bulkDeleteVideos = asyncHandler(async (req, res) => {
   }).select("videoFile thumbnail");
 
   for (const video of videos) {
-    if (video.videoFile) await deleteFromCloudinary(video.videoFile, "video").catch((err) => {
-      logger.warn("Cloudinary video cleanup failed", { error: err.message });
-    });
-    if (video.thumbnail) await deleteFromCloudinary(video.thumbnail, "image").catch((err) => {
-      logger.warn("Cloudinary thumbnail cleanup failed", { error: err.message });
-    });
+    if (video.videoFile)
+      await deleteFromCloudinary(video.videoFile, "video").catch((err) => {
+        logger.warn("Cloudinary video cleanup failed", { error: err.message });
+      });
+    if (video.thumbnail)
+      await deleteFromCloudinary(video.thumbnail, "image").catch((err) => {
+        logger.warn("Cloudinary thumbnail cleanup failed", {
+          error: err.message,
+        });
+      });
   }
 
   await Video.deleteMany({ _id: { $in: validIds }, owner: req.user._id });
 
   return res
     .status(200)
-    .json(new ApiResponse(200, { deletedCount: videos.length }, "Videos deleted successfully"));
+    .json(
+      new ApiResponse(
+        200,
+        { deletedCount: videos.length },
+        "Videos deleted successfully"
+      )
+    );
 });
 
 const bulkPublishVideos = asyncHandler(async (req, res) => {
@@ -1096,7 +1222,10 @@ const getShortsFeed = asyncHandler(async (req, res) => {
     {
       $lookup: {
         from: "likes",
-        let: { videoId: "$_id", userId: userId ? new mongoose.Types.ObjectId(userId) : null },
+        let: {
+          videoId: "$_id",
+          userId: userId ? new mongoose.Types.ObjectId(userId) : null,
+        },
         pipeline: [
           { $match: { $expr: { $eq: ["$video", "$$videoId"] } } },
           {
@@ -1106,7 +1235,9 @@ const getShortsFeed = asyncHandler(async (req, res) => {
               userLiked: {
                 $max: {
                   $cond: {
-                    if: { $and: ["$$userId", { $eq: ["$likedBy", "$$userId"] }] },
+                    if: {
+                      $and: ["$$userId", { $eq: ["$likedBy", "$$userId"] }],
+                    },
                     then: true,
                     else: false,
                   },
@@ -1131,23 +1262,37 @@ const getShortsFeed = asyncHandler(async (req, res) => {
       $addFields: {
         owner: { $first: "$owner" },
         likesCount: { $ifNull: [{ $arrayElemAt: ["$likeInfo.count", 0] }, 0] },
-        isLiked: { $ifNull: [{ $arrayElemAt: ["$likeInfo.userLiked", 0] }, false] },
+        isLiked: {
+          $ifNull: [{ $arrayElemAt: ["$likeInfo.userLiked", 0] }, false],
+        },
       },
     },
     {
       $project: {
-        videoFile: 1, title: 1, thumbnail: 1, views: 1, duration: 1,
-        createdAt: 1, owner: 1, likesCount: 1, isLiked: 1,
+        videoFile: 1,
+        title: 1,
+        thumbnail: 1,
+        views: 1,
+        duration: 1,
+        createdAt: 1,
+        owner: 1,
+        likesCount: 1,
+        isLiked: 1,
         likeInfo: 0,
       },
     },
   ];
 
   const videoAggregate = Video.aggregate(pipeline);
-  const options = { page: parseInt(page, 10) || 1, limit: Math.min(parseInt(limit, 10) || 20, 50) };
+  const options = {
+    page: parseInt(page, 10) || 1,
+    limit: Math.min(parseInt(limit, 10) || 20, 50),
+  };
   const videos = await Video.aggregatePaginate(videoAggregate, options);
 
-  return res.status(200).json(new ApiResponse(200, videos, "Shorts feed fetched"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, videos, "Shorts feed fetched"));
 });
 
 const getChannelAbout = asyncHandler(async (req, res) => {
@@ -1189,17 +1334,31 @@ const getChannelAbout = asyncHandler(async (req, res) => {
     },
     {
       $addFields: {
-        subscriberCount: { $ifNull: [{ $arrayElemAt: ["$subscribers.count", 0] }, 0] },
-        videoCount: { $ifNull: [{ $arrayElemAt: ["$videos.videoCount", 0] }, 0] },
-        totalViews: { $ifNull: [{ $arrayElemAt: ["$videos.totalViews", 0] }, 0] },
+        subscriberCount: {
+          $ifNull: [{ $arrayElemAt: ["$subscribers.count", 0] }, 0],
+        },
+        videoCount: {
+          $ifNull: [{ $arrayElemAt: ["$videos.videoCount", 0] }, 0],
+        },
+        totalViews: {
+          $ifNull: [{ $arrayElemAt: ["$videos.totalViews", 0] }, 0],
+        },
         joinDate: "$createdAt",
       },
     },
     {
       $project: {
-        fullName: 1, username: 1, avatar: 1, coverImage: 1,
-        bio: 1, socialLinks: 1, isVerified: 1,
-        subscriberCount: 1, videoCount: 1, totalViews: 1, joinDate: 1,
+        fullName: 1,
+        username: 1,
+        avatar: 1,
+        coverImage: 1,
+        bio: 1,
+        socialLinks: 1,
+        isVerified: 1,
+        subscriberCount: 1,
+        videoCount: 1,
+        totalViews: 1,
+        joinDate: 1,
       },
     },
   ]);
@@ -1208,7 +1367,9 @@ const getChannelAbout = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Channel not found");
   }
 
-  return res.status(200).json(new ApiResponse(200, profiles[0], "Channel about fetched"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, profiles[0], "Channel about fetched"));
 });
 
 const getTranscodingStatus = asyncHandler(async (req, res) => {

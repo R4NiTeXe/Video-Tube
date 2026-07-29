@@ -86,7 +86,9 @@ const getVideoComments = asyncHandler(async (req, res) => {
         isLiked: {
           $cond: {
             if: { $gt: [{ $size: "$likes" }, 0] },
-            then: { $in: [req.user?._id, { $arrayElemAt: ["$likes.likedBy", 0] }] },
+            then: {
+              $in: [req.user?._id, { $arrayElemAt: ["$likes.likedBy", 0] }],
+            },
             else: false,
           },
         },
@@ -147,7 +149,9 @@ const addComment = asyncHandler(async (req, res) => {
   try {
     const video = await Video.findById(videoId).select("owner title").lean();
     if (video && video.owner.toString() !== req.user._id.toString()) {
-      const recipient = await User.findById(video.owner).select("notificationPrefs").lean();
+      const recipient = await User.findById(video.owner)
+        .select("notificationPrefs")
+        .lean();
       if (recipient?.notificationPrefs?.comments !== false) {
         await Notification.create({
           recipient: video.owner,
@@ -159,7 +163,9 @@ const addComment = asyncHandler(async (req, res) => {
         });
       }
     }
-  } catch (err) { logger.warn("Comment notification failed", { error: err.message }); }
+  } catch (err) {
+    logger.warn("Comment notification failed", { error: err.message });
+  }
 
   return res
     .status(201)
@@ -203,20 +209,27 @@ const deleteComment = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid comment id");
   }
 
-  const comment = await Comment.findById(commentId).select("owner video").lean();
+  const comment = await Comment.findById(commentId)
+    .select("owner video")
+    .lean();
 
   if (!comment) {
     throw new ApiError(404, "Comment not found");
   }
 
-  if (comment.owner.toString() !== req.user._id.toString() && req.user.role !== "admin") {
+  if (
+    comment.owner.toString() !== req.user._id.toString() &&
+    req.user.role !== "admin"
+  ) {
     throw new ApiError(403, "You are not authorized to delete this comment");
   }
 
   const childCount = await Comment.countDocuments({ parentComment: commentId });
   await Comment.deleteMany({ parentComment: commentId });
   await Like.deleteMany({ comment: commentId });
-  await Video.findByIdAndUpdate(comment.video, { $inc: { commentsCount: -(childCount + 1) } });
+  await Video.findByIdAndUpdate(comment.video, {
+    $inc: { commentsCount: -(childCount + 1) },
+  });
   await Comment.findByIdAndDelete(commentId);
 
   return res
@@ -236,7 +249,9 @@ const addReply = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Reply content is required");
   }
 
-  const parentComment = await Comment.findById(commentId).select("video").lean();
+  const parentComment = await Comment.findById(commentId)
+    .select("video")
+    .lean();
 
   if (!parentComment) {
     throw new ApiError(404, "Comment not found");
@@ -256,7 +271,9 @@ const addReply = asyncHandler(async (req, res) => {
   // Create notification for parent comment owner
   try {
     if (parentComment.owner.toString() !== req.user._id.toString()) {
-      const recipient = await User.findById(parentComment.owner).select("notificationPrefs").lean();
+      const recipient = await User.findById(parentComment.owner)
+        .select("notificationPrefs")
+        .lean();
       if (recipient?.notificationPrefs?.replies !== false) {
         await Notification.create({
           recipient: parentComment.owner,
@@ -268,7 +285,9 @@ const addReply = asyncHandler(async (req, res) => {
         });
       }
     }
-  } catch (err) { logger.warn("Reply notification failed", { error: err.message }); }
+  } catch (err) {
+    logger.warn("Reply notification failed", { error: err.message });
+  }
 
   return res
     .status(201)

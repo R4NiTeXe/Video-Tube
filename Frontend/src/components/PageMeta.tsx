@@ -33,7 +33,9 @@ export function PageMeta({
 
   const [currentUrl, setCurrentUrl] = useState("");
   useEffect(() => {
-    setCurrentUrl(`${window.location.origin}${window.location.pathname}${window.location.search}`);
+    setCurrentUrl(
+      `${window.location.origin}${window.location.pathname}${window.location.search}`,
+    );
   }, []);
 
   const canonicalUrl = canonical || ogUrl || currentUrl;

@@ -1,7 +1,24 @@
-import { describe, it, beforeAll, afterAll, beforeEach, expect } from "@jest/globals";
+import {
+  describe,
+  it,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  expect,
+} from "@jest/globals";
 import request from "supertest";
 import { app } from "../src/app.js";
-import { startTestServer, stopTestServer, clearDatabase, dropDatabase, createTestUser, loginTestUser, getAuthHeaders, expectSuccess, expectError } from "./testUtils.js";
+import {
+  startTestServer,
+  stopTestServer,
+  clearDatabase,
+  dropDatabase,
+  createTestUser,
+  loginTestUser,
+  getAuthHeaders,
+  expectSuccess,
+  expectError,
+} from "./testUtils.js";
 import { User } from "../src/models/user.model.js";
 
 const TEST_DB_NAME = `videotube_auth_test_${Date.now()}_${Math.random().toString(36).slice(2)}`;
@@ -44,7 +61,10 @@ describe("Auth Flow", () => {
     });
 
     it("should reject duplicate username", async () => {
-      await createTestUser({ username: "existing", email: "existing@example.com" });
+      await createTestUser({
+        username: "existing",
+        email: "existing@example.com",
+      });
       const res = await request(app)
         .post("/api/v1/users/register")
         .field("fullName", "Another User")
@@ -57,7 +77,10 @@ describe("Auth Flow", () => {
     });
 
     it("should reject duplicate email", async () => {
-      await createTestUser({ username: "user1", email: "duplicate@example.com" });
+      await createTestUser({
+        username: "user1",
+        email: "duplicate@example.com",
+      });
       const res = await request(app)
         .post("/api/v1/users/register")
         .field("fullName", "Another User")
@@ -80,12 +103,10 @@ describe("Auth Flow", () => {
     });
 
     it("should login with valid email and password", async () => {
-      const res = await request(app)
-        .post("/api/v1/users/login")
-        .send({
-          email: "login@example.com",
-          password: "Test@1234",
-        });
+      const res = await request(app).post("/api/v1/users/login").send({
+        email: "login@example.com",
+        password: "Test@1234",
+      });
 
       expectSuccess(res, 200);
       expect(res.body.data.user).toHaveProperty("username", "logintest");
@@ -93,34 +114,28 @@ describe("Auth Flow", () => {
     });
 
     it("should login with valid username and password", async () => {
-      const res = await request(app)
-        .post("/api/v1/users/login")
-        .send({
-          username: "logintest",
-          password: "Test@1234",
-        });
+      const res = await request(app).post("/api/v1/users/login").send({
+        username: "logintest",
+        password: "Test@1234",
+      });
 
       expectSuccess(res, 200);
     });
 
     it("should reject login with wrong password", async () => {
-      const res = await request(app)
-        .post("/api/v1/users/login")
-        .send({
-          email: "login@example.com",
-          password: "Wrong@123",
-        });
+      const res = await request(app).post("/api/v1/users/login").send({
+        email: "login@example.com",
+        password: "Wrong@123",
+      });
 
       expectError(res, 401);
     });
 
     it("should reject login with non-existent user", async () => {
-      const res = await request(app)
-        .post("/api/v1/users/login")
-        .send({
-          email: "nonexistent@example.com",
-          password: "Test@1234",
-        });
+      const res = await request(app).post("/api/v1/users/login").send({
+        email: "nonexistent@example.com",
+        password: "Test@1234",
+      });
 
       expectError(res, 401);
     });
@@ -138,22 +153,18 @@ describe("Auth Flow", () => {
     it("should lock account after 5 failed attempts", async () => {
       // First 4 attempts return 401
       for (let i = 0; i < 4; i++) {
-        const res = await request(app)
-          .post("/api/v1/users/login")
-          .send({
-            email: "lock@example.com",
-            password: "Wrong@123",
-          });
+        const res = await request(app).post("/api/v1/users/login").send({
+          email: "lock@example.com",
+          password: "Wrong@123",
+        });
         expect(res.status).toBe(401);
       }
 
       // 5th attempt locks the account (returns 429)
-      const res = await request(app)
-        .post("/api/v1/users/login")
-        .send({
-          email: "lock@example.com",
-          password: "Wrong@123",
-        });
+      const res = await request(app).post("/api/v1/users/login").send({
+        email: "lock@example.com",
+        password: "Wrong@123",
+      });
 
       expectError(res, 429, "locked");
     });
@@ -180,14 +191,16 @@ describe("Auth Flow", () => {
   describe("Token Refresh", () => {
     it("should refresh access token with valid refresh token", async () => {
       const { cookies } = await loginTestUser();
-      
+
       const res = await request(app)
         .post("/api/v1/users/refresh-token")
         .set("Cookie", cookies.join("; "));
 
       expectSuccess(res, 200);
       expect(res.headers["set-cookie"]).toBeDefined();
-      expect(res.headers["set-cookie"].some(c => c.startsWith("accessToken="))).toBe(true);
+      expect(
+        res.headers["set-cookie"].some((c) => c.startsWith("accessToken="))
+      ).toBe(true);
     });
 
     it("should reject refresh with invalid token", async () => {
@@ -202,14 +215,16 @@ describe("Auth Flow", () => {
   describe("POST /api/v1/users/logout", () => {
     it("should logout and clear cookies", async () => {
       const { cookies } = await loginTestUser();
-      
+
       const res = await request(app)
         .post("/api/v1/users/logout")
         .set("Cookie", cookies.join("; "));
 
       expectSuccess(res, 200);
       expect(res.headers["set-cookie"]).toBeDefined();
-      expect(res.headers["set-cookie"].some(c => c.startsWith("accessToken="))).toBe(true);
+      expect(
+        res.headers["set-cookie"].some((c) => c.startsWith("accessToken="))
+      ).toBe(true);
     });
   });
 });

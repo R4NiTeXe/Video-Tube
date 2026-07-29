@@ -3,17 +3,28 @@ import { ApiError } from "../../utils/ApiError.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { User } from "../../models/user.model.js";
 import { createSession, deactivateSession } from "../session.controller.js";
-import { generateAccessAndRefreshToken, getCookieOptions, isValidEmail, isValidMobile } from "../user.controller.js";
+import {
+  generateAccessAndRefreshToken,
+  getCookieOptions,
+  isValidEmail,
+  isValidMobile,
+} from "../user.controller.js";
 import { sendEmail } from "../../utils/email.js";
 import { storeOTP, verifyOTP } from "../../utils/otp.js";
 import { otpEmailTemplate } from "../../utils/emailTemplates.js";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { assertPasswordStrength } from "../../utils/passwordValidation.js";
-import { uploadOnCloudinary, deleteFromCloudinary } from "../../utils/cloudinary.js";
+import {
+  uploadOnCloudinary,
+  deleteFromCloudinary,
+} from "../../utils/cloudinary.js";
 import logger from "../../utils/logger.js";
 import { getLocationInfo } from "../../utils/location.js";
-import { accountRegisteredTemplate, passwordChangedEmailTemplate } from "../../utils/emailTemplates.js";
+import {
+  accountRegisteredTemplate,
+  passwordChangedEmailTemplate,
+} from "../../utils/emailTemplates.js";
 
 const registerUser = asyncHandler(async (req, res) => {
   const { username, fullName, email, password } = req.body;
@@ -33,7 +44,9 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const existingUser = await User.findOne({
     $or: [{ email: normalizedEmail }, { username: normalizedUsername }],
-  }).select("_id").lean();
+  })
+    .select("_id")
+    .lean();
 
   if (existingUser) {
     throw new ApiError(409, "User already exists with this email or username");
@@ -75,7 +88,9 @@ const registerUser = asyncHandler(async (req, res) => {
     throw dbError;
   }
 
-  const createdUser = await User.findById(user._id).select("-password -refreshToken").lean();
+  const createdUser = await User.findById(user._id)
+    .select("-password -refreshToken")
+    .lean();
 
   if (!createdUser) {
     await deleteFromCloudinary(avatar.public_id, "image");
@@ -126,7 +141,10 @@ const loginUser = asyncHandler(async (req, res) => {
 
   if (user.lockUntil && user.lockUntil > new Date()) {
     const remainingMinutes = Math.ceil((user.lockUntil - new Date()) / 60000);
-    throw new ApiError(429, `Account temporarily locked. Try again in ${remainingMinutes} minute(s)`);
+    throw new ApiError(
+      429,
+      `Account temporarily locked. Try again in ${remainingMinutes} minute(s)`
+    );
   }
 
   const isPasswordValid = await user.isPasswordCorrect(password);
@@ -139,7 +157,10 @@ const loginUser = asyncHandler(async (req, res) => {
       user.lockUntil = new Date(Date.now() + LOCK_DURATION_MINUTES * 60 * 1000);
       user.loginAttempts = 0;
       await user.save({ validateBeforeSave: false });
-      throw new ApiError(429, `Account locked due to ${MAX_ATTEMPTS} failed attempts. Try again in ${LOCK_DURATION_MINUTES} minutes`);
+      throw new ApiError(
+        429,
+        `Account locked due to ${MAX_ATTEMPTS} failed attempts. Try again in ${LOCK_DURATION_MINUTES} minutes`
+      );
     }
     await user.save({ validateBeforeSave: false });
     throw new ApiError(401, "Invalid user credentials");
@@ -153,13 +174,17 @@ const loginUser = asyncHandler(async (req, res) => {
     user.loginAttempts = 0;
     user.lockUntil = undefined;
   }
-  
+
   user.lastLogin = new Date();
   await user.save({ validateBeforeSave: false });
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user._id
+  );
 
-  const loggedInUser = await User.findById(user._id).select("-password -refreshToken").lean();
+  const loggedInUser = await User.findById(user._id)
+    .select("-password -refreshToken")
+    .lean();
 
   const options = getCookieOptions();
 
@@ -184,7 +209,9 @@ const logoutUser = asyncHandler(async (req, res) => {
     await deactivateSession(incomingRefreshToken);
   }
 
-  const accessToken = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
+  const accessToken =
+    req.cookies?.accessToken ||
+    req.header("Authorization")?.replace("Bearer ", "");
   if (accessToken) {
     const { blacklistToken } = await import("../../utils/redis.js");
     await blacklistToken(accessToken, 86400);
@@ -200,7 +227,8 @@ const logoutUser = asyncHandler(async (req, res) => {
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
-  const incomingRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+  const incomingRefreshToken =
+    req.cookies?.refreshToken || req.body?.refreshToken;
 
   if (!incomingRefreshToken) {
     throw new ApiError(401, "Unauthorized request");
@@ -209,7 +237,10 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   let decodedToken;
 
   try {
-    decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+    decodedToken = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
   } catch {
     throw new ApiError(401, "Invalid refresh token");
   }
@@ -220,7 +251,9 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid refresh token");
   }
 
-  const session = await (await import("../../models/session.model.js")).Session.findOne({
+  const session = await (
+    await import("../../models/session.model.js")
+  ).Session.findOne({
     refreshToken: incomingRefreshToken,
     isActive: true,
   });
@@ -229,12 +262,16 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Refresh token is expired or revoked");
   }
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user._id
+  );
 
   await deactivateSession(incomingRefreshToken);
   await createSession(user._id, refreshToken, req);
 
-  const freshUser = await User.findById(user._id).select("-password -refreshToken").lean();
+  const freshUser = await User.findById(user._id)
+    .select("-password -refreshToken")
+    .lean();
 
   const options = getCookieOptions();
 
@@ -260,7 +297,11 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 const changeCurrentPassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
 
-  if ([oldPassword, newPassword].some((field) => typeof field !== "string" || !field.trim())) {
+  if (
+    [oldPassword, newPassword].some(
+      (field) => typeof field !== "string" || !field.trim()
+    )
+  ) {
     throw new ApiError(400, "Old password and new password are required");
   }
 
@@ -287,7 +328,9 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
   user.password = newPassword;
   await user.save();
 
-  await (await import("../../models/session.model.js")).Session.updateMany({ user: req.user._id }, { isActive: false });
+  await (
+    await import("../../models/session.model.js")
+  ).Session.updateMany({ user: req.user._id }, { isActive: false });
 
   const options = getCookieOptions();
 
@@ -315,11 +358,22 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
   if (!user) {
     await new Promise((resolve) => setTimeout(resolve, 100));
-    return res.status(200).json(new ApiResponse(200, {}, "If the email exists, a reset link has been sent"));
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          {},
+          "If the email exists, a reset link has been sent"
+        )
+      );
   }
 
   const resetToken = crypto.randomBytes(32).toString("hex");
-  user.passwordResetToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+  user.passwordResetToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
   user.passwordResetExpires = Date.now() + 15 * 60 * 1000;
   await user.save({ validateBeforeSave: false });
 
@@ -335,7 +389,15 @@ const forgotPassword = asyncHandler(async (req, res) => {
     logger.error("Failed to send reset email:", error.message);
   }
 
-  return res.status(200).json(new ApiResponse(200, {}, "If the email exists, a reset link has been sent"));
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        {},
+        "If the email exists, a reset link has been sent"
+      )
+    );
 });
 
 const resetPassword = asyncHandler(async (req, res) => {
@@ -360,10 +422,10 @@ const resetPassword = asyncHandler(async (req, res) => {
   user.password = newPassword;
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
-  
+
   user.lastLogin = new Date();
   await user.save();
-  
+
   const locationInfo = await getLocationInfo(req);
   try {
     await sendEmail({
@@ -375,9 +437,13 @@ const resetPassword = asyncHandler(async (req, res) => {
     logger.error("Failed to send password reset email: " + err.message);
   }
 
-  await (await import("../../models/session.model.js")).Session.updateMany({ user: user._id }, { isActive: false });
+  await (
+    await import("../../models/session.model.js")
+  ).Session.updateMany({ user: user._id }, { isActive: false });
 
-  return res.status(200).json(new ApiResponse(200, {}, "Password reset successfully"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password reset successfully"));
 });
 
 const socialLogin = asyncHandler(async (req, res) => {
@@ -389,12 +455,20 @@ const socialLogin = asyncHandler(async (req, res) => {
 
   const allowedProviders = ["google", "github"];
   if (!allowedProviders.includes(provider)) {
-    throw new ApiError(400, `Server-side OAuth token verification only supports: ${allowedProviders.join(", ")}. For other providers, use the server-side OAuth flow at /api/v1/auth/${provider}.`);
+    throw new ApiError(
+      400,
+      `Server-side OAuth token verification only supports: ${allowedProviders.join(", ")}. For other providers, use the server-side OAuth flow at /api/v1/auth/${provider}.`
+    );
   }
 
   const { verifyOAuthToken } = await import("../../utils/verifyOAuthToken.js");
   const verifiedData = await verifyOAuthToken(provider, token);
-  const { email: verifiedEmail, name: verifiedName, avatar: verifiedAvatar, providerId } = verifiedData;
+  const {
+    email: verifiedEmail,
+    name: verifiedName,
+    avatar: verifiedAvatar,
+    providerId,
+  } = verifiedData;
 
   const normalizedEmail = verifiedEmail.trim().toLowerCase();
   let user = await User.findOne({ email: normalizedEmail });
@@ -418,7 +492,9 @@ const socialLogin = asyncHandler(async (req, res) => {
     const socialMap = new Map();
     socialMap.set(provider, providerId);
 
-    const usernameBase = normalizedEmail.split("@")[0].replace(/[^a-z0-9]/g, "");
+    const usernameBase = normalizedEmail
+      .split("@")[0]
+      .replace(/[^a-z0-9]/g, "");
     let username = usernameBase;
     let suffix = 1;
     for (let attempts = 0; attempts < 10; attempts++) {
@@ -428,7 +504,9 @@ const socialLogin = asyncHandler(async (req, res) => {
           fullName: verifiedName.trim(),
           email: normalizedEmail,
           password: randomPassword,
-          avatar: verifiedAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(verifiedName)}&background=6366f1&color=fff`,
+          avatar:
+            verifiedAvatar ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(verifiedName)}&background=6366f1&color=fff`,
           socialAccounts: socialMap,
           isEmailVerified: true,
         });
@@ -453,15 +531,21 @@ const socialLogin = asyncHandler(async (req, res) => {
         html: accountRegisteredTemplate(user, locationInfo),
       });
     } catch (err) {
-      logger.error("Failed to send welcome email for social login: " + err.message);
+      logger.error(
+        "Failed to send welcome email for social login: " + err.message
+      );
     }
   }
 
   user.lastLogin = new Date();
   await user.save({ validateBeforeSave: false });
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
-  const loggedInUser = await User.findById(user._id).select("-password -refreshToken").lean();
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user._id
+  );
+  const loggedInUser = await User.findById(user._id)
+    .select("-password -refreshToken")
+    .lean();
 
   const options = getCookieOptions();
 
@@ -475,7 +559,9 @@ const socialLogin = asyncHandler(async (req, res) => {
       new ApiResponse(
         isNewUser ? 201 : 200,
         { user: loggedInUser },
-        isNewUser ? "User registered via social login" : "User logged in successfully"
+        isNewUser
+          ? "User registered via social login"
+          : "User logged in successfully"
       )
     );
 });

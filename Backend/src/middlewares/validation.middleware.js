@@ -14,10 +14,18 @@ export const validate = (schema) => {
   return async (req, res, next) => {
     try {
       if (schema.params) {
-        assignRequestProp(req, "params", await schema.params.parseAsync(req.params));
+        assignRequestProp(
+          req,
+          "params",
+          await schema.params.parseAsync(req.params)
+        );
       }
       if (schema.query) {
-        assignRequestProp(req, "query", await schema.query.parseAsync(req.query));
+        assignRequestProp(
+          req,
+          "query",
+          await schema.query.parseAsync(req.query)
+        );
       }
       if (schema.body) {
         req.body = await schema.body.parseAsync(req.body);
@@ -25,9 +33,13 @@ export const validate = (schema) => {
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        const issues = Array.isArray(error.issues) ? error.issues : error.errors || [];
+        const issues = Array.isArray(error.issues)
+          ? error.issues
+          : error.errors || [];
         const details = issues.map((err) => ({
-          field: Array.isArray(err.path) ? err.path.join(".") : String(err.path || ""),
+          field: Array.isArray(err.path)
+            ? err.path.join(".")
+            : String(err.path || ""),
           message: err.message,
           code: err.code,
         }));

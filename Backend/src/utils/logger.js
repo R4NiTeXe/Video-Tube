@@ -45,15 +45,21 @@ const logMethod = (level, levelName, message, meta) => {
 };
 
 const logger = {
-  error: (message, meta = {}) => logMethod(LOG_LEVELS.error, "error", message, meta),
-  warn: (message, meta = {}) => logMethod(LOG_LEVELS.warn, "warn", message, meta),
-  info: (message, meta = {}) => logMethod(LOG_LEVELS.info, "info", message, meta),
-  debug: (message, meta = {}) => logMethod(LOG_LEVELS.debug, "debug", message, meta),
+  error: (message, meta = {}) =>
+    logMethod(LOG_LEVELS.error, "error", message, meta),
+  warn: (message, meta = {}) =>
+    logMethod(LOG_LEVELS.warn, "warn", message, meta),
+  info: (message, meta = {}) =>
+    logMethod(LOG_LEVELS.info, "info", message, meta),
+  debug: (message, meta = {}) =>
+    logMethod(LOG_LEVELS.debug, "debug", message, meta),
   child: (context) => ({
-    error: (message, meta = {}) => logger.error(message, { ...meta, ...context }),
+    error: (message, meta = {}) =>
+      logger.error(message, { ...meta, ...context }),
     warn: (message, meta = {}) => logger.warn(message, { ...meta, ...context }),
     info: (message, meta = {}) => logger.info(message, { ...meta, ...context }),
-    debug: (message, meta = {}) => logger.debug(message, { ...meta, ...context }),
+    debug: (message, meta = {}) =>
+      logger.debug(message, { ...meta, ...context }),
   }),
 };
 

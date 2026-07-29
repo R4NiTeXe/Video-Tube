@@ -6,6 +6,11 @@ import { sseSchemas } from "../validators/index.js";
 
 const router = Router();
 
-router.get("/notifications", verifyJWT, validateQuery(sseSchemas.streamNotifications.query), streamNotifications);
+router.get(
+  "/notifications",
+  verifyJWT,
+  validateQuery(sseSchemas.streamNotifications.query),
+  streamNotifications
+);
 
 export default router;

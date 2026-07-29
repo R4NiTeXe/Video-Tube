@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { formatViews, formatDuration, timeAgo } from "@/src/lib/utils";
 import CommunityPoll from "@/src/components/CommunityPoll";
 import { PageMeta } from "@/src/components/PageMeta";
+import ChannelLink from "@/src/components/ChannelLink";
 
 interface ChannelProfile {
   _id: string;
@@ -78,42 +79,123 @@ interface ChannelPost {
   isLiked: boolean;
 }
 
-
 const HeartIcon = ({ filled }: { filled?: boolean }) => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill={filled ? "var(--accent-warm)" : "none"} stroke="var(--accent-warm)" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+  <svg
+    width="13"
+    height="13"
+    viewBox="0 0 24 24"
+    fill={filled ? "var(--accent-warm)" : "none"}
+    stroke="var(--accent-warm)"
+    strokeWidth="2"
+  >
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  </svg>
 );
 
-
 const FlagIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+    <line x1="4" y1="22" x2="4" y2="15" />
+  </svg>
 );
 
 const CheckIcon = ({ size = 16 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="3"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
 );
 
 const CloseIcon = ({ size = 16 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
 );
 
-
 const VideoEmptyIcon = () => (
-  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+  <svg
+    width="64"
+    height="64"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="var(--text-muted)"
+    strokeWidth="1"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    opacity="0.4"
+  >
+    <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+    <line x1="7" y1="2" x2="7" y2="22" />
+    <line x1="17" y1="2" x2="17" y2="22" />
+    <line x1="2" y1="12" x2="22" y2="12" />
+    <line x1="2" y1="7" x2="7" y2="7" />
+    <line x1="2" y1="17" x2="7" y2="17" />
+    <line x1="17" y1="17" x2="22" y2="17" />
+    <line x1="17" y1="7" x2="22" y2="7" />
+  </svg>
 );
 
 const PlaylistEmptyIcon = () => (
-  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+  <svg
+    width="64"
+    height="64"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="var(--text-muted)"
+    strokeWidth="1"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    opacity="0.4"
+  >
+    <line x1="8" y1="6" x2="21" y2="6" />
+    <line x1="8" y1="12" x2="21" y2="12" />
+    <line x1="8" y1="18" x2="21" y2="18" />
+    <line x1="3" y1="6" x2="3.01" y2="6" />
+    <line x1="3" y1="12" x2="3.01" y2="12" />
+    <line x1="3" y1="18" x2="3.01" y2="18" />
+  </svg>
 );
-
-
 
 export default function ChannelPage() {
   const router = useRouter();
   const params = useParams();
   const username = params.username as string;
-  const { user: currentUser, isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const {
+    user: currentUser,
+    isAuthenticated,
+    isLoading: authLoading,
+  } = useAuthStore();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"videos" | "about" | "playlists" | "community">("videos");
+  const [activeTab, setActiveTab] = useState<
+    "videos" | "about" | "playlists" | "community"
+  >("videos");
   const [channelSortBy, setChannelSortBy] = useState("createdAt");
   const [channelSortType, setChannelSortType] = useState("desc");
   const [postContent, setPostContent] = useState("");
@@ -144,7 +226,9 @@ export default function ChannelPage() {
   const { data: videosRes, isLoading: videosLoading } = useQuery({
     queryKey: ["channel-videos", username, channelSortBy, channelSortType],
     queryFn: async () => {
-      const res = await api.get(`/videos/channel/${username}?sortBy=${channelSortBy}&sortType=${channelSortType}`);
+      const res = await api.get(
+        `/videos/channel/${username}?sortBy=${channelSortBy}&sortType=${channelSortType}`,
+      );
       return res.data;
     },
     enabled: isAuthenticated && !!username && activeTab === "videos",
@@ -175,7 +259,11 @@ export default function ChannelPage() {
       return res.data;
     },
     enabled: isAuthenticated && !!username && activeTab === "community",
-    select: (data) => data?.data,
+    select: (data) => {
+      const d = data?.data;
+      if (Array.isArray(d)) return { docs: d };
+      return d;
+    },
   });
 
   const aboutData = aboutRes?.data;
@@ -192,16 +280,23 @@ export default function ChannelPage() {
   const createPostMutation = useMutation({
     mutationFn: async () => {
       const fd = new FormData();
-      const content = postContent.trim() || (pollQuestion.trim() || "");
+      const content = postContent.trim() || pollQuestion.trim() || "";
       fd.append("content", content);
-      if (pollQuestion.trim() && pollOptions.filter((o) => o.trim()).length >= 2) {
+      if (
+        pollQuestion.trim() &&
+        pollOptions.filter((o) => o.trim()).length >= 2
+      ) {
         fd.append("pollQuestion", pollQuestion.trim());
-        pollOptions.filter((o) => o.trim()).forEach((o) => fd.append("pollOptions", o.trim()));
+        pollOptions
+          .filter((o) => o.trim())
+          .forEach((o) => fd.append("pollOptions", o.trim()));
       }
       if (postImage) {
         fd.append("image", postImage);
       }
-      const res = await api.post("/community", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      const res = await api.post("/community", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       return res.data;
     },
     onSuccess: () => {
@@ -216,7 +311,7 @@ export default function ChannelPage() {
 
   const handleCreatePost = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!postContent.trim()) return;
+    if (!postContent.trim() && !postImage && !pollQuestion.trim()) return;
     createPostMutation.mutate();
   };
 
@@ -248,68 +343,199 @@ export default function ChannelPage() {
 
   if (authLoading || !isAuthenticated) {
     return (
-      <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
-        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ color: "var(--text-secondary)", fontWeight: 500 }}>
+      <div
+        style={{
+          display: "flex",
+          minHeight: "100vh",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "var(--bg-primary)",
+        }}
+      >
+        <motion.div
+          animate={{ opacity: [0.3, 1, 0.3] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          style={{ color: "var(--text-secondary)", fontWeight: 500 }}
+        >
           Loading...
         </motion.div>
       </div>
     );
   }
 
-  const videos: ChannelVideo[] = Array.isArray(videosRes?.data?.docs) ? videosRes.data.docs : Array.isArray(videosRes?.data) ? videosRes.data : [];
-  const playlists: Playlist[] = Array.isArray(playlistsRes?.data) ? playlistsRes.data : [];
+  const videos: ChannelVideo[] = Array.isArray(videosRes?.data?.docs)
+    ? videosRes.data.docs
+    : Array.isArray(videosRes?.data)
+      ? videosRes.data
+      : [];
+  const playlists: Playlist[] = Array.isArray(playlistsRes?.data)
+    ? playlistsRes.data
+    : [];
 
   return (
     <>
       <PageMeta
         title={channel?.fullName ? `${channel.fullName} - Channel` : "Channel"}
-        description={channel?.bio?.slice(0, 160) || "View channel on VideoTube."}
+        description={
+          channel?.bio?.slice(0, 160) || "View channel on VideoTube."
+        }
         {...(channel?.avatar ? { ogImage: channel.avatar } : {})}
         ogType="profile"
       />
       {isLoading ? (
-        <div style={{ display: "flex", justifyContent: "center", padding: "6rem 2rem" }}>
-          <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ color: "var(--text-muted)" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            padding: "6rem 2rem",
+          }}
+        >
+          <motion.div
+            animate={{ opacity: [0.3, 1, 0.3] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            style={{ color: "var(--text-muted)" }}
+          >
             Loading channel...
           </motion.div>
         </div>
       ) : !channel ? (
         <div style={{ textAlign: "center", padding: "6rem 2rem" }}>
-          <p style={{ fontSize: "1.2rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.5rem" }}>Channel not found</p>
-          <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem" }}>This channel doesn&apos;t exist or has been removed.</p>
-          <Link href="/" className="btn btn-primary" style={{ borderRadius: 99, padding: "0.7rem 1.75rem" }}>Go Home</Link>
+          <p
+            style={{
+              fontSize: "1.2rem",
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              marginBottom: "0.5rem",
+            }}
+          >
+            Channel not found
+          </p>
+          <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem" }}>
+            This channel doesn&apos;t exist or has been removed.
+          </p>
+          <Link
+            href="/"
+            className="btn btn-primary"
+            style={{ borderRadius: 99, padding: "0.7rem 1.75rem" }}
+          >
+            Go Home
+          </Link>
         </div>
       ) : (
         <div style={{ width: "100%", paddingBottom: "4rem" }}>
           {/* COVER IMAGE */}
-          <div style={{ width: "100%", height: 240, backgroundColor: "var(--elevated)", position: "relative", overflow: "hidden" }}>
+          <div
+            style={{
+              width: "100%",
+              height: 240,
+              backgroundColor: "var(--elevated)",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
             {channel.coverImage ? (
-              <img src={channel.coverImage} alt="Cover" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img
+                src={channel.coverImage}
+                alt="Cover"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
             ) : (
-              <div style={{ width: "100%", height: "100%", background: "linear-gradient(to right, var(--accent-subtle), var(--elevated))" }} />
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  background:
+                    "linear-gradient(to right, var(--accent-subtle), var(--elevated))",
+                }}
+              />
             )}
           </div>
 
           <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 2rem" }}>
             {/* CHANNEL HEADER */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "2rem", alignItems: "flex-end", marginTop: "-3rem", marginBottom: "2rem" }}>
-              <img src={channel.avatar} alt={channel.fullName} style={{ width: 120, height: 120, borderRadius: "50%", border: "4px solid var(--bg-primary)", backgroundColor: "var(--bg-secondary)", objectFit: "cover", flexShrink: 0, position: "relative", zIndex: 2 }} />
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "2rem",
+                alignItems: "flex-end",
+                marginTop: "-3rem",
+                marginBottom: "2rem",
+              }}
+            >
+              <img
+                src={channel.avatar}
+                alt={channel.fullName}
+                style={{
+                  width: 120,
+                  height: 120,
+                  borderRadius: "50%",
+                  border: "4px solid var(--bg-primary)",
+                  backgroundColor: "var(--bg-secondary)",
+                  objectFit: "cover",
+                  flexShrink: 0,
+                  position: "relative",
+                  zIndex: 2,
+                }}
+              />
               <div style={{ flex: 1, minWidth: 280, paddingTop: "3rem" }}>
-                <h1 style={{ fontSize: "2rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.25rem" }}>{channel.fullName}</h1>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "0.75rem", alignItems: "center" }}>
-                  <span style={{ fontWeight: 600, color: "var(--text-secondary)" }}>@{channel.username}</span>
+                <h1
+                  style={{
+                    fontSize: "2rem",
+                    fontWeight: 800,
+                    color: "var(--text-primary)",
+                    marginBottom: "0.25rem",
+                  }}
+                >
+                  {channel.fullName}
+                </h1>
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "0.75rem",
+                    color: "var(--text-muted)",
+                    fontSize: "0.9rem",
+                    marginBottom: "0.75rem",
+                    alignItems: "center",
+                  }}
+                >
+                  <span
+                    style={{ fontWeight: 600, color: "var(--text-secondary)" }}
+                  >
+                    @{channel.username}
+                  </span>
                   <span>&middot;</span>
-                  <span>{formatViews(channel.subscribersCount)} subscribers</span>
+                  <span>
+                    {formatViews(channel.subscribersCount)} subscribers
+                  </span>
                   <span>&middot;</span>
                   <span>{formatViews(channel.totalVideos || 0)} videos</span>
                 </div>
                 {channel.bio && (
-                  <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", maxWidth: 600 }}>
+                  <p
+                    style={{
+                      fontSize: "0.85rem",
+                      color: "var(--text-muted)",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                      maxWidth: 600,
+                    }}
+                  >
                     {channel.bio}
                   </p>
                 )}
               </div>
-              <div style={{ display: "flex", gap: "1rem", alignItems: "center", paddingTop: "3rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "1rem",
+                  alignItems: "center",
+                  paddingTop: "3rem",
+                }}
+              >
                 {!isOwnChannel && (
                   <button
                     onClick={() => subscribeMutation.mutate()}
@@ -323,24 +549,43 @@ export default function ChannelPage() {
             </div>
 
             {/* TABS */}
-            <div style={{ display: "flex", gap: "1rem", borderBottom: "1px solid var(--border)", marginBottom: "2rem", overflowX: "auto", scrollbarWidth: "none" }}>
-              {(["videos", "about", "playlists", "community"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  style={{
-                    padding: "0.75rem 1.5rem",
-                    background: "none", border: "none",
-                    borderBottom: `2px solid ${activeTab === tab ? "var(--text-primary)" : "transparent"}`,
-                    color: activeTab === tab ? "var(--text-primary)" : "var(--text-muted)",
-                    fontWeight: activeTab === tab ? 700 : 500,
-                    textTransform: "uppercase", fontSize: "0.85rem", letterSpacing: "0.05em",
-                    cursor: "pointer", transition: "all 0.2s", whiteSpace: "nowrap"
-                  }}
-                >
-                  {tab}
-                </button>
-              ))}
+            <div
+              style={{
+                display: "flex",
+                gap: "1rem",
+                borderBottom: "1px solid var(--border)",
+                marginBottom: "2rem",
+                overflowX: "auto",
+                scrollbarWidth: "none",
+              }}
+            >
+              {(["videos", "about", "playlists", "community"] as const).map(
+                (tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    style={{
+                      padding: "0.75rem 1.5rem",
+                      background: "none",
+                      border: "none",
+                      borderBottom: `2px solid ${activeTab === tab ? "var(--text-primary)" : "transparent"}`,
+                      color:
+                        activeTab === tab
+                          ? "var(--text-primary)"
+                          : "var(--text-muted)",
+                      fontWeight: activeTab === tab ? 700 : 500,
+                      textTransform: "uppercase",
+                      fontSize: "0.85rem",
+                      letterSpacing: "0.05em",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {tab}
+                  </button>
+                ),
+              )}
             </div>
 
             <AnimatePresence mode="wait">
@@ -355,9 +600,25 @@ export default function ChannelPage() {
                 {/* VIDEOS TAB */}
                 {activeTab === "videos" && (
                   <div>
-                    <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
-                      <span style={{ fontSize: "0.82rem", color: "var(--text-muted)", fontWeight: 500 }}>Sort by</span>
-<select
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        marginBottom: "1rem",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "0.82rem",
+                          color: "var(--text-muted)",
+                          fontWeight: 500,
+                        }}
+                      >
+                        Sort by
+                      </span>
+                      <select
                         value={`${channelSortBy}-${channelSortType}`}
                         onChange={(e) => {
                           const parts = e.target.value.split("-");
@@ -368,9 +629,13 @@ export default function ChannelPage() {
                           }
                         }}
                         style={{
-                          padding: "0.4rem 0.8rem", borderRadius: "var(--radius-md)",
-                          border: "1px solid var(--border)", backgroundColor: "var(--elevated)",
-                          color: "var(--text-secondary)", fontSize: "0.82rem", fontWeight: 500,
+                          padding: "0.4rem 0.8rem",
+                          borderRadius: "var(--radius-md)",
+                          border: "1px solid var(--border)",
+                          backgroundColor: "var(--elevated)",
+                          color: "var(--text-secondary)",
+                          fontSize: "0.82rem",
+                          fontWeight: 500,
                           cursor: "pointer",
                         }}
                       >
@@ -384,24 +649,69 @@ export default function ChannelPage() {
                     </div>
 
                     {videosLoading ? (
-                      <div style={{ display: "flex", justifyContent: "center", padding: "4rem" }}>
-                        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ color: "var(--text-muted)" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          padding: "4rem",
+                        }}
+                      >
+                        <motion.div
+                          animate={{ opacity: [0.3, 1, 0.3] }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                          style={{ color: "var(--text-muted)" }}
+                        >
                           Loading videos...
                         </motion.div>
                       </div>
                     ) : videos.length === 0 ? (
-                      <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
+                      <div
+                        style={{ textAlign: "center", padding: "4rem 2rem" }}
+                      >
                         <VideoEmptyIcon />
-                        <p style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.5rem", marginTop: "1rem" }}>No videos yet</p>
-                        <p style={{ color: "var(--text-muted)", marginBottom: "1.25rem" }}>This channel hasn&apos;t uploaded any videos.</p>
+                        <p
+                          style={{
+                            fontSize: "1.1rem",
+                            fontWeight: 600,
+                            color: "var(--text-primary)",
+                            marginBottom: "0.5rem",
+                            marginTop: "1rem",
+                          }}
+                        >
+                          No videos yet
+                        </p>
+                        <p
+                          style={{
+                            color: "var(--text-muted)",
+                            marginBottom: "1.25rem",
+                          }}
+                        >
+                          This channel hasn&apos;t uploaded any videos.
+                        </p>
                         {isOwnChannel && (
-                          <Link href="/studio" className="btn btn-primary" style={{ borderRadius: 99, padding: "0.6rem 1.5rem", fontSize: "0.85rem", display: "inline-flex" }}>
+                          <Link
+                            href="/studio"
+                            className="btn btn-primary"
+                            style={{
+                              borderRadius: 99,
+                              padding: "0.6rem 1.5rem",
+                              fontSize: "0.85rem",
+                              display: "inline-flex",
+                            }}
+                          >
                             Upload your first video
                           </Link>
                         )}
                       </div>
                     ) : (
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.5rem" }}>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "repeat(auto-fill, minmax(300px, 1fr))",
+                          gap: "1.5rem",
+                        }}
+                      >
                         {videos.map((video, i) => (
                           <motion.div
                             key={video._id}
@@ -411,13 +721,71 @@ export default function ChannelPage() {
                             className="video-card-premium"
                             onClick={() => router.push(`/videos/${video._id}`)}
                           >
-                            <div className="thumb-wrapper" style={{ position: "relative", width: "100%", aspectRatio: "16/9", borderRadius: "var(--radius-lg)", overflow: "hidden", backgroundColor: "var(--bg-secondary)" }}>
-                              <img src={video.thumbnail || ""} alt={video.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                              <div className="duration-badge" style={{ position: "absolute", bottom: 6, right: 6, background: "rgba(0,0,0,0.8)", color: "#fff", padding: "2px 6px", borderRadius: 4, fontSize: "0.75rem", fontWeight: 600 }}>{formatDuration(video.duration)}</div>
+                            <div
+                              className="thumb-wrapper"
+                              style={{
+                                position: "relative",
+                                width: "100%",
+                                aspectRatio: "16/9",
+                                borderRadius: "var(--radius-lg)",
+                                overflow: "hidden",
+                                backgroundColor: "var(--bg-secondary)",
+                              }}
+                            >
+                              <img
+                                src={video.thumbnail || ""}
+                                alt={video.title}
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                }}
+                              />
+                              <div
+                                className="duration-badge"
+                                style={{
+                                  position: "absolute",
+                                  bottom: 6,
+                                  right: 6,
+                                  background: "rgba(0,0,0,0.8)",
+                                  color: "#fff",
+                                  padding: "2px 6px",
+                                  borderRadius: 4,
+                                  fontSize: "0.75rem",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {formatDuration(video.duration)}
+                              </div>
                             </div>
-                            <div className="card-info" style={{ marginTop: "0.75rem" }}>
-                              <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.25rem", overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{video.title}</h3>
-                              <div style={{ display: "flex", gap: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)", alignItems: "center" }}>
+                            <div
+                              className="card-info"
+                              style={{ marginTop: "0.75rem" }}
+                            >
+                              <h3
+                                style={{
+                                  fontSize: "1rem",
+                                  fontWeight: 700,
+                                  color: "var(--text-primary)",
+                                  marginBottom: "0.25rem",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  display: "-webkit-box",
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: "vertical",
+                                }}
+                              >
+                                {video.title}
+                              </h3>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  gap: "0.5rem",
+                                  fontSize: "0.85rem",
+                                  color: "var(--text-muted)",
+                                  alignItems: "center",
+                                }}
+                              >
                                 <span>{formatViews(video.views)} views</span>
                                 <span>&middot;</span>
                                 <span>{timeAgo(video.createdAt)}</span>
@@ -434,19 +802,50 @@ export default function ChannelPage() {
                 {activeTab === "playlists" && (
                   <div>
                     {playlistsLoading ? (
-                      <div style={{ display: "flex", justifyContent: "center", padding: "4rem" }}>
-                        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ color: "var(--text-muted)" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          padding: "4rem",
+                        }}
+                      >
+                        <motion.div
+                          animate={{ opacity: [0.3, 1, 0.3] }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                          style={{ color: "var(--text-muted)" }}
+                        >
                           Loading playlists...
                         </motion.div>
                       </div>
                     ) : playlists.length === 0 ? (
-                      <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
+                      <div
+                        style={{ textAlign: "center", padding: "4rem 2rem" }}
+                      >
                         <PlaylistEmptyIcon />
-                        <p style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.5rem", marginTop: "1rem" }}>No playlists</p>
-                        <p style={{ color: "var(--text-muted)" }}>This channel has no public playlists.</p>
+                        <p
+                          style={{
+                            fontSize: "1.1rem",
+                            fontWeight: 600,
+                            color: "var(--text-primary)",
+                            marginBottom: "0.5rem",
+                            marginTop: "1rem",
+                          }}
+                        >
+                          No playlists
+                        </p>
+                        <p style={{ color: "var(--text-muted)" }}>
+                          This channel has no public playlists.
+                        </p>
                       </div>
                     ) : (
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1.5rem" }}>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "repeat(auto-fill, minmax(280px, 1fr))",
+                          gap: "1.5rem",
+                        }}
+                      >
                         {playlists.map((pl, i) => (
                           <motion.div
                             key={pl._id}
@@ -454,21 +853,102 @@ export default function ChannelPage() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.05 }}
                           >
-                            <Link href={`/playlists/${pl._id}`} style={{ textDecoration: "none", color: "inherit" }}>
-                              <div style={{ position: "relative", width: "100%", aspectRatio: "16/9", borderRadius: "var(--radius-lg)", overflow: "hidden", backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border)" }}>
-                                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-secondary)" }}>
+                            <Link
+                              href={`/playlists/${pl._id}`}
+                              style={{
+                                textDecoration: "none",
+                                color: "inherit",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  position: "relative",
+                                  width: "100%",
+                                  aspectRatio: "16/9",
+                                  borderRadius: "var(--radius-lg)",
+                                  overflow: "hidden",
+                                  backgroundColor: "var(--bg-secondary)",
+                                  border: "1px solid var(--border)",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    inset: 0,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    backgroundColor: "var(--bg-secondary)",
+                                  }}
+                                >
                                   <PlaylistEmptyIcon />
                                 </div>
-                                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: "rgba(0,0,0,0.8)", backdropFilter: "blur(4px)", padding: "0.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-                                  <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", color: "#fff", fontSize: "0.8rem", fontWeight: 600 }}>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    backgroundColor: "rgba(0,0,0,0.8)",
+                                    backdropFilter: "blur(4px)",
+                                    padding: "0.5rem",
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    borderTop:
+                                      "1px solid rgba(255,255,255,0.1)",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "0.35rem",
+                                      color: "#fff",
+                                      fontSize: "0.8rem",
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    <svg
+                                      width="14"
+                                      height="14"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    >
+                                      <line x1="8" y1="6" x2="21" y2="6" />
+                                      <line x1="8" y1="12" x2="21" y2="12" />
+                                      <line x1="8" y1="18" x2="21" y2="18" />
+                                      <line x1="3" y1="6" x2="3.01" y2="6" />
+                                      <line x1="3" y1="12" x2="3.01" y2="12" />
+                                      <line x1="3" y1="18" x2="3.01" y2="18" />
+                                    </svg>
                                     Playlist
                                   </div>
                                 </div>
                               </div>
                               <div style={{ marginTop: "0.75rem" }}>
-                                <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.2rem" }}>{pl.name}</h3>
-                                <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>View full playlist</p>
+                                <h3
+                                  style={{
+                                    fontSize: "1rem",
+                                    fontWeight: 700,
+                                    color: "var(--text-primary)",
+                                    marginBottom: "0.2rem",
+                                  }}
+                                >
+                                  {pl.name}
+                                </h3>
+                                <p
+                                  style={{
+                                    fontSize: "0.85rem",
+                                    color: "var(--text-muted)",
+                                  }}
+                                >
+                                  View full playlist
+                                </p>
                               </div>
                             </Link>
                           </motion.div>
@@ -482,14 +962,38 @@ export default function ChannelPage() {
                 {activeTab === "about" && (
                   <div>
                     <div style={{ marginBottom: "2rem" }}>
-                      <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>About</h3>
-                      <p style={{ color: "var(--text-primary)", lineHeight: 1.7, fontSize: "0.95rem" }}>
+                      <h3
+                        style={{
+                          fontSize: "0.85rem",
+                          fontWeight: 700,
+                          color: "var(--text-muted)",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                          marginBottom: "0.75rem",
+                        }}
+                      >
+                        About
+                      </h3>
+                      <p
+                        style={{
+                          color: "var(--text-primary)",
+                          lineHeight: 1.7,
+                          fontSize: "0.95rem",
+                        }}
+                      >
                         {aboutData?.bio || channel?.bio ? (
                           aboutData?.bio || channel?.bio
                         ) : isOwnChannel ? (
                           <span>
                             You haven&apos;t added a bio yet.{" "}
-                            <Link href="/edit-profile" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
+                            <Link
+                              href="/edit-profile"
+                              style={{
+                                color: "var(--accent)",
+                                fontWeight: 600,
+                                textDecoration: "none",
+                              }}
+                            >
                               Add one to tell viewers about yourself →
                             </Link>
                           </span>
@@ -500,12 +1004,16 @@ export default function ChannelPage() {
                     </div>
                   </div>
                 )}
-                    
+
                 {activeTab === "community" && (
                   <div>
                     {/* Create Post Form (only for channel owner) */}
                     {isOwnChannel && (
-                      <form onSubmit={handleCreatePost} className="form-card" style={{ padding: "1.25rem", marginBottom: "1.5rem" }}>
+                      <form
+                        onSubmit={handleCreatePost}
+                        className="form-card"
+                        style={{ padding: "1.25rem", marginBottom: "1.5rem" }}
+                      >
                         <textarea
                           placeholder="Share an update with your subscribers..."
                           value={postContent}
@@ -513,16 +1021,65 @@ export default function ChannelPage() {
                           maxLength={500}
                           rows={3}
                           className="input"
-                          style={{ width: "100%", resize: "vertical", marginBottom: "0.75rem" }}
+                          style={{
+                            width: "100%",
+                            resize: "vertical",
+                            marginBottom: "0.75rem",
+                          }}
                         />
                         {postImagePreview && (
-                          <div style={{ position: "relative", display: "inline-block", marginBottom: "0.75rem" }}>
-                            <img src={postImagePreview} alt="Preview" style={{ maxHeight: 200, borderRadius: "var(--radius-md)", objectFit: "cover" }} />
-                            <button type="button" onClick={() => { setPostImage(null); setPostImagePreview(""); }} style={{ position: "absolute", top: 4, right: 4, width: 24, height: 24, borderRadius: "50%", backgroundColor: "rgba(0,0,0,0.6)", color: "#fff", border: "none", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+                          <div
+                            style={{
+                              position: "relative",
+                              display: "inline-block",
+                              marginBottom: "0.75rem",
+                            }}
+                          >
+                            <img
+                              src={postImagePreview}
+                              alt="Preview"
+                              style={{
+                                maxHeight: 200,
+                                borderRadius: "var(--radius-md)",
+                                objectFit: "cover",
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPostImage(null);
+                                setPostImagePreview("");
+                              }}
+                              style={{
+                                position: "absolute",
+                                top: 4,
+                                right: 4,
+                                width: 24,
+                                height: 24,
+                                borderRadius: "50%",
+                                backgroundColor: "rgba(0,0,0,0.6)",
+                                color: "#fff",
+                                border: "none",
+                                cursor: "pointer",
+                                fontSize: 14,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              ×
+                            </button>
                           </div>
                         )}
                         {/* Poll Builder */}
-                        <div style={{ marginBottom: "0.75rem", padding: "0.75rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-sm)" }}>
+                        <div
+                          style={{
+                            marginBottom: "0.75rem",
+                            padding: "0.75rem",
+                            backgroundColor: "var(--bg-secondary)",
+                            borderRadius: "var(--radius-sm)",
+                          }}
+                        >
                           <input
                             placeholder="Ask a question (optional poll)"
                             value={pollQuestion}
@@ -530,25 +1087,85 @@ export default function ChannelPage() {
                             className="input"
                             style={{ width: "100%", marginBottom: "0.5rem" }}
                           />
-                          {pollQuestion.trim() && pollOptions.map((opt, i) => (
-                            <input
-                              key={i}
-                              placeholder={`Option ${i + 1}`}
-                              value={opt}
-                              onChange={(e) => handlePollOptionChange(i, e.target.value)}
-                              className="input"
-                              style={{ width: "100%", marginBottom: "0.3rem", fontSize: "0.85rem" }}
-                            />
-                          ))}
+                          {pollQuestion.trim() &&
+                            pollOptions.map((opt, i) => (
+                              <input
+                                key={i}
+                                placeholder={`Option ${i + 1}`}
+                                value={opt}
+                                onChange={(e) =>
+                                  handlePollOptionChange(i, e.target.value)
+                                }
+                                className="input"
+                                style={{
+                                  width: "100%",
+                                  marginBottom: "0.3rem",
+                                  fontSize: "0.85rem",
+                                }}
+                              />
+                            ))}
                         </div>
-                        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                          <label style={{ cursor: "pointer", fontSize: "0.82rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "0.5rem",
+                            alignItems: "center",
+                          }}
+                        >
+                          <label
+                            style={{
+                              cursor: "pointer",
+                              fontSize: "0.82rem",
+                              color: "var(--text-secondary)",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.3rem",
+                            }}
+                          >
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <rect
+                                x="3"
+                                y="3"
+                                width="18"
+                                height="18"
+                                rx="2"
+                                ry="2"
+                              />
+                              <circle cx="8.5" cy="8.5" r="1.5" />
+                              <polyline points="21 15 16 10 5 21" />
+                            </svg>
                             Add image
-                            <input type="file" accept="image/*" onChange={handlePostImageChange} style={{ display: "none" }} />
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handlePostImageChange}
+                              style={{ display: "none" }}
+                            />
                           </label>
-                          <button type="submit" disabled={createPostMutation.isPending || !postContent.trim()} className="btn btn-primary" style={{ marginLeft: "auto", borderRadius: 99, padding: "0.5rem 1.25rem", fontSize: "0.85rem" }}>
-                            {createPostMutation.isPending ? "Posting..." : "Post"}
+                          <button
+                            type="submit"
+                            disabled={
+                              createPostMutation.isPending ||
+                              !postContent.trim()
+                            }
+                            className="btn btn-primary"
+                            style={{
+                              marginLeft: "auto",
+                              borderRadius: 99,
+                              padding: "0.5rem 1.25rem",
+                              fontSize: "0.85rem",
+                            }}
+                          >
+                            {createPostMutation.isPending
+                              ? "Posting..."
+                              : "Post"}
                           </button>
                         </div>
                       </form>
@@ -556,18 +1173,64 @@ export default function ChannelPage() {
 
                     {/* Posts Feed */}
                     {postsLoading ? (
-                      <div style={{ display: "flex", justifyContent: "center", padding: "4rem" }}>
-                        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ color: "var(--text-muted)" }}>Loading posts...</motion.div>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          padding: "4rem",
+                        }}
+                      >
+                        <motion.div
+                          animate={{ opacity: [0.3, 1, 0.3] }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                          style={{ color: "var(--text-muted)" }}
+                        >
+                          Loading posts...
+                        </motion.div>
                       </div>
                     ) : !postsRes?.docs?.length ? (
-                      <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
-                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1" opacity="0.4"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                        <p style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--text-primary)", margin: "1rem 0 0.5rem" }}>No community posts yet</p>
-                        <p style={{ color: "var(--text-muted)" }}>{isOwnChannel ? "Create your first post above!" : "This channel hasn't posted anything yet."}</p>
+                      <div
+                        style={{ textAlign: "center", padding: "4rem 2rem" }}
+                      >
+                        <svg
+                          width="64"
+                          height="64"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="var(--text-muted)"
+                          strokeWidth="1"
+                          opacity="0.4"
+                        >
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                        </svg>
+                        <p
+                          style={{
+                            fontSize: "1.1rem",
+                            fontWeight: 600,
+                            color: "var(--text-primary)",
+                            margin: "1rem 0 0.5rem",
+                          }}
+                        >
+                          No community posts yet
+                        </p>
+                        <p style={{ color: "var(--text-muted)" }}>
+                          {isOwnChannel
+                            ? "Create your first post above!"
+                            : "This channel hasn't posted anything yet."}
+                        </p>
                       </div>
                     ) : (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                        {(Array.isArray(postsRes?.docs) ? postsRes.docs : []).map((post: ChannelPost, i: number) => (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "1rem",
+                        }}
+                      >
+                        {(Array.isArray(postsRes?.docs)
+                          ? postsRes.docs
+                          : []
+                        ).map((post: ChannelPost, i: number) => (
                           <motion.div
                             key={post._id}
                             initial={{ opacity: 0, y: 12 }}
@@ -576,51 +1239,191 @@ export default function ChannelPage() {
                             className="form-card"
                             style={{ padding: "1.25rem" }}
                           >
-                            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
-                              <img src={post.owner.avatar} alt={post.owner.fullName} style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover" }} />
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.75rem",
+                                marginBottom: "0.75rem",
+                              }}
+                            >
+                              <ChannelLink username={post.owner.username}>
+                                <img
+                                  src={post.owner.avatar}
+                                  alt={post.owner.fullName}
+                                  style={{
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: "50%",
+                                    objectFit: "cover",
+                                  }}
+                                />
+                              </ChannelLink>
                               <div>
-                                <p style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-primary)" }}>{post.owner.fullName}</p>
-                                <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{timeAgo(post.createdAt)}</p>
+                                <ChannelLink username={post.owner.username}>
+                                  <p
+                                    style={{
+                                      fontSize: "0.9rem",
+                                      fontWeight: 600,
+                                      color: "var(--text-primary)",
+                                    }}
+                                  >
+                                    {post.owner.fullName}
+                                  </p>
+                                </ChannelLink>
+                                <p
+                                  style={{
+                                    fontSize: "0.75rem",
+                                    color: "var(--text-muted)",
+                                  }}
+                                >
+                                  {timeAgo(post.createdAt)}
+                                </p>
                               </div>
                             </div>
 
-                            <p style={{ fontSize: "0.92rem", color: "var(--text-primary)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{post.content}</p>
+                            <p
+                              style={{
+                                fontSize: "0.92rem",
+                                color: "var(--text-primary)",
+                                lineHeight: 1.6,
+                                whiteSpace: "pre-wrap",
+                              }}
+                            >
+                              {post.content}
+                            </p>
 
                             {post.image && (
-                              <img src={post.image} alt="Post image" style={{ width: "100%", maxHeight: 400, objectFit: "contain", borderRadius: "var(--radius-md)", marginTop: "0.75rem", backgroundColor: "#000" }} />
+                              <img
+                                src={post.image}
+                                alt="Post image"
+                                style={{
+                                  width: "100%",
+                                  maxHeight: 400,
+                                  objectFit: "contain",
+                                  borderRadius: "var(--radius-md)",
+                                  marginTop: "0.75rem",
+                                  backgroundColor: "#000",
+                                }}
+                              />
                             )}
 
-                            {post.poll && (
-                              <CommunityPoll poll={post.poll} />
-                            )}
+                            {post.poll && <CommunityPoll poll={post.poll} />}
 
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border)", fontSize: "0.82rem", color: "var(--text-muted)" }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                                <button onClick={() => togglePostLikeMutation.mutate(post._id)}
-                                  style={{ display: "flex", alignItems: "center", gap: "0.35rem", background: "none", border: "none", cursor: "pointer", color: post.isLiked ? "var(--accent-warm)" : "var(--text-muted)", padding: 0, fontSize: "0.82rem", transition: "color 0.15s" }}
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                marginTop: "0.75rem",
+                                paddingTop: "0.75rem",
+                                borderTop: "1px solid var(--border)",
+                                fontSize: "0.82rem",
+                                color: "var(--text-muted)",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "1rem",
+                                }}
+                              >
+                                <button
+                                  onClick={() =>
+                                    togglePostLikeMutation.mutate(post._id)
+                                  }
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.35rem",
+                                    background: "none",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    color: post.isLiked
+                                      ? "var(--accent-warm)"
+                                      : "var(--text-muted)",
+                                    padding: 0,
+                                    fontSize: "0.82rem",
+                                    transition: "color 0.15s",
+                                  }}
                                 >
-                                  <HeartIcon filled={post.isLiked} /> {post.likesCount}
+                                  <HeartIcon filled={post.isLiked} />{" "}
+                                  {post.likesCount}
                                 </button>
-                                <button onClick={() => setOpenComments(openComments === post._id ? null : post._id)}
-                                  style={{ display: "flex", alignItems: "center", gap: "0.35rem", background: "none", border: "none", cursor: "pointer", color: openComments === post._id ? "var(--accent)" : "var(--text-muted)", padding: 0, fontSize: "0.82rem" }}
+                                <button
+                                  onClick={() =>
+                                    setOpenComments(
+                                      openComments === post._id
+                                        ? null
+                                        : post._id,
+                                    )
+                                  }
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.35rem",
+                                    background: "none",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    color:
+                                      openComments === post._id
+                                        ? "var(--accent)"
+                                        : "var(--text-muted)",
+                                    padding: 0,
+                                    fontSize: "0.82rem",
+                                  }}
                                 >
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                  <svg
+                                    width="13"
+                                    height="13"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                  >
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                  </svg>
                                   {post.commentsCount}
                                 </button>
                               </div>
                               {isOwnChannel && (
-                                <button onClick={() => setDeletePostId(post._id)}
-                                  style={{ display: "flex", alignItems: "center", gap: "0.35rem", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 0, fontSize: "0.82rem" }}
+                                <button
+                                  onClick={() => setDeletePostId(post._id)}
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.35rem",
+                                    background: "none",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    color: "var(--text-muted)",
+                                    padding: 0,
+                                    fontSize: "0.82rem",
+                                  }}
                                   title="Delete post"
                                 >
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                  <svg
+                                    width="13"
+                                    height="13"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                  >
+                                    <path d="M3 6h18" />
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                  </svg>
                                   Delete
                                 </button>
                               )}
                             </div>
                             <AnimatePresence>
                               {openComments === post._id && (
-                                <PostComments postId={post._id} channelUsername={username} />
+                                <PostComments
+                                  postId={post._id}
+                                  channelUsername={username}
+                                />
                               )}
                             </AnimatePresence>
                           </motion.div>
@@ -634,17 +1437,32 @@ export default function ChannelPage() {
           </div>
         </div>
       )}
-      {showReportModal && <ReportModal targetId={channel?._id || ""} onClose={() => setShowReportModal(false)} />}
+      {showReportModal && (
+        <ReportModal
+          targetId={channel?._id || ""}
+          onClose={() => setShowReportModal(false)}
+        />
+      )}
       <AnimatePresence>
         {deletePostId && (
-          <DeletePostModal postId={deletePostId} channelUsername={username} onClose={() => setDeletePostId(null)} />
+          <DeletePostModal
+            postId={deletePostId}
+            channelUsername={username}
+            onClose={() => setDeletePostId(null)}
+          />
         )}
       </AnimatePresence>
     </>
   );
 }
 
-function PostComments({ postId, channelUsername }: { postId: string; channelUsername: string }) {
+function PostComments({
+  postId,
+  channelUsername,
+}: {
+  postId: string;
+  channelUsername: string;
+}) {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const [commentText, setCommentText] = useState("");
@@ -660,13 +1478,17 @@ function PostComments({ postId, channelUsername }: { postId: string; channelUser
 
   const addCommentMutation = useMutation({
     mutationFn: async () => {
-      const res = await api.post(`/community/${postId}/comments`, { content: commentText });
+      const res = await api.post(`/community/${postId}/comments`, {
+        content: commentText,
+      });
       return res.data;
     },
     onSuccess: () => {
       setCommentText("");
       queryClient.invalidateQueries({ queryKey: ["post-comments", postId] });
-      queryClient.invalidateQueries({ queryKey: ["channel-posts", channelUsername] });
+      queryClient.invalidateQueries({
+        queryKey: ["channel-posts", channelUsername],
+      });
     },
   });
 
@@ -676,11 +1498,18 @@ function PostComments({ postId, channelUsername }: { postId: string; channelUser
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["post-comments", postId] });
-      queryClient.invalidateQueries({ queryKey: ["channel-posts", channelUsername] });
+      queryClient.invalidateQueries({
+        queryKey: ["channel-posts", channelUsername],
+      });
     },
   });
 
-  const comments: { _id: string; content: string; owner: { _id: string; fullName: string; avatar: string }; createdAt: string }[] = commentsRes?.data?.docs || [];
+  const comments: {
+    _id: string;
+    content: string;
+    owner: { _id: string; fullName: string; avatar: string; username?: string };
+    createdAt: string;
+  }[] = commentsRes?.data?.docs || [];
 
   return (
     <motion.div
@@ -689,18 +1518,34 @@ function PostComments({ postId, channelUsername }: { postId: string; channelUser
       exit={{ opacity: 0, height: 0 }}
       style={{ overflow: "hidden" }}
     >
-      <div style={{ borderTop: "1px solid var(--border)", marginTop: "0.75rem", paddingTop: "0.75rem" }}>
-        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
+      <div
+        style={{
+          borderTop: "1px solid var(--border)",
+          marginTop: "0.75rem",
+          paddingTop: "0.75rem",
+        }}
+      >
+        <div
+          style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}
+        >
           <input
             type="text"
             placeholder="Write a comment..."
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && commentText.trim()) addCommentMutation.mutate(); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && commentText.trim())
+                addCommentMutation.mutate();
+            }}
             style={{
-              flex: 1, padding: "0.5rem 0.75rem", fontSize: "0.85rem",
-              borderRadius: "var(--radius-md)", border: "1px solid var(--border)",
-              backgroundColor: "var(--input)", color: "var(--text-primary)", outline: "none",
+              flex: 1,
+              padding: "0.5rem 0.75rem",
+              fontSize: "0.85rem",
+              borderRadius: "var(--radius-md)",
+              border: "1px solid var(--border)",
+              backgroundColor: "var(--input)",
+              color: "var(--text-primary)",
+              outline: "none",
             }}
           />
           <button
@@ -714,33 +1559,135 @@ function PostComments({ postId, channelUsername }: { postId: string; channelUser
         </div>
 
         {commentsLoading ? (
-          <div style={{ padding: "0.5rem 0", color: "var(--text-muted)", fontSize: "0.8rem" }}>Loading comments...</div>
+          <div
+            style={{
+              padding: "0.5rem 0",
+              color: "var(--text-muted)",
+              fontSize: "0.8rem",
+            }}
+          >
+            Loading comments...
+          </div>
         ) : comments.length === 0 ? (
-          <div style={{ padding: "0.5rem 0", color: "var(--text-muted)", fontSize: "0.8rem" }}>No comments yet.</div>
+          <div
+            style={{
+              padding: "0.5rem 0",
+              color: "var(--text-muted)",
+              fontSize: "0.8rem",
+            }}
+          >
+            No comments yet.
+          </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", maxHeight: 300, overflow: "auto" }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.6rem",
+              maxHeight: 300,
+              overflow: "auto",
+            }}
+          >
             {comments.map((comment) => (
-              <div key={comment._id} style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
-                <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", backgroundColor: "var(--accent-subtle)", flexShrink: 0 }}>
-                  {comment.owner?.avatar ? (
-                    <img src={comment.owner.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  ) : (
-                    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)", fontSize: 11, fontWeight: 700 }}>
-                      {(comment.owner?.fullName?.[0] || "U").toUpperCase()}
-                    </div>
-                  )}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginBottom: "0.1rem" }}>
-                    <span style={{ fontWeight: 600, fontSize: "0.78rem", color: "var(--text-primary)" }}>{comment.owner?.fullName || "Anonymous"}</span>
-                    <span style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>{timeAgo(comment.createdAt)}</span>
+              <div
+                key={comment._id}
+                style={{
+                  display: "flex",
+                  gap: "0.5rem",
+                  alignItems: "flex-start",
+                }}
+              >
+                <ChannelLink username={comment.owner?.username}>
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: "50%",
+                      overflow: "hidden",
+                      backgroundColor: "var(--accent-subtle)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {comment.owner?.avatar ? (
+                      <img
+                        src={comment.owner.avatar}
+                        alt=""
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "var(--accent)",
+                          fontSize: 11,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {(comment.owner?.fullName?.[0] || "U").toUpperCase()}
+                      </div>
+                    )}
                   </div>
-                  <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.4 }}>{comment.content}</p>
+                </ChannelLink>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.35rem",
+                      marginBottom: "0.1rem",
+                    }}
+                  >
+                    <ChannelLink username={comment.owner?.username}>
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          fontSize: "0.78rem",
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        {comment.owner?.fullName || "Anonymous"}
+                      </span>
+                    </ChannelLink>
+                    <span
+                      style={{
+                        fontSize: "0.68rem",
+                        color: "var(--text-muted)",
+                      }}
+                    >
+                      {timeAgo(comment.createdAt)}
+                    </span>
+                  </div>
+                  <p
+                    style={{
+                      fontSize: "0.82rem",
+                      color: "var(--text-secondary)",
+                      margin: 0,
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {comment.content}
+                  </p>
                 </div>
                 {comment.owner?._id === user?._id && (
                   <button
                     onClick={() => deleteCommentMutation.mutate(comment._id)}
-                    style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "0.15rem", fontSize: "0.7rem", flexShrink: 0 }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "var(--text-muted)",
+                      cursor: "pointer",
+                      padding: "0.15rem",
+                      fontSize: "0.7rem",
+                      flexShrink: 0,
+                    }}
                   >
                     ✕
                   </button>
@@ -754,14 +1701,24 @@ function PostComments({ postId, channelUsername }: { postId: string; channelUser
   );
 }
 
-function DeletePostModal({ postId, channelUsername, onClose }: { postId: string; channelUsername: string; onClose: () => void }) {
+function DeletePostModal({
+  postId,
+  channelUsername,
+  onClose,
+}: {
+  postId: string;
+  channelUsername: string;
+  onClose: () => void;
+}) {
   const queryClient = useQueryClient();
   const deleteMutation = useMutation({
     mutationFn: async () => {
       await api.delete(`/community/${postId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["channel-posts", channelUsername] });
+      queryClient.invalidateQueries({
+        queryKey: ["channel-posts", channelUsername],
+      });
       onClose();
     },
   });
@@ -774,13 +1731,21 @@ function DeletePostModal({ postId, channelUsername, onClose }: { postId: string;
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
       style={{
-        position: "fixed", inset: 0, zIndex: 1000,
+        position: "fixed",
+        inset: 0,
+        zIndex: 1000,
         backgroundColor: "rgba(0,0,0,0.6)",
         backdropFilter: "blur(8px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         padding: "1rem",
       }}
     >
@@ -790,34 +1755,75 @@ function DeletePostModal({ postId, channelUsername, onClose }: { postId: string;
         exit={{ scale: 0.92, opacity: 0, y: 20 }}
         transition={{ type: "spring", stiffness: 300, damping: 28 }}
         style={{
-          width: "100%", maxWidth: 420,
-          borderRadius: "var(--radius-xl)", padding: "2rem",
+          width: "100%",
+          maxWidth: 420,
+          borderRadius: "var(--radius-xl)",
+          padding: "2rem",
           backgroundColor: "var(--card)",
           border: "1px solid var(--border)",
           boxShadow: "var(--shadow-lg)",
         }}
       >
         <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: "50%",
-            backgroundColor: "var(--error-subtle)",
-            display: "inline-flex", alignItems: "center", justifyContent: "center",
-            marginBottom: "1rem", color: "var(--error)",
-          }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              backgroundColor: "var(--error-subtle)",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: "1rem",
+              color: "var(--error)",
+            }}
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 6h18" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
             </svg>
           </div>
-          <h2 id="delete-post-title" style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.5rem" }}>Delete this post?</h2>
-          <p style={{ fontSize: "0.9rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
-            This action cannot be undone. The post and all its comments will be permanently removed.
+          <h2
+            id="delete-post-title"
+            style={{
+              fontSize: "1.2rem",
+              fontWeight: 700,
+              color: "var(--text-primary)",
+              marginBottom: "0.5rem",
+            }}
+          >
+            Delete this post?
+          </h2>
+          <p
+            style={{
+              fontSize: "0.9rem",
+              color: "var(--text-muted)",
+              lineHeight: 1.5,
+            }}
+          >
+            This action cannot be undone. The post and all its comments will be
+            permanently removed.
           </p>
         </div>
         <div style={{ display: "flex", gap: "0.75rem" }}>
           <button
             onClick={onClose}
             className="btn btn-ghost"
-            style={{ flex: 1, borderRadius: "var(--radius-md)", padding: "0.65rem 1rem", fontSize: "0.9rem" }}
+            style={{
+              flex: 1,
+              borderRadius: "var(--radius-md)",
+              padding: "0.65rem 1rem",
+              fontSize: "0.9rem",
+            }}
           >
             Cancel
           </button>
@@ -825,9 +1831,16 @@ function DeletePostModal({ postId, channelUsername, onClose }: { postId: string;
             onClick={() => deleteMutation.mutate()}
             disabled={deleteMutation.isPending}
             style={{
-              flex: 1, borderRadius: "var(--radius-md)", padding: "0.65rem 1rem", fontSize: "0.9rem",
-              fontWeight: 600, border: "none", cursor: deleteMutation.isPending ? "not-allowed" : "pointer",
-              backgroundColor: "var(--error)", color: "#fff", opacity: deleteMutation.isPending ? 0.6 : 1,
+              flex: 1,
+              borderRadius: "var(--radius-md)",
+              padding: "0.65rem 1rem",
+              fontSize: "0.9rem",
+              fontWeight: 600,
+              border: "none",
+              cursor: deleteMutation.isPending ? "not-allowed" : "pointer",
+              backgroundColor: "var(--error)",
+              color: "#fff",
+              opacity: deleteMutation.isPending ? 0.6 : 1,
               transition: "opacity 0.2s",
             }}
           >
@@ -848,13 +1861,21 @@ const REPORT_REASONS = [
   { value: "other", label: "Other" },
 ];
 
-function ReportModal({ targetId, onClose }: { targetId: string; onClose: () => void }) {
+function ReportModal({
+  targetId,
+  onClose,
+}: {
+  targetId: string;
+  onClose: () => void;
+}) {
   const [selectedReason, setSelectedReason] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const prevFocused = document.activeElement as HTMLElement | null;
-    const focusable = modalRef.current?.querySelector<HTMLElement>("button, [href], input, select, textarea, [tabindex]:not([tabindex=\"-1\"])");
+    const focusable = modalRef.current?.querySelector<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
     focusable?.focus();
     return () => {
       prevFocused?.focus();
@@ -863,7 +1884,12 @@ function ReportModal({ targetId, onClose }: { targetId: string; onClose: () => v
 
   const reportMutation = useMutation({
     mutationFn: async () => {
-      await api.post("/reports", { target: targetId, targetType: "user", reason: selectedReason, description: selectedReason });
+      await api.post("/reports", {
+        target: targetId,
+        targetType: "user",
+        reason: selectedReason,
+        description: selectedReason,
+      });
     },
     onSuccess: () => setSubmitted(true),
   });
@@ -877,13 +1903,21 @@ function ReportModal({ targetId, onClose }: { targetId: string; onClose: () => v
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
       style={{
-        position: "fixed", inset: 0, zIndex: 1000,
+        position: "fixed",
+        inset: 0,
+        zIndex: 1000,
         backgroundColor: "rgba(0,0,0,0.6)",
         backdropFilter: "blur(8px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         padding: "1rem",
       }}
     >
@@ -892,8 +1926,10 @@ function ReportModal({ targetId, onClose }: { targetId: string; onClose: () => v
         animate={{ scale: 1, opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 28 }}
         style={{
-          width: "100%", maxWidth: 480,
-          borderRadius: "var(--radius-xl)", padding: "2rem",
+          width: "100%",
+          maxWidth: 480,
+          borderRadius: "var(--radius-xl)",
+          padding: "2rem",
           backgroundColor: "var(--card)",
           border: "1px solid var(--border)",
           boxShadow: "var(--shadow-lg)",
@@ -901,39 +1937,135 @@ function ReportModal({ targetId, onClose }: { targetId: string; onClose: () => v
       >
         {submitted ? (
           <div style={{ textAlign: "center", padding: "var(--sp-8) 0" }}>
-            <div style={{ width: 56, height: 56, borderRadius: "50%", backgroundColor: "var(--success-subtle)", display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: "var(--sp-4)", color: "var(--success)" }}>
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: "50%",
+                backgroundColor: "var(--success-subtle)",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: "var(--sp-4)",
+                color: "var(--success)",
+              }}
+            >
               <CheckIcon size={16} />
             </div>
-            <h3 style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "var(--sp-2)" }}>Report Submitted</h3>
-            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "var(--sp-6)" }}>Thank you for helping keep our community safe.</p>
-            <button onClick={onClose} className="btn btn-primary btn-pill">Done</button>
+            <h3
+              style={{
+                fontSize: "1.2rem",
+                fontWeight: 700,
+                color: "var(--text-primary)",
+                marginBottom: "var(--sp-2)",
+              }}
+            >
+              Report Submitted
+            </h3>
+            <p
+              style={{
+                color: "var(--text-muted)",
+                fontSize: "0.9rem",
+                marginBottom: "var(--sp-6)",
+              }}
+            >
+              Thank you for helping keep our community safe.
+            </p>
+            <button onClick={onClose} className="btn btn-primary btn-pill">
+              Done
+            </button>
           </div>
         ) : (
           <>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--sp-6)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)" }}>
-                <div style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "var(--error-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--error)" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "var(--sp-6)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "var(--sp-3)",
+                }}
+              >
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    backgroundColor: "var(--error-subtle)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "var(--error)",
+                  }}
+                >
                   <FlagIcon />
                 </div>
-                <h2 id="report-modal-title" style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--text-primary)" }}>Report User</h2>
+                <h2
+                  id="report-modal-title"
+                  style={{
+                    fontSize: "1.25rem",
+                    fontWeight: 700,
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  Report User
+                </h2>
               </div>
-              <button aria-label="Close" onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: 4 }}>
+              <button
+                aria-label="Close"
+                onClick={onClose}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--text-muted)",
+                  cursor: "pointer",
+                  padding: 4,
+                }}
+              >
                 <CloseIcon size={16} />
               </button>
             </div>
 
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", marginBottom: "1.25rem" }}>Why are you reporting this user?</p>
+            <p
+              style={{
+                color: "var(--text-secondary)",
+                fontSize: "0.9rem",
+                marginBottom: "1.25rem",
+              }}
+            >
+              Why are you reporting this user?
+            </p>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-2)", marginBottom: "var(--sp-6)" }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "var(--sp-2)",
+                marginBottom: "var(--sp-6)",
+              }}
+            >
               {REPORT_REASONS.map((r) => (
                 <label
                   key={r.value}
                   style={{
-                    display: "flex", alignItems: "center", gap: "var(--sp-3)",
-                    padding: "0.75rem 1rem", borderRadius: "var(--radius-md)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "var(--sp-3)",
+                    padding: "0.75rem 1rem",
+                    borderRadius: "var(--radius-md)",
                     border: `1.5px solid ${selectedReason === r.value ? "var(--accent)" : "var(--border)"}`,
-                    backgroundColor: selectedReason === r.value ? "var(--accent-subtle)" : "transparent",
-                    cursor: "pointer", transition: "all 0.2s",
+                    backgroundColor:
+                      selectedReason === r.value
+                        ? "var(--accent-subtle)"
+                        : "transparent",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
                   }}
                 >
                   <input
@@ -944,16 +2076,44 @@ function ReportModal({ targetId, onClose }: { targetId: string; onClose: () => v
                     onChange={() => setSelectedReason(r.value)}
                     style={{ display: "none" }}
                   />
-                  <div style={{
-                    width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
-                    border: `2px solid ${selectedReason === r.value ? "var(--accent)" : "var(--border-medium)"}`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    backgroundColor: selectedReason === r.value ? "var(--accent)" : "transparent",
-                    transition: "all 0.2s",
-                  }}>
-                    {selectedReason === r.value && <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#fff" }} />}
+                  <div
+                    style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: "50%",
+                      flexShrink: 0,
+                      border: `2px solid ${selectedReason === r.value ? "var(--accent)" : "var(--border-medium)"}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor:
+                        selectedReason === r.value
+                          ? "var(--accent)"
+                          : "transparent",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    {selectedReason === r.value && (
+                      <div
+                        style={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: "50%",
+                          backgroundColor: "#fff",
+                        }}
+                      />
+                    )}
                   </div>
-                  <span style={{ fontSize: "0.9rem", color: selectedReason === r.value ? "var(--accent)" : "var(--text-primary)", fontWeight: selectedReason === r.value ? 600 : 400 }}>
+                  <span
+                    style={{
+                      fontSize: "0.9rem",
+                      color:
+                        selectedReason === r.value
+                          ? "var(--accent)"
+                          : "var(--text-primary)",
+                      fontWeight: selectedReason === r.value ? 600 : 400,
+                    }}
+                  >
                     {r.label}
                   </span>
                 </label>

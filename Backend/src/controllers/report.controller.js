@@ -22,7 +22,10 @@ const createReport = asyncHandler(async (req, res) => {
   const { targetType, target, reason, description } = req.body;
 
   if (!targetType || !["video", "comment", "user"].includes(targetType)) {
-    throw new ApiError(400, "Invalid target type. Must be 'video', 'comment', or 'user'");
+    throw new ApiError(
+      400,
+      "Invalid target type. Must be 'video', 'comment', or 'user'"
+    );
   }
 
   if (!target || !mongoose.isValidObjectId(target)) {
@@ -30,14 +33,18 @@ const createReport = asyncHandler(async (req, res) => {
   }
 
   if (!reason || !REASONS.includes(reason)) {
-    throw new ApiError(400, `Invalid reason. Must be one of: ${REASONS.join(", ")}`);
+    throw new ApiError(
+      400,
+      `Invalid reason. Must be one of: ${REASONS.join(", ")}`
+    );
   }
 
   if (description && description.length > 1000) {
     throw new ApiError(400, "Description must be under 1000 characters");
   }
 
-  const targetModel = targetType === "video" ? Video : targetType === "comment" ? Comment : User;
+  const targetModel =
+    targetType === "video" ? Video : targetType === "comment" ? Comment : User;
   const targetExists = await targetModel.findById(target).lean();
   if (!targetExists) {
     throw new ApiError(404, `Target ${targetType} not found`);
@@ -52,7 +59,10 @@ const createReport = asyncHandler(async (req, res) => {
   });
 
   if (existing) {
-    throw new ApiError(400, "You have already reported this content. It is being reviewed.");
+    throw new ApiError(
+      400,
+      "You have already reported this content. It is being reviewed."
+    );
   }
 
   const report = await Report.create({
@@ -63,7 +73,9 @@ const createReport = asyncHandler(async (req, res) => {
     description: description?.trim() || "",
   });
 
-  return res.status(201).json(new ApiResponse(201, report, "Report submitted successfully"));
+  return res
+    .status(201)
+    .json(new ApiResponse(201, report, "Report submitted successfully"));
 });
 
 const getMyReports = asyncHandler(async (req, res) => {
@@ -83,12 +95,16 @@ const getMyReports = asyncHandler(async (req, res) => {
   ]);
 
   return res.status(200).json(
-    new ApiResponse(200, {
-      docs: reports,
-      totalDocs: totalCount,
-      page: pageNumber,
-      limit: limitNumber,
-    }, "Reports fetched")
+    new ApiResponse(
+      200,
+      {
+        docs: reports,
+        totalDocs: totalCount,
+        page: pageNumber,
+        limit: limitNumber,
+      },
+      "Reports fetched"
+    )
   );
 });
 

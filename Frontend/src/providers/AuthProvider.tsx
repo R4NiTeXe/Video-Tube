@@ -5,7 +5,11 @@ import { api, setCsrfToken } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useSSE } from "@/src/hooks/useSSE";
 
-export default function AuthProvider({ children }: { children: React.ReactNode }) {
+export default function AuthProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { login, logout, setLoading } = useAuthStore();
   useSSE();
 
@@ -16,7 +20,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         if (res.data?.csrfToken) {
           setCsrfToken(res.data.csrfToken);
         }
-      } catch { /* non-fatal */ }
+      } catch {
+        /* non-fatal */
+      }
 
       const checkAuth = async () => {
         setLoading(true);
@@ -34,7 +40,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     };
 
     init();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return <>{children}</>;

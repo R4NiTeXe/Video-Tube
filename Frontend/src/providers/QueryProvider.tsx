@@ -3,7 +3,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React, { useState, useEffect } from "react";
 
-export default function QueryProvider({ children }: { children: React.ReactNode }) {
+export default function QueryProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -16,11 +20,13 @@ export default function QueryProvider({ children }: { children: React.ReactNode 
             refetchOnReconnect: false,
           },
         },
-      })
+      }),
   );
 
   const [showDevtools, setShowDevtools] = useState(false);
-  const [Devtools, setDevtools] = useState<React.ComponentType<{ initialIsOpen?: boolean }> | null>(null);
+  const [Devtools, setDevtools] = useState<React.ComponentType<{
+    initialIsOpen?: boolean;
+  }> | null>(null);
 
   useEffect(() => {
     if (process.env.NODE_ENV === "development") {

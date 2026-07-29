@@ -15,7 +15,9 @@ const createPlaylist = asyncHandler(async (req, res) => {
     name: name.trim(),
     description: description.trim(),
     owner: req.user._id,
-    visibility: ["public", "private", "unlisted"].includes(visibility) ? visibility : "public",
+    visibility: ["public", "private", "unlisted"].includes(visibility)
+      ? visibility
+      : "public",
   });
 
   if (!playlist) {
@@ -187,7 +189,10 @@ const getPlaylistById = asyncHandler(async (req, res) => {
 const addVideoToPlaylist = asyncHandler(async (req, res) => {
   const { playlistId, videoId } = req.params;
 
-  if (!mongoose.isValidObjectId(playlistId) || !mongoose.isValidObjectId(videoId)) {
+  if (
+    !mongoose.isValidObjectId(playlistId) ||
+    !mongoose.isValidObjectId(videoId)
+  ) {
     throw new ApiError(400, "Invalid playlist id or video id");
   }
 
@@ -211,7 +216,8 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
     // Either playlist doesn't exist, user doesn't own it, or video already in it
     const existing = await Playlist.findById(playlistId);
     if (!existing) throw new ApiError(404, "Playlist not found");
-    if (existing.owner.toString() !== req.user._id.toString()) throw new ApiError(403, "Not authorized");
+    if (existing.owner.toString() !== req.user._id.toString())
+      throw new ApiError(403, "Not authorized");
     throw new ApiError(400, "Video is already in the playlist");
   }
 
@@ -223,7 +229,10 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
 const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
   const { playlistId, videoId } = req.params;
 
-  if (!mongoose.isValidObjectId(playlistId) || !mongoose.isValidObjectId(videoId)) {
+  if (
+    !mongoose.isValidObjectId(playlistId) ||
+    !mongoose.isValidObjectId(videoId)
+  ) {
     throw new ApiError(400, "Invalid playlist id or video id");
   }
 
@@ -343,7 +352,9 @@ const reorderPlaylist = asyncHandler(async (req, res) => {
   playlist.videos = reorderedIds;
   await playlist.save();
 
-  return res.status(200).json(new ApiResponse(200, playlist, "Playlist reordered"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, playlist, "Playlist reordered"));
 });
 
 const getChannelPlaylists = asyncHandler(async (req, res) => {
@@ -353,7 +364,9 @@ const getChannelPlaylists = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Username is required");
   }
 
-  const user = await mongoose.model("User").findOne({ username: username.toLowerCase().trim() });
+  const user = await mongoose
+    .model("User")
+    .findOne({ username: username.toLowerCase().trim() });
   if (!user) throw new ApiError(404, "Channel not found");
 
   const isOwner = user._id.toString() === req.user?._id?.toString();
@@ -381,12 +394,21 @@ const getChannelPlaylists = asyncHandler(async (req, res) => {
       },
     },
     {
-      $project: { name: 1, description: 1, totalVideos: 1, coverImage: 1, visibility: 1, updatedAt: 1 },
+      $project: {
+        name: 1,
+        description: 1,
+        totalVideos: 1,
+        coverImage: 1,
+        visibility: 1,
+        updatedAt: 1,
+      },
     },
     { $sort: { updatedAt: -1 } },
   ]);
 
-  return res.status(200).json(new ApiResponse(200, playlists, "Channel playlists fetched"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, playlists, "Channel playlists fetched"));
 });
 
 const getPublicPlaylists = asyncHandler(async (req, res) => {
@@ -405,9 +427,20 @@ const getPublicPlaylists = asyncHandler(async (req, res) => {
     Playlist.countDocuments({ visibility: "public" }),
   ]);
 
-  return res.status(200).json(
-    new ApiResponse(200, { docs: playlists, totalDocs: total, page: pageNumber, limit: limitNumber }, "Public playlists fetched")
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          docs: playlists,
+          totalDocs: total,
+          page: pageNumber,
+          limit: limitNumber,
+        },
+        "Public playlists fetched"
+      )
+    );
 });
 
 export {

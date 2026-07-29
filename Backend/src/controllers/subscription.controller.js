@@ -22,7 +22,9 @@ const toggleSubscription = asyncHandler(async (req, res) => {
   const existingSub = await Subscription.findOneAndDelete({
     subscriber: req.user._id,
     channel: channelId,
-  }).select("_id").lean();
+  })
+    .select("_id")
+    .lean();
 
   let subscribed;
 
@@ -30,7 +32,10 @@ const toggleSubscription = asyncHandler(async (req, res) => {
     subscribed = false;
   } else {
     try {
-      await Subscription.create({ subscriber: req.user._id, channel: channelId });
+      await Subscription.create({
+        subscriber: req.user._id,
+        channel: channelId,
+      });
       subscribed = true;
     } catch (error) {
       if (error.code === 11000) {
@@ -41,13 +46,19 @@ const toggleSubscription = asyncHandler(async (req, res) => {
     }
   }
 
-  const subscribersCount = await Subscription.countDocuments({ channel: channelId });
+  const subscribersCount = await Subscription.countDocuments({
+    channel: channelId,
+  });
 
   if (subscribed) {
     try {
       if (channelId !== req.user._id.toString()) {
-        const recipient = await User.findById(channelId).select("notificationPrefs mutedChannels").lean();
-        const isMuted = recipient?.mutedChannels?.some((id) => id.toString() === req.user._id.toString());
+        const recipient = await User.findById(channelId)
+          .select("notificationPrefs mutedChannels")
+          .lean();
+        const isMuted = recipient?.mutedChannels?.some(
+          (id) => id.toString() === req.user._id.toString()
+        );
         if (recipient?.notificationPrefs?.subscriptions !== false && !isMuted) {
           const notif = await Notification.create({
             recipient: channelId,
@@ -58,13 +69,19 @@ const toggleSubscription = asyncHandler(async (req, res) => {
           sendSSENotification(channelId, notif);
         }
       }
-    } catch (err) { logger.warn("Subscription notification failed", { error: err.message }); }
+    } catch (err) {
+      logger.warn("Subscription notification failed", { error: err.message });
+    }
   }
 
   return res
     .status(200)
     .json(
-      new ApiResponse(200, { subscribed, subscribersCount }, subscribed ? "Subscribed successfully" : "Unsubscribed successfully")
+      new ApiResponse(
+        200,
+        { subscribed, subscribersCount },
+        subscribed ? "Subscribed successfully" : "Unsubscribed successfully"
+      )
     );
 });
 
@@ -81,70 +98,74 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
   const limitNumber = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 50);
   const skip = (pageNumber - 1) * limitNumber;
 
-  const [{ data, metadata } = { data: [], metadata: [{ total: 0 }] }] = await Subscription.aggregate([
-    {
-      $match: {
-        channel: new mongoose.Types.ObjectId(channelId),
+  const [{ data, metadata } = { data: [], metadata: [{ total: 0 }] }] =
+    await Subscription.aggregate([
+      {
+        $match: {
+          channel: new mongoose.Types.ObjectId(channelId),
+        },
       },
-    },
-    {
-      $facet: {
-        metadata: [{ $count: "total" }],
-        data: [
-          { $skip: skip },
-          { $limit: limitNumber },
-          {
-            $lookup: {
-              from: "users",
-              localField: "subscriber",
-              foreignField: "_id",
-              as: "subscriber",
-              pipeline: [
-                {
-                  $lookup: {
-                    from: "subscriptions",
-                    localField: "_id",
-                    foreignField: "channel",
-                    as: "subscribedToSubscriber",
-                  },
-                },
-                {
-                  $addFields: {
-                    subscribedToSubscriber: {
-                      $cond: {
-                        if: {
-                          $in: [channelId, "$subscribedToSubscriber.subscriber"],
-                        },
-                        then: true,
-                        else: false,
-                      },
+      {
+        $facet: {
+          metadata: [{ $count: "total" }],
+          data: [
+            { $skip: skip },
+            { $limit: limitNumber },
+            {
+              $lookup: {
+                from: "users",
+                localField: "subscriber",
+                foreignField: "_id",
+                as: "subscriber",
+                pipeline: [
+                  {
+                    $lookup: {
+                      from: "subscriptions",
+                      localField: "_id",
+                      foreignField: "channel",
+                      as: "subscribedToSubscriber",
                     },
-                    subscribersCount: { $size: "$subscribedToSubscriber" },
                   },
-                },
-              ],
-            },
-          },
-          {
-            $unwind: "$subscriber",
-          },
-          {
-            $project: {
-              _id: 0,
-              subscriber: {
-                _id: 1,
-                fullName: 1,
-                username: 1,
-                avatar: 1,
-                subscribedToSubscriber: 1,
-                subscribersCount: 1,
+                  {
+                    $addFields: {
+                      subscribedToSubscriber: {
+                        $cond: {
+                          if: {
+                            $in: [
+                              channelId,
+                              "$subscribedToSubscriber.subscriber",
+                            ],
+                          },
+                          then: true,
+                          else: false,
+                        },
+                      },
+                      subscribersCount: { $size: "$subscribedToSubscriber" },
+                    },
+                  },
+                ],
               },
             },
-          },
-        ],
+            {
+              $unwind: "$subscriber",
+            },
+            {
+              $project: {
+                _id: 0,
+                subscriber: {
+                  _id: 1,
+                  fullName: 1,
+                  username: 1,
+                  avatar: 1,
+                  subscribedToSubscriber: 1,
+                  subscribersCount: 1,
+                },
+              },
+            },
+          ],
+        },
       },
-    },
-  ]);
+    ]);
 
   const total = metadata[0]?.total || 0;
   const docs = data.map((d) => d.subscriber);
@@ -152,7 +173,17 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(200, { docs, total, page: pageNumber, limit: limitNumber, totalPages: Math.ceil(total / limitNumber) }, "Subscribers fetched successfully")
+      new ApiResponse(
+        200,
+        {
+          docs,
+          total,
+          page: pageNumber,
+          limit: limitNumber,
+          totalPages: Math.ceil(total / limitNumber),
+        },
+        "Subscribers fetched successfully"
+      )
     );
 });
 
@@ -169,69 +200,70 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
   const limitNumber = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 50);
   const skip = (pageNumber - 1) * limitNumber;
 
-  const [{ data, metadata } = { data: [], metadata: [{ total: 0 }] }] = await Subscription.aggregate([
-    {
-      $match: {
-        subscriber: new mongoose.Types.ObjectId(subscriberId),
+  const [{ data, metadata } = { data: [], metadata: [{ total: 0 }] }] =
+    await Subscription.aggregate([
+      {
+        $match: {
+          subscriber: new mongoose.Types.ObjectId(subscriberId),
+        },
       },
-    },
-    {
-      $facet: {
-        metadata: [{ $count: "total" }],
-        data: [
-          { $skip: skip },
-          { $limit: limitNumber },
-          {
-            $lookup: {
-              from: "users",
-              localField: "channel",
-              foreignField: "_id",
-              as: "subscribedChannel",
-              pipeline: [
-                {
-                  $lookup: {
-                    from: "videos",
-                    localField: "_id",
-                    foreignField: "owner",
-                    as: "videos",
+      {
+        $facet: {
+          metadata: [{ $count: "total" }],
+          data: [
+            { $skip: skip },
+            { $limit: limitNumber },
+            {
+              $lookup: {
+                from: "users",
+                localField: "channel",
+                foreignField: "_id",
+                as: "subscribedChannel",
+                pipeline: [
+                  {
+                    $lookup: {
+                      from: "videos",
+                      localField: "_id",
+                      foreignField: "owner",
+                      as: "videos",
+                    },
                   },
-                },
-                {
-                  $addFields: {
-                    latestVideo: { $last: "$videos" },
+                  {
+                    $addFields: {
+                      latestVideo: { $last: "$videos" },
+                    },
                   },
-                },
-              ],
+                ],
+              },
             },
-          },
-          {
-            $unwind: "$subscribedChannel",
-          },
-          {
-            $project: {
-              _id: 0,
-              subscribedChannel: {
-                _id: 1,
-                fullName: 1,
-                username: 1,
-                avatar: 1,
-                latestVideo: {
+            {
+              $unwind: "$subscribedChannel",
+            },
+            {
+              $project: {
+                _id: 0,
+                subscribedChannel: {
                   _id: 1,
-                  videoFile: 1,
-                  thumbnail: 1,
-                  title: 1,
-                  description: 1,
-                  duration: 1,
-                  createdAt: 1,
-                  views: 1,
+                  fullName: 1,
+                  username: 1,
+                  avatar: 1,
+                  latestVideo: {
+                    _id: 1,
+                    videoFile: 1,
+                    thumbnail: 1,
+                    title: 1,
+                    description: 1,
+                    duration: 1,
+                    createdAt: 1,
+                    views: 1,
+                  },
                 },
               },
             },
-          },
-        ],
+          ],
+        },
       },
-    },
-  ]);
+    ]);
 
   const total = metadata[0]?.total || 0;
   const docs = data.map((d) => d.subscribedChannel);
@@ -241,7 +273,13 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        { docs, total, page: pageNumber, limit: limitNumber, totalPages: Math.ceil(total / limitNumber) },
+        {
+          docs,
+          total,
+          page: pageNumber,
+          limit: limitNumber,
+          totalPages: Math.ceil(total / limitNumber),
+        },
         "Subscribed channels fetched successfully"
       )
     );
@@ -255,11 +293,19 @@ const getChannelNotificationStatus = asyncHandler(async (req, res) => {
   }
 
   const user = await User.findById(req.user._id).select("mutedChannels").lean();
-  const isMuted = user?.mutedChannels?.some((id) => id.toString() === channelId);
+  const isMuted = user?.mutedChannels?.some(
+    (id) => id.toString() === channelId
+  );
 
   return res
     .status(200)
-    .json(new ApiResponse(200, { isMuted: !!isMuted }, "Channel notification status fetched"));
+    .json(
+      new ApiResponse(
+        200,
+        { isMuted: !!isMuted },
+        "Channel notification status fetched"
+      )
+    );
 });
 
 const toggleChannelNotifications = asyncHandler(async (req, res) => {
@@ -270,7 +316,10 @@ const toggleChannelNotifications = asyncHandler(async (req, res) => {
   }
 
   if (channelId === req.user._id.toString()) {
-    throw new ApiError(400, "You cannot mute notifications for your own channel");
+    throw new ApiError(
+      400,
+      "You cannot mute notifications for your own channel"
+    );
   }
 
   const user = await User.findById(req.user._id).select("mutedChannels");
@@ -286,7 +335,19 @@ const toggleChannelNotifications = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, { isMuted: idx >= 0 ? false : true }, idx >= 0 ? "Notifications enabled" : "Notifications muted"));
+    .json(
+      new ApiResponse(
+        200,
+        { isMuted: idx >= 0 ? false : true },
+        idx >= 0 ? "Notifications enabled" : "Notifications muted"
+      )
+    );
 });
 
-export { toggleSubscription, getUserChannelSubscribers, getSubscribedChannels, getChannelNotificationStatus, toggleChannelNotifications };
+export {
+  toggleSubscription,
+  getUserChannelSubscribers,
+  getSubscribedChannels,
+  getChannelNotificationStatus,
+  toggleChannelNotifications,
+};

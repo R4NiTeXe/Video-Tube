@@ -34,7 +34,8 @@ const findOrCreateUser = async (provider, providerId, email, name, avatar) => {
   const randomPassword = crypto.randomBytes(32).toString("hex");
   const socialMap = { [provider]: providerId };
 
-  const usernameBase = normalizedEmail.split("@")[0].replace(/[^a-z0-9]/g, "") || "user";
+  const usernameBase =
+    normalizedEmail.split("@")[0].replace(/[^a-z0-9]/g, "") || "user";
   let username = usernameBase;
   let suffix = 1;
   while (await User.findOne({ username })) {
@@ -47,7 +48,9 @@ const findOrCreateUser = async (provider, providerId, email, name, avatar) => {
     fullName: name || normalizedEmail.split("@")[0],
     email: normalizedEmail,
     password: randomPassword,
-    avatar: avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || "User")}&background=6366f1&color=fff`,
+    avatar:
+      avatar ||
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(name || "User")}&background=6366f1&color=fff`,
     socialAccounts: socialMap,
     isEmailVerified: true,
   });
@@ -125,7 +128,8 @@ export const configurePassport = () => {
         },
         async (accessToken, refreshToken, profile, done) => {
           try {
-            const email = profile.emails?.[0]?.value || `${profile.username}@github.local`;
+            const email =
+              profile.emails?.[0]?.value || `${profile.username}@github.local`;
             const { user, isNew } = await findOrCreateUser(
               "github",
               profile.id.toString(),
@@ -154,7 +158,8 @@ export const configurePassport = () => {
         },
         async (accessToken, refreshToken, profile, done) => {
           try {
-            const email = profile.emails?.[0]?.value || `${profile.id}@facebook.local`;
+            const email =
+              profile.emails?.[0]?.value || `${profile.id}@facebook.local`;
             const { user, isNew } = await findOrCreateUser(
               "facebook",
               profile.id,

@@ -134,40 +134,48 @@ const userSchema = new Schema(
       default: false,
     },
     blockedUsers: {
-      type: [{
-        type: Schema.Types.ObjectId,
-        ref: "User",
-      }],
+      type: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "User",
+        },
+      ],
       validate: {
         validator: (v) => !v || v.length <= 1000,
         message: "Blocked users list cannot exceed 1000 entries",
       },
     },
     mutedUsers: {
-      type: [{
-        type: Schema.Types.ObjectId,
-        ref: "User",
-      }],
+      type: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "User",
+        },
+      ],
       validate: {
         validator: (v) => !v || v.length <= 1000,
         message: "Muted users list cannot exceed 1000 entries",
       },
     },
     mutedChannels: {
-      type: [{
-        type: Schema.Types.ObjectId,
-        ref: "User",
-      }],
+      type: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "User",
+        },
+      ],
       validate: {
         validator: (v) => !v || v.length <= 1000,
         message: "Muted channels list cannot exceed 1000 entries",
       },
     },
     watchLater: {
-      type: [{
-        type: Schema.Types.ObjectId,
-        ref: "Video",
-      }],
+      type: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "Video",
+        },
+      ],
       validate: {
         validator: (v) => !v || v.length <= 200,
         message: "Watch later list cannot exceed 200 entries",
@@ -199,10 +207,12 @@ const userSchema = new Schema(
       type: Date,
     },
     watchHistory: {
-      type: [{
-        type: Schema.Types.ObjectId,
-        ref: "Video",
-      }],
+      type: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "Video",
+        },
+      ],
       validate: {
         validator: (v) => !v || v.length <= 500,
         message: "Watch history cannot exceed 500 entries",
@@ -240,8 +250,14 @@ userSchema.pre("save", async function () {
   if (this.isModified("password")) {
     this.password = await bcrypt.hash(this.password, 10);
   }
-  if (this.isModified("emailVerificationToken") && this.emailVerificationToken) {
-    this.emailVerificationToken = crypto.createHash("sha256").update(this.emailVerificationToken).digest("hex");
+  if (
+    this.isModified("emailVerificationToken") &&
+    this.emailVerificationToken
+  ) {
+    this.emailVerificationToken = crypto
+      .createHash("sha256")
+      .update(this.emailVerificationToken)
+      .digest("hex");
   }
 });
 

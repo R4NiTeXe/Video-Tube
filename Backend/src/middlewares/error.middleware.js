@@ -10,7 +10,6 @@ const errorHandler = (err, req, res, next) => {
   let message = err.message || "Internal Server Error";
   let errors = err.errors || [];
 
-  
   if (err instanceof ZodError) {
     statusCode = 400;
     message = "Validation failed";
@@ -20,10 +19,7 @@ const errorHandler = (err, req, res, next) => {
       message: e.message,
       code: e.code,
     }));
-  }
-
-  
-  else if (err instanceof mongoose.Error.ValidationError) {
+  } else if (err instanceof mongoose.Error.ValidationError) {
     statusCode = 400;
     message = "Validation failed";
     errors = Object.values(err.errors).map((e) => ({
@@ -31,40 +27,31 @@ const errorHandler = (err, req, res, next) => {
       message: e.message,
       code: "invalid_value",
     }));
-  }
-
-  
-  else if (err instanceof mongoose.Error.CastError) {
+  } else if (err instanceof mongoose.Error.CastError) {
     statusCode = 400;
     message = "Invalid resource identifier";
-    errors = [{ field: err.path, message: "Invalid format", code: "invalid_id" }];
-  }
-
-  
-  else if (err.code === 11000) {
+    errors = [
+      { field: err.path, message: "Invalid format", code: "invalid_id" },
+    ];
+  } else if (err.code === 11000) {
     statusCode = 409;
     const field = Object.keys(err.keyPattern || {})[0] || "field";
     message = `${field} already exists`;
     errors = [{ field, message, code: "duplicate" }];
-  }
-
-  
-  else if (err.name === "JsonWebTokenError") {
+  } else if (err.name === "JsonWebTokenError") {
     statusCode = 401;
     message = "Invalid token";
   } else if (err.name === "TokenExpiredError") {
     statusCode = 401;
     message = "Token expired";
-  }
-
-  
-  else if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+  } else if (
+    err instanceof SyntaxError &&
+    err.status === 400 &&
+    "body" in err
+  ) {
     statusCode = 400;
     message = "Invalid JSON in request body";
-  }
-
-  
-  else if (err instanceof multer.MulterError) {
+  } else if (err instanceof multer.MulterError) {
     if (err.code === "LIMIT_FILE_SIZE") {
       statusCode = 413;
       message = "File size exceeds the allowed limit";
@@ -72,22 +59,15 @@ const errorHandler = (err, req, res, next) => {
       statusCode = 400;
       message = `Upload error: ${err.message}`;
     }
-  }
-
-  
-  else if (err.statusCode) {
+  } else if (err.statusCode) {
     statusCode = err.statusCode;
     message = err.message;
     errors = err.errors || [];
-  }
-
-  
-  else if (err.type === "entity.too.large") {
+  } else if (err.type === "entity.too.large") {
     statusCode = 413;
     message = "Request body too large";
   }
 
-  
   if (statusCode >= 500) {
     logger.error(`${req.method} ${req.originalUrl}`, {
       statusCode,
@@ -95,15 +75,21 @@ const errorHandler = (err, req, res, next) => {
       stack: isProduction ? undefined : err.stack,
     });
   } else {
-    logger.warn(`${req.method} ${req.originalUrl} - ${statusCode}`, { message, ...(errors.length ? { errors } : {}) });
+    logger.warn(`${req.method} ${req.originalUrl} - ${statusCode}`, {
+      message,
+      ...(errors.length ? { errors } : {}),
+    });
   }
 
   res.status(statusCode).json({
     success: false,
     statusCode,
-    message: statusCode >= 500 && isProduction ? "Internal Server Error" : message,
+    message:
+      statusCode >= 500 && isProduction ? "Internal Server Error" : message,
     ...(errors.length > 0 ? { errors } : {}),
-    ...(err.attemptsRemaining !== undefined ? { attemptsRemaining: err.attemptsRemaining } : {}),
+    ...(err.attemptsRemaining !== undefined
+      ? { attemptsRemaining: err.attemptsRemaining }
+      : {}),
   });
 };
 

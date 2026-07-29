@@ -16,16 +16,23 @@ import { deleteFromCloudinary } from "../utils/cloudinary.js";
 import logger from "../utils/logger.js";
 
 const getPlatformStats = asyncHandler(async (req, res) => {
-  const [totalUsers, totalVideos, totalComments, totalSubscriptions, totalLikes, totalPlaylists, totalReports] =
-    await Promise.all([
-      User.countDocuments(),
-      Video.countDocuments(),
-      Comment.countDocuments(),
-      Subscription.countDocuments(),
-      Like.countDocuments(),
-      Playlist.countDocuments(),
-      Report.countDocuments(),
-    ]);
+  const [
+    totalUsers,
+    totalVideos,
+    totalComments,
+    totalSubscriptions,
+    totalLikes,
+    totalPlaylists,
+    totalReports,
+  ] = await Promise.all([
+    User.countDocuments(),
+    Video.countDocuments(),
+    Comment.countDocuments(),
+    Subscription.countDocuments(),
+    Like.countDocuments(),
+    Playlist.countDocuments(),
+    Report.countDocuments(),
+  ]);
 
   const publishedVideos = await Video.countDocuments({ isPublished: true });
   const totalViews = await Video.aggregate([
@@ -33,17 +40,21 @@ const getPlatformStats = asyncHandler(async (req, res) => {
   ]);
 
   return res.status(200).json(
-    new ApiResponse(200, {
-      totalUsers,
-      totalVideos,
-      publishedVideos,
-      totalComments,
-      totalSubscriptions,
-      totalLikes,
-      totalPlaylists,
-      totalReports,
-      totalViews: totalViews[0]?.total || 0,
-    }, "Platform stats fetched")
+    new ApiResponse(
+      200,
+      {
+        totalUsers,
+        totalVideos,
+        publishedVideos,
+        totalComments,
+        totalSubscriptions,
+        totalLikes,
+        totalPlaylists,
+        totalReports,
+        totalViews: totalViews[0]?.total || 0,
+      },
+      "Platform stats fetched"
+    )
   );
 });
 
@@ -74,12 +85,16 @@ const getAllUsers = asyncHandler(async (req, res) => {
   ]);
 
   return res.status(200).json(
-    new ApiResponse(200, {
-      docs: users,
-      totalDocs: totalCount,
-      page: pageNumber,
-      limit: limitNumber,
-    }, "Users fetched successfully")
+    new ApiResponse(
+      200,
+      {
+        docs: users,
+        totalDocs: totalCount,
+        page: pageNumber,
+        limit: limitNumber,
+      },
+      "Users fetched successfully"
+    )
   );
 });
 
@@ -131,7 +146,9 @@ const banUser = asyncHandler(async (req, res) => {
   user.banned = true;
   await user.save({ validateBeforeSave: false });
 
-  return res.status(200).json(new ApiResponse(200, {}, "User banned successfully"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "User banned successfully"));
 });
 
 const adminDeleteVideo = asyncHandler(async (req, res) => {
@@ -141,15 +158,22 @@ const adminDeleteVideo = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid video id");
   }
 
-  const video = await Video.findById(videoId).select("owner videoFile thumbnail title");
+  const video = await Video.findById(videoId).select(
+    "owner videoFile thumbnail title"
+  );
   if (!video) throw new ApiError(404, "Video not found");
 
   await Comment.deleteMany({ video: videoId });
   await Like.deleteMany({ video: videoId });
-  await Playlist.updateMany({ videos: videoId }, { $pull: { videos: videoId } });
+  await Playlist.updateMany(
+    { videos: videoId },
+    { $pull: { videos: videoId } }
+  );
 
-  if (video.videoFile) await deleteFromCloudinary(video.videoFile, "video").catch(() => {});
-  if (video.thumbnail) await deleteFromCloudinary(video.thumbnail, "image").catch(() => {});
+  if (video.videoFile)
+    await deleteFromCloudinary(video.videoFile, "video").catch(() => {});
+  if (video.thumbnail)
+    await deleteFromCloudinary(video.thumbnail, "image").catch(() => {});
 
   await Video.findByIdAndDelete(videoId);
   try {
@@ -160,9 +184,15 @@ const adminDeleteVideo = asyncHandler(async (req, res) => {
       video: videoId,
       message: `Your video "${video.title || "Untitled"}" has been removed for violating our community guidelines`,
     });
-  } catch { logger.warn("Failed to notify video owner about admin deletion", { videoId }); }
+  } catch {
+    logger.warn("Failed to notify video owner about admin deletion", {
+      videoId,
+    });
+  }
 
-  return res.status(200).json(new ApiResponse(200, {}, "Video deleted by admin"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Video deleted by admin"));
 });
 
 const getAllReports = asyncHandler(async (req, res) => {
@@ -191,12 +221,16 @@ const getAllReports = asyncHandler(async (req, res) => {
   ]);
 
   return res.status(200).json(
-    new ApiResponse(200, {
-      docs: reports,
-      totalDocs: totalCount,
-      page: pageNumber,
-      limit: limitNumber,
-    }, "Reports fetched successfully")
+    new ApiResponse(
+      200,
+      {
+        docs: reports,
+        totalDocs: totalCount,
+        page: pageNumber,
+        limit: limitNumber,
+      },
+      "Reports fetched successfully"
+    )
   );
 });
 
@@ -206,18 +240,33 @@ const getRecentActivity = asyncHandler(async (req, res) => {
   limit = Math.min(50, Math.max(1, parseInt(limit, 10) || 10));
   const skip = (page - 1) * limit;
 
-  const [recentUsers, totalUsers, recentVideos, totalVideos] = await Promise.all([
-    User.find().select("fullName avatar createdAt").sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
-    User.countDocuments(),
-    Video.find({ isPublished: true }).select("title thumbnail views createdAt").sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
-    Video.countDocuments({ isPublished: true }),
-  ]);
+  const [recentUsers, totalUsers, recentVideos, totalVideos] =
+    await Promise.all([
+      User.find()
+        .select("fullName avatar createdAt")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      User.countDocuments(),
+      Video.find({ isPublished: true })
+        .select("title thumbnail views createdAt")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Video.countDocuments({ isPublished: true }),
+    ]);
 
   return res.status(200).json(
-    new ApiResponse(200, {
-      users: { docs: recentUsers, total: totalUsers, page, limit },
-      videos: { docs: recentVideos, total: totalVideos, page, limit },
-    }, "Recent activity fetched")
+    new ApiResponse(
+      200,
+      {
+        users: { docs: recentUsers, total: totalUsers, page, limit },
+        videos: { docs: recentVideos, total: totalVideos, page, limit },
+      },
+      "Recent activity fetched"
+    )
   );
 });
 

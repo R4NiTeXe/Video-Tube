@@ -12,7 +12,9 @@ const subscriptionSchema = new Schema(
       ref: "User",
       required: true,
       validate: {
-        validator: function (v) { return this.subscriber?.toString() !== v?.toString(); },
+        validator: function (v) {
+          return this.subscriber?.toString() !== v?.toString();
+        },
         message: "Cannot subscribe to yourself",
       },
     },

@@ -4,7 +4,11 @@ import React, { useCallback, useEffect, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import SplashScreen from "@/src/components/SplashScreen";
 
-export default function SplashWrapper({ children }: { children: React.ReactNode }) {
+export default function SplashWrapper({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [showSplash, setShowSplash] = useState(false);
 
   useEffect(() => {
@@ -35,4 +39,3 @@ export default function SplashWrapper({ children }: { children: React.ReactNode 
     </>
   );
 }
-

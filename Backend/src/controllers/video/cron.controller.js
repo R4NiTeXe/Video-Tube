@@ -76,7 +76,9 @@ const publishScheduledVideos = asyncHandler(async (req, res) => {
   const publishedCount = await runPublishScheduledVideos();
   return res
     .status(200)
-    .json(new ApiResponse(200, { publishedCount }, "Scheduled videos published"));
+    .json(
+      new ApiResponse(200, { publishedCount }, "Scheduled videos published")
+    );
 });
 
 export {

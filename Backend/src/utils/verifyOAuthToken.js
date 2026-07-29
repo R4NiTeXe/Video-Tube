@@ -55,5 +55,8 @@ export const verifyOAuthToken = async (provider, token) => {
     };
   }
 
-  throw new ApiError(400, `OAuth token verification not implemented for provider: ${provider}. Use the server-side OAuth flow at /api/v1/auth/${provider}.`);
+  throw new ApiError(
+    400,
+    `OAuth token verification not implemented for provider: ${provider}. Use the server-side OAuth flow at /api/v1/auth/${provider}.`
+  );
 };

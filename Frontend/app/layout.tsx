@@ -31,8 +31,16 @@ export const metadata: Metadata = {
     default: "VideoTube — Watch, Share, and Connect",
     template: "%s | VideoTube",
   },
-  description: "Watch, share, and connect on VideoTube — a video platform for everyone.",
-  keywords: ["video sharing", "streaming", "VideoTube", "watch videos", "upload videos", "video platform"],
+  description:
+    "Watch, share, and connect on VideoTube — a video platform for everyone.",
+  keywords: [
+    "video sharing",
+    "streaming",
+    "VideoTube",
+    "watch videos",
+    "upload videos",
+    "video platform",
+  ],
   metadataBase: new URL(SITE_URL),
   openGraph: {
     type: "website",
@@ -67,19 +75,29 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${inter.variable}`}
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+    >
       <head>
-        <meta httpEquiv="Content-Security-Policy" content="upgrade-insecure-requests" />
+        <meta
+          httpEquiv="Content-Security-Policy"
+          content="upgrade-insecure-requests"
+        />
       </head>
       <body suppressHydrationWarning>
-        <ThemeProvider attribute="data-theme" defaultTheme="dark" enableSystem={false}>
+        <ThemeProvider
+          attribute="data-theme"
+          defaultTheme="dark"
+          enableSystem={false}
+        >
           <QueryProvider>
             <AuthProvider>
               <ErrorBoundary>
                 <SplashWrapper>
-                  <AppShell>
-                    {children}
-                  </AppShell>
+                  <AppShell>{children}</AppShell>
                   <MobileDrawer />
                 </SplashWrapper>
                 <ShortcutsDialog />

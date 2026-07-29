@@ -13,29 +13,65 @@ if (!isTest && !fs.existsSync(TEMP_UPLOAD_PATH)) {
   fs.mkdirSync(TEMP_UPLOAD_PATH, { recursive: true });
 }
 
-export const MAX_VIDEO_SIZE = (parseInt(process.env.MAX_VIDEO_SIZE_MB) || 20) * 1024 * 1024;
-export const MAX_THUMBNAIL_SIZE = (parseInt(process.env.MAX_THUMBNAIL_SIZE_MB) || 2) * 1024 * 1024;
-export const MAX_IMAGE_SIZE = (parseInt(process.env.MAX_IMAGE_SIZE_MB) || 5) * 1024 * 1024;
+export const MAX_VIDEO_SIZE =
+  (parseInt(process.env.MAX_VIDEO_SIZE_MB) || 20) * 1024 * 1024;
+export const MAX_THUMBNAIL_SIZE =
+  (parseInt(process.env.MAX_THUMBNAIL_SIZE_MB) || 2) * 1024 * 1024;
+export const MAX_IMAGE_SIZE =
+  (parseInt(process.env.MAX_IMAGE_SIZE_MB) || 5) * 1024 * 1024;
 
-const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/x-msvideo", "video/x-matroska", "video/webm"];
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const ALLOWED_VIDEO_TYPES = [
+  "video/mp4",
+  "video/quicktime",
+  "video/x-msvideo",
+  "video/x-matroska",
+  "video/webm",
+];
+const ALLOWED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+];
 const DANGEROUS_EXTENSIONS = new Set([
-  ".exe", ".bat", ".cmd", ".com", ".msi",
-  ".scr", ".pif", ".vb", ".vbs", ".vbe",
-  ".js", ".jse", ".ws", ".wsf", ".wsh",
-  ".ps1", ".psm1", ".psd1", ".dll", ".ocx",
-  ".sh", ".bash", ".py", ".pl", ".rb",
-  ".jar", ".class", ".swf",
+  ".exe",
+  ".bat",
+  ".cmd",
+  ".com",
+  ".msi",
+  ".scr",
+  ".pif",
+  ".vb",
+  ".vbs",
+  ".vbe",
+  ".js",
+  ".jse",
+  ".ws",
+  ".wsf",
+  ".wsh",
+  ".ps1",
+  ".psm1",
+  ".psd1",
+  ".dll",
+  ".ocx",
+  ".sh",
+  ".bash",
+  ".py",
+  ".pl",
+  ".rb",
+  ".jar",
+  ".class",
+  ".swf",
 ]);
 
 const MAGIC_BYTES = {
-  "image/jpeg": [0xFF, 0xD8, 0xFF],
-  "image/png": [0x89, 0x50, 0x4E, 0x47],
+  "image/jpeg": [0xff, 0xd8, 0xff],
+  "image/png": [0x89, 0x50, 0x4e, 0x47],
   "image/webp": [0x52, 0x49, 0x46, 0x46],
   "image/gif": [0x47, 0x49, 0x46, 0x38],
   "video/mp4": [0x00, 0x00, 0x00],
   "video/quicktime": [0x00, 0x00, 0x00],
-  "video/webm": [0x1A, 0x45, 0xDF, 0xA3],
+  "video/webm": [0x1a, 0x45, 0xdf, 0xa3],
 };
 
 const readMagicBytes = (filePath, bytes = 8) => {
@@ -49,7 +85,9 @@ const readMagicBytes = (filePath, bytes = 8) => {
     return [];
   } finally {
     if (fd !== undefined) {
-      try { fs.closeSync(fd); } catch {}
+      try {
+        fs.closeSync(fd);
+      } catch {}
     }
   }
 };
@@ -65,7 +103,10 @@ const validateMagicBytes = (filePath, mimetype) => {
 const fileFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
   if (DANGEROUS_EXTENSIONS.has(ext)) {
-    return cb(new ApiError(400, `File type "${ext}" is not allowed for upload`), false);
+    return cb(
+      new ApiError(400, `File type "${ext}" is not allowed for upload`),
+      false
+    );
   }
 
   const isVideo = file.fieldname === "videoFile";
@@ -73,7 +114,13 @@ const fileFilter = (req, file, cb) => {
 
   if (!allowedTypes.includes(file.mimetype)) {
     const typeLabel = isVideo ? "video" : "image";
-    return cb(new ApiError(400, `Invalid ${typeLabel} type. Allowed: ${allowedTypes.join(", ")}`), false);
+    return cb(
+      new ApiError(
+        400,
+        `Invalid ${typeLabel} type. Allowed: ${allowedTypes.join(", ")}`
+      ),
+      false
+    );
   }
   cb(null, true);
 };
@@ -94,14 +141,18 @@ const storage = multer.diskStorage({
       "video/quicktime": ".mov",
       "video/x-msvideo": ".avi",
       "video/x-matroska": ".mkv",
-      "video/webm": ".webm"
+      "video/webm": ".webm",
     };
     extension = mimeToExt[file.mimetype] || extension;
     cb(null, `${file.fieldname}-${Date.now()}-${randomUUID()}${extension}`);
   },
 });
 
-const GLOBAL_MAX_FILE_SIZE = Math.max(MAX_VIDEO_SIZE, MAX_THUMBNAIL_SIZE, MAX_IMAGE_SIZE);
+const GLOBAL_MAX_FILE_SIZE = Math.max(
+  MAX_VIDEO_SIZE,
+  MAX_THUMBNAIL_SIZE,
+  MAX_IMAGE_SIZE
+);
 
 export const upload = multer({
   storage,
@@ -142,23 +193,47 @@ export const validateFileSize = (req, res, next) => {
       const size = stats.size;
 
       if (size > maxBytes) {
-        try { fs.unlinkSync(file.path); } catch {
+        try {
+          fs.unlinkSync(file.path);
+        } catch {
           // Best-effort temp file cleanup.
         }
         const sizeMB = maxBytes / 1024 / 1024;
-        const fieldLabels = { videoFile: "Video", thumbnail: "Thumbnail", avatar: "Avatar", coverImage: "Cover Image", banner: "Banner", image: "Image" };
+        const fieldLabels = {
+          videoFile: "Video",
+          thumbnail: "Thumbnail",
+          avatar: "Avatar",
+          coverImage: "Cover Image",
+          banner: "Banner",
+          image: "Image",
+        };
         const fieldLabel = fieldLabels[fieldName] || fieldName;
-        throw new ApiError(413, `${fieldLabel} size must be ${sizeMB} MB or less`);
+        throw new ApiError(
+          413,
+          `${fieldLabel} size must be ${sizeMB} MB or less`
+        );
       }
 
       // Validate file magic bytes against declared mime type (skipped in tests)
       if (!isTest && !validateMagicBytes(file.path, file.mimetype)) {
-        try { fs.unlinkSync(file.path); } catch {
+        try {
+          fs.unlinkSync(file.path);
+        } catch {
           // Best-effort temp file cleanup.
         }
-        const fieldLabels = { videoFile: "Video", thumbnail: "Thumbnail", avatar: "Avatar", coverImage: "Cover Image", banner: "Banner", image: "Image" };
+        const fieldLabels = {
+          videoFile: "Video",
+          thumbnail: "Thumbnail",
+          avatar: "Avatar",
+          coverImage: "Cover Image",
+          banner: "Banner",
+          image: "Image",
+        };
         const fieldLabel = fieldLabels[fieldName] || fieldName;
-        throw new ApiError(400, `${fieldLabel} file content does not match declared type`);
+        throw new ApiError(
+          400,
+          `${fieldLabel} file content does not match declared type`
+        );
       }
     } catch (err) {
       // If file was removed or missing, ignore ENOENT; otherwise rethrow

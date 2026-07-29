@@ -16,7 +16,9 @@ const passwordSchema = z
   .regex(/[0-9]/, "Must contain number")
   .regex(/[^A-Za-z0-9]/, "Must contain special character");
 
-const mobileSchema = z.string().regex(/^\+?[1-9]\d{9,14}$/, "Invalid mobile number format");
+const mobileSchema = z
+  .string()
+  .regex(/^\+?[1-9]\d{9,14}$/, "Invalid mobile number format");
 
 const channelEnum = z.enum(["email", "mobile", "both"]).optional();
 
@@ -27,10 +29,17 @@ const identifierMessage = "Either identifier, email, or mobile is required";
 export const userSchemas = {
   register: {
     body: z.object({
-      username: z.string().min(3).max(20).regex(/^[a-zA-Z0-9_]+$/),
+      username: z
+        .string()
+        .min(3)
+        .max(20)
+        .regex(/^[a-zA-Z0-9_]+$/),
       fullName: z.string().min(1).max(50).trim(),
       email: z.string().email(),
-      password: z.string().min(8).max(64)
+      password: z
+        .string()
+        .min(8)
+        .max(64)
         .regex(/[A-Z]/, "Must contain uppercase")
         .regex(/[a-z]/, "Must contain lowercase")
         .regex(/[0-9]/, "Must contain number")
@@ -39,14 +48,16 @@ export const userSchemas = {
   },
 
   login: {
-    body: z.object({
-      email: z.string().email().optional(),
-      username: z.string().optional(),
-      mobile: z.string().optional(),
-      password: z.string().min(1),
-    }).refine((data) => data.email || data.username || data.mobile, {
-      message: "Either email, username, or mobile is required",
-    }),
+    body: z
+      .object({
+        email: z.string().email().optional(),
+        username: z.string().optional(),
+        mobile: z.string().optional(),
+        password: z.string().min(1),
+      })
+      .refine((data) => data.email || data.username || data.mobile, {
+        message: "Either email, username, or mobile is required",
+      }),
   },
 
   refreshToken: {
@@ -92,12 +103,14 @@ export const userSchemas = {
   },
 
   updateAccount: {
-    body: z.object({
-      fullName: z.string().min(1).max(50).trim().optional(),
-      email: z.string().email().optional(),
-    }).refine((data) => Object.keys(data).length > 0, {
-      message: "At least one field is required",
-    }),
+    body: z
+      .object({
+        fullName: z.string().min(1).max(50).trim().optional(),
+        email: z.string().email().optional(),
+      })
+      .refine((data) => Object.keys(data).length > 0, {
+        message: "At least one field is required",
+      }),
   },
 
   sendIdentifierUpdateOTP: {
@@ -127,12 +140,14 @@ export const userSchemas = {
       bio: z.string().max(500).optional(),
       location: z.string().max(100).optional(),
       website: z.string().url().optional().or(z.literal("")),
-      socialLinks: z.object({
-        twitter: z.string().url().optional().or(z.literal("")),
-        instagram: z.string().url().optional().or(z.literal("")),
-        linkedin: z.string().url().optional().or(z.literal("")),
-        github: z.string().url().optional().or(z.literal("")),
-      }).optional(),
+      socialLinks: z
+        .object({
+          twitter: z.string().url().optional().or(z.literal("")),
+          instagram: z.string().url().optional().or(z.literal("")),
+          linkedin: z.string().url().optional().or(z.literal("")),
+          github: z.string().url().optional().or(z.literal("")),
+        })
+        .optional(),
     }),
   },
 
@@ -149,22 +164,26 @@ export const userSchemas = {
   },
 
   updateContentDefaults: {
-    body: z.object({
-      defaultVisibility: z.enum(["public", "private"]).optional(),
-      defaultCategory: z.string().optional(),
-    }).refine((data) => Object.keys(data).length > 0, {
-      message: "At least one field is required",
-    }),
+    body: z
+      .object({
+        defaultVisibility: z.enum(["public", "private"]).optional(),
+        defaultCategory: z.string().optional(),
+      })
+      .refine((data) => Object.keys(data).length > 0, {
+        message: "At least one field is required",
+      }),
   },
 
   sendChangePasswordOTP: {
-    body: z.object({
-      email: z.string().email().optional(),
-      mobile: mobileSchema.optional(),
-      channel: channelEnum,
-    }).refine((data) => data.email || data.mobile, {
-      message: "Either email or mobile is required",
-    }),
+    body: z
+      .object({
+        email: z.string().email().optional(),
+        mobile: mobileSchema.optional(),
+        channel: channelEnum,
+      })
+      .refine((data) => data.email || data.mobile, {
+        message: "Either email or mobile is required",
+      }),
   },
 
   verifyAndChangePassword: {
@@ -255,20 +274,24 @@ export const userSchemas = {
   },
 
   sendForgotPasswordOTP: {
-    body: z.object({
-      identifier: z.string().min(1).optional(),
-      email: z.string().email().optional(),
-      mobile: mobileSchema.optional(),
-    }).refine(identifierRefine, { message: identifierMessage }),
+    body: z
+      .object({
+        identifier: z.string().min(1).optional(),
+        email: z.string().email().optional(),
+        mobile: mobileSchema.optional(),
+      })
+      .refine(identifierRefine, { message: identifierMessage }),
   },
 
   verifyResetOTP: {
-    body: z.object({
-      identifier: z.string().min(1).optional(),
-      email: z.string().email().optional(),
-      mobile: mobileSchema.optional(),
-      otp: z.string().length(6),
-    }).refine(identifierRefine, { message: identifierMessage }),
+    body: z
+      .object({
+        identifier: z.string().min(1).optional(),
+        email: z.string().email().optional(),
+        mobile: mobileSchema.optional(),
+        otp: z.string().length(6),
+      })
+      .refine(identifierRefine, { message: identifierMessage }),
   },
 
   resetPasswordWithOTP: {
@@ -310,7 +333,11 @@ export const userSchemas = {
       email: z.string().email(),
       mobile: mobileSchema,
       fullName: z.string().min(1).max(50).trim(),
-      username: z.string().min(3).max(20).regex(/^[a-zA-Z0-9_]+$/),
+      username: z
+        .string()
+        .min(3)
+        .max(20)
+        .regex(/^[a-zA-Z0-9_]+$/),
       password: passwordSchema,
       emailOtp: z.string().length(6).optional(),
       mobileOtp: z.string().length(6).optional(),
@@ -322,8 +349,15 @@ export const userSchemas = {
       mobile: z.string().regex(/^\+?[1-9]\d{9,14}$/),
       otp: z.string().length(6),
       fullName: z.string().min(1).max(50).trim(),
-      username: z.string().min(3).max(20).regex(/^[a-zA-Z0-9_]+$/),
-      password: z.string().min(8).max(64)
+      username: z
+        .string()
+        .min(3)
+        .max(20)
+        .regex(/^[a-zA-Z0-9_]+$/),
+      password: z
+        .string()
+        .min(8)
+        .max(64)
         .regex(/[A-Z]/)
         .regex(/[a-z]/)
         .regex(/[0-9]/)
@@ -365,10 +399,17 @@ export const videoSchemas = {
       description: z.string().min(1).max(5000).trim(),
       tags: z.union([z.string(), z.array(z.string())]).optional(),
       category: z.string().max(50).optional(),
-      chapters: z.union([z.string(), z.array(z.object({
-        title: z.string().min(1).max(100),
-        startTime: z.number().nonnegative(),
-      }))]).optional(),
+      chapters: z
+        .union([
+          z.string(),
+          z.array(
+            z.object({
+              title: z.string().min(1).max(100),
+              startTime: z.number().nonnegative(),
+            })
+          ),
+        ])
+        .optional(),
       scheduledAt: z.string().datetime().optional(),
     }),
   },
@@ -377,15 +418,17 @@ export const videoSchemas = {
     params: z.object({
       videoId: mongoId,
     }),
-    body: z.object({
-      title: z.string().min(1).max(100).trim().optional(),
-      description: z.string().max(5000).trim().optional(),
-      tags: z.union([z.string(), z.array(z.string())]).optional(),
-      category: z.string().max(50).optional(),
-      visibility: z.enum(["public", "private"]).optional(),
-    }).refine((data) => Object.keys(data).length > 0, {
-      message: "At least one field is required",
-    }),
+    body: z
+      .object({
+        title: z.string().min(1).max(100).trim().optional(),
+        description: z.string().max(5000).trim().optional(),
+        tags: z.union([z.string(), z.array(z.string())]).optional(),
+        category: z.string().max(50).optional(),
+        visibility: z.enum(["public", "private"]).optional(),
+      })
+      .refine((data) => Object.keys(data).length > 0, {
+        message: "At least one field is required",
+      }),
   },
 
   getVideoById: {
@@ -473,10 +516,14 @@ export const videoSchemas = {
       videoId: mongoId,
     }),
     body: z.object({
-      chapters: z.array(z.object({
-        title: z.string().min(1).max(100),
-        startTime: z.number().nonnegative(),
-      })).max(50),
+      chapters: z
+        .array(
+          z.object({
+            title: z.string().min(1).max(100),
+            startTime: z.number().nonnegative(),
+          })
+        )
+        .max(50),
     }),
   },
 
@@ -577,13 +624,15 @@ export const playlistSchemas = {
     params: z.object({
       playlistId: mongoId,
     }),
-    body: z.object({
-      name: z.string().min(1).max(100).trim().optional(),
-      description: z.string().max(500).trim().optional(),
-      visibility: z.enum(["public", "private"]).optional(),
-    }).refine((data) => Object.keys(data).length > 0, {
-      message: "At least one field is required",
-    }),
+    body: z
+      .object({
+        name: z.string().min(1).max(100).trim().optional(),
+        description: z.string().max(500).trim().optional(),
+        visibility: z.enum(["public", "private"]).optional(),
+      })
+      .refine((data) => Object.keys(data).length > 0, {
+        message: "At least one field is required",
+      }),
   },
 
   getPlaylistById: {
@@ -786,14 +835,25 @@ export const communityPostSchemas = {
 export const dashboardSchemas = {
   getChannelStats: {},
   getChannelVideos: { query: pagination },
-  getChannelAnalytics: { query: z.object({ period: z.enum(["7d", "30d", "90d"]).default("7d") }) },
-  getSubscriberGrowth: { query: z.object({ days: z.coerce.number().int().positive().max(365).default(30) }) },
+  getChannelAnalytics: {
+    query: z.object({ period: z.enum(["7d", "30d", "90d"]).default("7d") }),
+  },
+  getSubscriberGrowth: {
+    query: z.object({
+      days: z.coerce.number().int().positive().max(365).default(30),
+    }),
+  },
   getVideoDetailedStats: { params: z.object({ videoId: mongoId }) },
 };
 
 export const adminSchemas = {
   getPlatformStats: {},
-  getAllUsers: { query: pagination.extend({ query: z.string().optional(), role: z.enum(["user", "admin"]).optional() }) },
+  getAllUsers: {
+    query: pagination.extend({
+      query: z.string().optional(),
+      role: z.enum(["user", "admin"]).optional(),
+    }),
+  },
   updateUserRole: {
     params: z.object({ userId: mongoId }),
     body: z.object({ role: z.enum(["user", "admin"]) }),
@@ -807,9 +867,22 @@ export const adminSchemas = {
 export const reportSchemas = {
   createReport: {
     body: z.object({
-      targetType: z.enum(["video", "comment", "user", "playlist", "communityPost"]),
+      targetType: z.enum([
+        "video",
+        "comment",
+        "user",
+        "playlist",
+        "communityPost",
+      ]),
       target: mongoId,
-      reason: z.enum(["spam", "inappropriate", "copyright", "harassment", "misinformation", "other"]),
+      reason: z.enum([
+        "spam",
+        "inappropriate",
+        "copyright",
+        "harassment",
+        "misinformation",
+        "other",
+      ]),
       description: z.string().max(1000).optional(),
     }),
   },
@@ -832,16 +905,29 @@ export const sessionSchemas = {
 
 export const otpSchemas = {
   sendOtp: { body: z.object({ identifier: z.string().min(1) }) },
-  verifyOtp: { body: z.object({ identifier: z.string().min(1), otp: z.string().length(6) }) },
+  verifyOtp: {
+    body: z.object({
+      identifier: z.string().min(1),
+      otp: z.string().length(6),
+    }),
+  },
   resendOtp: { body: z.object({ identifier: z.string().min(1) }) },
   getOtpUsage: { query: z.object({ identifier: z.string().optional() }) },
 };
 
 export const oauthSchemas = {
-  googleCallback: { query: z.object({ code: z.string(), state: z.string().optional() }) },
-  githubCallback: { query: z.object({ code: z.string(), state: z.string().optional() }) },
-  facebookCallback: { query: z.object({ code: z.string(), state: z.string().optional() }) },
-  discordCallback: { query: z.object({ code: z.string(), state: z.string().optional() }) },
+  googleCallback: {
+    query: z.object({ code: z.string(), state: z.string().optional() }),
+  },
+  githubCallback: {
+    query: z.object({ code: z.string(), state: z.string().optional() }),
+  },
+  facebookCallback: {
+    query: z.object({ code: z.string(), state: z.string().optional() }),
+  },
+  discordCallback: {
+    query: z.object({ code: z.string(), state: z.string().optional() }),
+  },
 };
 
 export const sseSchemas = {

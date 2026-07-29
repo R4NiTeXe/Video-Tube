@@ -10,7 +10,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PageMeta } from "@/src/components/PageMeta";
 import { EyeIcon, EyeOffIcon, CloseIcon } from "@/src/components/icons";
 
-
 export default function LoginPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading, login } = useAuthStore();
@@ -66,8 +65,21 @@ export default function LoginPage() {
 
   if (authLoading) {
     return (
-      <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
-        <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.5, repeat: Infinity }} className="text-body" style={{ color: "var(--text-muted)", fontWeight: 500 }}>
+      <div
+        style={{
+          display: "flex",
+          minHeight: "100vh",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "var(--bg-primary)",
+        }}
+      >
+        <motion.div
+          animate={{ opacity: [0.4, 1, 0.4] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          className="text-body"
+          style={{ color: "var(--text-muted)", fontWeight: 500 }}
+        >
           Checking session...
         </motion.div>
       </div>
@@ -77,116 +89,265 @@ export default function LoginPage() {
 
   return (
     <>
-      <PageMeta title="Sign In" description="Sign in to your VideoTube account to access your videos, playlists, and subscriptions." noIndex />
-    <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)", display: "flex", overflow: "hidden" }}>
-      {/* LEFT: FORM */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", zIndex: 10, backgroundColor: "var(--bg-primary)", overflowY: "auto" }}>
-
-        <header style={{ padding: "var(--sp-6) var(--sp-8)", display: "flex", alignItems: "center", flexShrink: 0 }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="VideoTube" style={{ height: "32px", width: "auto", display: "block" }} />
-          </Link>
-        </header>
-
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "var(--sp-4) var(--sp-8) var(--sp-16)" }}>
-          <motion.div
-            initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.45 }}
-            style={{ width: "100%", maxWidth: "440px" }}
+      <PageMeta
+        title="Sign In"
+        description="Sign in to your VideoTube account to access your videos, playlists, and subscriptions."
+        noIndex
+      />
+      <div
+        style={{
+          minHeight: "100vh",
+          backgroundColor: "var(--bg-primary)",
+          display: "flex",
+          overflow: "hidden",
+        }}
+      >
+        {/* LEFT: FORM */}
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            position: "relative",
+            zIndex: 10,
+            backgroundColor: "var(--bg-primary)",
+            overflowY: "auto",
+          }}
+        >
+          <header
+            style={{
+              padding: "var(--sp-6) var(--sp-8)",
+              display: "flex",
+              alignItems: "center",
+              flexShrink: 0,
+            }}
           >
-            {/* Title */}
-            <h1 className="text-hero" style={{ color: "var(--text-primary)", marginBottom: "var(--sp-2)" }}>
-              Welcome back
-            </h1>
-            <p className="text-body" style={{ color: "var(--text-secondary)", marginBottom: "var(--sp-6)" }}>
-              Sign in to continue to VideoTube
-            </p>
+            <Link
+              href="/"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "var(--sp-2)",
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo.png"
+                alt="VideoTube"
+                style={{ height: "32px", width: "auto", display: "block" }}
+              />
+            </Link>
+          </header>
 
-            {/* Error */}
-            <AnimatePresence>
-              {error && (
-                <motion.div role="alert" aria-live="polite" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                  className="card"
-                  style={{
-                    padding: "var(--sp-3) var(--sp-4)", backgroundColor: "var(--error-subtle)", color: "var(--error)",
-                    borderRadius: "var(--radius-md)", marginBottom: "var(--sp-6)", fontSize: 13,
-                    border: "1px solid rgba(239,68,68,0.20)", display: "flex", alignItems: "center", gap: "var(--sp-2)",
-                  }}>
-                  <CloseIcon size={14} /> {error}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Form */}
-            <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-2)" }}>
-                <label htmlFor="login-email" className="text-caption" style={{ color: "var(--text-secondary)" }}>Email or Mobile</label>
-                <div className="input-wrapper" onMouseEnter={() => {}} onMouseLeave={() => {}}>
-                  <input
-                    type="text" required
-                    placeholder="Email or mobile"
-                    className="input"
-                    id="login-email"
-                    autoComplete="email"
-                    value={identifier}
-                    onChange={e => setIdentifier(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-2)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <label htmlFor="login-password" className="text-caption" style={{ color: "var(--text-secondary)" }}>Password</label>
-                  <Link href="/forgot-password" className="text-caption" style={{ color: "var(--text-muted)", textDecoration: "none" }}>
-                    Forgot Password?
-                  </Link>
-                </div>
-                <div className="password-field" style={{ position: "relative" }}>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    required
-                    placeholder="Password"
-                    className="input"
-                    id="login-password"
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    style={{ paddingRight: 44 }}
-                  />
-                  <button
-                    type="button"
-                    className="password-toggle"
-                    onClick={() => setShowPassword(p => !p)}
-                    onMouseDown={e => e.preventDefault()}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
-                  </button>
-                </div>
-              </div>
-
-              <button
-                type="submit" disabled={isLoading}
-                className="btn btn-primary"
-                style={{ width: "100%", marginTop: "var(--sp-2)", opacity: isLoading ? 0.6 : 1, cursor: isLoading ? "not-allowed" : "pointer" }}
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "var(--sp-4) var(--sp-8) var(--sp-16)",
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.45 }}
+              style={{ width: "100%", maxWidth: "440px" }}
+            >
+              {/* Title */}
+              <h1
+                className="text-hero"
+                style={{
+                  color: "var(--text-primary)",
+                  marginBottom: "var(--sp-2)",
+                }}
               >
-                {isLoading ? "Signing in..." : "Sign in"}
-              </button>
-            </form>
+                Welcome back
+              </h1>
+              <p
+                className="text-body"
+                style={{
+                  color: "var(--text-secondary)",
+                  marginBottom: "var(--sp-6)",
+                }}
+              >
+                Sign in to continue to VideoTube
+              </p>
 
-            {/* Footer */}
-            <p className="text-body" style={{ marginTop: "var(--sp-8)", textAlign: "center", color: "var(--text-muted)" }}>
-              Don&apos;t have an account?{" "}
-              <Link href="/register" style={{ color: "var(--text-primary)", fontWeight: 700, textDecoration: "underline" }}>
-                Sign up
-              </Link>
-            </p>
-          </motion.div>
+              {/* Error */}
+              <AnimatePresence>
+                {error && (
+                  <motion.div
+                    role="alert"
+                    aria-live="polite"
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    className="card"
+                    style={{
+                      padding: "var(--sp-3) var(--sp-4)",
+                      backgroundColor: "var(--error-subtle)",
+                      color: "var(--error)",
+                      borderRadius: "var(--radius-md)",
+                      marginBottom: "var(--sp-6)",
+                      fontSize: 13,
+                      border: "1px solid rgba(239,68,68,0.20)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "var(--sp-2)",
+                    }}
+                  >
+                    <CloseIcon size={14} /> {error}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Form */}
+              <form
+                onSubmit={handleLogin}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "var(--sp-4)",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "var(--sp-2)",
+                  }}
+                >
+                  <label
+                    htmlFor="login-email"
+                    className="text-caption"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    Email or Mobile
+                  </label>
+                  <div
+                    className="input-wrapper"
+                    onMouseEnter={() => {}}
+                    onMouseLeave={() => {}}
+                  >
+                    <input
+                      type="text"
+                      required
+                      placeholder="Email or mobile"
+                      className="input"
+                      id="login-email"
+                      autoComplete="email"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "var(--sp-2)",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <label
+                      htmlFor="login-password"
+                      className="text-caption"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      Password
+                    </label>
+                    <Link
+                      href="/forgot-password"
+                      className="text-caption"
+                      style={{
+                        color: "var(--text-muted)",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Forgot Password?
+                    </Link>
+                  </div>
+                  <div
+                    className="password-field"
+                    style={{ position: "relative" }}
+                  >
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      placeholder="Password"
+                      className="input"
+                      id="login-password"
+                      autoComplete="current-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      style={{ paddingRight: 44 }}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle"
+                      onClick={() => setShowPassword((p) => !p)}
+                      onMouseDown={(e) => e.preventDefault()}
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                    >
+                      {showPassword ? (
+                        <EyeOffIcon size={16} />
+                      ) : (
+                        <EyeIcon size={16} />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="btn btn-primary"
+                  style={{
+                    width: "100%",
+                    marginTop: "var(--sp-2)",
+                    opacity: isLoading ? 0.6 : 1,
+                    cursor: isLoading ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {isLoading ? "Signing in..." : "Sign in"}
+                </button>
+              </form>
+
+              {/* Footer */}
+              <p
+                className="text-body"
+                style={{
+                  marginTop: "var(--sp-8)",
+                  textAlign: "center",
+                  color: "var(--text-muted)",
+                }}
+              >
+                Don&apos;t have an account?{" "}
+                <Link
+                  href="/register"
+                  style={{
+                    color: "var(--text-primary)",
+                    fontWeight: 700,
+                    textDecoration: "underline",
+                  }}
+                >
+                  Sign up
+                </Link>
+              </p>
+            </motion.div>
+          </div>
         </div>
       </div>
-
-      
-    </div>
     </>
   );
 }

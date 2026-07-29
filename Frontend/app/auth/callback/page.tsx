@@ -54,7 +54,15 @@ function CallbackContent() {
   }, [searchParams, login, router]);
 
   return (
-    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", backgroundColor: "var(--bg-primary)" }}>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "100vh",
+        backgroundColor: "var(--bg-primary)",
+      }}
+    >
       <p style={{ color: "var(--text-muted)" }}>Completing sign-in...</p>
     </div>
   );
@@ -63,12 +71,26 @@ function CallbackContent() {
 export default function AuthCallbackPage() {
   return (
     <>
-      <PageMeta title="Authenticating..." description="Completing your sign-in to VideoTube." noIndex />
-      <Suspense fallback={
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", backgroundColor: "var(--bg-primary)" }}>
-          <p style={{ color: "var(--text-muted)" }}>Completing sign-in...</p>
-        </div>
-      }>
+      <PageMeta
+        title="Authenticating..."
+        description="Completing your sign-in to VideoTube."
+        noIndex
+      />
+      <Suspense
+        fallback={
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              height: "100vh",
+              backgroundColor: "var(--bg-primary)",
+            }}
+          >
+            <p style={{ color: "var(--text-muted)" }}>Completing sign-in...</p>
+          </div>
+        }
+      >
         <CallbackContent />
       </Suspense>
     </>

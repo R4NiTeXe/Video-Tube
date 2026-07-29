@@ -21,7 +21,11 @@ import { verifyOAuthToken } from "../utils/verifyOAuthToken.js";
 import { sendEmail } from "../utils/email.js";
 import { storeOTP, verifyOTP, otpService } from "../utils/otp.js";
 import { OTP } from "../models/otp.model.js";
-import { otpEmailTemplate, passwordChangedEmailTemplate, accountRecoveryTemplate } from "../utils/emailTemplates.js";
+import {
+  otpEmailTemplate,
+  passwordChangedEmailTemplate,
+  accountRecoveryTemplate,
+} from "../utils/emailTemplates.js";
 import { sendWhatsAppOTP } from "../utils/whatsappOtp.js";
 import { getLocationInfo } from "../utils/location.js";
 import mongoose from "mongoose";
@@ -29,7 +33,10 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import validator from "validator";
-import { validatePasswordStrength, assertPasswordStrength } from "../utils/passwordValidation.js";
+import {
+  validatePasswordStrength,
+  assertPasswordStrength,
+} from "../utils/passwordValidation.js";
 import logger from "../utils/logger.js";
 import { createSession, deactivateSession } from "./session.controller.js";
 
@@ -77,7 +84,9 @@ const logoutUser = asyncHandler(async (req, res) => {
   }
 
   // Blacklist access token so it can't be reused after logout
-  const accessToken = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
+  const accessToken =
+    req.cookies?.accessToken ||
+    req.header("Authorization")?.replace("Bearer ", "");
   if (accessToken) {
     const { blacklistToken } = await import("../utils/redis.js");
     await blacklistToken(accessToken, 86400);
@@ -134,7 +143,9 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   await deactivateSession(incomingRefreshToken);
   await createSession(user._id, refreshToken, req);
 
-  const freshUser = await User.findById(user._id).select("-password -refreshToken").lean();
+  const freshUser = await User.findById(user._id)
+    .select("-password -refreshToken")
+    .lean();
 
   const options = getCookieOptions();
 
@@ -143,11 +154,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
     .json(
-      new ApiResponse(
-        200,
-        { user: freshUser },
-        "Token refreshed successfully"
-      )
+      new ApiResponse(200, { user: freshUser }, "Token refreshed successfully")
     );
 });
 
@@ -281,9 +288,9 @@ const updateUserImage = async ({
     throw new ApiError(400, missingFileMessage);
   }
 
-  const user = await User.findById(userId).select(
-    `${urlField} ${publicIdField}`
-  ).lean();
+  const user = await User.findById(userId)
+    .select(`${urlField} ${publicIdField}`)
+    .lean();
 
   if (!user) {
     throw new ApiError(404, "User not found");
@@ -312,7 +319,9 @@ const updateUserImage = async ({
         returnDocument: "after",
         runValidators: true,
       }
-    ).select("-password -refreshToken").lean();
+    )
+      .select("-password -refreshToken")
+      .lean();
   } catch (error) {
     await deleteFromCloudinary(uploadedImage.public_id);
     throw error;
@@ -376,7 +385,9 @@ const updateUserBanner = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, updatedUser, "Channel banner updated successfully"));
+    .json(
+      new ApiResponse(200, updatedUser, "Channel banner updated successfully")
+    );
 });
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
@@ -420,8 +431,12 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
       },
       {
         $addFields: {
-          subscribersCount: { $ifNull: [{ $arrayElemAt: ["$subscribers.count", 0] }, 0] },
-          channelsSubscribedToCount: { $ifNull: [{ $arrayElemAt: ["$subscribedTo.count", 0] }, 0] },
+          subscribersCount: {
+            $ifNull: [{ $arrayElemAt: ["$subscribers.count", 0] }, 0],
+          },
+          channelsSubscribedToCount: {
+            $ifNull: [{ $arrayElemAt: ["$subscribedTo.count", 0] }, 0],
+          },
         },
       },
       {
@@ -522,7 +537,12 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        { docs: user[0]?.watchHistory || [], total: user[0]?.totalCount || 0, page: pageNumber, limit: limitNumber },
+        {
+          docs: user[0]?.watchHistory || [],
+          total: user[0]?.totalCount || 0,
+          page: pageNumber,
+          limit: limitNumber,
+        },
         "Watch history fetched successfully"
       )
     );
@@ -535,7 +555,9 @@ const deleteCurrentUser = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Unauthorized request");
   }
 
-  const user = await User.findById(userId).select("_id avatarPublicId coverImagePublicId").lean();
+  const user = await User.findById(userId)
+    .select("_id avatarPublicId coverImagePublicId")
+    .lean();
 
   if (!user) {
     throw new ApiError(404, "User not found");
@@ -580,21 +602,33 @@ const deleteCurrentUser = asyncHandler(async (req, res) => {
   await CommunityPost.deleteMany({ owner: userId });
 
   await Poll.deleteMany({ createdBy: userId });
-  await Poll.updateMany(
-    { voters: userId },
-    { $pull: { voters: userId } }
-  );
+  await Poll.updateMany({ voters: userId }, { $pull: { voters: userId } });
 
   await PostLike.deleteMany({ likedBy: userId });
 
   await OTP.deleteMany({ user: userId });
 
   // remove user reference from other users' blocked/muted/watchLater/watchHistory arrays
-  await User.updateMany({ blockedUsers: userId }, { $pull: { blockedUsers: userId } });
-  await User.updateMany({ mutedUsers: userId }, { $pull: { mutedUsers: userId } });
-  await User.updateMany({ mutedChannels: userId }, { $pull: { mutedChannels: userId } });
-  await User.updateMany({ watchLater: userId }, { $pull: { watchLater: userId } });
-  await User.updateMany({ watchHistory: userId }, { $pull: { watchHistory: userId } });
+  await User.updateMany(
+    { blockedUsers: userId },
+    { $pull: { blockedUsers: userId } }
+  );
+  await User.updateMany(
+    { mutedUsers: userId },
+    { $pull: { mutedUsers: userId } }
+  );
+  await User.updateMany(
+    { mutedChannels: userId },
+    { $pull: { mutedChannels: userId } }
+  );
+  await User.updateMany(
+    { watchLater: userId },
+    { $pull: { watchLater: userId } }
+  );
+  await User.updateMany(
+    { watchHistory: userId },
+    { $pull: { watchHistory: userId } }
+  );
 
   await Session.deleteMany({ user: userId });
 
@@ -636,7 +670,13 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       }
     }
 
-    const allowedFields = ["youtube", "twitter", "instagram", "github", "website"];
+    const allowedFields = [
+      "youtube",
+      "twitter",
+      "instagram",
+      "github",
+      "website",
+    ];
     const sanitizedLinks = {};
 
     for (const field of allowedFields) {
@@ -715,9 +755,15 @@ const getUserProfile = asyncHandler(async (req, res) => {
     },
     {
       $addFields: {
-        subscriberCount: { $ifNull: [{ $arrayElemAt: ["$subscribers.count", 0] }, 0] },
-        videoCount: { $ifNull: [{ $arrayElemAt: ["$videos.videoCount", 0] }, 0] },
-        totalViews: { $ifNull: [{ $arrayElemAt: ["$videos.totalViews", 0] }, 0] },
+        subscriberCount: {
+          $ifNull: [{ $arrayElemAt: ["$subscribers.count", 0] }, 0],
+        },
+        videoCount: {
+          $ifNull: [{ $arrayElemAt: ["$videos.videoCount", 0] }, 0],
+        },
+        totalViews: {
+          $ifNull: [{ $arrayElemAt: ["$videos.totalViews", 0] }, 0],
+        },
       },
     },
     {
@@ -743,7 +789,9 @@ const getUserProfile = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, profile[0], "User profile fetched successfully"));
+    .json(
+      new ApiResponse(200, profile[0], "User profile fetched successfully")
+    );
 });
 
 const searchUsers = asyncHandler(async (req, res) => {
@@ -776,11 +824,22 @@ const forgotPassword = asyncHandler(async (req, res) => {
   // Constant-time response to prevent email enumeration
   if (!user) {
     await new Promise((resolve) => setTimeout(resolve, 100));
-    return res.status(200).json(new ApiResponse(200, {}, "If the email exists, a reset link has been sent"));
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          {},
+          "If the email exists, a reset link has been sent"
+        )
+      );
   }
 
   const resetToken = crypto.randomBytes(32).toString("hex");
-  user.passwordResetToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+  user.passwordResetToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
   user.passwordResetExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
   await user.save({ validateBeforeSave: false });
 
@@ -797,9 +856,15 @@ const forgotPassword = asyncHandler(async (req, res) => {
     logger.error("Failed to send reset email:", error.message);
   }
 
-  return res.status(200).json(
-    new ApiResponse(200, {}, "If the email exists, a reset link has been sent")
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        {},
+        "If the email exists, a reset link has been sent"
+      )
+    );
 });
 
 const resetPassword = asyncHandler(async (req, res) => {
@@ -828,7 +893,9 @@ const resetPassword = asyncHandler(async (req, res) => {
 
   await Session.updateMany({ user: user._id }, { isActive: false });
 
-  return res.status(200).json(new ApiResponse(200, {}, "Password reset successfully"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password reset successfully"));
 });
 
 const blockUser = asyncHandler(async (req, res) => {
@@ -848,13 +915,19 @@ const blockUser = asyncHandler(async (req, res) => {
   const isBlocked = user.blockedUsers.includes(userId);
 
   if (isBlocked) {
-    user.blockedUsers = user.blockedUsers.filter((id) => id.toString() !== userId);
+    user.blockedUsers = user.blockedUsers.filter(
+      (id) => id.toString() !== userId
+    );
     await user.save({ validateBeforeSave: false });
-    return res.status(200).json(new ApiResponse(200, { blocked: false }, "User unblocked"));
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { blocked: false }, "User unblocked"));
   } else {
     user.blockedUsers.push(userId);
     await user.save({ validateBeforeSave: false });
-    return res.status(200).json(new ApiResponse(200, { blocked: true }, "User blocked"));
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { blocked: true }, "User blocked"));
   }
 });
 
@@ -874,11 +947,15 @@ const muteUser = asyncHandler(async (req, res) => {
   if (isMuted) {
     user.mutedUsers = user.mutedUsers.filter((id) => id.toString() !== userId);
     await user.save({ validateBeforeSave: false });
-    return res.status(200).json(new ApiResponse(200, { muted: false }, "User unmuted"));
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { muted: false }, "User unmuted"));
   } else {
     user.mutedUsers.push(userId);
     await user.save({ validateBeforeSave: false });
-    return res.status(200).json(new ApiResponse(200, { muted: true }, "User muted"));
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { muted: true }, "User muted"));
   }
 });
 
@@ -896,7 +973,11 @@ const addToWatchLater = asyncHandler(async (req, res) => {
   if (exists) {
     user.watchLater = user.watchLater.filter((id) => id.toString() !== videoId);
     await user.save({ validateBeforeSave: false });
-    return res.status(200).json(new ApiResponse(200, { watchLater: false }, "Removed from watch later"));
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { watchLater: false }, "Removed from watch later")
+      );
   } else {
     user.watchLater.push(videoId);
     // Cap at 200 to prevent unbounded array growth
@@ -904,7 +985,9 @@ const addToWatchLater = asyncHandler(async (req, res) => {
       user.watchLater = user.watchLater.slice(-200);
     }
     await user.save({ validateBeforeSave: false });
-    return res.status(200).json(new ApiResponse(200, { watchLater: true }, "Added to watch later"));
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { watchLater: true }, "Added to watch later"));
   }
 });
 
@@ -920,18 +1003,29 @@ const getWatchLater = asyncHandler(async (req, res) => {
 
   const watchLaterIds = user?.watchLater?.slice(skip, skip + limit) || [];
 
-  const videos = await Video.find({ _id: { $in: watchLaterIds }, isPublished: true })
+  const videos = await Video.find({
+    _id: { $in: watchLaterIds },
+    isPublished: true,
+  })
     .select("title thumbnail views duration createdAt")
     .populate("owner", "fullName username avatar")
     .sort({ createdAt: -1 })
     .lean();
 
   // Preserve original order from watchLater array
-  const ordered = watchLaterIds.map((id) => videos.find((v) => v._id.toString() === id.toString())).filter(Boolean);
+  const ordered = watchLaterIds
+    .map((id) => videos.find((v) => v._id.toString() === id.toString()))
+    .filter(Boolean);
 
-  return res.status(200).json(
-    new ApiResponse(200, { docs: ordered, total, page, limit, totalPages }, "Watch later fetched")
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { docs: ordered, total, page, limit, totalPages },
+        "Watch later fetched"
+      )
+    );
 });
 
 const addSearchHistory = asyncHandler(async (req, res) => {
@@ -951,7 +1045,9 @@ const addSearchHistory = asyncHandler(async (req, res) => {
   }
   await user.save({ validateBeforeSave: false });
 
-  return res.status(200).json(new ApiResponse(200, user.searchHistory, "Search history updated"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user.searchHistory, "Search history updated"));
 });
 
 const getSearchHistory = asyncHandler(async (req, res) => {
@@ -965,35 +1061,60 @@ const getSearchHistory = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
   const docs = user?.searchHistory?.slice(skip, skip + limit) || [];
 
-  return res.status(200).json(
-    new ApiResponse(200, { docs, total, page, limit, totalPages }, "Search history fetched")
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { docs, total, page, limit, totalPages },
+        "Search history fetched"
+      )
+    );
 });
 
 const clearSearchHistory = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(req.user._id, { $set: { searchHistory: [] } });
-  return res.status(200).json(new ApiResponse(200, {}, "Search history cleared"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Search history cleared"));
 });
 
 const clearWatchHistory = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(req.user._id, { $set: { watchHistory: [] } });
-  return res.status(200).json(new ApiResponse(200, {}, "Watch history cleared"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Watch history cleared"));
 });
 
 const getNotificationPrefs = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id).select("notificationPrefs").lean();
-  return res.status(200).json(new ApiResponse(200, user.notificationPrefs, "Notification preferences fetched"));
+  const user = await User.findById(req.user._id)
+    .select("notificationPrefs")
+    .lean();
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        user.notificationPrefs,
+        "Notification preferences fetched"
+      )
+    );
 });
 
 const updateNotificationPrefs = asyncHandler(async (req, res) => {
   const { likes, comments, replies, subscriptions, mentions } = req.body;
 
   const updateFields = {};
-  if (likes !== undefined) updateFields["notificationPrefs.likes"] = Boolean(likes);
-  if (comments !== undefined) updateFields["notificationPrefs.comments"] = Boolean(comments);
-  if (replies !== undefined) updateFields["notificationPrefs.replies"] = Boolean(replies);
-  if (subscriptions !== undefined) updateFields["notificationPrefs.subscriptions"] = Boolean(subscriptions);
-  if (mentions !== undefined) updateFields["notificationPrefs.mentions"] = Boolean(mentions);
+  if (likes !== undefined)
+    updateFields["notificationPrefs.likes"] = Boolean(likes);
+  if (comments !== undefined)
+    updateFields["notificationPrefs.comments"] = Boolean(comments);
+  if (replies !== undefined)
+    updateFields["notificationPrefs.replies"] = Boolean(replies);
+  if (subscriptions !== undefined)
+    updateFields["notificationPrefs.subscriptions"] = Boolean(subscriptions);
+  if (mentions !== undefined)
+    updateFields["notificationPrefs.mentions"] = Boolean(mentions);
 
   if (!Object.keys(updateFields).length) {
     throw new ApiError(400, "At least one preference is required");
@@ -1005,7 +1126,15 @@ const updateNotificationPrefs = asyncHandler(async (req, res) => {
     { new: true }
   ).select("notificationPrefs");
 
-  return res.status(200).json(new ApiResponse(200, user.notificationPrefs, "Notification preferences updated"));
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        user.notificationPrefs,
+        "Notification preferences updated"
+      )
+    );
 });
 
 const updatePrivacySettings = asyncHandler(async (req, res) => {
@@ -1021,11 +1150,20 @@ const updatePrivacySettings = asyncHandler(async (req, res) => {
     { new: true }
   ).select("isPrivate");
 
-  return res.status(200).json(new ApiResponse(200, user, "Privacy settings updated"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Privacy settings updated"));
 });
 
 const forgotPasswordOTP = asyncHandler(async (req, res) => {
-  logger.info("[forgotPasswordOTP] Request received", { body: { ...req.body, identifier: req.body.identifier ? req.body.identifier.replace(/^(.{1,2}).*(@.+)/, "$1***$2") : undefined } });
+  logger.info("[forgotPasswordOTP] Request received", {
+    body: {
+      ...req.body,
+      identifier: req.body.identifier
+        ? req.body.identifier.replace(/^(.{1,2}).*(@.+)/, "$1***$2")
+        : undefined,
+    },
+  });
 
   const { identifier, email } = req.body;
   const id = (identifier || email || "").trim().toLowerCase();
@@ -1037,16 +1175,29 @@ const forgotPasswordOTP = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email: id });
 
   if (!user) {
-    logger.info("[forgotPasswordOTP] User not found — returning generic response");
-    return res.status(200).json(new ApiResponse(200, {}, "If the email exists, an OTP has been sent"));
+    logger.info(
+      "[forgotPasswordOTP] User not found — returning generic response"
+    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, {}, "If the email exists, an OTP has been sent")
+      );
   }
 
-  logger.info("[forgotPasswordOTP] User found", { userId: user._id, email: id });
+  logger.info("[forgotPasswordOTP] User found", {
+    userId: user._id,
+    email: id,
+  });
 
   const otp = await storeOTP(id, "forgot-password", "email", user._id);
-  logger.info("[forgotPasswordOTP] OTP generated and stored", { userId: user._id });
+  logger.info("[forgotPasswordOTP] OTP generated and stored", {
+    userId: user._id,
+  });
 
-  logger.info("[forgotPasswordOTP] Sending email via sendEmail()...", { to: id });
+  logger.info("[forgotPasswordOTP] Sending email via sendEmail()...", {
+    to: id,
+  });
   await sendEmail({
     to: id,
     subject: "Your VideoTube Account Recovery Code",
@@ -1055,9 +1206,11 @@ const forgotPasswordOTP = asyncHandler(async (req, res) => {
   logger.info("[forgotPasswordOTP] Email sent successfully via provider");
   await otpService.confirmOtpDelivery(user._id, user.timezone);
 
-  return res.status(200).json(
-    new ApiResponse(200, {}, "If the email exists, an OTP has been sent")
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, {}, "If the email exists, an OTP has been sent")
+    );
 });
 
 const verifyResetOTP = asyncHandler(async (req, res) => {
@@ -1080,9 +1233,15 @@ const verifyResetOTP = asyncHandler(async (req, res) => {
     { expiresIn: "5m" }
   );
 
-  return res.status(200).json(
-    new ApiResponse(200, { resetToken }, "OTP verified. Use the reset token to set a new password.")
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { resetToken },
+        "OTP verified. Use the reset token to set a new password."
+      )
+    );
 });
 
 const resetPasswordWithOTP = asyncHandler(async (req, res) => {
@@ -1096,7 +1255,10 @@ const resetPasswordWithOTP = asyncHandler(async (req, res) => {
 
   let decoded;
   try {
-    decoded = jwt.verify(resetToken, process.env.ACCESS_TOKEN_SECRET + "_reset");
+    decoded = jwt.verify(
+      resetToken,
+      process.env.ACCESS_TOKEN_SECRET + "_reset"
+    );
   } catch (error) {
     throw new ApiError(400, "Invalid or expired reset token");
   }
@@ -1105,8 +1267,8 @@ const resetPasswordWithOTP = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid reset token");
   }
 
-  const user = await User.findOne({ 
-    $or: [{ email: decoded.email }, { mobile: decoded.email }] 
+  const user = await User.findOne({
+    $or: [{ email: decoded.email }, { mobile: decoded.email }],
   });
   if (!user) {
     throw new ApiError(404, "User not found");
@@ -1127,9 +1289,9 @@ const resetPasswordWithOTP = asyncHandler(async (req, res) => {
     logger.error("Failed to send password changed email:", error.message);
   }
 
-  return res.status(200).json(
-    new ApiResponse(200, {}, "Password reset successfully")
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password reset successfully"));
 });
 
 const skipAndLogin = asyncHandler(async (req, res) => {
@@ -1141,7 +1303,10 @@ const skipAndLogin = asyncHandler(async (req, res) => {
 
   let decoded;
   try {
-    decoded = jwt.verify(resetToken, process.env.ACCESS_TOKEN_SECRET + "_reset");
+    decoded = jwt.verify(
+      resetToken,
+      process.env.ACCESS_TOKEN_SECRET + "_reset"
+    );
   } catch (error) {
     throw new ApiError(400, "Invalid or expired reset token");
   }
@@ -1150,17 +1315,21 @@ const skipAndLogin = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid reset token");
   }
 
-  const user = await User.findOne({ 
-    $or: [{ email: decoded.email }, { mobile: decoded.email }] 
+  const user = await User.findOne({
+    $or: [{ email: decoded.email }, { mobile: decoded.email }],
   });
   if (!user) {
     throw new ApiError(404, "User not found");
   }
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
-  const loggedInUser = await User.findById(user._id).select("-password -refreshToken").lean();
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user._id
+  );
+  const loggedInUser = await User.findById(user._id)
+    .select("-password -refreshToken")
+    .lean();
   const options = getCookieOptions();
-  
+
   const deviceInfo = {
     ip: req.ip,
     userAgent: req.headers["user-agent"],
@@ -1169,11 +1338,12 @@ const skipAndLogin = asyncHandler(async (req, res) => {
 
   const lastLoginTime = user.lastLogin ? new Date(user.lastLogin).getTime() : 0;
   const FIFTEEN_DAYS = 15 * 24 * 60 * 60 * 1000;
-  
+
   const locationInfo = await getLocationInfo(req);
-  
+
   try {
-    const { accountRecoveryTemplate } = await import("../utils/emailTemplates.js");
+    const { accountRecoveryTemplate } =
+      await import("../utils/emailTemplates.js");
     await sendEmail({
       to: user.email,
       subject: "Account Recovery Successful",
@@ -1190,7 +1360,13 @@ const skipAndLogin = asyncHandler(async (req, res) => {
     .status(200)
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
-    .json(new ApiResponse(200, { user: loggedInUser, accessToken, refreshToken }, "Logged in successfully"));
+    .json(
+      new ApiResponse(
+        200,
+        { user: loggedInUser, accessToken, refreshToken },
+        "Logged in successfully"
+      )
+    );
 });
 
 const sendChangePasswordOTP = asyncHandler(async (req, res) => {
@@ -1203,7 +1379,10 @@ const sendChangePasswordOTP = asyncHandler(async (req, res) => {
 
   if (channel === "whatsapp") {
     if (!mobile) {
-      throw new ApiError(400, "No mobile number linked. Please add one in your profile first.");
+      throw new ApiError(
+        400,
+        "No mobile number linked. Please add one in your profile first."
+      );
     }
     const otp = await storeOTP(mobile, "change-password", "whatsapp", userId);
     try {
@@ -1213,9 +1392,15 @@ const sendChangePasswordOTP = asyncHandler(async (req, res) => {
       logger.error("Failed to send OTP WhatsApp:", error.message);
       throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);
     }
-    return res.status(200).json(
-      new ApiResponse(200, { channel: "whatsapp" }, "OTP sent to your WhatsApp")
-    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { channel: "whatsapp" },
+          "OTP sent to your WhatsApp"
+        )
+      );
   } else {
     const otp = await storeOTP(email, "change-password", "email", userId);
     try {
@@ -1229,9 +1414,11 @@ const sendChangePasswordOTP = asyncHandler(async (req, res) => {
       logger.error("Failed to send OTP email:", error.message);
       throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
     }
-    return res.status(200).json(
-      new ApiResponse(200, { channel: "email" }, "OTP sent to your email")
-    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { channel: "email" }, "OTP sent to your email")
+      );
   }
 });
 
@@ -1303,11 +1490,19 @@ const socialLogin = asyncHandler(async (req, res) => {
 
   const allowedProviders = ["google", "github"];
   if (!allowedProviders.includes(provider)) {
-    throw new ApiError(400, `Server-side OAuth token verification only supports: ${allowedProviders.join(", ")}. For other providers, use the server-side OAuth flow at /api/v1/auth/${provider}.`);
+    throw new ApiError(
+      400,
+      `Server-side OAuth token verification only supports: ${allowedProviders.join(", ")}. For other providers, use the server-side OAuth flow at /api/v1/auth/${provider}.`
+    );
   }
 
   const verifiedData = await verifyOAuthToken(provider, token);
-  const { email: verifiedEmail, name: verifiedName, avatar: verifiedAvatar, providerId } = verifiedData;
+  const {
+    email: verifiedEmail,
+    name: verifiedName,
+    avatar: verifiedAvatar,
+    providerId,
+  } = verifiedData;
 
   const normalizedEmail = verifiedEmail.trim().toLowerCase();
   let user = await User.findOne({ email: normalizedEmail });
@@ -1327,19 +1522,23 @@ const socialLogin = asyncHandler(async (req, res) => {
     const socialMap = new Map();
     socialMap.set(provider, providerId);
 
-    const usernameBase = normalizedEmail.split("@")[0].replace(/[^a-z0-9]/g, "");
+    const usernameBase = normalizedEmail
+      .split("@")[0]
+      .replace(/[^a-z0-9]/g, "");
     let username = usernameBase;
     let suffix = 1;
     for (let attempts = 0; attempts < 10; attempts++) {
       try {
         user = await User.create({
           username,
-      fullName: verifiedName.trim(),
-      email: normalizedEmail,
-      password: randomPassword,
-      avatar: verifiedAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(verifiedName)}&background=6366f1&color=fff`,
-      socialAccounts: socialMap,
-      timezone: req.body?.timezone || "UTC",
+          fullName: verifiedName.trim(),
+          email: normalizedEmail,
+          password: randomPassword,
+          avatar:
+            verifiedAvatar ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(verifiedName)}&background=6366f1&color=fff`,
+          socialAccounts: socialMap,
+          timezone: req.body?.timezone || "UTC",
         });
         break;
       } catch (err) {
@@ -1353,8 +1552,12 @@ const socialLogin = asyncHandler(async (req, res) => {
     }
   }
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
-  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user._id
+  );
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
 
   const options = getCookieOptions();
 
@@ -1368,11 +1571,12 @@ const socialLogin = asyncHandler(async (req, res) => {
       new ApiResponse(
         isNewUser ? 201 : 200,
         { user: loggedInUser, accessToken, refreshToken },
-        isNewUser ? "User registered via social login" : "User logged in successfully"
+        isNewUser
+          ? "User registered via social login"
+          : "User logged in successfully"
       )
     );
 });
-
 
 const isValidMobile = (mobile) => /^\+?[1-9]\d{9,14}$/.test(mobile);
 
@@ -1380,7 +1584,6 @@ const detectChannel = (identifier) => {
   if (/^\+?[1-9]\d{9,14}$/.test(identifier.trim())) return "whatsapp";
   return "email";
 };
-
 
 const sendRegistrationOTP = asyncHandler(async (req, res) => {
   const { email, mobile } = req.body;
@@ -1396,14 +1599,18 @@ const sendRegistrationOTP = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Please provide a valid email");
   }
   if (!isValidMobile(normalizedMobile)) {
-    throw new ApiError(400, "Invalid mobile number format. Use +91XXXXXXXXXX format");
+    throw new ApiError(
+      400,
+      "Invalid mobile number format. Use +91XXXXXXXXXX format"
+    );
   }
 
   const existingUser = await User.findOne({
     $or: [{ email: normalizedEmail }, { mobile: normalizedMobile }],
   });
   if (existingUser) {
-    const field = existingUser.email === normalizedEmail ? "Email" : "Mobile number";
+    const field =
+      existingUser.email === normalizedEmail ? "Email" : "Mobile number";
     throw new ApiError(409, `${field} already registered. Please login.`);
   }
 
@@ -1430,16 +1637,25 @@ const sendRegistrationOTP = asyncHandler(async (req, res) => {
     await otpService.confirmOtpDelivery();
   }
 
-  return res.status(200).json(
-    new ApiResponse(200, { email: normalizedEmail, mobile: normalizedMobile }, "OTPs sent to both email and mobile number")
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { email: normalizedEmail, mobile: normalizedMobile },
+        "OTPs sent to both email and mobile number"
+      )
+    );
 });
 
 const verifyRegistrationOTP = asyncHandler(async (req, res) => {
   const { identifier, otp: otpValue } = req.body;
 
   if (!identifier || !otpValue) {
-    throw new ApiError(400, "Identifier (email or mobile) and OTP are required");
+    throw new ApiError(
+      400,
+      "Identifier (email or mobile) and OTP are required"
+    );
   }
 
   const normalizedIdentifier = identifier.trim().toLowerCase();
@@ -1452,16 +1668,26 @@ const verifyRegistrationOTP = asyncHandler(async (req, res) => {
     throw new ApiError(400, result.message);
   }
 
-  return res.status(200).json(
-    new ApiResponse(200, { verified: true, identifier: normalizedIdentifier, channel }, `${channel} verified successfully`)
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { verified: true, identifier: normalizedIdentifier, channel },
+        `${channel} verified successfully`
+      )
+    );
 });
 
 const registerUnified = asyncHandler(async (req, res) => {
-  const { email, mobile, fullName, username, password, emailOtp, mobileOtp } = req.body;
+  const { email, mobile, fullName, username, password, emailOtp, mobileOtp } =
+    req.body;
 
   if (!email || !mobile || !fullName || !username || !password) {
-    throw new ApiError(400, "All fields are required: email, mobile, fullName, username, password");
+    throw new ApiError(
+      400,
+      "All fields are required: email, mobile, fullName, username, password"
+    );
   }
 
   const normalizedEmail = email.trim().toLowerCase();
@@ -1476,8 +1702,16 @@ const registerUnified = asyncHandler(async (req, res) => {
   if (password.length < 8 || password.length > 16) {
     throw new ApiError(400, "Password must be 8-16 characters");
   }
-  if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
-    throw new ApiError(400, "Password must contain uppercase, lowercase, number, and special character");
+  if (
+    !/[A-Z]/.test(password) ||
+    !/[a-z]/.test(password) ||
+    !/[0-9]/.test(password) ||
+    !/[^A-Za-z0-9]/.test(password)
+  ) {
+    throw new ApiError(
+      400,
+      "Password must contain uppercase, lowercase, number, and special character"
+    );
   }
 
   let emailVerified = false;
@@ -1487,7 +1721,10 @@ const registerUnified = asyncHandler(async (req, res) => {
     const result = await verifyOTP(normalizedEmail, emailOtp, "registration");
     if (result.valid) emailVerified = true;
   } else {
-    const emailRecord = await OTP.findOne({ identifier: normalizedEmail, purpose: "registration" });
+    const emailRecord = await OTP.findOne({
+      identifier: normalizedEmail,
+      purpose: "registration",
+    });
     if (emailRecord?.verified) emailVerified = true;
   }
 
@@ -1495,7 +1732,10 @@ const registerUnified = asyncHandler(async (req, res) => {
     const result = await verifyOTP(normalizedMobile, mobileOtp, "registration");
     if (result.valid) mobileVerified = true;
   } else {
-    const mobileRecord = await OTP.findOne({ identifier: normalizedMobile, purpose: "registration" });
+    const mobileRecord = await OTP.findOne({
+      identifier: normalizedMobile,
+      purpose: "registration",
+    });
     if (mobileRecord?.verified) mobileVerified = true;
   }
 
@@ -1507,9 +1747,12 @@ const registerUnified = asyncHandler(async (req, res) => {
   if (existingEmail) throw new ApiError(409, "Email already registered");
 
   const existingMobile = await User.findOne({ mobile: normalizedMobile });
-  if (existingMobile) throw new ApiError(409, "Mobile number already registered");
+  if (existingMobile)
+    throw new ApiError(409, "Mobile number already registered");
 
-  const existingUsername = await User.findOne({ username: username.toLowerCase() });
+  const existingUsername = await User.findOne({
+    username: username.toLowerCase(),
+  });
   if (existingUsername) throw new ApiError(409, "Username already taken");
 
   let avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=6366f1&color=fff`;
@@ -1518,13 +1761,15 @@ const registerUnified = asyncHandler(async (req, res) => {
   const avatarLocalPath = req.files?.avatar?.[0]?.path;
   if (avatarLocalPath) {
     const uploaded = await uploadOnCloudinary(avatarLocalPath);
-    if (uploaded?.secure_url || uploaded?.url) avatarUrl = uploaded.secure_url || uploaded.url;
+    if (uploaded?.secure_url || uploaded?.url)
+      avatarUrl = uploaded.secure_url || uploaded.url;
   }
 
   const coverLocalPath = req.files?.coverImage?.[0]?.path;
   if (coverLocalPath) {
     const uploaded = await uploadOnCloudinary(coverLocalPath);
-    if (uploaded?.secure_url || uploaded?.url) coverUrl = uploaded.secure_url || uploaded.url;
+    if (uploaded?.secure_url || uploaded?.url)
+      coverUrl = uploaded.secure_url || uploaded.url;
   }
 
   const user = await User.create({
@@ -1540,8 +1785,12 @@ const registerUnified = asyncHandler(async (req, res) => {
     timezone: req.body?.timezone || "UTC",
   });
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
-  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user._id
+  );
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
 
   const options = getCookieOptions();
 
@@ -1577,11 +1826,20 @@ const sendLoginOTP = asyncHandler(async (req, res) => {
 
   if (!user) {
     // Don't reveal if user exists
-    return res.status(200).json(new ApiResponse(200, {}, "If the account exists, an OTP has been sent"));
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, {}, "If the account exists, an OTP has been sent")
+      );
   }
 
   if (channel === "email") {
-    const otp = await storeOTP(normalizedIdentifier, "login", "email", user._id);
+    const otp = await storeOTP(
+      normalizedIdentifier,
+      "login",
+      "email",
+      user._id
+    );
     try {
       await sendEmail({
         to: normalizedIdentifier,
@@ -1594,7 +1852,12 @@ const sendLoginOTP = asyncHandler(async (req, res) => {
       throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
     }
   } else {
-    const otp = await storeOTP(normalizedIdentifier, "login", "whatsapp", user._id);
+    const otp = await storeOTP(
+      normalizedIdentifier,
+      "login",
+      "whatsapp",
+      user._id
+    );
     try {
       await sendWhatsAppOTP(normalizedIdentifier, otp);
       await otpService.confirmOtpDelivery(user._id, user.timezone);
@@ -1604,9 +1867,11 @@ const sendLoginOTP = asyncHandler(async (req, res) => {
     }
   }
 
-  return res.status(200).json(
-    new ApiResponse(200, {}, "If the account exists, an OTP has been sent")
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, {}, "If the account exists, an OTP has been sent")
+    );
 });
 
 const verifyLoginOTP = asyncHandler(async (req, res) => {
@@ -1635,8 +1900,12 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
     throw new ApiError(404, "No account found");
   }
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
-  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user._id
+  );
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
 
   const options = getCookieOptions();
 
@@ -1654,7 +1923,6 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
       )
     );
 });
-
 
 const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
   const { password, channel = "email" } = req.body;
@@ -1675,9 +1943,17 @@ const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
 
   if (channel === "whatsapp") {
     if (!user.mobile) {
-      throw new ApiError(400, "No mobile number linked. Please add one in your profile first.");
+      throw new ApiError(
+        400,
+        "No mobile number linked. Please add one in your profile first."
+      );
     }
-    const otp = await storeOTP(user.mobile, "delete-account", "whatsapp", req.user._id);
+    const otp = await storeOTP(
+      user.mobile,
+      "delete-account",
+      "whatsapp",
+      req.user._id
+    );
     try {
       await sendWhatsAppOTP(user.mobile, otp);
       await otpService.confirmOtpDelivery(req.user._id, user.timezone);
@@ -1685,11 +1961,22 @@ const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
       logger.error("Failed to send delete OTP WhatsApp:", error.message);
       throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);
     }
-    return res.status(200).json(
-      new ApiResponse(200, { channel: "whatsapp" }, "OTP sent to your WhatsApp for account deletion")
-    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { channel: "whatsapp" },
+          "OTP sent to your WhatsApp for account deletion"
+        )
+      );
   } else {
-    const otp = await storeOTP(user.email, "delete-account", "email", req.user._id);
+    const otp = await storeOTP(
+      user.email,
+      "delete-account",
+      "email",
+      req.user._id
+    );
     try {
       await sendEmail({
         to: user.email,
@@ -1701,9 +1988,15 @@ const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
       logger.error("Failed to send delete account OTP email:", error.message);
       throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
     }
-    return res.status(200).json(
-      new ApiResponse(200, { channel: "email" }, "OTP sent to your email for account deletion")
-    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { channel: "email" },
+          "OTP sent to your email for account deletion"
+        )
+      );
   }
 });
 
@@ -1740,38 +2033,66 @@ const verifyAndDeleteAccount = asyncHandler(async (req, res) => {
   try {
     dbSession.startTransaction();
 
-    const userVideos = await Video.find({ owner: userId }).select("videoFile thumbnail").session(dbSession).lean();
+    const userVideos = await Video.find({ owner: userId })
+      .select("videoFile thumbnail")
+      .session(dbSession)
+      .lean();
     for (const video of userVideos) {
       if (video.videoFile) await deleteFromCloudinary(video.videoFile);
       if (video.thumbnail) await deleteFromCloudinary(video.thumbnail);
     }
 
     if (user.avatarPublicId) await deleteFromCloudinary(user.avatarPublicId);
-    if (user.coverImagePublicId) await deleteFromCloudinary(user.coverImagePublicId);
+    if (user.coverImagePublicId)
+      await deleteFromCloudinary(user.coverImagePublicId);
 
-    await Subscription.deleteMany({ $or: [{ subscriber: userId }, { channel: userId }] }).session(dbSession);
+    await Subscription.deleteMany({
+      $or: [{ subscriber: userId }, { channel: userId }],
+    }).session(dbSession);
     await Video.deleteMany({ owner: userId }).session(dbSession);
     await Comment.deleteMany({ owner: userId }).session(dbSession);
     await Like.deleteMany({ likedBy: userId }).session(dbSession);
     await Playlist.deleteMany({ owner: userId }).session(dbSession);
-    await Notification.deleteMany({ $or: [{ recipient: userId }, { sender: userId }] }).session(dbSession);
+    await Notification.deleteMany({
+      $or: [{ recipient: userId }, { sender: userId }],
+    }).session(dbSession);
     await CommunityPost.deleteMany({ owner: userId }).session(dbSession);
     await Poll.deleteMany({ createdBy: userId }).session(dbSession);
-    await Poll.updateMany({ voters: userId }, { $pull: { voters: userId } }).session(dbSession);
+    await Poll.updateMany(
+      { voters: userId },
+      { $pull: { voters: userId } }
+    ).session(dbSession);
     await PostLike.deleteMany({ likedBy: userId }).session(dbSession);
     await OTP.deleteMany({ user: userId }).session(dbSession);
     await Session.deleteMany({ user: userId }).session(dbSession);
-    await User.updateMany({ blockedUsers: userId }, { $pull: { blockedUsers: userId } }).session(dbSession);
-    await User.updateMany({ mutedUsers: userId }, { $pull: { mutedUsers: userId } }).session(dbSession);
-    await User.updateMany({ mutedChannels: userId }, { $pull: { mutedChannels: userId } }).session(dbSession);
-    await User.updateMany({ watchLater: userId }, { $pull: { watchLater: userId } }).session(dbSession);
-    await User.updateMany({ watchHistory: userId }, { $pull: { watchHistory: userId } }).session(dbSession);
+    await User.updateMany(
+      { blockedUsers: userId },
+      { $pull: { blockedUsers: userId } }
+    ).session(dbSession);
+    await User.updateMany(
+      { mutedUsers: userId },
+      { $pull: { mutedUsers: userId } }
+    ).session(dbSession);
+    await User.updateMany(
+      { mutedChannels: userId },
+      { $pull: { mutedChannels: userId } }
+    ).session(dbSession);
+    await User.updateMany(
+      { watchLater: userId },
+      { $pull: { watchLater: userId } }
+    ).session(dbSession);
+    await User.updateMany(
+      { watchHistory: userId },
+      { $pull: { watchHistory: userId } }
+    ).session(dbSession);
     await User.findByIdAndDelete(userId).session(dbSession);
 
     await dbSession.commitTransaction();
   } catch (err) {
     await dbSession.abortTransaction();
-    logger.error("Account deletion failed — transaction rolled back", { error: err.message });
+    logger.error("Account deletion failed — transaction rolled back", {
+      error: err.message,
+    });
     throw new ApiError(500, "Failed to delete account. Please try again.");
   } finally {
     dbSession.endSession();
@@ -1786,7 +2107,6 @@ const verifyAndDeleteAccount = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Account deleted successfully"));
 });
 
-
 const sendForgotPasswordChangeOTP = asyncHandler(async (req, res) => {
   const { channel = "email" } = req.body;
   const user = await User.findById(req.user._id);
@@ -1795,21 +2115,43 @@ const sendForgotPasswordChangeOTP = asyncHandler(async (req, res) => {
 
   if (channel === "whatsapp") {
     if (!mobile) {
-      throw new ApiError(400, "No mobile number linked. Please add one in your profile first.");
+      throw new ApiError(
+        400,
+        "No mobile number linked. Please add one in your profile first."
+      );
     }
-    const otp = await storeOTP(mobile, "forgot-password-change", "whatsapp", req.user._id);
+    const otp = await storeOTP(
+      mobile,
+      "forgot-password-change",
+      "whatsapp",
+      req.user._id
+    );
     try {
       await sendWhatsAppOTP(mobile, otp);
       await otpService.confirmOtpDelivery(req.user._id, user.timezone);
     } catch (error) {
-      logger.error("Failed to send forgot password change OTP WhatsApp:", error.message);
+      logger.error(
+        "Failed to send forgot password change OTP WhatsApp:",
+        error.message
+      );
       throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);
     }
-    return res.status(200).json(
-      new ApiResponse(200, { channel: "whatsapp" }, "OTP sent to your WhatsApp")
-    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { channel: "whatsapp" },
+          "OTP sent to your WhatsApp"
+        )
+      );
   } else {
-    const otp = await storeOTP(email, "forgot-password-change", "email", req.user._id);
+    const otp = await storeOTP(
+      email,
+      "forgot-password-change",
+      "email",
+      req.user._id
+    );
     try {
       await sendEmail({
         to: email,
@@ -1821,9 +2163,11 @@ const sendForgotPasswordChangeOTP = asyncHandler(async (req, res) => {
       logger.error("Failed to send forgot password change OTP:", error.message);
       throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
     }
-    return res.status(200).json(
-      new ApiResponse(200, { channel: "email" }, "OTP sent to your email")
-    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { channel: "email" }, "OTP sent to your email")
+      );
   }
 });
 

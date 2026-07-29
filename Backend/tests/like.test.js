@@ -1,7 +1,25 @@
-import { describe, it, beforeAll, afterAll, beforeEach, expect } from "@jest/globals";
+import {
+  describe,
+  it,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  expect,
+} from "@jest/globals";
 import request from "supertest";
 import { app } from "../src/app.js";
-import { startTestServer, stopTestServer, clearDatabase, dropDatabase, createTestUser, loginTestUser, createTestVideo, getAuthHeaders, expectSuccess, expectError } from "./testUtils.js";
+import {
+  startTestServer,
+  stopTestServer,
+  clearDatabase,
+  dropDatabase,
+  createTestUser,
+  loginTestUser,
+  createTestVideo,
+  getAuthHeaders,
+  expectSuccess,
+  expectError,
+} from "./testUtils.js";
 import { Like } from "../src/models/like.model.js";
 import { Video } from "../src/models/video.model.js";
 import { Comment } from "../src/models/comment.model.js";
@@ -22,15 +40,21 @@ describe("Like System", () => {
 
   beforeEach(async () => {
     await clearDatabase();
-    
+
     user1 = await createTestUser();
     user2 = await createTestUser();
-    
-    const { cookies: c1 } = await loginTestUser({ email: user1.email, password: "Test@1234" });
-    const { cookies: c2 } = await loginTestUser({ email: user2.email, password: "Test@1234" });
-    
+
+    const { cookies: c1 } = await loginTestUser({
+      email: user1.email,
+      password: "Test@1234",
+    });
+    const { cookies: c2 } = await loginTestUser({
+      email: user2.email,
+      password: "Test@1234",
+    });
+
     video = await createTestVideo(user1._id);
-    
+
     cookies1 = c1;
     cookies2 = c2;
   });
@@ -63,10 +87,16 @@ describe("Like System", () => {
     it("should increment likesCount atomically under concurrent likes", async () => {
       const numUsers = 10;
       const users = [];
-      
+
       for (let i = 0; i < numUsers; i++) {
-        const u = await createTestUser({ username: `concurrent${i}`, email: `concurrent${i}@example.com` });
-        const { cookies } = await loginTestUser({ email: u.email, password: "Test@1234" });
+        const u = await createTestUser({
+          username: `concurrent${i}`,
+          email: `concurrent${i}@example.com`,
+        });
+        const { cookies } = await loginTestUser({
+          email: u.email,
+          password: "Test@1234",
+        });
         users.push({ user: u, cookies });
       }
 

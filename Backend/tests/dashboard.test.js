@@ -1,7 +1,24 @@
-import { describe, it, beforeAll, afterAll, beforeEach, expect } from "@jest/globals";
+import {
+  describe,
+  it,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  expect,
+} from "@jest/globals";
 import request from "supertest";
 import { app } from "../src/app.js";
-import { startTestServer, stopTestServer, clearDatabase, dropDatabase, createTestUser, loginTestUser, createTestVideo, getAuthHeaders, expectSuccess } from "./testUtils.js";
+import {
+  startTestServer,
+  stopTestServer,
+  clearDatabase,
+  dropDatabase,
+  createTestUser,
+  loginTestUser,
+  createTestVideo,
+  getAuthHeaders,
+  expectSuccess,
+} from "./testUtils.js";
 import { Video } from "../src/models/video.model.js";
 import { Like } from "../src/models/like.model.js";
 import { Comment } from "../src/models/comment.model.js";
@@ -23,18 +40,33 @@ describe("Dashboard Stats", () => {
 
   beforeEach(async () => {
     await clearDatabase();
-    
+
     user = await createTestUser();
-    const { cookies: c } = await loginTestUser({ email: user.email, password: "Test@1234" });
+    const { cookies: c } = await loginTestUser({
+      email: user.email,
+      password: "Test@1234",
+    });
     cookies = c;
-    
+
     video1 = await createTestVideo(user._id, { views: 100, title: "Video 1" });
     video2 = await createTestVideo(user._id, { views: 200, title: "Video 2" });
-    
+
     await Like.create({ video: video1._id, likedBy: user._id });
-    await Comment.create({ content: "Comment 1", video: video1._id, owner: user._id });
-    await Comment.create({ content: "Comment 2", video: video1._id, owner: user._id });
-    await Comment.create({ content: "Comment 3", video: video2._id, owner: user._id });
+    await Comment.create({
+      content: "Comment 1",
+      video: video1._id,
+      owner: user._id,
+    });
+    await Comment.create({
+      content: "Comment 2",
+      video: video1._id,
+      owner: user._id,
+    });
+    await Comment.create({
+      content: "Comment 3",
+      video: video2._id,
+      owner: user._id,
+    });
   });
 
   describe("GET /api/v1/dashboard/stats", () => {
@@ -53,8 +85,7 @@ describe("Dashboard Stats", () => {
     });
 
     it("should require authentication", async () => {
-      const res = await request(app)
-        .get("/api/v1/dashboard/stats");
+      const res = await request(app).get("/api/v1/dashboard/stats");
 
       expect(res.status).toBe(401);
     });

@@ -16,8 +16,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     window.scrollTo(0, 0);
   }, [pathname]);
 
-  const isAuthPage =
-    pathname ? (authPages.includes(pathname) || pathname.startsWith("/embed")) : false;
+  const isAuthPage = pathname
+    ? authPages.includes(pathname) || pathname.startsWith("/embed")
+    : false;
   const isLandingPage = pathname === "/" && !isAuthenticated;
 
   if (isAuthPage || isLandingPage) {

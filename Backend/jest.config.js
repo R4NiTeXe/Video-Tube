@@ -3,11 +3,7 @@ export default {
   transform: {},
   moduleFileExtensions: ["js", "mjs", "cjs", "json"],
   testMatch: ["**/tests/**/*.test.js"],
-  collectCoverageFrom: [
-    "src/**/*.js",
-    "!src/index.js",
-    "!src/app.js",
-  ],
+  collectCoverageFrom: ["src/**/*.js", "!src/index.js", "!src/app.js"],
   coverageDirectory: "coverage",
   verbose: true,
   forceExit: true,

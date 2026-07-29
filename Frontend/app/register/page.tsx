@@ -11,38 +11,96 @@ import { COUNTRIES } from "@/src/lib/countries";
 import SocialLoginButtons from "@/src/components/SocialLoginButtons";
 
 const UploadImageIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-    <polyline points="21 15 16 10 5 21"/>
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <circle cx="8.5" cy="8.5" r="1.5" />
+    <polyline points="21 15 16 10 5 21" />
   </svg>
 );
 
 const EyeIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
   </svg>
 );
 const EyeOffIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-    <line x1="1" y1="1" x2="23" y2="23"/>
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+    <line x1="1" y1="1" x2="23" y2="23" />
   </svg>
 );
 
 const MailIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 4L12 13 2 4"/>
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="2" y="4" width="20" height="16" rx="2" />
+    <path d="M22 4L12 13 2 4" />
   </svg>
 );
 const PhoneIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
   </svg>
 );
 
 const ShieldCheckIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/>
+  <svg
+    width="22"
+    height="22"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    <polyline points="9 12 11 14 15 10" />
   </svg>
 );
 
@@ -51,18 +109,21 @@ type Step = "details" | "otp" | "done";
 const OTP_LENGTH = 6;
 const COOLDOWN_SECONDS = 60;
 
-
-
 function PasswordStrengthBar({ password }: { password: string }) {
   let score = 0;
   const checks = [
-    { label: "8-16 characters", pass: password.length >= 8 && password.length <= 16 },
+    {
+      label: "8-16 characters",
+      pass: password.length >= 8 && password.length <= 16,
+    },
     { label: "Uppercase letter", pass: /[A-Z]/.test(password) },
     { label: "Lowercase letter", pass: /[a-z]/.test(password) },
     { label: "Number", pass: /[0-9]/.test(password) },
     { label: "Special character", pass: /[^A-Za-z0-9]/.test(password) },
   ];
-  checks.forEach((c) => { if (c.pass) score++; });
+  checks.forEach((c) => {
+    if (c.pass) score++;
+  });
   const labels = ["Very Weak", "Weak", "Fair", "Strong", "Very Strong"];
   const colors = ["#dc2626", "#f97316", "#eab308", "#22c55e", "#16a34a"];
   const level = Math.min(score, 4);
@@ -71,13 +132,35 @@ function PasswordStrengthBar({ password }: { password: string }) {
     <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
       <div style={{ display: "flex", gap: "3px" }}>
         {[0, 1, 2, 3, 4].map((i) => (
-          <div key={i} style={{ flex: 1, height: 3, borderRadius: 99, backgroundColor: i < score ? colors[level] : "var(--elevated)", transition: "background-color 0.2s" }} />
+          <div
+            key={i}
+            style={{
+              flex: 1,
+              height: 3,
+              borderRadius: 99,
+              backgroundColor: i < score ? colors[level] : "var(--elevated)",
+              transition: "background-color 0.2s",
+            }}
+          />
         ))}
       </div>
-      <span style={{ fontSize: "0.72rem", color: colors[level], fontWeight: 600 }}>{labels[level]}</span>
+      <span
+        style={{ fontSize: "0.72rem", color: colors[level], fontWeight: 600 }}
+      >
+        {labels[level]}
+      </span>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.2rem 0.6rem" }}>
         {checks.map((c) => (
-          <span key={c.label} style={{ fontSize: "0.68rem", color: c.pass ? "var(--success)" : "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.2rem" }}>
+          <span
+            key={c.label}
+            style={{
+              fontSize: "0.68rem",
+              color: c.pass ? "var(--success)" : "var(--text-muted)",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.2rem",
+            }}
+          >
             {c.pass ? "✓" : "×"} {c.label}
           </span>
         ))}
@@ -92,10 +175,8 @@ export default function RegisterPage() {
 
   const avatarRef = useRef<HTMLInputElement>(null);
 
-
   const [step, setStep] = useState<Step>("details");
 
-  
   const [formData, setFormData] = useState({
     fullName: "",
     username: "",
@@ -112,12 +193,17 @@ export default function RegisterPage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [coverFile] = useState<File | null>(null);
 
-  
-  const [emailOtp, setEmailOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
-  const [mobileOtp, setMobileOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
+  const [emailOtp, setEmailOtp] = useState<string[]>(
+    Array(OTP_LENGTH).fill(""),
+  );
+  const [mobileOtp, setMobileOtp] = useState<string[]>(
+    Array(OTP_LENGTH).fill(""),
+  );
   const [emailVerified, setEmailVerified] = useState(false);
   const [mobileVerified, setMobileVerified] = useState(false);
-  const [verifyChannel, setVerifyChannel] = useState<"email" | "whatsapp" | null>(null);
+  const [verifyChannel, setVerifyChannel] = useState<
+    "email" | "whatsapp" | null
+  >(null);
   const [emailCooldown, setEmailCooldown] = useState(0);
   const [mobileCooldown, setMobileCooldown] = useState(0);
   const [emailOtpError, setEmailOtpError] = useState("");
@@ -129,20 +215,16 @@ export default function RegisterPage() {
   const emailOtpRefs = useRef<(HTMLInputElement | null)[]>([]);
   const mobileOtpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  
-
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [statusText, setStatusText] = useState("");
 
   const fullMobile = `${formData.countryCode}${formData.mobile}`;
 
-  
   useEffect(() => {
     if (!authLoading && isAuthenticated) router.push("/");
   }, [isAuthenticated, authLoading, router]);
 
-  
   useEffect(() => {
     if (emailCooldown <= 0) return;
     const t = setTimeout(() => setEmailCooldown((c) => c - 1), 1000);
@@ -155,15 +237,15 @@ export default function RegisterPage() {
     return () => clearTimeout(t);
   }, [mobileCooldown]);
 
-
-  
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) { setAvatarName(file.name); setAvatarPreview(URL.createObjectURL(file)); setAvatarFile(file); }
+    if (file) {
+      setAvatarName(file.name);
+      setAvatarPreview(URL.createObjectURL(file));
+      setAvatarFile(file);
+    }
   };
 
-
-  
   const handleOtpChange = (
     index: number,
     value: string,
@@ -187,7 +269,11 @@ export default function RegisterPage() {
     refs: React.MutableRefObject<(HTMLInputElement | null)[]>,
     isEmail: boolean,
   ) => {
-    if (e.key === "Backspace" && !(isEmail ? emailOtp : mobileOtp)[index] && index > 0) {
+    if (
+      e.key === "Backspace" &&
+      !(isEmail ? emailOtp : mobileOtp)[index] &&
+      index > 0
+    ) {
       refs.current[index - 1]?.focus();
     }
   };
@@ -198,7 +284,10 @@ export default function RegisterPage() {
     refs: React.MutableRefObject<(HTMLInputElement | null)[]>,
   ) => {
     e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, OTP_LENGTH);
     if (pasted.length > 0) {
       const next = Array(OTP_LENGTH).fill("");
       for (let i = 0; i < pasted.length; i++) next[i] = pasted[i];
@@ -207,34 +296,39 @@ export default function RegisterPage() {
     }
   };
 
-  
-  const sendOtps = useCallback(async (channel?: "email" | "whatsapp") => {
-    setSendingOtp(true);
-    setError("");
-    try {
-      await api.post("/users/send-registration-otp", {
-        email: formData.email,
-        mobile: fullMobile,
-        channel: channel || "email",
-      });
-      if (channel === "whatsapp") {
-        setMobileCooldown(COOLDOWN_SECONDS);
-      } else {
-        setEmailCooldown(COOLDOWN_SECONDS);
+  const sendOtps = useCallback(
+    async (channel?: "email" | "whatsapp") => {
+      setSendingOtp(true);
+      setError("");
+      try {
+        await api.post("/users/send-registration-otp", {
+          email: formData.email,
+          mobile: fullMobile,
+          channel: channel || "email",
+        });
+        if (channel === "whatsapp") {
+          setMobileCooldown(COOLDOWN_SECONDS);
+        } else {
+          setEmailCooldown(COOLDOWN_SECONDS);
+        }
+        setTimeout(() => {
+          if (channel === "whatsapp") mobileOtpRefs.current[0]?.focus();
+          else emailOtpRefs.current[0]?.focus();
+        }, 100);
+      } catch (err: unknown) {
+        setError(getApiErrorMessage(err, "Failed to send OTP."));
+      } finally {
+        setSendingOtp(false);
       }
-      setTimeout(() => {
-        if (channel === "whatsapp") mobileOtpRefs.current[0]?.focus();
-        else emailOtpRefs.current[0]?.focus();
-      }, 100);
-    } catch (err: unknown) {
-      setError(getApiErrorMessage(err, "Failed to send OTP."));
-    } finally {
-      setSendingOtp(false);
-    }
-  }, [formData.email, fullMobile]);
+    },
+    [formData.email, fullMobile],
+  );
 
-  
-  const verifyOtp = async (identifier: string, otp: string, isEmail: boolean) => {
+  const verifyOtp = async (
+    identifier: string,
+    otp: string,
+    isEmail: boolean,
+  ) => {
     if (isEmail) setEmailVerifying(true);
     else setMobileVerifying(true);
 
@@ -255,7 +349,6 @@ export default function RegisterPage() {
     }
   };
 
-  
   const handleDetailsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -296,7 +389,6 @@ export default function RegisterPage() {
     setStep("otp");
   };
 
-  
   const bothVerified = emailVerified || mobileVerified;
 
   const handleFinalRegister = async () => {
@@ -326,7 +418,8 @@ export default function RegisterPage() {
       const response = await api.post("/users/register-unified", data, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (evt) => {
-          if (evt.total && evt.loaded >= evt.total) setStatusText("Creating your account...");
+          if (evt.total && evt.loaded >= evt.total)
+            setStatusText("Creating your account...");
         },
       });
       const { user, accessToken, refreshToken } = response.data.data;
@@ -342,7 +435,6 @@ export default function RegisterPage() {
     }
   };
 
-  
   useEffect(() => {
     if (step === "done") {
       const t = setTimeout(() => router.push("/"), 2500);
@@ -351,11 +443,22 @@ export default function RegisterPage() {
     return;
   }, [step, router]);
 
-  
   if (authLoading) {
     return (
-      <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
-        <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ color: "var(--text-muted)", fontWeight: 500 }}>
+      <div
+        style={{
+          display: "flex",
+          minHeight: "100vh",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "var(--bg-primary)",
+        }}
+      >
+        <motion.div
+          animate={{ opacity: [0.4, 1, 0.4] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          style={{ color: "var(--text-muted)", fontWeight: 500 }}
+        >
           Checking session...
         </motion.div>
       </div>
@@ -363,370 +466,1165 @@ export default function RegisterPage() {
   }
   if (isAuthenticated) return null;
 
-
   const confirmBorderClass = "input";
 
-  
   const stepNumber = step === "details" ? 1 : step === "otp" ? 2 : 3;
-  const stepTitle = step === "details"
-    ? "Create an account"
-    : step === "otp"
-      ? "Verify your email or phone"
-      : "Welcome aboard!";
-  const stepSub = step === "details"
-    ? "Join VideoTube — it's free"
-    : step === "otp"
-      ? "We sent a code to your email or phone"
-      : "Your account is ready. Redirecting...";
+  const stepTitle =
+    step === "details"
+      ? "Create an account"
+      : step === "otp"
+        ? "Verify your email or phone"
+        : "Welcome aboard!";
+  const stepSub =
+    step === "details"
+      ? "Join VideoTube — it's free"
+      : step === "otp"
+        ? "We sent a code to your email or phone"
+        : "Your account is ready. Redirecting...";
 
   return (
     <>
-      <PageMeta title="Create Account" description="Join VideoTube — create your account." noIndex />
-      <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)", display: "flex", overflow: "hidden" }}>
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", zIndex: 10, backgroundColor: "var(--bg-primary)", overflowY: "auto" }}>
-
-          <header style={{ padding: "var(--sp-6) var(--sp-8)", display: "flex", alignItems: "center", flexShrink: 0 }}>
-            <Link href="/" style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", textDecoration: "none" }}>
+      <PageMeta
+        title="Create Account"
+        description="Join VideoTube — create your account."
+        noIndex
+      />
+      <div
+        style={{
+          minHeight: "100vh",
+          backgroundColor: "var(--bg-primary)",
+          display: "flex",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            position: "relative",
+            zIndex: 10,
+            backgroundColor: "var(--bg-primary)",
+            overflowY: "auto",
+          }}
+        >
+          <header
+            style={{
+              padding: "var(--sp-6) var(--sp-8)",
+              display: "flex",
+              alignItems: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Link
+              href="/"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "var(--sp-2)",
+                textDecoration: "none",
+              }}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.png" alt="VideoTube" style={{ height: "32px", width: "auto", display: "block" }} />
+              <img
+                src="/logo.png"
+                alt="VideoTube"
+                style={{ height: "32px", width: "auto", display: "block" }}
+              />
             </Link>
           </header>
 
-          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "var(--sp-4) var(--sp-8) var(--sp-16)" }}>
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "var(--sp-4) var(--sp-8) var(--sp-16)",
+            }}
+          >
             <div style={{ width: "100%", maxWidth: "560px" }}>
-          <div style={{ marginBottom: "1.5rem" }}>
-            <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              Step {stepNumber} of 3
-            </span>
-            <h1 style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "0.25rem" }}>
-              {stepTitle}
-            </h1>
-            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginTop: "0.25rem" }}>
-              {stepSub}
-            </p>
-          </div>
+              <div style={{ marginBottom: "1.5rem" }}>
+                <span
+                  style={{
+                    fontSize: "0.8rem",
+                    fontWeight: 700,
+                    color: "var(--accent)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  Step {stepNumber} of 3
+                </span>
+                <h1
+                  style={{
+                    fontSize: "1.75rem",
+                    fontWeight: 800,
+                    color: "var(--text-primary)",
+                    marginTop: "0.25rem",
+                  }}
+                >
+                  {stepTitle}
+                </h1>
+                <p
+                  style={{
+                    color: "var(--text-muted)",
+                    fontSize: "0.9rem",
+                    marginTop: "0.25rem",
+                  }}
+                >
+                  {stepSub}
+                </p>
+              </div>
 
-          <AnimatePresence mode="wait">
-            {step === "details" && (
-              <motion.div
-                key="details"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <SocialLoginButtons mode="register" />
+              <AnimatePresence mode="wait">
+                {step === "details" && (
+                  <motion.div
+                    key="details"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <SocialLoginButtons mode="register" />
 
-                <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)", margin: "var(--sp-3) 0" }}>
-                  <div style={{ flex: 1, height: 1, backgroundColor: "var(--border)" }} />
-                  <span className="text-caption" style={{ color: "var(--text-muted)" }}>or register with</span>
-                  <div style={{ flex: 1, height: 1, backgroundColor: "var(--border)" }} />
-                </div>
-
-                <form onSubmit={handleDetailsSubmit} style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                    <label htmlFor="reg-fullname" className="text-caption" style={{ color: "var(--text-secondary)" }}>Full Name <span style={{ color: "var(--accent)" }}>*</span></label>
-                    <input type="text" required placeholder="Full name" className="input" id="reg-fullname"
-                      value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} />
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                    <label htmlFor="reg-username" className="text-caption" style={{ color: "var(--text-secondary)" }}>Username <span style={{ color: "var(--accent)" }}>*</span></label>
-                    <input type="text" required placeholder="Username" className="input" id="reg-username"
-                      value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} />
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                    <label htmlFor="reg-email" className="text-caption" style={{ color: "var(--text-secondary)" }}>Email Address <span style={{ color: "var(--accent)" }}>*</span></label>
-                    <input type="email" required placeholder="Email address" className="input" id="reg-email"
-                      value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                    <label htmlFor="reg-mobile" className="text-caption" style={{ color: "var(--text-secondary)" }}>Mobile Number <span style={{ color: "var(--accent)" }}>*</span></label>
-                    <div style={{ display: "flex", gap: "var(--sp-2)" }}>
-                      <select value={formData.countryCode} onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })} className="input" style={{ width: "110px", flexShrink: 0 }}>
-                        {COUNTRIES.map((c) => (
-                          <option key={`${c.code}-${c.iso}`} value={c.code}>{c.iso.toUpperCase()} {c.code}</option>
-                        ))}
-                      </select>
-                      <input type="tel" required placeholder="Mobile number" className="input" id="reg-mobile" style={{ flex: 1 }}
-                        value={formData.mobile} onChange={(e) => setFormData({ ...formData, mobile: e.target.value })} />
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                    <label htmlFor="reg-password" className="text-caption" style={{ color: "var(--text-secondary)" }}>Password <span style={{ color: "var(--accent)" }}>*</span></label>
-                    <div className="password-field" style={{ position: "relative" }}>
-                      <input type={showPassword ? "text" : "password"} required placeholder="Password" className="input" id="reg-password" autoComplete="new-password"
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        style={{ paddingRight: "var(--sp-12)" }} />
-                      <button type="button" className="password-toggle" onClick={() => setShowPassword((p) => !p)} onMouseDown={(e) => e.preventDefault()}
-                        aria-label={showPassword ? "Hide password" : "Show password"}>
-                        {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-                      </button>
-                    </div>
-                    <PasswordStrengthBar password={formData.password} />
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                    <label htmlFor="reg-confirm" className="text-caption" style={{ color: "var(--text-secondary)" }}>Confirm Password <span style={{ color: "var(--accent)" }}>*</span></label>
-                    <div className="password-field" style={{ position: "relative" }}>
-                      <input type={showConfirmPassword ? "text" : "password"} required placeholder="Confirm Password" className={confirmBorderClass} id="reg-confirm" autoComplete="new-password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        style={{ paddingRight: "var(--sp-12)" }} />
-                      <button type="button" className="password-toggle" onClick={() => setShowConfirmPassword((p) => !p)} onMouseDown={(e) => e.preventDefault()}
-                        aria-label={showConfirmPassword ? "Hide password" : "Show password"}>
-                        {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-1)" }}>
-                    <label className="text-caption" style={{ color: "var(--text-secondary)" }}>
-                      Profile Photo <span style={{ color: "var(--accent)" }}>*</span>
-                    </label>
-                    <div className={`upload-zone ${avatarPreview ? "has-file" : ""}`}
-                      onClick={() => avatarRef.current?.click()}
-                      style={{ flexDirection: "row", gap: "var(--sp-3)", padding: "var(--sp-3)", justifyContent: "flex-start", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1.5px dashed var(--border)", cursor: "pointer", transition: "all 0.2s" }}>
-                      <input type="file" ref={avatarRef} accept="image/*" onChange={handleAvatarChange} style={{ display: "none" }} />
-                      {avatarPreview ? (
-                        <img src={avatarPreview} alt="Avatar preview" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover" }} />
-                      ) : (
-                        <UploadImageIcon />
-                      )}
-                      <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
-                        {avatarName || "Choose profile image"}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "var(--sp-3)",
+                        margin: "var(--sp-3) 0",
+                      }}
+                    >
+                      <div
+                        style={{
+                          flex: 1,
+                          height: 1,
+                          backgroundColor: "var(--border)",
+                        }}
+                      />
+                      <span
+                        className="text-caption"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        or register with
                       </span>
+                      <div
+                        style={{
+                          flex: 1,
+                          height: 1,
+                          backgroundColor: "var(--border)",
+                        }}
+                      />
                     </div>
-                  </div>
 
-                  {error && <p style={{ color: "var(--error)", fontSize: "0.82rem" }}>{error}</p>}
-
-                  <button type="submit" className="btn btn-primary" style={{ padding: "0.85rem", marginTop: "var(--sp-2)" }}>
-                    Continue to Verification
-                  </button>
-
-                  <p style={{ textAlign: "center", fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "var(--sp-2)" }}>
-                    Already have an account?{" "}
-                    <Link href="/login" style={{ color: "var(--accent)", fontWeight: 600 }}>Sign in</Link>
-                  </p>
-                </form>
-              </motion.div>
-            )}
-
-            {step === "otp" && (
-              <motion.div
-                key="otp"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <form style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
-                  {!verifyChannel && !emailVerified && !mobileVerified && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
-                    >
-        <p style={{ fontSize: "0.88rem", color: "var(--text-secondary)", textAlign: "center", marginBottom: "0.5rem" }}>
-                         Choose how to verify:
-                       </p>
-                      <button
-                        type="button"
-                        onClick={() => { setVerifyChannel("email"); sendOtps("email"); }}
-                        disabled={sendingOtp}
-                        style={{
-                          display: "flex", alignItems: "center", gap: "0.75rem",
-                          padding: "1rem 1.2rem",
-                          borderRadius: "var(--radius-md)",
-                          border: "1.5px solid var(--border)",
-                          backgroundColor: "var(--bg-secondary)",
-                          cursor: "pointer",
-                          transition: "all 0.2s",
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.backgroundColor = "var(--accent-subtle)"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.backgroundColor = "var(--bg-secondary)"; }}
-                      >
-                        <div style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", flexShrink: 0 }}>
-                          <MailIcon />
-                        </div>
-                        <div style={{ textAlign: "left" }}>
-                          <p style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>Email</p>
-                          <p style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>OTP sent to {formData.email}</p>
-                        </div>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { setVerifyChannel("whatsapp"); sendOtps("whatsapp"); }}
-                        disabled={sendingOtp}
-                        style={{
-                          display: "flex", alignItems: "center", gap: "0.75rem",
-                          padding: "1rem 1.2rem",
-                          borderRadius: "var(--radius-md)",
-                          border: "1.5px solid var(--border)",
-                          backgroundColor: "var(--bg-secondary)",
-                          cursor: "pointer",
-                          transition: "all 0.2s",
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.backgroundColor = "var(--accent-subtle)"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.backgroundColor = "var(--bg-secondary)"; }}
-                      >
-                        <div style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "#25D366", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", flexShrink: 0 }}>
-                          <PhoneIcon />
-                        </div>
-                        <div style={{ textAlign: "left" }}>
-                          <p style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>WhatsApp</p>
-                          <p style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>OTP sent to {fullMobile}</p>
-                        </div>
-                      </button>
-                    </motion.div>
-                  )}
-
-                  {verifyChannel === "email" && !emailVerified && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
+                    <form
+                      onSubmit={handleDetailsSubmit}
                       style={{
-                        padding: "1.2rem",
-                        borderRadius: "var(--radius-md)",
-                        border: "1px solid var(--border)",
-                        backgroundColor: "var(--bg-secondary)",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "var(--sp-3)",
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
-                        <div style={{ color: "var(--accent)", display: "flex" }}><MailIcon /></div>
-                        <div>
-                          <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>Email OTP</p>
-                          <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{formData.email}</p>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "var(--sp-1)",
+                        }}
+                      >
+                        <label
+                          htmlFor="reg-fullname"
+                          className="text-caption"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
+                          Full Name{" "}
+                          <span style={{ color: "var(--accent)" }}>*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Full name"
+                          className="input"
+                          id="reg-fullname"
+                          value={formData.fullName}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              fullName: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "var(--sp-1)",
+                        }}
+                      >
+                        <label
+                          htmlFor="reg-username"
+                          className="text-caption"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
+                          Username{" "}
+                          <span style={{ color: "var(--accent)" }}>*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Username"
+                          className="input"
+                          id="reg-username"
+                          value={formData.username}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              username: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "var(--sp-1)",
+                        }}
+                      >
+                        <label
+                          htmlFor="reg-email"
+                          className="text-caption"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
+                          Email Address{" "}
+                          <span style={{ color: "var(--accent)" }}>*</span>
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          placeholder="Email address"
+                          className="input"
+                          id="reg-email"
+                          value={formData.email}
+                          onChange={(e) =>
+                            setFormData({ ...formData, email: e.target.value })
+                          }
+                        />
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "var(--sp-1)",
+                        }}
+                      >
+                        <label
+                          htmlFor="reg-mobile"
+                          className="text-caption"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
+                          Mobile Number{" "}
+                          <span style={{ color: "var(--accent)" }}>*</span>
+                        </label>
+                        <div style={{ display: "flex", gap: "var(--sp-2)" }}>
+                          <select
+                            value={formData.countryCode}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                countryCode: e.target.value,
+                              })
+                            }
+                            className="input"
+                            style={{ width: "110px", flexShrink: 0 }}
+                          >
+                            {COUNTRIES.map((c) => (
+                              <option key={`${c.code}-${c.iso}`} value={c.code}>
+                                {c.iso.toUpperCase()} {c.code}
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            type="tel"
+                            required
+                            placeholder="Mobile number"
+                            className="input"
+                            id="reg-mobile"
+                            style={{ flex: 1 }}
+                            value={formData.mobile}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                mobile: e.target.value,
+                              })
+                            }
+                          />
                         </div>
                       </div>
-                      <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", marginBottom: "1rem" }}>
-                        {emailOtp.map((digit, i) => (
-                          <input key={i} ref={(el) => { emailOtpRefs.current[i] = el; }}
-                            type="text" inputMode="numeric" maxLength={1} value={digit}
-                            aria-label={`OTP digit ${i + 1}`}
-                            onChange={(e) => handleOtpChange(i, e.target.value, setEmailOtp, emailOtpRefs, true)}
-                            onKeyDown={(e) => handleOtpKeyDown(i, e, setEmailOtp, emailOtpRefs, true)}
-                            onPaste={(e) => handleOtpPaste(e, setEmailOtp, emailOtpRefs)}
-                            style={{ width: 44, height: 48, textAlign: "center", fontSize: "1.15rem", fontWeight: 700, borderRadius: "var(--radius-md)", border: "1.5px solid var(--border)", backgroundColor: "var(--bg-primary)", color: "var(--text-primary)", outline: "none" }} />
-                        ))}
-                      </div>
-                      {emailOtpError && <p style={{ fontSize: "0.78rem", color: "var(--error)", textAlign: "center", marginBottom: "0.75rem" }}>{emailOtpError}</p>}
-                      <div style={{ display: "flex", gap: "0.6rem" }}>
-                        <button type="button" disabled={emailVerifying || emailOtp.join("").length < OTP_LENGTH}
-                          onClick={() => verifyOtp(formData.email, emailOtp.join(""), true)}
-                          className="btn btn-primary" style={{ flex: 1, padding: "0.7rem", fontSize: "0.82rem" }}>
-                          {emailVerifying ? "Verifying..." : "Verify Email"}
-                        </button>
-                        <button type="button" disabled={emailCooldown > 0 || sendingOtp}
-                          onClick={() => { sendOtps("email"); setEmailOtp(Array(OTP_LENGTH).fill("")); setEmailOtpError(""); }}
-                          style={{ padding: "0.7rem 1rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", backgroundColor: "var(--bg-secondary)", color: emailCooldown > 0 ? "var(--text-muted)" : "var(--text-primary)", fontSize: "0.78rem", fontWeight: 600, cursor: emailCooldown > 0 ? "not-allowed" : "pointer" }}>
-                          {emailCooldown > 0 ? `${emailCooldown}s` : "Resend"}
-                        </button>
-                      </div>
-                      <button type="button" onClick={() => setVerifyChannel(null)}
-                        style={{ marginTop: "0.75rem", background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.78rem", cursor: "pointer", textDecoration: "underline", width: "100%", textAlign: "center" }}>
-                        Use a different method
-                      </button>
-                    </motion.div>
-                  )}
 
-                  {verifyChannel === "whatsapp" && !mobileVerified && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "var(--sp-1)",
+                        }}
+                      >
+                        <label
+                          htmlFor="reg-password"
+                          className="text-caption"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
+                          Password{" "}
+                          <span style={{ color: "var(--accent)" }}>*</span>
+                        </label>
+                        <div
+                          className="password-field"
+                          style={{ position: "relative" }}
+                        >
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            required
+                            placeholder="Password"
+                            className="input"
+                            id="reg-password"
+                            autoComplete="new-password"
+                            value={formData.password}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                password: e.target.value,
+                              })
+                            }
+                            style={{ paddingRight: "var(--sp-12)" }}
+                          />
+                          <button
+                            type="button"
+                            className="password-toggle"
+                            onClick={() => setShowPassword((p) => !p)}
+                            onMouseDown={(e) => e.preventDefault()}
+                            aria-label={
+                              showPassword ? "Hide password" : "Show password"
+                            }
+                          >
+                            {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                          </button>
+                        </div>
+                        <PasswordStrengthBar password={formData.password} />
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "var(--sp-1)",
+                        }}
+                      >
+                        <label
+                          htmlFor="reg-confirm"
+                          className="text-caption"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
+                          Confirm Password{" "}
+                          <span style={{ color: "var(--accent)" }}>*</span>
+                        </label>
+                        <div
+                          className="password-field"
+                          style={{ position: "relative" }}
+                        >
+                          <input
+                            type={showConfirmPassword ? "text" : "password"}
+                            required
+                            placeholder="Confirm Password"
+                            className={confirmBorderClass}
+                            id="reg-confirm"
+                            autoComplete="new-password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            style={{ paddingRight: "var(--sp-12)" }}
+                          />
+                          <button
+                            type="button"
+                            className="password-toggle"
+                            onClick={() => setShowConfirmPassword((p) => !p)}
+                            onMouseDown={(e) => e.preventDefault()}
+                            aria-label={
+                              showConfirmPassword
+                                ? "Hide password"
+                                : "Show password"
+                            }
+                          >
+                            {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "var(--sp-1)",
+                        }}
+                      >
+                        <label
+                          className="text-caption"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
+                          Profile Photo{" "}
+                          <span style={{ color: "var(--accent)" }}>*</span>
+                        </label>
+                        <div
+                          className={`upload-zone ${avatarPreview ? "has-file" : ""}`}
+                          onClick={() => avatarRef.current?.click()}
+                          style={{
+                            flexDirection: "row",
+                            gap: "var(--sp-3)",
+                            padding: "var(--sp-3)",
+                            justifyContent: "flex-start",
+                            backgroundColor: "var(--bg-secondary)",
+                            borderRadius: "var(--radius-md)",
+                            border: "1.5px dashed var(--border)",
+                            cursor: "pointer",
+                            transition: "all 0.2s",
+                          }}
+                        >
+                          <input
+                            type="file"
+                            ref={avatarRef}
+                            accept="image/*"
+                            onChange={handleAvatarChange}
+                            style={{ display: "none" }}
+                          />
+                          {avatarPreview ? (
+                            <img
+                              src={avatarPreview}
+                              alt="Avatar preview"
+                              style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: "50%",
+                                objectFit: "cover",
+                              }}
+                            />
+                          ) : (
+                            <UploadImageIcon />
+                          )}
+                          <span
+                            style={{
+                              fontSize: "0.85rem",
+                              color: "var(--text-muted)",
+                            }}
+                          >
+                            {avatarName || "Choose profile image"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {error && (
+                        <p
+                          style={{ color: "var(--error)", fontSize: "0.82rem" }}
+                        >
+                          {error}
+                        </p>
+                      )}
+
+                      <button
+                        type="submit"
+                        className="btn btn-primary"
+                        style={{ padding: "0.85rem", marginTop: "var(--sp-2)" }}
+                      >
+                        Continue to Verification
+                      </button>
+
+                      <p
+                        style={{
+                          textAlign: "center",
+                          fontSize: "0.85rem",
+                          color: "var(--text-muted)",
+                          marginTop: "var(--sp-2)",
+                        }}
+                      >
+                        Already have an account?{" "}
+                        <Link
+                          href="/login"
+                          style={{ color: "var(--accent)", fontWeight: 600 }}
+                        >
+                          Sign in
+                        </Link>
+                      </p>
+                    </form>
+                  </motion.div>
+                )}
+
+                {step === "otp" && (
+                  <motion.div
+                    key="otp"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <form
                       style={{
-                        padding: "1.2rem",
-                        borderRadius: "var(--radius-md)",
-                        border: "1px solid var(--border)",
-                        backgroundColor: "var(--bg-secondary)",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "var(--sp-3)",
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
-                        <div style={{ color: "#25D366", display: "flex" }}><PhoneIcon /></div>
-                        <div>
-                          <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>WhatsApp OTP</p>
-                          <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{fullMobile}</p>
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", marginBottom: "1rem" }}>
-                        {mobileOtp.map((digit, i) => (
-                          <input key={i} ref={(el) => { mobileOtpRefs.current[i] = el; }}
-                            type="text" inputMode="numeric" maxLength={1} value={digit}
-                            aria-label={`OTP digit ${i + 1}`}
-                            onChange={(e) => handleOtpChange(i, e.target.value, setMobileOtp, mobileOtpRefs, false)}
-                            onKeyDown={(e) => handleOtpKeyDown(i, e, setMobileOtp, mobileOtpRefs, false)}
-                            onPaste={(e) => handleOtpPaste(e, setMobileOtp, mobileOtpRefs)}
-                            style={{ width: 44, height: 48, textAlign: "center", fontSize: "1.15rem", fontWeight: 700, borderRadius: "var(--radius-md)", border: "1.5px solid var(--border)", backgroundColor: "var(--bg-primary)", color: "var(--text-primary)", outline: "none" }} />
-                        ))}
-                      </div>
-                      {mobileOtpError && <p style={{ fontSize: "0.78rem", color: "var(--error)", textAlign: "center", marginBottom: "0.75rem" }}>{mobileOtpError}</p>}
-                      <div style={{ display: "flex", gap: "0.6rem" }}>
-                        <button type="button" disabled={mobileVerifying || mobileOtp.join("").length < OTP_LENGTH}
-                          onClick={() => verifyOtp(fullMobile, mobileOtp.join(""), false)}
-                          className="btn btn-primary" style={{ flex: 1, padding: "0.7rem", fontSize: "0.82rem", backgroundColor: "#25D366" }}>
-                          {mobileVerifying ? "Verifying..." : "Verify"}
-                        </button>
-                        <button type="button" disabled={mobileCooldown > 0 || sendingOtp}
-                          onClick={() => { sendOtps("whatsapp"); setMobileOtp(Array(OTP_LENGTH).fill("")); setMobileOtpError(""); }}
-                          style={{ padding: "0.7rem 1rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", backgroundColor: "var(--bg-secondary)", color: mobileCooldown > 0 ? "var(--text-muted)" : "var(--text-primary)", fontSize: "0.78rem", fontWeight: 600, cursor: mobileCooldown > 0 ? "not-allowed" : "pointer" }}>
-                          {mobileCooldown > 0 ? `${mobileCooldown}s` : "Resend"}
-                        </button>
-                      </div>
-                      <button type="button" onClick={() => setVerifyChannel(null)}
-                        style={{ marginTop: "0.75rem", background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.78rem", cursor: "pointer", textDecoration: "underline", width: "100%", textAlign: "center" }}>
-                        Use a different method
+                      {!verifyChannel && !emailVerified && !mobileVerified && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "0.75rem",
+                          }}
+                        >
+                          <p
+                            style={{
+                              fontSize: "0.88rem",
+                              color: "var(--text-secondary)",
+                              textAlign: "center",
+                              marginBottom: "0.5rem",
+                            }}
+                          >
+                            Choose how to verify:
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setVerifyChannel("email");
+                              sendOtps("email");
+                            }}
+                            disabled={sendingOtp}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.75rem",
+                              padding: "1rem 1.2rem",
+                              borderRadius: "var(--radius-md)",
+                              border: "1.5px solid var(--border)",
+                              backgroundColor: "var(--bg-secondary)",
+                              cursor: "pointer",
+                              transition: "all 0.2s",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor =
+                                "var(--accent)";
+                              e.currentTarget.style.backgroundColor =
+                                "var(--accent-subtle)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor =
+                                "var(--border)";
+                              e.currentTarget.style.backgroundColor =
+                                "var(--bg-secondary)";
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: "50%",
+                                backgroundColor: "var(--accent)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: "#fff",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <MailIcon />
+                            </div>
+                            <div style={{ textAlign: "left" }}>
+                              <p
+                                style={{
+                                  fontSize: "0.9rem",
+                                  fontWeight: 700,
+                                  color: "var(--text-primary)",
+                                }}
+                              >
+                                Email
+                              </p>
+                              <p
+                                style={{
+                                  fontSize: "0.78rem",
+                                  color: "var(--text-muted)",
+                                }}
+                              >
+                                OTP sent to {formData.email}
+                              </p>
+                            </div>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setVerifyChannel("whatsapp");
+                              sendOtps("whatsapp");
+                            }}
+                            disabled={sendingOtp}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.75rem",
+                              padding: "1rem 1.2rem",
+                              borderRadius: "var(--radius-md)",
+                              border: "1.5px solid var(--border)",
+                              backgroundColor: "var(--bg-secondary)",
+                              cursor: "pointer",
+                              transition: "all 0.2s",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor =
+                                "var(--accent)";
+                              e.currentTarget.style.backgroundColor =
+                                "var(--accent-subtle)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor =
+                                "var(--border)";
+                              e.currentTarget.style.backgroundColor =
+                                "var(--bg-secondary)";
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: "50%",
+                                backgroundColor: "#25D366",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: "#fff",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <PhoneIcon />
+                            </div>
+                            <div style={{ textAlign: "left" }}>
+                              <p
+                                style={{
+                                  fontSize: "0.9rem",
+                                  fontWeight: 700,
+                                  color: "var(--text-primary)",
+                                }}
+                              >
+                                WhatsApp
+                              </p>
+                              <p
+                                style={{
+                                  fontSize: "0.78rem",
+                                  color: "var(--text-muted)",
+                                }}
+                              >
+                                OTP sent to {fullMobile}
+                              </p>
+                            </div>
+                          </button>
+                        </motion.div>
+                      )}
+
+                      {verifyChannel === "email" && !emailVerified && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          style={{
+                            padding: "1.2rem",
+                            borderRadius: "var(--radius-md)",
+                            border: "1px solid var(--border)",
+                            backgroundColor: "var(--bg-secondary)",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                              marginBottom: "1rem",
+                            }}
+                          >
+                            <div
+                              style={{
+                                color: "var(--accent)",
+                                display: "flex",
+                              }}
+                            >
+                              <MailIcon />
+                            </div>
+                            <div>
+                              <p
+                                style={{
+                                  fontSize: "0.85rem",
+                                  fontWeight: 600,
+                                  color: "var(--text-primary)",
+                                }}
+                              >
+                                Email OTP
+                              </p>
+                              <p
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "var(--text-muted)",
+                                }}
+                              >
+                                {formData.email}
+                              </p>
+                            </div>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: "0.5rem",
+                              justifyContent: "center",
+                              marginBottom: "1rem",
+                            }}
+                          >
+                            {emailOtp.map((digit, i) => (
+                              <input
+                                key={i}
+                                ref={(el) => {
+                                  emailOtpRefs.current[i] = el;
+                                }}
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={1}
+                                value={digit}
+                                aria-label={`OTP digit ${i + 1}`}
+                                onChange={(e) =>
+                                  handleOtpChange(
+                                    i,
+                                    e.target.value,
+                                    setEmailOtp,
+                                    emailOtpRefs,
+                                    true,
+                                  )
+                                }
+                                onKeyDown={(e) =>
+                                  handleOtpKeyDown(
+                                    i,
+                                    e,
+                                    setEmailOtp,
+                                    emailOtpRefs,
+                                    true,
+                                  )
+                                }
+                                onPaste={(e) =>
+                                  handleOtpPaste(e, setEmailOtp, emailOtpRefs)
+                                }
+                                style={{
+                                  width: 44,
+                                  height: 48,
+                                  textAlign: "center",
+                                  fontSize: "1.15rem",
+                                  fontWeight: 700,
+                                  borderRadius: "var(--radius-md)",
+                                  border: "1.5px solid var(--border)",
+                                  backgroundColor: "var(--bg-primary)",
+                                  color: "var(--text-primary)",
+                                  outline: "none",
+                                }}
+                              />
+                            ))}
+                          </div>
+                          {emailOtpError && (
+                            <p
+                              style={{
+                                fontSize: "0.78rem",
+                                color: "var(--error)",
+                                textAlign: "center",
+                                marginBottom: "0.75rem",
+                              }}
+                            >
+                              {emailOtpError}
+                            </p>
+                          )}
+                          <div style={{ display: "flex", gap: "0.6rem" }}>
+                            <button
+                              type="button"
+                              disabled={
+                                emailVerifying ||
+                                emailOtp.join("").length < OTP_LENGTH
+                              }
+                              onClick={() =>
+                                verifyOtp(
+                                  formData.email,
+                                  emailOtp.join(""),
+                                  true,
+                                )
+                              }
+                              className="btn btn-primary"
+                              style={{
+                                flex: 1,
+                                padding: "0.7rem",
+                                fontSize: "0.82rem",
+                              }}
+                            >
+                              {emailVerifying ? "Verifying..." : "Verify Email"}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={emailCooldown > 0 || sendingOtp}
+                              onClick={() => {
+                                sendOtps("email");
+                                setEmailOtp(Array(OTP_LENGTH).fill(""));
+                                setEmailOtpError("");
+                              }}
+                              style={{
+                                padding: "0.7rem 1rem",
+                                borderRadius: "var(--radius-md)",
+                                border: "1px solid var(--border)",
+                                backgroundColor: "var(--bg-secondary)",
+                                color:
+                                  emailCooldown > 0
+                                    ? "var(--text-muted)"
+                                    : "var(--text-primary)",
+                                fontSize: "0.78rem",
+                                fontWeight: 600,
+                                cursor:
+                                  emailCooldown > 0 ? "not-allowed" : "pointer",
+                              }}
+                            >
+                              {emailCooldown > 0
+                                ? `${emailCooldown}s`
+                                : "Resend"}
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setVerifyChannel(null)}
+                            style={{
+                              marginTop: "0.75rem",
+                              background: "none",
+                              border: "none",
+                              color: "var(--text-muted)",
+                              fontSize: "0.78rem",
+                              cursor: "pointer",
+                              textDecoration: "underline",
+                              width: "100%",
+                              textAlign: "center",
+                            }}
+                          >
+                            Use a different method
+                          </button>
+                        </motion.div>
+                      )}
+
+                      {verifyChannel === "whatsapp" && !mobileVerified && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          style={{
+                            padding: "1.2rem",
+                            borderRadius: "var(--radius-md)",
+                            border: "1px solid var(--border)",
+                            backgroundColor: "var(--bg-secondary)",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                              marginBottom: "1rem",
+                            }}
+                          >
+                            <div style={{ color: "#25D366", display: "flex" }}>
+                              <PhoneIcon />
+                            </div>
+                            <div>
+                              <p
+                                style={{
+                                  fontSize: "0.85rem",
+                                  fontWeight: 600,
+                                  color: "var(--text-primary)",
+                                }}
+                              >
+                                WhatsApp OTP
+                              </p>
+                              <p
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "var(--text-muted)",
+                                }}
+                              >
+                                {fullMobile}
+                              </p>
+                            </div>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: "0.5rem",
+                              justifyContent: "center",
+                              marginBottom: "1rem",
+                            }}
+                          >
+                            {mobileOtp.map((digit, i) => (
+                              <input
+                                key={i}
+                                ref={(el) => {
+                                  mobileOtpRefs.current[i] = el;
+                                }}
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={1}
+                                value={digit}
+                                aria-label={`OTP digit ${i + 1}`}
+                                onChange={(e) =>
+                                  handleOtpChange(
+                                    i,
+                                    e.target.value,
+                                    setMobileOtp,
+                                    mobileOtpRefs,
+                                    false,
+                                  )
+                                }
+                                onKeyDown={(e) =>
+                                  handleOtpKeyDown(
+                                    i,
+                                    e,
+                                    setMobileOtp,
+                                    mobileOtpRefs,
+                                    false,
+                                  )
+                                }
+                                onPaste={(e) =>
+                                  handleOtpPaste(e, setMobileOtp, mobileOtpRefs)
+                                }
+                                style={{
+                                  width: 44,
+                                  height: 48,
+                                  textAlign: "center",
+                                  fontSize: "1.15rem",
+                                  fontWeight: 700,
+                                  borderRadius: "var(--radius-md)",
+                                  border: "1.5px solid var(--border)",
+                                  backgroundColor: "var(--bg-primary)",
+                                  color: "var(--text-primary)",
+                                  outline: "none",
+                                }}
+                              />
+                            ))}
+                          </div>
+                          {mobileOtpError && (
+                            <p
+                              style={{
+                                fontSize: "0.78rem",
+                                color: "var(--error)",
+                                textAlign: "center",
+                                marginBottom: "0.75rem",
+                              }}
+                            >
+                              {mobileOtpError}
+                            </p>
+                          )}
+                          <div style={{ display: "flex", gap: "0.6rem" }}>
+                            <button
+                              type="button"
+                              disabled={
+                                mobileVerifying ||
+                                mobileOtp.join("").length < OTP_LENGTH
+                              }
+                              onClick={() =>
+                                verifyOtp(fullMobile, mobileOtp.join(""), false)
+                              }
+                              className="btn btn-primary"
+                              style={{
+                                flex: 1,
+                                padding: "0.7rem",
+                                fontSize: "0.82rem",
+                                backgroundColor: "#25D366",
+                              }}
+                            >
+                              {mobileVerifying ? "Verifying..." : "Verify"}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={mobileCooldown > 0 || sendingOtp}
+                              onClick={() => {
+                                sendOtps("whatsapp");
+                                setMobileOtp(Array(OTP_LENGTH).fill(""));
+                                setMobileOtpError("");
+                              }}
+                              style={{
+                                padding: "0.7rem 1rem",
+                                borderRadius: "var(--radius-md)",
+                                border: "1px solid var(--border)",
+                                backgroundColor: "var(--bg-secondary)",
+                                color:
+                                  mobileCooldown > 0
+                                    ? "var(--text-muted)"
+                                    : "var(--text-primary)",
+                                fontSize: "0.78rem",
+                                fontWeight: 600,
+                                cursor:
+                                  mobileCooldown > 0
+                                    ? "not-allowed"
+                                    : "pointer",
+                              }}
+                            >
+                              {mobileCooldown > 0
+                                ? `${mobileCooldown}s`
+                                : "Resend"}
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setVerifyChannel(null)}
+                            style={{
+                              marginTop: "0.75rem",
+                              background: "none",
+                              border: "none",
+                              color: "var(--text-muted)",
+                              fontSize: "0.78rem",
+                              cursor: "pointer",
+                              textDecoration: "underline",
+                              width: "100%",
+                              textAlign: "center",
+                            }}
+                          >
+                            Use a different method
+                          </button>
+                        </motion.div>
+                      )}
+
+                      <AnimatePresence>
+                        {(emailVerified || mobileVerified) && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: "0.6rem",
+                              padding: "0.9rem",
+                              borderRadius: "var(--radius-md)",
+                              backgroundColor: "rgba(34, 197, 94, 0.06)",
+                              border: "1.5px solid var(--success)",
+                            }}
+                          >
+                            <ShieldCheckIcon />
+                            <span
+                              style={{
+                                fontSize: "0.88rem",
+                                fontWeight: 700,
+                                color: "var(--success)",
+                              }}
+                            >
+                              {emailVerified && mobileVerified
+                                ? "Both verified!"
+                                : emailVerified
+                                  ? "Email verified!"
+                                  : "Mobile verified!"}
+                            </span>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      <motion.button
+                        type="button"
+                        disabled={
+                          !(emailVerified || mobileVerified) || isLoading
+                        }
+                        onClick={handleFinalRegister}
+                        className="btn btn-primary"
+                        whileHover={
+                          (emailVerified || mobileVerified) && !isLoading
+                            ? { scale: 1.01 }
+                            : {}
+                        }
+                        whileTap={
+                          (emailVerified || mobileVerified) && !isLoading
+                            ? { scale: 0.98 }
+                            : {}
+                        }
+                        style={{
+                          width: "100%",
+                          padding: "0.85rem",
+                          opacity:
+                            (emailVerified || mobileVerified) && !isLoading
+                              ? 1
+                              : 0.5,
+                          cursor:
+                            (emailVerified || mobileVerified) && !isLoading
+                              ? "pointer"
+                              : "not-allowed",
+                        }}
+                      >
+                        {isLoading
+                          ? statusText || "Processing..."
+                          : "Create Account"}
+                      </motion.button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStep("details");
+                          setVerifyChannel(null);
+                        }}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "var(--text-muted)",
+                          fontSize: "0.82rem",
+                          cursor: "pointer",
+                          textAlign: "center",
+                          width: "100%",
+                        }}
+                      >
+                        ← Back to details
                       </button>
-                    </motion.div>
-                  )}
+                    </form>
+                  </motion.div>
+                )}
 
-                  <AnimatePresence>
-                    {(emailVerified || mobileVerified) && (
-                      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                        style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.6rem", padding: "0.9rem", borderRadius: "var(--radius-md)", backgroundColor: "rgba(34, 197, 94, 0.06)", border: "1.5px solid var(--success)" }}>
-                        <ShieldCheckIcon />
-                        <span style={{ fontSize: "0.88rem", fontWeight: 700, color: "var(--success)" }}>
-                          {emailVerified && mobileVerified ? "Both verified!" : emailVerified ? "Email verified!" : "Mobile verified!"}
-                        </span>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  <motion.button type="button" disabled={!(emailVerified || mobileVerified) || isLoading}
-                    onClick={handleFinalRegister} className="btn btn-primary"
-                    whileHover={(emailVerified || mobileVerified) && !isLoading ? { scale: 1.01 } : {}}
-                    whileTap={(emailVerified || mobileVerified) && !isLoading ? { scale: 0.98 } : {}}
-                    style={{ width: "100%", padding: "0.85rem", opacity: (emailVerified || mobileVerified) && !isLoading ? 1 : 0.5, cursor: (emailVerified || mobileVerified) && !isLoading ? "pointer" : "not-allowed" }}>
-                    {isLoading ? statusText || "Processing..." : "Create Account"}
-                  </motion.button>
-
-                  <button type="button" onClick={() => { setStep("details"); setVerifyChannel(null); }}
-                    style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.82rem", cursor: "pointer", textAlign: "center", width: "100%" }}>
-                    ← Back to details
-                  </button>
-                </form>
-              </motion.div>
-            )}
-
-            {step === "done" && (
-              <motion.div
-                key="done"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                style={{ textAlign: "center", padding: "2rem 0" }}
-              >
-                <div style={{ width: 64, height: 64, borderRadius: "50%", backgroundColor: "var(--success-subtle)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.25rem", color: "var(--success)" }}>
-                  <ShieldCheckIcon />
-                </div>
-                <h3 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.5rem" }}>Account Created!</h3>
-                <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Redirecting to home page...</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                {step === "done" && (
+                  <motion.div
+                    key="done"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    style={{ textAlign: "center", padding: "2rem 0" }}
+                  >
+                    <div
+                      style={{
+                        width: 64,
+                        height: 64,
+                        borderRadius: "50%",
+                        backgroundColor: "var(--success-subtle)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        margin: "0 auto 1.25rem",
+                        color: "var(--success)",
+                      }}
+                    >
+                      <ShieldCheckIcon />
+                    </div>
+                    <h3
+                      style={{
+                        fontSize: "1.25rem",
+                        fontWeight: 700,
+                        color: "var(--text-primary)",
+                        marginBottom: "0.5rem",
+                      }}
+                    >
+                      Account Created!
+                    </h3>
+                    <p
+                      style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}
+                    >
+                      Redirecting to home page...
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>

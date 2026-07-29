@@ -9,16 +9,27 @@ import { User } from "../../models/user.model.js";
 import { Playlist } from "../../models/playlist.model.js";
 import { Poll } from "../../models/poll.model.js";
 import { Session } from "../../models/session.model.js";
-import { uploadOnCloudinary, deleteFromCloudinary, generateHlsManifest, generateVideoQualities, getPublicIdFromCloudinaryUrl } from "../../utils/cloudinary.js";
+import {
+  uploadOnCloudinary,
+  deleteFromCloudinary,
+  generateHlsManifest,
+  generateVideoQualities,
+  getPublicIdFromCloudinaryUrl,
+} from "../../utils/cloudinary.js";
 import { escapeRegex } from "../../utils/sanitizer.js";
 import mongoose from "mongoose";
 import logger from "../../utils/logger.js";
 import { sendSSENotification } from "../sse.controller.js";
 
 const publishAVideo = asyncHandler(async (req, res) => {
-  const { title, description, tags, category, chapters, scheduledAt } = req.body;
+  const { title, description, tags, category, chapters, scheduledAt } =
+    req.body;
 
-  if ([title, description].some((field) => typeof field !== "string" || !field.trim())) {
+  if (
+    [title, description].some(
+      (field) => typeof field !== "string" || !field.trim()
+    )
+  ) {
     throw new ApiError(400, "Title and description are required");
   }
 
@@ -39,14 +50,20 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
   const thumbnailUpload = await uploadOnCloudinary(thumbnailLocalPath);
   if (!thumbnailUpload) {
-    await deleteFromCloudinary(videoUpload.secure_url || videoUpload.url, "video");
+    await deleteFromCloudinary(
+      videoUpload.secure_url || videoUpload.url,
+      "video"
+    );
     throw new ApiError(400, "Error while uploading thumbnail");
   }
 
   let parsedTags = [];
   if (tags) {
     if (typeof tags === "string") {
-      parsedTags = tags.split(",").map((t) => t.trim()).filter(Boolean);
+      parsedTags = tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
     } else if (Array.isArray(tags)) {
       parsedTags = tags.map((t) => String(t).trim()).filter(Boolean);
     }
@@ -55,9 +72,12 @@ const publishAVideo = asyncHandler(async (req, res) => {
   let parsedChapters = [];
   if (chapters) {
     try {
-      parsedChapters = typeof chapters === "string" ? JSON.parse(chapters) : chapters;
+      parsedChapters =
+        typeof chapters === "string" ? JSON.parse(chapters) : chapters;
       if (!Array.isArray(parsedChapters)) parsedChapters = [];
-      parsedChapters = parsedChapters.filter((ch) => ch && ch.title && typeof ch.startTime === "number");
+      parsedChapters = parsedChapters.filter(
+        (ch) => ch && ch.title && typeof ch.startTime === "number"
+      );
     } catch {
       parsedChapters = [];
     }
@@ -67,8 +87,14 @@ const publishAVideo = asyncHandler(async (req, res) => {
   if (scheduledAt) {
     scheduledDate = new Date(scheduledAt);
     if (isNaN(scheduledDate.getTime()) || scheduledDate <= new Date()) {
-      await deleteFromCloudinary(videoUpload.secure_url || videoUpload.url, "video");
-      await deleteFromCloudinary(thumbnailUpload.secure_url || thumbnailUpload.url, "image");
+      await deleteFromCloudinary(
+        videoUpload.secure_url || videoUpload.url,
+        "video"
+      );
+      await deleteFromCloudinary(
+        thumbnailUpload.secure_url || thumbnailUpload.url,
+        "image"
+      );
       throw new ApiError(400, "scheduledAt must be a valid future date");
     }
   }
@@ -90,36 +116,61 @@ const publishAVideo = asyncHandler(async (req, res) => {
       transcodingStatus: "pending",
     });
   } catch (dbError) {
-    await deleteFromCloudinary(videoUpload.secure_url || videoUpload.url, "video");
-    await deleteFromCloudinary(thumbnailUpload.secure_url || thumbnailUpload.url, "image");
+    await deleteFromCloudinary(
+      videoUpload.secure_url || videoUpload.url,
+      "video"
+    );
+    await deleteFromCloudinary(
+      thumbnailUpload.secure_url || thumbnailUpload.url,
+      "image"
+    );
     throw dbError;
   }
 
   const createdVideo = await Video.findById(video._id).lean();
 
   if (!createdVideo) {
-    await deleteFromCloudinary(videoUpload.secure_url || videoUpload.url, "video");
-    await deleteFromCloudinary(thumbnailUpload.secure_url || thumbnailUpload.url, "image");
+    await deleteFromCloudinary(
+      videoUpload.secure_url || videoUpload.url,
+      "video"
+    );
+    await deleteFromCloudinary(
+      thumbnailUpload.secure_url || thumbnailUpload.url,
+      "image"
+    );
     throw new ApiError(500, "Something went wrong while publishing the video");
   }
 
-  const publicId = getPublicIdFromCloudinaryUrl(videoUpload.secure_url || videoUpload.url);
+  const publicId = getPublicIdFromCloudinaryUrl(
+    videoUpload.secure_url || videoUpload.url
+  );
   if (publicId) {
-    Video.findByIdAndUpdate(video._id, { transcodingStatus: "processing" }).then(() => {
-      Promise.all([generateHlsManifest(publicId), generateVideoQualities(publicId)])
-        .then(([hlsUrl, qualities]) => {
-          const updateData = { transcodingStatus: "completed" };
-          if (hlsUrl) updateData.hlsUrl = hlsUrl;
-          if (qualities?.length) updateData.qualities = qualities;
-          Video.findByIdAndUpdate(video._id, { $set: updateData }).catch((err) => {
-            logger.error("Failed to update video with HLS data:", { error: err.message });
+    Video.findByIdAndUpdate(video._id, { transcodingStatus: "processing" })
+      .then(() => {
+        Promise.all([
+          generateHlsManifest(publicId),
+          generateVideoQualities(publicId),
+        ])
+          .then(([hlsUrl, qualities]) => {
+            const updateData = { transcodingStatus: "completed" };
+            if (hlsUrl) updateData.hlsUrl = hlsUrl;
+            if (qualities?.length) updateData.qualities = qualities;
+            Video.findByIdAndUpdate(video._id, { $set: updateData }).catch(
+              (err) => {
+                logger.error("Failed to update video with HLS data:", {
+                  error: err.message,
+                });
+              }
+            );
+          })
+          .catch((err) => {
+            logger.error("HLS generation failed:", { error: err.message });
+            Video.findByIdAndUpdate(video._id, {
+              transcodingStatus: "failed",
+            }).catch(() => {});
           });
-        })
-        .catch((err) => {
-          logger.error("HLS generation failed:", { error: err.message });
-          Video.findByIdAndUpdate(video._id, { transcodingStatus: "failed" }).catch(() => {});
-        });
-    }).catch(() => {});
+      })
+      .catch(() => {});
   }
 
   return res
@@ -162,7 +213,10 @@ const updateVideo = asyncHandler(async (req, res) => {
 
   if (tags !== undefined) {
     if (typeof tags === "string") {
-      updateFields.tags = tags.split(",").map((t) => t.trim()).filter(Boolean);
+      updateFields.tags = tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
     } else if (Array.isArray(tags)) {
       updateFields.tags = tags.map((t) => String(t).trim()).filter(Boolean);
     } else {
@@ -171,13 +225,17 @@ const updateVideo = asyncHandler(async (req, res) => {
   }
 
   if (category !== undefined) {
-    updateFields.category = typeof category === "string" ? category.trim() : "General";
+    updateFields.category =
+      typeof category === "string" ? category.trim() : "General";
   }
 
   if (visibility !== undefined) {
     const valid = ["public", "private"];
     if (!valid.includes(visibility)) {
-      throw new ApiError(400, "Visibility must be one of: public, unlisted, private");
+      throw new ApiError(
+        400,
+        "Visibility must be one of: public, unlisted, private"
+      );
     }
     updateFields.visibility = visibility;
   }
@@ -207,7 +265,9 @@ const updateVideo = asyncHandler(async (req, res) => {
     await deleteFromCloudinary(oldThumbnail);
   }
 
-  return res.status(200).json(new ApiResponse(200, updatedVideo, "Video updated successfully"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedVideo, "Video updated successfully"));
 });
 
 const deleteVideo = asyncHandler(async (req, res) => {
@@ -239,15 +299,48 @@ const deleteVideo = asyncHandler(async (req, res) => {
   }
 
   // Best-effort cleanup of playlists/watch later/history
-  try { await Playlist.updateMany({ videos: videoId }, { $pull: { videos: videoId } }); } catch { logger.warn("Failed to clean up playlists for video", { videoId }); }
-  try { await User.updateMany({ watchLater: videoId }, { $pull: { watchLater: videoId } }); } catch { logger.warn("Failed to clean up watchLater for video", { videoId }); }
-  try { await User.updateMany({ watchHistory: videoId }, { $pull: { watchHistory: videoId } }); } catch { logger.warn("Failed to clean up watchHistory for video", { videoId }); }
+  try {
+    await Playlist.updateMany(
+      { videos: videoId },
+      { $pull: { videos: videoId } }
+    );
+  } catch {
+    logger.warn("Failed to clean up playlists for video", { videoId });
+  }
+  try {
+    await User.updateMany(
+      { watchLater: videoId },
+      { $pull: { watchLater: videoId } }
+    );
+  } catch {
+    logger.warn("Failed to clean up watchLater for video", { videoId });
+  }
+  try {
+    await User.updateMany(
+      { watchHistory: videoId },
+      { $pull: { watchHistory: videoId } }
+    );
+  } catch {
+    logger.warn("Failed to clean up watchHistory for video", { videoId });
+  }
 
   // Best-effort cleanup of polls/notifications
-  try { await Poll.deleteMany({ video: videoId }); } catch { logger.warn("Failed to clean up polls for video", { videoId }); }
-  try { if (mongoose.modelNames().includes("Notification")) { await Notification.deleteMany({ video: videoId }); } } catch { logger.warn("Failed to clean up notifications for video", { videoId }); }
+  try {
+    await Poll.deleteMany({ video: videoId });
+  } catch {
+    logger.warn("Failed to clean up polls for video", { videoId });
+  }
+  try {
+    if (mongoose.modelNames().includes("Notification")) {
+      await Notification.deleteMany({ video: videoId });
+    }
+  } catch {
+    logger.warn("Failed to clean up notifications for video", { videoId });
+  }
 
-  return res.status(200).json(new ApiResponse(200, {}, "Video deleted successfully"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Video deleted successfully"));
 });
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
@@ -263,7 +356,10 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
   }
 
   if (video.owner.toString() !== req.user._id.toString()) {
-    throw new ApiError(403, "You are not authorized to toggle publish status of this video");
+    throw new ApiError(
+      403,
+      "You are not authorized to toggle publish status of this video"
+    );
   }
 
   video.isPublished = !video.isPublished;
@@ -271,7 +367,13 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, { isPublished: video.isPublished }, "Publish status toggled successfully"));
+    .json(
+      new ApiResponse(
+        200,
+        { isPublished: video.isPublished },
+        "Publish status toggled successfully"
+      )
+    );
 });
 
 const updateVideoTags = asyncHandler(async (req, res) => {
@@ -291,7 +393,10 @@ const updateVideoTags = asyncHandler(async (req, res) => {
   let parsedTags = [];
   if (tags) {
     if (typeof tags === "string") {
-      parsedTags = tags.split(",").map((t) => t.trim()).filter(Boolean);
+      parsedTags = tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
     } else if (Array.isArray(tags)) {
       parsedTags = tags.map((t) => String(t).trim()).filter(Boolean);
     }
@@ -300,7 +405,9 @@ const updateVideoTags = asyncHandler(async (req, res) => {
   video.tags = parsedTags;
   await video.save({ validateBeforeSave: false });
 
-  return res.status(200).json(new ApiResponse(200, video, "Tags updated successfully"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video, "Tags updated successfully"));
 });
 
 const updateVideoChapters = asyncHandler(async (req, res) => {
@@ -320,9 +427,12 @@ const updateVideoChapters = asyncHandler(async (req, res) => {
   let parsedChapters = [];
   if (chapters) {
     try {
-      parsedChapters = typeof chapters === "string" ? JSON.parse(chapters) : chapters;
+      parsedChapters =
+        typeof chapters === "string" ? JSON.parse(chapters) : chapters;
       if (!Array.isArray(parsedChapters)) parsedChapters = [];
-      parsedChapters = parsedChapters.filter((ch) => ch && ch.title && typeof ch.startTime === "number");
+      parsedChapters = parsedChapters.filter(
+        (ch) => ch && ch.title && typeof ch.startTime === "number"
+      );
     } catch {
       parsedChapters = [];
     }
@@ -331,7 +441,9 @@ const updateVideoChapters = asyncHandler(async (req, res) => {
   video.chapters = parsedChapters;
   await video.save({ validateBeforeSave: false });
 
-  return res.status(200).json(new ApiResponse(200, video, "Chapters updated successfully"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video, "Chapters updated successfully"));
 });
 
 const bulkDeleteVideos = asyncHandler(async (req, res) => {
@@ -352,13 +464,23 @@ const bulkDeleteVideos = asyncHandler(async (req, res) => {
   }).select("videoFile thumbnail");
 
   for (const video of videos) {
-    if (video.videoFile) await deleteFromCloudinary(video.videoFile, "video").catch(() => {});
-    if (video.thumbnail) await deleteFromCloudinary(video.thumbnail, "image").catch(() => {});
+    if (video.videoFile)
+      await deleteFromCloudinary(video.videoFile, "video").catch(() => {});
+    if (video.thumbnail)
+      await deleteFromCloudinary(video.thumbnail, "image").catch(() => {});
   }
 
   await Video.deleteMany({ _id: { $in: validIds }, owner: req.user._id });
 
-  return res.status(200).json(new ApiResponse(200, { deletedCount: videos.length }, "Videos deleted successfully"));
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { deletedCount: videos.length },
+        "Videos deleted successfully"
+      )
+    );
 });
 
 const bulkPublishVideos = asyncHandler(async (req, res) => {

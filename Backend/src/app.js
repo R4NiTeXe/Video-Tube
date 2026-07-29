@@ -10,11 +10,20 @@ import * as Sentry from "@sentry/node";
 import logger, { runWithCorrelationId } from "./utils/logger.js";
 // Removed: import { apiLimiter } — global apiLimiter was removed to avoid
 // ERR_ERL_DOUBLE_COUNT with per-route limiters (authLimiter, otpLimiter, etc.)
-import { csrfMiddleware, csrfTokenHandler } from "./middlewares/csrf.middleware.js";
+import {
+  csrfMiddleware,
+  csrfTokenHandler,
+} from "./middlewares/csrf.middleware.js";
 import { configurePassport } from "./config/passport.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger.js";
-import { trackRequest, incrementConnections, decrementConnections, metricsHandler, initMetrics } from "./utils/metrics.js";
+import {
+  trackRequest,
+  incrementConnections,
+  decrementConnections,
+  metricsHandler,
+  initMetrics,
+} from "./utils/metrics.js";
 
 const app = express();
 
@@ -27,7 +36,9 @@ const proxyTrustCount = (() => {
   const raw = process.env.PROXY_TRUST_COUNT;
   if (!raw) return 1;
   if (raw.toLowerCase() === "true" || raw.toLowerCase() === "false") {
-    logger.warn(`PROXY_TRUST_COUNT="${raw}" is not supported with express-rate-limit v8. Falling back to 1.`);
+    logger.warn(
+      `PROXY_TRUST_COUNT="${raw}" is not supported with express-rate-limit v8. Falling back to 1.`
+    );
     return 1;
   }
   const num = Number(raw);
@@ -39,13 +50,16 @@ app.set("trust proxy", proxyTrustCount);
 
 initMetrics();
 
-
 if (process.env.SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV || "development",
-    release: process.env.SENTRY_RELEASE || `videotube@${process.env.npm_package_version || "unknown"}`,
-    tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || "0.1"),
+    release:
+      process.env.SENTRY_RELEASE ||
+      `videotube@${process.env.npm_package_version || "unknown"}`,
+    tracesSampleRate: parseFloat(
+      process.env.SENTRY_TRACES_SAMPLE_RATE || "0.1"
+    ),
     maxBreadcrumbs: 50,
     beforeSend(event) {
       if (event.request?.headers) {
@@ -55,31 +69,40 @@ if (process.env.SENTRY_DSN) {
       }
       if (event.request?.data) {
         if (typeof event.request.data === "string") {
-          try { event.request.data = JSON.parse(event.request.data); } catch {
+          try {
+            event.request.data = JSON.parse(event.request.data);
+          } catch {
             // Keep the original payload if it is not JSON.
           }
         }
-        if (event.request.data?.password) event.request.data.password = "[REDACTED]";
+        if (event.request.data?.password)
+          event.request.data.password = "[REDACTED]";
         if (event.request.data?.token) event.request.data.token = "[REDACTED]";
-        if (event.request.data?.refreshToken) event.request.data.refreshToken = "[REDACTED]";
+        if (event.request.data?.refreshToken)
+          event.request.data.refreshToken = "[REDACTED]";
       }
       return event;
     },
   });
   app.use(Sentry.Handlers.requestHandler());
-  logger.info("Sentry error monitoring initialized", { release: process.env.SENTRY_RELEASE || "unknown" });
+  logger.info("Sentry error monitoring initialized", {
+    release: process.env.SENTRY_RELEASE || "unknown",
+  });
 } else {
-  logger.info("Sentry not configured — set SENTRY_DSN to enable error monitoring");
+  logger.info(
+    "Sentry not configured — set SENTRY_DSN to enable error monitoring"
+  );
 }
 
-
 app.use((req, res, next) => {
-  const correlationId = req.headers["x-correlation-id"] || req.headers["x-request-id"] || crypto.randomUUID();
+  const correlationId =
+    req.headers["x-correlation-id"] ||
+    req.headers["x-request-id"] ||
+    crypto.randomUUID();
   req.correlationId = correlationId;
   res.setHeader("X-Correlation-ID", correlationId);
   runWithCorrelationId(correlationId, next);
 });
-
 
 app.use((req, res, next) => {
   if (req.path === "/metrics") return next();
@@ -87,42 +110,64 @@ app.use((req, res, next) => {
   incrementConnections();
   res.on("finish", () => {
     decrementConnections();
-    trackRequest(req.method, req.route?.path || req.path, res.statusCode, Date.now() - start);
+    trackRequest(
+      req.method,
+      req.route?.path || req.path,
+      res.statusCode,
+      Date.now() - start
+    );
   });
   next();
 });
 
-
 configurePassport();
 app.use(passport.initialize());
 
-
 const isDev = process.env.NODE_ENV !== "production";
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://res.cloudinary.com", ...(isDev ? ["'unsafe-eval'"] : [])],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "https://res.cloudinary.com", "https://*.cloudinary.com", "https://api.cloudinary.com"],
-      mediaSrc: ["'self'", "https://res.cloudinary.com", "https://*.cloudinary.com", "blob:", "data:", "http:", "https:"],
-      frameSrc: ["'self'"],
-      objectSrc: ["'none'"],
-      baseUri: ["'self'"],
-      formAction: ["'self'"],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://res.cloudinary.com",
+          ...(isDev ? ["'unsafe-eval'"] : []),
+        ],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "https:", "blob:"],
+        connectSrc: [
+          "'self'",
+          "https://res.cloudinary.com",
+          "https://*.cloudinary.com",
+          "https://api.cloudinary.com",
+        ],
+        mediaSrc: [
+          "'self'",
+          "https://res.cloudinary.com",
+          "https://*.cloudinary.com",
+          "blob:",
+          "data:",
+          "http:",
+          "https:",
+        ],
+        frameSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+      },
     },
-  },
-  strictTransportSecurity: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true,
-  },
-  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
-  crossOriginEmbedderPolicy: false,
-}));
-
+    strictTransportSecurity: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    crossOriginEmbedderPolicy: false,
+  })
+);
 
 app.use(
   morgan("combined", {
@@ -130,13 +175,12 @@ app.use(
   })
 );
 
-
 app.use(compression({ level: 6, threshold: 1024 }));
 
-
-
 const rawOrigins = [
-  ...(process.env.CORS_ORIGIN?.split(",").map((o) => o.trim()).filter(Boolean) || []),
+  ...(process.env.CORS_ORIGIN?.split(",")
+    .map((o) => o.trim())
+    .filter(Boolean) || []),
   ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL.trim()] : []),
 ];
 
@@ -148,11 +192,18 @@ const DEV_ORIGINS = [
   "http://127.0.0.1:3001",
 ];
 
-const corsOrigins = rawOrigins.length > 0 ? [...new Set(rawOrigins)] : (process.env.NODE_ENV === "production" ? [] : DEV_ORIGINS);
+const corsOrigins =
+  rawOrigins.length > 0
+    ? [...new Set(rawOrigins)]
+    : process.env.NODE_ENV === "production"
+      ? []
+      : DEV_ORIGINS;
 
 // Guard: wildcard '*' is incompatible with credentials (browser spec violation)
 if (corsOrigins.includes("*")) {
-  logger.error("CORS_ORIGIN contains '*' — wildcard origins are incompatible with credentials: true. Remove '*' from CORS_ORIGIN.");
+  logger.error(
+    "CORS_ORIGIN contains '*' — wildcard origins are incompatible with credentials: true. Remove '*' from CORS_ORIGIN."
+  );
   process.exit(1);
 }
 
@@ -160,7 +211,9 @@ if (corsOrigins.includes("*")) {
 // "https://*.example.com" → /^https:\/\/[^.]+\.example\.com$/
 const originPatterns = corsOrigins.map((origin) => {
   if (origin.includes("*")) {
-    const escaped = origin.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace("\\*", "[^.]+");
+    const escaped = origin
+      .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+      .replace("\\*", "[^.]+");
     return new RegExp(`^${escaped}$`);
   }
   return origin;
@@ -178,7 +231,10 @@ app.use(
 
       if (allowed) return callback(null, true);
 
-      logger.warn("CORS blocked origin", { origin, allowedOrigins: corsOrigins });
+      logger.warn("CORS blocked origin", {
+        origin,
+        allowedOrigins: corsOrigins,
+      });
       callback(new Error(`Origin ${origin} not allowed by CORS`));
     },
     credentials: true,
@@ -186,16 +242,15 @@ app.use(
   })
 );
 
-
 app.use(cookieParser());
 app.use(express.json({ limit: "16kb", depth: 10 }));
-app.use(express.urlencoded({ extended: true, limit: "16kb", parameterLimit: 1000 }));
+app.use(
+  express.urlencoded({ extended: true, limit: "16kb", parameterLimit: 1000 })
+);
 app.use(express.static("public"));
-
 
 app.use(csrfMiddleware);
 app.get("/api/v1/csrf-token", csrfTokenHandler);
-
 
 const sanitizeTarget = (obj, replaceWith = "_") => {
   if (!obj || typeof obj !== "object") return;
@@ -219,17 +274,18 @@ app.use((req, res, next) => {
   try {
     const queryCopy = { ...req.query };
     sanitizeTarget(queryCopy);
-    Object.defineProperty(req, "query", { value: queryCopy, configurable: true });
+    Object.defineProperty(req, "query", {
+      value: queryCopy,
+      configurable: true,
+    });
   } catch (err) {
     logger.warn("Could not redefine req.query", { error: err.message });
   }
   next();
 });
 
-
 // REMOVED: app.use("/api", apiLimiter) — per-route limiters exist on auth, OTP, etc.
 // Global + per-route on same request causes express-rate-limit v8 ERR_ERL_DOUBLE_COUNT.
-
 
 app.get("/health/live", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
@@ -258,37 +314,57 @@ app.get("/health/ready", async (req, res) => {
     });
   } catch (err) {
     logger.warn("Health check failed", { error: err.message });
-    res.status(503).json({ status: "not ready", database: "disconnected", error: "health check failed", uptime: process.uptime(), timestamp: new Date().toISOString() });
+    res
+      .status(503)
+      .json({
+        status: "not ready",
+        database: "disconnected",
+        error: "health check failed",
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+      });
   }
 });
 
-app.get("/metrics", (req, res, next) => {
-  const metricsToken = process.env.METRICS_TOKEN;
-  if (metricsToken && process.env.NODE_ENV === "production") {
-    const provided = req.headers["authorization"]?.replace("Bearer ", "") || req.query?.token;
-    if (provided !== metricsToken) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+app.get(
+  "/metrics",
+  (req, res, next) => {
+    const metricsToken = process.env.METRICS_TOKEN;
+    if (metricsToken && process.env.NODE_ENV === "production") {
+      const provided =
+        req.headers["authorization"]?.replace("Bearer ", "") ||
+        req.query?.token;
+      if (provided !== metricsToken) {
+        return res
+          .status(401)
+          .json({ success: false, message: "Unauthorized" });
+      }
     }
-  }
-  next();
-}, metricsHandler);
+    next();
+  },
+  metricsHandler
+);
 
 if (process.env.NODE_ENV !== "production") {
-  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-    customCss: `
+  app.use(
+    "/api-docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+      customCss: `
       .swagger-ui .topbar { display: none; }
       .swagger-ui .info .title { color: #ef4444; }
       .swagger-ui .scheme-container { background: #f8fafc; padding: 1rem; border-radius: 0.5rem; }
     `,
-    customSiteTitle: "VideoTube API Documentation",
-    swaggerOptions: {
-      persistAuthorization: true,
-      displayRequestDuration: true,
-      filter: true,
-      showExtensions: true,
-      showCommonExtensions: true,
-    },
-  }));
+      customSiteTitle: "VideoTube API Documentation",
+      swaggerOptions: {
+        persistAuthorization: true,
+        displayRequestDuration: true,
+        filter: true,
+        showExtensions: true,
+        showCommonExtensions: true,
+      },
+    })
+  );
   app.get("/api-docs.json", (req, res) => {
     res.setHeader("Content-Type", "application/json");
     res.send(swaggerSpec);
@@ -303,7 +379,11 @@ app.post("/api/v1/webhooks/cloudinary", async (req, res) => {
       const tokenValue = Array.isArray(token) ? token[0] : token;
       const tokenBuffer = Buffer.from(String(tokenValue || ""));
       const secretBuffer = Buffer.from(webhookSecret);
-      if (!tokenValue || tokenBuffer.length !== secretBuffer.length || !crypto.timingSafeEqual(tokenBuffer, secretBuffer)) {
+      if (
+        !tokenValue ||
+        tokenBuffer.length !== secretBuffer.length ||
+        !crypto.timingSafeEqual(tokenBuffer, secretBuffer)
+      ) {
         return res.status(401).json({ error: "Unauthorized" });
       }
     }
@@ -321,7 +401,6 @@ app.post("/api/v1/webhooks/cloudinary", async (req, res) => {
     res.status(200).json({ received: true });
   }
 });
-
 
 import userRouter from "./routes/user.routes.js";
 import videoRouter from "./routes/video.routes.js";
@@ -360,14 +439,14 @@ app.use("/api/v1/sse", sseRouter);
 app.use("/api/v1/reports", reportRouter);
 app.use("/api/v1/polls", pollRouter);
 
-
 app.get("/api/v1/oembed", async (req, res) => {
   try {
     const { url } = req.query;
     if (!url) return res.status(400).json({ error: "URL is required" });
 
     const videoIdMatch = url.match(/\/videos\/([a-fA-F0-9]+)/);
-    if (!videoIdMatch) return res.status(404).json({ error: "Invalid video URL" });
+    if (!videoIdMatch)
+      return res.status(404).json({ error: "Invalid video URL" });
 
     const { default: Video } = await import("./models/video.model.js");
     const video = await Video.findById(videoIdMatch[1])
@@ -393,8 +472,10 @@ app.get("/api/v1/oembed", async (req, res) => {
   }
 });
 
-
-import { errorHandler, notFoundHandler } from "./middlewares/error.middleware.js";
+import {
+  errorHandler,
+  notFoundHandler,
+} from "./middlewares/error.middleware.js";
 
 if (process.env.SENTRY_DSN) {
   app.use(Sentry.Handlers.errorHandler());

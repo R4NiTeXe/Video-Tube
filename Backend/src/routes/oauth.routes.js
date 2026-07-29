@@ -9,12 +9,20 @@ const router = Router();
 const FE = () => process.env.FRONTEND_URL || "http://localhost:3000";
 
 const generateTokens = (userId) => {
-  const accessToken = jwt.sign({ _id: userId }, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "1d",
-  });
-  const refreshToken = jwt.sign({ _id: userId }, process.env.REFRESH_TOKEN_SECRET, {
-    expiresIn: process.env.REFRESH_TOKEN_EXPIRY || "10d",
-  });
+  const accessToken = jwt.sign(
+    { _id: userId },
+    process.env.ACCESS_TOKEN_SECRET,
+    {
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "1d",
+    }
+  );
+  const refreshToken = jwt.sign(
+    { _id: userId },
+    process.env.REFRESH_TOKEN_SECRET,
+    {
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY || "10d",
+    }
+  );
   return { accessToken, refreshToken };
 };
 
@@ -47,7 +55,9 @@ const handleOAuthCallback = async (req, res) => {
     });
 
     const isNew = req.user._isNew ? "true" : "false";
-    res.redirect(`${FE().replace(/\/+$/, '')}/auth/callback?isNew=${isNew}&accessToken=${accessToken}&refreshToken=${refreshToken}`);
+    res.redirect(
+      `${FE().replace(/\/+$/, "")}/auth/callback?isNew=${isNew}&accessToken=${accessToken}&refreshToken=${refreshToken}`
+    );
   } catch (error) {
     logger.error("OAuth callback error:", { error: error.message });
     res.redirect(`${FE()}/login?error=auth_failed`);
@@ -57,11 +67,16 @@ const handleOAuthCallback = async (req, res) => {
 const oauthCallback = (provider) => (req, res, next) => {
   passport.authenticate(provider, { session: false }, (err, user, info) => {
     if (err) {
-      logger.error(`${provider} OAuth error:`, { error: err.message, stack: err.stack });
+      logger.error(`${provider} OAuth error:`, {
+        error: err.message,
+        stack: err.stack,
+      });
       return res.redirect(`${FE()}/login?error=auth_failed`);
     }
     if (!user) {
-      logger.warn(`${provider} OAuth failed: no user returned`, { info: info?.message || "unknown" });
+      logger.warn(`${provider} OAuth failed: no user returned`, {
+        info: info?.message || "unknown",
+      });
       return res.redirect(`${FE()}/login?error=auth_failed`);
     }
     req.user = user;
@@ -70,19 +85,41 @@ const oauthCallback = (provider) => (req, res, next) => {
 };
 
 // Google
-router.get("/google", passport.authenticate("google", { scope: ["profile", "email"], prompt: "select_account", session: false }));
+router.get(
+  "/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    prompt: "select_account",
+    session: false,
+  })
+);
 router.get("/google/callback", oauthCallback("google"));
 
 // GitHub
-router.get("/github", passport.authenticate("github", { scope: ["user:email"], session: false }));
+router.get(
+  "/github",
+  passport.authenticate("github", { scope: ["user:email"], session: false })
+);
 router.get("/github/callback", oauthCallback("github"));
 
 // Facebook
-router.get("/facebook", passport.authenticate("facebook", { scope: ["public_profile"], session: false }));
+router.get(
+  "/facebook",
+  passport.authenticate("facebook", {
+    scope: ["public_profile"],
+    session: false,
+  })
+);
 router.get("/facebook/callback", oauthCallback("facebook"));
 
 // Discord
-router.get("/discord", passport.authenticate("discord", { scope: ["identify", "email"], session: false }));
+router.get(
+  "/discord",
+  passport.authenticate("discord", {
+    scope: ["identify", "email"],
+    session: false,
+  })
+);
 router.get("/discord/callback", oauthCallback("discord"));
 
 export default router;

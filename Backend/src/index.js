@@ -1,24 +1,35 @@
-import 'dotenv/config'
+import "dotenv/config";
 import http from "http";
 import cron from "node-cron";
 import connectDB from "./db/index.js";
-import { app } from './app.js';
-import logger from './utils/logger.js';
-import mongoose from 'mongoose';
-import { initRedis, closeRedis } from './utils/redis.js';
-import { initWebSocket, closeWebSocket } from './utils/websocket.js';
-
+import { app } from "./app.js";
+import logger from "./utils/logger.js";
+import mongoose from "mongoose";
+import { initRedis, closeRedis } from "./utils/redis.js";
+import { initWebSocket, closeWebSocket } from "./utils/websocket.js";
 
 if (!process.env.NODE_ENV) {
-  logger.warn("NODE_ENV is not set. Defaulting to 'development'. Set NODE_ENV=production in production.");
-} else if (process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") {
-  logger.warn(`Unrecognized NODE_ENV value: ${process.env.NODE_ENV}. Expected 'production', 'development', or 'test'.`);
+  logger.warn(
+    "NODE_ENV is not set. Defaulting to 'development'. Set NODE_ENV=production in production."
+  );
+} else if (
+  process.env.NODE_ENV !== "production" &&
+  process.env.NODE_ENV !== "development" &&
+  process.env.NODE_ENV !== "test"
+) {
+  logger.warn(
+    `Unrecognized NODE_ENV value: ${process.env.NODE_ENV}. Expected 'production', 'development', or 'test'.`
+  );
 }
 
-if (process.env.LOG_LEVEL && !["error", "warn", "info", "debug"].includes(process.env.LOG_LEVEL)) {
-  logger.warn(`Invalid LOG_LEVEL "${process.env.LOG_LEVEL}". Falling back to "info".`);
+if (
+  process.env.LOG_LEVEL &&
+  !["error", "warn", "info", "debug"].includes(process.env.LOG_LEVEL)
+) {
+  logger.warn(
+    `Invalid LOG_LEVEL "${process.env.LOG_LEVEL}". Falling back to "info".`
+  );
 }
-
 
 const REQUIRED_SECRET_KEYS = [
   { key: "ACCESS_TOKEN_SECRET", label: "Access Token Secret" },
@@ -56,14 +67,23 @@ if (isProduction) {
       logger.error(`Missing ${label} (${key}). Server cannot start.`);
       process.exit(1);
     }
-    const values = allowList ? value.split(",").map((item) => item.trim()).filter(Boolean) : [value.trim()];
+    const values = allowList
+      ? value
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean)
+      : [value.trim()];
     if (values.length === 0 || values.some((item) => !parseHttpsUrl(item))) {
-      logger.error(`${label} (${key}) must contain valid HTTPS URL${allowList ? "s" : ""} in production. Server cannot start.`);
+      logger.error(
+        `${label} (${key}) must contain valid HTTPS URL${allowList ? "s" : ""} in production. Server cannot start.`
+      );
       process.exit(1);
     }
   }
   if (!process.env.SENTRY_DSN) {
-    logger.warn("SENTRY_DSN not set — error monitoring is disabled. Recommended for production.");
+    logger.warn(
+      "SENTRY_DSN not set — error monitoring is disabled. Recommended for production."
+    );
   }
 }
 
@@ -73,24 +93,32 @@ for (const { key, label } of REQUIRED_SECRET_KEYS) {
     process.exit(1);
   }
   if (process.env[key].length < MIN_SECRET_LENGTH) {
-    logger.error(`${label} (${key}) must be at least ${MIN_SECRET_LENGTH} characters. Server cannot start.`);
+    logger.error(
+      `${label} (${key}) must be at least ${MIN_SECRET_LENGTH} characters. Server cannot start.`
+    );
     process.exit(1);
   }
 }
 
 // Validate Cloudinary credentials if any are set (all-or-nothing)
-const CLOUDINARY_KEYS = ["CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"];
+const CLOUDINARY_KEYS = [
+  "CLOUDINARY_CLOUD_NAME",
+  "CLOUDINARY_API_KEY",
+  "CLOUDINARY_API_SECRET",
+];
 const cloudinarySet = CLOUDINARY_KEYS.filter((k) => process.env[k]);
 if (cloudinarySet.length > 0 && cloudinarySet.length < 3) {
-  logger.error(`Partial Cloudinary config: set ${CLOUDINARY_KEYS.filter((k) => !process.env[k]).join(", ")} or remove all CLOUDINARY_* vars.`);
+  logger.error(
+    `Partial Cloudinary config: set ${CLOUDINARY_KEYS.filter((k) => !process.env[k]).join(", ")} or remove all CLOUDINARY_* vars.`
+  );
   process.exit(1);
 }
 
-
 if (isProduction && !process.env.PROXY_TRUST_COUNT) {
-  logger.warn("PROXY_TRUST_COUNT not set. Defaulting to 1 (single reverse proxy). Set to 2 if behind CDN + nginx.");
+  logger.warn(
+    "PROXY_TRUST_COUNT not set. Defaulting to 1 (single reverse proxy). Set to 2 if behind CDN + nginx."
+  );
 }
-
 
 if (!isProduction) {
   const OPTIONAL_CONFIG = [
@@ -99,7 +127,9 @@ if (!isProduction) {
   ];
   for (const { key, fallback } of OPTIONAL_CONFIG) {
     if (!process.env[key]) {
-      logger.warn(`${key} not set. Using fallback "${fallback}". Set this in production.`);
+      logger.warn(
+        `${key} not set. Using fallback "${fallback}". Set this in production.`
+      );
     }
   }
 }
@@ -108,26 +138,29 @@ let server;
 let cronJobs = [];
 
 connectDB()
-.then(async () => {
+  .then(async () => {
     await initRedis();
 
-    
-    const { runPublishScheduledVideos, runUpdateTrendingScores } = await import("./controllers/video/cron.controller.js");
+    const { runPublishScheduledVideos, runUpdateTrendingScores } =
+      await import("./controllers/video/cron.controller.js");
     const publishJob = cron.schedule("* * * * *", async () => {
       try {
         await runPublishScheduledVideos();
       } catch (err) {
-        logger.error("Scheduled video publishing cron failed", { error: err.message });
+        logger.error("Scheduled video publishing cron failed", {
+          error: err.message,
+        });
       }
     });
     logger.info("Scheduled video publishing cron initialized (every minute)");
 
-    
     const trendingJob = cron.schedule("0 * * * *", async () => {
       try {
         await runUpdateTrendingScores();
       } catch (err) {
-        logger.error("Trending score update cron failed", { error: err.message });
+        logger.error("Trending score update cron failed", {
+          error: err.message,
+        });
       }
     });
     logger.info("Trending score update cron initialized (every hour)");
@@ -141,13 +174,13 @@ connectDB()
     initWebSocket(server);
 
     server.listen(process.env.PORT || 8000, () => {
-        logger.info(`Server is running at port : ${process.env.PORT || 8000}`);
+      logger.info(`Server is running at port : ${process.env.PORT || 8000}`);
     });
-})
-.catch((err) => {
+  })
+  .catch((err) => {
     logger.error("MONGO db connection failed !!!", { error: err.message });
     process.exit(1);
-});
+  });
 
 const gracefulShutdown = async (signal, exitCode = 0) => {
   logger.info(`${signal} received. Shutting down gracefully...`);
@@ -168,8 +201,8 @@ const gracefulShutdown = async (signal, exitCode = 0) => {
   }
   try {
     if (mongoose.connection.readyState !== 0) {
-    await mongoose.connection.close();
-    logger.info("MongoDB connection closed");
+      await mongoose.connection.close();
+      logger.info("MongoDB connection closed");
     }
   } catch (err) {
     logger.warn("Error closing MongoDB connection", { error: err.message });
@@ -183,8 +216,12 @@ const gracefulShutdown = async (signal, exitCode = 0) => {
   return exitCode;
 };
 
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM", 0).then((code) => process.exit(code)));
-process.on("SIGINT", () => gracefulShutdown("SIGINT", 0).then((code) => process.exit(code)));
+process.on("SIGTERM", () =>
+  gracefulShutdown("SIGTERM", 0).then((code) => process.exit(code))
+);
+process.on("SIGINT", () =>
+  gracefulShutdown("SIGINT", 0).then((code) => process.exit(code))
+);
 
 process.on("uncaughtException", (err) => {
   logger.error("Uncaught exception", { error: err.message, stack: err.stack });

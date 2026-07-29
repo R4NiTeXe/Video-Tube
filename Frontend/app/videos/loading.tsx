@@ -21,7 +21,9 @@ export default function Loading() {
           animation: "spin 0.8s linear infinite",
         }}
       />
-      <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>Loading video...</p>
+      <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
+        Loading video...
+      </p>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );

@@ -29,7 +29,9 @@ const initRedis = async () => {
       isAvailable = true;
       logger.info("Redis connected");
     } else {
-      logger.warn("Redis unavailable — caching disabled", { error: err.message });
+      logger.warn("Redis unavailable — caching disabled", {
+        error: err.message,
+      });
       isAvailable = false;
     }
   }
@@ -96,11 +98,16 @@ const isTokenBlacklisted = async (token) => {
   }
 };
 
-
 const acquireLock = async (lockKey, ttlSeconds = 10) => {
   if (!isRedisAvailable()) return null;
   try {
-    const result = await redis.set(`lock:${lockKey}`, "1", "NX", "EX", ttlSeconds);
+    const result = await redis.set(
+      `lock:${lockKey}`,
+      "1",
+      "NX",
+      "EX",
+      ttlSeconds
+    );
     return result === "OK" ? () => releaseLock(lockKey) : null;
   } catch (err) {
     logger.warn("Redis acquireLock failed", { lockKey, error: err.message });
@@ -129,8 +136,15 @@ const closeRedis = async () => {
 };
 
 export {
-  initRedis, getRedis, isRedisAvailable, closeRedis,
-  cacheGet, cacheSet, cacheDel,
-  blacklistToken, isTokenBlacklisted,
-  acquireLock, releaseLock,
+  initRedis,
+  getRedis,
+  isRedisAvailable,
+  closeRedis,
+  cacheGet,
+  cacheSet,
+  cacheDel,
+  blacklistToken,
+  isTokenBlacklisted,
+  acquireLock,
+  releaseLock,
 };

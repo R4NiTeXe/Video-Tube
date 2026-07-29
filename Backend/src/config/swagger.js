@@ -47,7 +47,10 @@ const options = {
             errors: {
               type: "array",
               items: { type: "string" },
-              example: ["email is required", "password must be at least 8 characters"],
+              example: [
+                "email is required",
+                "password must be at least 8 characters",
+              ],
             },
           },
         },
@@ -66,8 +69,16 @@ const options = {
             _id: { type: "string", example: "507f1f77bcf86cd799439011" },
             fullName: { type: "string", example: "John Doe" },
             username: { type: "string", example: "johndoe" },
-            email: { type: "string", format: "email", example: "john@example.com" },
-            avatar: { type: "string", format: "uri", example: "https://res.cloudinary.com/.../avatar.jpg" },
+            email: {
+              type: "string",
+              format: "email",
+              example: "john@example.com",
+            },
+            avatar: {
+              type: "string",
+              format: "uri",
+              example: "https://res.cloudinary.com/.../avatar.jpg",
+            },
             coverImage: { type: "string", format: "uri" },
             subscribersCount: { type: "integer", example: 1250 },
             channelsSubscribedToCount: { type: "integer", example: 42 },
@@ -81,14 +92,21 @@ const options = {
           properties: {
             _id: { type: "string", example: "507f1f77bcf86cd799439012" },
             title: { type: "string", example: "How to build a REST API" },
-            description: { type: "string", example: "Learn REST API best practices..." },
+            description: {
+              type: "string",
+              example: "Learn REST API best practices...",
+            },
             videoFile: { type: "string", format: "uri" },
             thumbnail: { type: "string", format: "uri" },
             duration: { type: "number", example: 642 },
             views: { type: "integer", example: 15420 },
             isPublished: { type: "boolean", example: true },
             owner: { $ref: "#/components/schemas/User" },
-            tags: { type: "array", items: { type: "string" }, example: ["tutorial", "api", "nodejs"] },
+            tags: {
+              type: "array",
+              items: { type: "string" },
+              example: ["tutorial", "api", "nodejs"],
+            },
             category: { type: "string", example: "Education" },
             hlsUrl: { type: "string", format: "uri" },
             qualities: {
@@ -102,7 +120,11 @@ const options = {
                 },
               },
             },
-            transcodingStatus: { type: "string", enum: ["pending", "processing", "completed", "failed"], example: "completed" },
+            transcodingStatus: {
+              type: "string",
+              enum: ["pending", "processing", "completed", "failed"],
+              example: "completed",
+            },
             createdAt: { type: "string", format: "date-time" },
             updatedAt: { type: "string", format: "date-time" },
           },
@@ -112,10 +134,20 @@ const options = {
           properties: {
             _id: { type: "string", example: "507f1f77bcf86cd799439013" },
             name: { type: "string", example: "My Favorites" },
-            description: { type: "string", example: "Collection of my favorite videos" },
-            videos: { type: "array", items: { $ref: "#/components/schemas/Video" } },
+            description: {
+              type: "string",
+              example: "Collection of my favorite videos",
+            },
+            videos: {
+              type: "array",
+              items: { $ref: "#/components/schemas/Video" },
+            },
             owner: { $ref: "#/components/schemas/User" },
-            visibility: { type: "string", enum: ["public", "private", "unlisted"], example: "public" },
+            visibility: {
+              type: "string",
+              enum: ["public", "private", "unlisted"],
+              example: "public",
+            },
             createdAt: { type: "string", format: "date-time" },
             updatedAt: { type: "string", format: "date-time" },
           },

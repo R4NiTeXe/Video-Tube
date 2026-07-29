@@ -17,7 +17,10 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid video id");
   }
 
-  const existingLike = await Like.findOneAndDelete({ video: videoId, likedBy: req.user._id });
+  const existingLike = await Like.findOneAndDelete({
+    video: videoId,
+    likedBy: req.user._id,
+  });
 
   let isLiked;
 
@@ -42,7 +45,9 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     try {
       const video = await Video.findById(videoId).select("owner title").lean();
       if (video && video.owner.toString() !== req.user._id.toString()) {
-        const recipient = await User.findById(video.owner).select("notificationPrefs").lean();
+        const recipient = await User.findById(video.owner)
+          .select("notificationPrefs")
+          .lean();
         if (recipient?.notificationPrefs?.likes !== false) {
           const notif = await Notification.create({
             recipient: video.owner,
@@ -54,12 +59,20 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
           sendSSENotification(video.owner, notif);
         }
       }
-    } catch (err) { logger.warn("Video like notification failed", { error: err.message }); }
+    } catch (err) {
+      logger.warn("Video like notification failed", { error: err.message });
+    }
   }
 
   return res
     .status(200)
-    .json(new ApiResponse(200, { isLiked, likesCount }, isLiked ? "Video liked" : "Like removed"));
+    .json(
+      new ApiResponse(
+        200,
+        { isLiked, likesCount },
+        isLiked ? "Video liked" : "Like removed"
+      )
+    );
 });
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
@@ -80,7 +93,9 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
       .json(new ApiResponse(200, { isLiked: false }, "Like removed"));
   }
 
-  const comment = await Comment.findById(commentId).select("owner video").lean();
+  const comment = await Comment.findById(commentId)
+    .select("owner video")
+    .lean();
   if (!comment) {
     throw new ApiError(404, "Comment not found");
   }
@@ -100,7 +115,9 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 
   try {
     if (comment.owner.toString() !== req.user._id.toString()) {
-      const recipient = await User.findById(comment.owner).select("notificationPrefs").lean();
+      const recipient = await User.findById(comment.owner)
+        .select("notificationPrefs")
+        .lean();
       if (recipient?.notificationPrefs?.likes !== false) {
         const notif = await Notification.create({
           recipient: comment.owner,
@@ -113,7 +130,9 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
         sendSSENotification(comment.owner, notif);
       }
     }
-  } catch (err) { logger.warn("Comment like notification failed", { error: err.message }); }
+  } catch (err) {
+    logger.warn("Comment like notification failed", { error: err.message });
+  }
 
   return res
     .status(200)
@@ -193,7 +212,11 @@ const getLikedVideos = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(200, { docs: data, total, page: pageNumber, limit: limitNumber }, "Liked videos fetched successfully")
+      new ApiResponse(
+        200,
+        { docs: data, total, page: pageNumber, limit: limitNumber },
+        "Liked videos fetched successfully"
+      )
     );
 });
 

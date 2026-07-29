@@ -4,7 +4,12 @@ import { otpService } from "../services/otp.service.js";
 export const generateOTP = () => otpService.generateOtp();
 
 // Store OTP (10min expiry)
-export const storeOTP = async (identifier, purpose, channel = "email", userId = null) => {
+export const storeOTP = async (
+  identifier,
+  purpose,
+  channel = "email",
+  userId = null
+) => {
   const { otp } = await otpService.storeOtp({
     identifier: identifier.toLowerCase(),
     purpose,

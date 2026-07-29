@@ -11,13 +11,15 @@ const createLimiter = (options) => {
   if (isTest) {
     return (req, res, next) => next();
   }
-  
+
   if (process.env.REDIS_URL) {
     options.store = new RedisStore({
       sendCommand: (...args) => getRedis().call(...args),
     });
   } else if (process.env.NODE_ENV === "production" && !warnedMemoryStore) {
-    logger.warn("Using in-memory rate limiter in production. Rate limits will not be shared across instances.");
+    logger.warn(
+      "Using in-memory rate limiter in production. Rate limits will not be shared across instances."
+    );
     warnedMemoryStore = true;
   }
 

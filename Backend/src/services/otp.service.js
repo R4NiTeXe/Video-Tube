@@ -33,7 +33,10 @@ let globalDailyCountDate = null;
 
 const resetGlobalDailyCountIfNeeded = () => {
   const today = OTP.getStartOfDay();
-  if (!globalDailyCountDate || globalDailyCountDate.getTime() !== today.getTime()) {
+  if (
+    !globalDailyCountDate ||
+    globalDailyCountDate.getTime() !== today.getTime()
+  ) {
     globalDailyCount = 0;
     globalDailyCountDate = today;
   }
@@ -60,19 +63,32 @@ const hashOtp = (otp) => {
 const checkGlobalLimit = () => {
   const current = getGlobalDailyCount();
   if (current >= OTP_CONSTANTS.GLOBAL_DAILY_LIMIT) {
-    return { allowed: false, message: "Global daily OTP limit reached. Please try again tomorrow." };
+    return {
+      allowed: false,
+      message: "Global daily OTP limit reached. Please try again tomorrow.",
+    };
   }
-  return { allowed: true, remaining: OTP_CONSTANTS.GLOBAL_DAILY_LIMIT - current };
+  return {
+    allowed: true,
+    remaining: OTP_CONSTANTS.GLOBAL_DAILY_LIMIT - current,
+  };
 };
 
 const checkUserLimit = async (userId, timezone) => {
-  const user = await User.findById(userId).select("otpDailyCount otpDailyCountDate timezone");
+  const user = await User.findById(userId).select(
+    "otpDailyCount otpDailyCountDate timezone"
+  );
   if (!user) return { allowed: false, message: "User not found." };
 
   const tz = timezone || user.timezone;
   const today = OTP.getStartOfDay(tz);
-  const userDate = user.otpDailyCountDate ? new Date(user.otpDailyCountDate) : null;
-  const currentCount = (userDate && userDate.getTime() === today.getTime()) ? (user.otpDailyCount || 0) : 0;
+  const userDate = user.otpDailyCountDate
+    ? new Date(user.otpDailyCountDate)
+    : null;
+  const currentCount =
+    userDate && userDate.getTime() === today.getTime()
+      ? user.otpDailyCount || 0
+      : 0;
 
   if (currentCount >= OTP_CONSTANTS.USER_DAILY_LIMIT) {
     return {
@@ -115,13 +131,25 @@ const incrementUserDailyCount = async (userId, timezone) => {
 };
 
 const getUserOtpUsage = async (userId, timezone) => {
-  const user = await User.findById(userId).select("otpDailyCount otpDailyCountDate timezone");
-  if (!user) return { used: 0, limit: OTP_CONSTANTS.USER_DAILY_LIMIT, remaining: OTP_CONSTANTS.USER_DAILY_LIMIT };
+  const user = await User.findById(userId).select(
+    "otpDailyCount otpDailyCountDate timezone"
+  );
+  if (!user)
+    return {
+      used: 0,
+      limit: OTP_CONSTANTS.USER_DAILY_LIMIT,
+      remaining: OTP_CONSTANTS.USER_DAILY_LIMIT,
+    };
 
   const tz = timezone || user.timezone;
   const today = OTP.getStartOfDay(tz);
-  const userDate = user.otpDailyCountDate ? new Date(user.otpDailyCountDate) : null;
-  const used = (userDate && userDate.getTime() === today.getTime()) ? (user.otpDailyCount || 0) : 0;
+  const userDate = user.otpDailyCountDate
+    ? new Date(user.otpDailyCountDate)
+    : null;
+  const used =
+    userDate && userDate.getTime() === today.getTime()
+      ? user.otpDailyCount || 0
+      : 0;
 
   return {
     used,
@@ -152,9 +180,13 @@ const storeOtp = async ({ identifier, userId, purpose, channel = "email" }) => {
 
   const otp = generateOtp();
   const otpHash = hashOtp(otp);
-  const expiresAt = new Date(Date.now() + OTP_CONSTANTS.OTP_EXPIRY_MINUTES * 60 * 1000);
+  const expiresAt = new Date(
+    Date.now() + OTP_CONSTANTS.OTP_EXPIRY_MINUTES * 60 * 1000
+  );
 
-  const existing = await OTP.findOne({ identifier, purpose }).select("otpHash").lean();
+  const existing = await OTP.findOne({ identifier, purpose })
+    .select("otpHash")
+    .lean();
 
   const otpDoc = await OTP.findOneAndReplace(
     { identifier, purpose },
@@ -348,8 +380,14 @@ const verifyOtp = async ({ identifier, otp, purpose }) => {
   if (!record) {
     const existing = await OTP.findOne({ identifier, purpose });
     if (!existing) {
-      logger.warn("OTP verification failed: not found", { identifier, purpose });
-      return { valid: false, message: "OTP not found. Please request a new one." };
+      logger.warn("OTP verification failed: not found", {
+        identifier,
+        purpose,
+      });
+      return {
+        valid: false,
+        message: "OTP not found. Please request a new one.",
+      };
     }
     if (existing.verified) {
       return { valid: false, message: "OTP already used." };
@@ -364,8 +402,16 @@ const verifyOtp = async ({ identifier, otp, purpose }) => {
   }
 
   if (record.otpHash !== otpHash) {
-    logger.warn("OTP verification failed: invalid code", { identifier, purpose, attempts: record.attempts });
-    return { valid: false, message: "Invalid OTP.", attemptsRemaining: OTP_CONSTANTS.MAX_ATTEMPTS - record.attempts };
+    logger.warn("OTP verification failed: invalid code", {
+      identifier,
+      purpose,
+      attempts: record.attempts,
+    });
+    return {
+      valid: false,
+      message: "Invalid OTP.",
+      attemptsRemaining: OTP_CONSTANTS.MAX_ATTEMPTS - record.attempts,
+    };
   }
 
   await OTP.findOneAndUpdate(
@@ -373,9 +419,18 @@ const verifyOtp = async ({ identifier, otp, purpose }) => {
     { $set: { verified: true, verifiedAt: new Date() } }
   );
 
-  logger.info("OTP verified successfully", { identifier, purpose, userId: record.user });
+  logger.info("OTP verified successfully", {
+    identifier,
+    purpose,
+    userId: record.user,
+  });
 
-  return { valid: true, message: "OTP verified.", channel: record.channel, userId: record.user };
+  return {
+    valid: true,
+    message: "OTP verified.",
+    channel: record.channel,
+    userId: record.user,
+  };
 };
 
 const cleanupExpiredOtps = async () => {

@@ -52,7 +52,11 @@ export const csrfMiddleware = (req, res, next) => {
   }
 
   // Exempt routes
-  if (CSRF_EXEMPT_ROUTES.some((route) => req.path === route || req.path.startsWith(route + "/"))) {
+  if (
+    CSRF_EXEMPT_ROUTES.some(
+      (route) => req.path === route || req.path.startsWith(route + "/")
+    )
+  ) {
     return next();
   }
 
@@ -64,8 +68,12 @@ export const csrfMiddleware = (req, res, next) => {
     path: req.path,
     hasCookie: !!cookieToken,
     hasHeader: !!headerToken,
-    cookieToken: cookieToken ? `${cookieToken.slice(0, 8)}...${cookieToken.slice(-4)}` : null,
-    headerToken: headerToken ? `${headerToken.slice(0, 8)}...${headerToken.slice(-4)}` : null,
+    cookieToken: cookieToken
+      ? `${cookieToken.slice(0, 8)}...${cookieToken.slice(-4)}`
+      : null,
+    headerToken: headerToken
+      ? `${headerToken.slice(0, 8)}...${headerToken.slice(-4)}`
+      : null,
   });
 
   // If both cookie and header are present, validate they match (full double-submit check)
@@ -73,7 +81,10 @@ export const csrfMiddleware = (req, res, next) => {
     const cookieBuf = Buffer.from(cookieToken);
     const headerBuf = Buffer.from(headerToken);
 
-    if (cookieBuf.length === headerBuf.length && crypto.timingSafeEqual(cookieBuf, headerBuf)) {
+    if (
+      cookieBuf.length === headerBuf.length &&
+      crypto.timingSafeEqual(cookieBuf, headerBuf)
+    ) {
       return next();
     }
 
@@ -131,7 +142,8 @@ export const csrfMiddleware = (req, res, next) => {
 
 export const csrfTokenHandler = (req, res) => {
   // Use the token set by middleware (req._csrfToken) or fallback
-  const token = req._csrfToken || req.cookies[CSRF_COOKIE_NAME] || generateCsrfToken();
+  const token =
+    req._csrfToken || req.cookies[CSRF_COOKIE_NAME] || generateCsrfToken();
   res.cookie(CSRF_COOKIE_NAME, token, getCookieOptions());
   res.json({ success: true, csrfToken: token });
 };

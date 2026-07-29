@@ -1,7 +1,25 @@
-import { describe, it, beforeAll, afterAll, beforeEach, expect } from "@jest/globals";
+import {
+  describe,
+  it,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  expect,
+} from "@jest/globals";
 import request from "supertest";
 import { app } from "../src/app.js";
-import { startTestServer, stopTestServer, clearDatabase, dropDatabase, createTestUser, loginTestUser, createTestVideo, getAuthHeaders, expectSuccess, expectError } from "./testUtils.js";
+import {
+  startTestServer,
+  stopTestServer,
+  clearDatabase,
+  dropDatabase,
+  createTestUser,
+  loginTestUser,
+  createTestVideo,
+  getAuthHeaders,
+  expectSuccess,
+  expectError,
+} from "./testUtils.js";
 import { Subscription } from "../src/models/subscription.model.js";
 import { Notification } from "../src/models/notification.model.js";
 
@@ -21,13 +39,25 @@ describe("Subscription System", () => {
 
   beforeEach(async () => {
     await clearDatabase();
-    
-    user1 = await createTestUser({ username: "subscriber", email: `sub_${Date.now()}@example.com` });
-    user2 = await createTestUser({ username: "creator", email: `creator_${Date.now()}@example.com` });
-    
-    const { cookies: c1 } = await loginTestUser({ email: user1.email, password: "Test@1234" });
-    const { cookies: c2 } = await loginTestUser({ email: user2.email, password: "Test@1234" });
-    
+
+    user1 = await createTestUser({
+      username: "subscriber",
+      email: `sub_${Date.now()}@example.com`,
+    });
+    user2 = await createTestUser({
+      username: "creator",
+      email: `creator_${Date.now()}@example.com`,
+    });
+
+    const { cookies: c1 } = await loginTestUser({
+      email: user1.email,
+      password: "Test@1234",
+    });
+    const { cookies: c2 } = await loginTestUser({
+      email: user2.email,
+      password: "Test@1234",
+    });
+
     cookies1 = c1;
     cookies2 = c2;
   });
@@ -71,7 +101,10 @@ describe("Subscription System", () => {
         .post(`/api/v1/subscriptions/c/${user2._id}`)
         .set("Cookie", cookies1.join("; "));
 
-      const notifications = await Notification.find({ recipient: user2._id, type: "subscribe" });
+      const notifications = await Notification.find({
+        recipient: user2._id,
+        type: "subscribe",
+      });
       expect(notifications.length).toBe(1);
       expect(notifications[0].sender.toString()).toBe(user1._id.toString());
     });

@@ -2,42 +2,48 @@ import mongoose from "mongoose";
 import crypto from "crypto";
 import logger from "../utils/logger.js";
 
-const otpSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true },
-  identifier: { type: String, required: true, lowercase: true, index: true },
-  otpHash: { type: String, required: true },
-  purpose: {
-    type: String,
-    required: true,
-    enum: [
-      "registration",
-      "forgot-password",
-      "change-password",
-      "verify-email",
-      "social-link",
-      "login",
-      "email-registration",
-      "delete-account",
-      "forgot-password-change",
-      "reset",
-    ],
+const otpSchema = new mongoose.Schema(
+  {
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true },
+    identifier: { type: String, required: true, lowercase: true, index: true },
+    otpHash: { type: String, required: true },
+    purpose: {
+      type: String,
+      required: true,
+      enum: [
+        "registration",
+        "forgot-password",
+        "change-password",
+        "verify-email",
+        "social-link",
+        "login",
+        "email-registration",
+        "delete-account",
+        "forgot-password-change",
+        "reset",
+      ],
+    },
+    channel: {
+      type: String,
+      required: true,
+      enum: ["email", "whatsapp"],
+      default: "email",
+    },
+    expiresAt: { type: Date, required: true },
+    attempts: { type: Number, default: 0, max: 5 },
+    maxAttempts: { type: Number, default: 5 },
+    verified: { type: Boolean, default: false },
+    verifiedAt: { type: Date },
+    prevOtpHash: { type: String },
+    prevOtpInvalidatedAt: { type: Date },
+    dailyCount: { type: Number, default: 0 },
+    dailyCountDate: {
+      type: Date,
+      default: () => new Date(new Date().setHours(0, 0, 0, 0)),
+    },
   },
-  channel: {
-    type: String,
-    required: true,
-    enum: ["email", "whatsapp"],
-    default: "email",
-  },
-  expiresAt: { type: Date, required: true },
-  attempts: { type: Number, default: 0, max: 5 },
-  maxAttempts: { type: Number, default: 5 },
-  verified: { type: Boolean, default: false },
-  verifiedAt: { type: Date },
-  prevOtpHash: { type: String },
-  prevOtpInvalidatedAt: { type: Date },
-  dailyCount: { type: Number, default: 0 },
-  dailyCountDate: { type: Date, default: () => new Date(new Date().setHours(0, 0, 0, 0)) },
-}, { timestamps: true });
+  { timestamps: true }
+);
 
 otpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 otpSchema.index({ identifier: 1, purpose: 1 }, { unique: true });
@@ -60,7 +66,9 @@ otpSchema.statics.getStartOfDay = function (timezone) {
     return new Date(dateStr + "T00:00:00.000Z");
   }
   const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  );
 };
 
 otpSchema.methods.verifyOtp = function (otp) {

@@ -43,7 +43,10 @@ register.registerMetric(dbQueryDuration);
 
 export const trackRequest = (method, route, status, durationMs) => {
   httpRequestsTotal.inc({ method, route, status: String(status) });
-  httpRequestDuration.observe({ method, route, status: String(status) }, durationMs / 1000);
+  httpRequestDuration.observe(
+    { method, route, status: String(status) },
+    durationMs / 1000
+  );
 };
 
 export const trackDbQuery = (operation, collection, durationMs) => {
@@ -56,7 +59,13 @@ export const trackCacheHit = (hit) => {
 
 export const incrementConnections = () => activeConnections.inc();
 export const decrementConnections = () => activeConnections.dec();
-export { activeConnections, httpRequestDuration, httpRequestsTotal, dbQueryDuration, cacheHitsTotal };
+export {
+  activeConnections,
+  httpRequestDuration,
+  httpRequestsTotal,
+  dbQueryDuration,
+  cacheHitsTotal,
+};
 
 export const metricsHandler = async (req, res) => {
   const metrics = await register.metrics();

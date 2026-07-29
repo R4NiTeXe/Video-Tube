@@ -1,34 +1,98 @@
 "use client";
 
-
 import { motion } from "framer-motion";
 import { PageMeta } from "@/src/components/PageMeta";
 
 export default function TranscodePage() {
   return (
     <>
-      <PageMeta title="Video Transcoding" description="Video transcoding and adaptive streaming is coming soon." noIndex />
-      <main style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 60px)", padding: "2rem" }}>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          style={{ textAlign: "center", maxWidth: 500 }}
+      <PageMeta
+        title="Video Transcoding"
+        description="Video transcoding and adaptive streaming is coming soon."
+        noIndex
+      />
+      <main
+        style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "calc(100vh - 60px)",
+            padding: "2rem",
+          }}
         >
-          <div style={{ width: 80, height: 80, borderRadius: "50%", backgroundColor: "var(--accent-subtle)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.5rem", color: "var(--accent)" }}>
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-          </div>
-          <h1 style={{ fontSize: "1.8rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.5rem" }}>Video Transcoding</h1>
-          <p style={{ fontSize: "0.95rem", color: "var(--text-muted)", marginBottom: "1.5rem", lineHeight: 1.6 }}>
-            Adaptive streaming with multiple quality options (360p, 480p, 720p, 1080p) is being built.
-          </p>
-          <div style={{ display: "inline-block", padding: "0.5rem 1.25rem", borderRadius: 99, backgroundColor: "var(--accent-subtle)", color: "var(--accent)", fontWeight: 700, fontSize: "0.85rem" }}>
-            Coming Soon
-          </div>
-        </motion.div>
-      </div>
-    </main>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            style={{ textAlign: "center", maxWidth: 500 }}
+          >
+            <div
+              style={{
+                width: 80,
+                height: 80,
+                borderRadius: "50%",
+                backgroundColor: "var(--accent-subtle)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 1.5rem",
+                color: "var(--accent)",
+              }}
+            >
+              <svg
+                width="36"
+                height="36"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polygon points="23 7 16 12 23 17 23 7" />
+                <rect x="1" y="5" width="15" height="14" rx="2" />
+              </svg>
+            </div>
+            <h1
+              style={{
+                fontSize: "1.8rem",
+                fontWeight: 800,
+                color: "var(--text-primary)",
+                marginBottom: "0.5rem",
+              }}
+            >
+              Video Transcoding
+            </h1>
+            <p
+              style={{
+                fontSize: "0.95rem",
+                color: "var(--text-muted)",
+                marginBottom: "1.5rem",
+                lineHeight: 1.6,
+              }}
+            >
+              Adaptive streaming with multiple quality options (360p, 480p,
+              720p, 1080p) is being built.
+            </p>
+            <div
+              style={{
+                display: "inline-block",
+                padding: "0.5rem 1.25rem",
+                borderRadius: 99,
+                backgroundColor: "var(--accent-subtle)",
+                color: "var(--accent)",
+                fontWeight: 700,
+                fontSize: "0.85rem",
+              }}
+            >
+              Coming Soon
+            </div>
+          </motion.div>
+        </div>
+      </main>
     </>
   );
 }

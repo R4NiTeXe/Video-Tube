@@ -10,7 +10,9 @@ export const initWebSocket = (server) => {
   wss = new WebSocketServer({ server, path: "/ws" });
 
   wss.on("connection", (ws, req) => {
-    const token = new URL(req.url, "http://localhost").searchParams.get("token");
+    const token = new URL(req.url, "http://localhost").searchParams.get(
+      "token"
+    );
     if (!token) {
       ws.close(4001, "Authentication required");
       return;
@@ -59,13 +61,24 @@ const handleMessage = (ws, msg) => {
       leaveRoom(ws, `video:${msg.videoId}`);
       break;
     case "comment:new":
-      broadcast(`video:${msg.videoId}`, { type: "comment:new", comment: msg.comment });
+      broadcast(`video:${msg.videoId}`, {
+        type: "comment:new",
+        comment: msg.comment,
+      });
       break;
     case "typing:start":
-      broadcast(`video:${msg.videoId}`, { type: "typing:start", userId: ws.userId, username: msg.username }, ws);
+      broadcast(
+        `video:${msg.videoId}`,
+        { type: "typing:start", userId: ws.userId, username: msg.username },
+        ws
+      );
       break;
     case "typing:stop":
-      broadcast(`video:${msg.videoId}`, { type: "typing:stop", userId: ws.userId }, ws);
+      broadcast(
+        `video:${msg.videoId}`,
+        { type: "typing:stop", userId: ws.userId },
+        ws
+      );
       break;
   }
 };

@@ -35,8 +35,7 @@ export function useSSE() {
       esRef.current = null;
     }
 
-    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
-    const url = `${API_BASE_URL}/sse/notifications${token ? `?token=${encodeURIComponent(token)}` : ""}`;
+    const url = `${API_BASE_URL}/sse/notifications`;
     const es = new EventSource(url, { withCredentials: true });
     esRef.current = es;
 
@@ -69,7 +68,7 @@ export function useSSE() {
 
       // If authentication was lost, stop retrying immediately
       if (!authRef.current) {
-        logger?.warn?.("SSE stopped — not authenticated");
+        logger.warn("SSE stopped — not authenticated");
         return;
       }
 
@@ -85,23 +84,25 @@ export function useSSE() {
           if (!isMountedRef.current || !authRef.current) return;
 
           try {
-            const sessionToken = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
-            const sessionUrl = `${API_BASE_URL}/users/current-user${sessionToken ? `?token=${encodeURIComponent(sessionToken)}` : ""}`;
-            const res = await fetch(sessionUrl, {
+            const res = await fetch(`${API_BASE_URL}/users/current-user`, {
               credentials: "include",
             });
-            if (res.ok && isMountedRef.current) {
+            if (!isMountedRef.current) return;
+            if (!authRef.current) return;
+            if (res.ok) {
               connect();
-            } else if (isMountedRef.current) {
-              logger?.warn?.("SSE stopped — session check failed");
+            } else {
+              logger.warn("SSE stopped — session check failed");
               retryCountRef.current = MAX_RETRIES;
             }
           } catch {
-            if (isMountedRef.current) connect();
+            if (!isMountedRef.current) return;
+            if (!authRef.current) return;
+            connect();
           }
         }, delay);
       } else {
-        logger?.warn?.("SSE max retries reached, stopping reconnection attempts");
+        logger.warn("SSE max retries reached, stopping reconnection attempts");
       }
     };
   }, [queryClient]);
@@ -109,7 +110,14 @@ export function useSSE() {
   // Handle page visibility - reconnect when tab becomes visible
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible" && authRef.current && !isConnected) {
+      if (
+        document.visibilityState === "visible" &&
+        authRef.current &&
+        !isConnected &&
+        isMountedRef.current
+      ) {
+        if (reconnectRef.current) clearTimeout(reconnectRef.current);
+        reconnectRef.current = null;
         retryCountRef.current = 0;
         retryDelayRef.current = INITIAL_RETRY_DELAY;
         connect();
@@ -117,7 +125,8 @@ export function useSSE() {
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [isConnected, connect]);
 
   useEffect(() => {

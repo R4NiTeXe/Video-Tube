@@ -30,19 +30,52 @@ interface PlaylistDetail {
 }
 
 const BackIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="19" y1="12" x2="5" y2="12" />
+    <polyline points="12 19 5 12 12 5" />
+  </svg>
 );
 
 const EditIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
 );
-
-
 
 const XIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
 );
-
 
 export default function PlaylistDetailPage() {
   const params = useParams();
@@ -67,10 +100,6 @@ export default function PlaylistDetailPage() {
     enabled: isAuthenticated && !!playlistId,
   });
 
-
-
-
-
   const removeVideo = useMutation({
     mutationFn: async (videoId: string) => {
       await api.patch(`/playlists/remove/${videoId}/${playlistId}`);
@@ -82,8 +111,20 @@ export default function PlaylistDetailPage() {
 
   if (authLoading || !isAuthenticated) {
     return (
-      <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
-        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ color: "var(--text-secondary)", fontWeight: 500 }}>
+      <div
+        style={{
+          display: "flex",
+          minHeight: "100vh",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "var(--bg-primary)",
+        }}
+      >
+        <motion.div
+          animate={{ opacity: [0.3, 1, 0.3] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          style={{ color: "var(--text-secondary)", fontWeight: 500 }}
+        >
           Loading...
         </motion.div>
       </div>
@@ -95,8 +136,20 @@ export default function PlaylistDetailPage() {
 
   if (isLoading) {
     return (
-      <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
-        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ color: "var(--text-muted)" }}>
+      <div
+        style={{
+          display: "flex",
+          minHeight: "100vh",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "var(--bg-primary)",
+        }}
+      >
+        <motion.div
+          animate={{ opacity: [0.3, 1, 0.3] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          style={{ color: "var(--text-muted)" }}
+        >
           Loading playlist...
         </motion.div>
       </div>
@@ -105,11 +158,36 @@ export default function PlaylistDetailPage() {
 
   if (!playlist) {
     return (
-      <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          backgroundColor: "var(--bg-primary)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <div style={{ textAlign: "center" }}>
-          <p style={{ fontSize: "1.2rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.5rem" }}>Playlist not found</p>
-          <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem" }}>This playlist doesn&apos;t exist or has been removed.</p>
-          <Link href="/playlists" className="btn btn-primary" style={{ borderRadius: 99, padding: "0.7rem 1.75rem" }}>Go to Playlists</Link>
+          <p
+            style={{
+              fontSize: "1.2rem",
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              marginBottom: "0.5rem",
+            }}
+          >
+            Playlist not found
+          </p>
+          <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem" }}>
+            This playlist doesn&apos;t exist or has been removed.
+          </p>
+          <Link
+            href="/playlists"
+            className="btn btn-primary"
+            style={{ borderRadius: 99, padding: "0.7rem 1.75rem" }}
+          >
+            Go to Playlists
+          </Link>
         </div>
       </div>
     );
@@ -119,22 +197,62 @@ export default function PlaylistDetailPage() {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
-      <PageMeta title={playlist?.name || "Playlist"} description="View playlist on VideoTube." noIndex />
+      <PageMeta
+        title={playlist?.name || "Playlist"}
+        description="View playlist on VideoTube."
+        noIndex
+      />
       <header
         className="glass"
         style={{
-          position: "sticky", top: 0, zIndex: 50,
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
           padding: "0.75rem 2rem",
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-          borderTop: "none", borderLeft: "none", borderRight: "none", borderRadius: 0,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          borderTop: "none",
+          borderLeft: "none",
+          borderRight: "none",
+          borderRadius: 0,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <button onClick={() => router.back()} style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--text-secondary)", fontSize: "0.88rem", fontWeight: 500, background: "none", border: "none", cursor: "pointer" }}>
+          <button
+            onClick={() => router.back()}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.4rem",
+              color: "var(--text-secondary)",
+              fontSize: "0.88rem",
+              fontWeight: 500,
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
             <BackIcon /> Back
           </button>
-          <span style={{ color: "var(--border)", fontSize: "1.2rem", fontWeight: 300 }}>/</span>
-          <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.9rem" }}>Playlist</span>
+          <span
+            style={{
+              color: "var(--border)",
+              fontSize: "1.2rem",
+              fontWeight: 300,
+            }}
+          >
+            /
+          </span>
+          <span
+            style={{
+              fontWeight: 600,
+              color: "var(--text-secondary)",
+              fontSize: "0.9rem",
+            }}
+          >
+            Playlist
+          </span>
         </div>
         {isOwner && !editing && (
           <button
@@ -144,7 +262,14 @@ export default function PlaylistDetailPage() {
               setEditDesc(playlist.description);
               setEditing(true);
             }}
-            style={{ padding: "0.45rem 1rem", fontSize: "0.82rem", borderRadius: 99, display: "flex", alignItems: "center", gap: "0.35rem" }}
+            style={{
+              padding: "0.45rem 1rem",
+              fontSize: "0.82rem",
+              borderRadius: 99,
+              display: "flex",
+              alignItems: "center",
+              gap: "0.35rem",
+            }}
           >
             <EditIcon /> Edit
           </button>
@@ -152,22 +277,51 @@ export default function PlaylistDetailPage() {
       </header>
 
       <div className="content-max">
-        
         {videos.length === 0 ? (
           <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
-            <div style={{
-              width: 64, height: 64, borderRadius: "50%",
-              backgroundColor: "var(--elevated)",
-              display: "inline-flex", alignItems: "center", justifyContent: "center",
-              marginBottom: "1rem", color: "var(--text-muted)",
-            }}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+            <div
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: "50%",
+                backgroundColor: "var(--elevated)",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: "1rem",
+                color: "var(--text-muted)",
+              }}
+            >
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              >
+                <polygon points="23 7 16 12 23 17 23 7" />
+                <rect x="1" y="5" width="15" height="14" rx="2" />
+              </svg>
             </div>
-            <p style={{ fontWeight: 600, fontSize: "1.05rem", color: "var(--text-secondary)", marginBottom: "0.4rem" }}>No videos in this playlist</p>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Add videos from the home page to start building this playlist.</p>
+            <p
+              style={{
+                fontWeight: 600,
+                fontSize: "1.05rem",
+                color: "var(--text-secondary)",
+                marginBottom: "0.4rem",
+              }}
+            >
+              No videos in this playlist
+            </p>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+              Add videos from the home page to start building this playlist.
+            </p>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
+          >
             <AnimatePresence mode="popLayout">
               {videos.map((video, i) => (
                 <motion.div
@@ -181,37 +335,99 @@ export default function PlaylistDetailPage() {
                   <div
                     className="video-card-premium"
                     style={{
-                      display: "flex", flexDirection: "row", alignItems: "center", gap: "1rem",
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: "1rem",
                       padding: "0.75rem",
                       borderRadius: "var(--radius-lg)",
                       border: "1px solid var(--border)",
                       backgroundColor: "var(--card)",
                     }}
                   >
-                    <Link href={`/videos/${video._id}`} style={{ flexShrink: 0, width: 180, position: "relative" }}>
-                      <div style={{ width: "100%", paddingTop: "56.25%", borderRadius: "var(--radius-md)", overflow: "hidden", position: "relative" }}>
+                    <Link
+                      href={`/videos/${video._id}`}
+                      style={{
+                        flexShrink: 0,
+                        width: 180,
+                        position: "relative",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "100%",
+                          paddingTop: "56.25%",
+                          borderRadius: "var(--radius-md)",
+                          overflow: "hidden",
+                          position: "relative",
+                        }}
+                      >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={video.thumbnail} alt={video.title} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-                        <div className="duration-badge" style={{ position: "absolute", bottom: 6, right: 6, background: "rgba(0,0,0,0.75)", color: "#fff", padding: "0.15rem 0.45rem", borderRadius: 4, fontSize: "0.7rem", fontWeight: 600 }}>
+                        <img
+                          src={video.thumbnail}
+                          alt={video.title}
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                        />
+                        <div
+                          className="duration-badge"
+                          style={{
+                            position: "absolute",
+                            bottom: 6,
+                            right: 6,
+                            background: "rgba(0,0,0,0.75)",
+                            color: "#fff",
+                            padding: "0.15rem 0.45rem",
+                            borderRadius: 4,
+                            fontSize: "0.7rem",
+                            fontWeight: 600,
+                          }}
+                        >
                           {formatDuration(video.duration)}
                         </div>
                       </div>
                     </Link>
 
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <Link href={`/videos/${video._id}`} style={{ textDecoration: "none" }}>
-                        <h2 style={{
-                          fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)",
-                          display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
-                          marginBottom: "0.3rem",
-                        }}>
+                      <Link
+                        href={`/videos/${video._id}`}
+                        style={{ textDecoration: "none" }}
+                      >
+                        <h2
+                          style={{
+                            fontSize: "0.95rem",
+                            fontWeight: 700,
+                            color: "var(--text-primary)",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                            marginBottom: "0.3rem",
+                          }}
+                        >
                           {video.title}
                         </h2>
                       </Link>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.75rem",
+                          fontSize: "0.8rem",
+                          color: "var(--text-muted)",
+                        }}
+                      >
                         <span>{formatViews(video.views)} views</span>
                         <span>•</span>
-                        <span>{new Date(video.createdAt).toLocaleDateString()}</span>
+                        <span>
+                          {new Date(video.createdAt).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
 
@@ -222,16 +438,36 @@ export default function PlaylistDetailPage() {
                         title="Remove from playlist"
                         style={{
                           flexShrink: 0,
-                          width: 34, height: 34, borderRadius: "50%",
+                          width: 34,
+                          height: 34,
+                          borderRadius: "50%",
                           backgroundColor: "transparent",
                           border: "1px solid var(--border)",
-                          display: "flex", alignItems: "center", justifyContent: "center",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                           color: "var(--text-muted)",
                           cursor: "pointer",
                           transition: "all 0.2s",
                         }}
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--error-subtle)"; (e.currentTarget as HTMLElement).style.color = "var(--error)"; (e.currentTarget as HTMLElement).style.borderColor = "var(--error)"; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"; }}
+                        onMouseEnter={(e) => {
+                          (
+                            e.currentTarget as HTMLElement
+                          ).style.backgroundColor = "var(--error-subtle)";
+                          (e.currentTarget as HTMLElement).style.color =
+                            "var(--error)";
+                          (e.currentTarget as HTMLElement).style.borderColor =
+                            "var(--error)";
+                        }}
+                        onMouseLeave={(e) => {
+                          (
+                            e.currentTarget as HTMLElement
+                          ).style.backgroundColor = "transparent";
+                          (e.currentTarget as HTMLElement).style.color =
+                            "var(--text-muted)";
+                          (e.currentTarget as HTMLElement).style.borderColor =
+                            "var(--border)";
+                        }}
                       >
                         <XIcon />
                       </button>

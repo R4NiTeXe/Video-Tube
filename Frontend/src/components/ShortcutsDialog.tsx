@@ -14,7 +14,8 @@ export default function ShortcutsDialog() {
         target.tagName === "TEXTAREA" ||
         target.tagName === "SELECT" ||
         target.isContentEditable
-      ) return;
+      )
+        return;
 
       if (e.key === "?" && e.shiftKey) {
         e.preventDefault();
@@ -57,22 +58,42 @@ export default function ShortcutsDialog() {
           boxShadow: "var(--shadow-xl)",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-          <h2 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "1rem",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "1.1rem",
+              fontWeight: 700,
+              color: "var(--text-primary)",
+              margin: 0,
+            }}
+          >
             Keyboard Shortcuts
           </h2>
           <button
             onClick={() => setIsOpen(false)}
             style={{
-              background: "none", border: "none", cursor: "pointer",
-              color: "var(--text-muted)", fontSize: "1.2rem", padding: "0.25rem",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--text-muted)",
+              fontSize: "1.2rem",
+              padding: "0.25rem",
             }}
           >
             ✕
           </button>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+        <div
+          style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
+        >
           {DEFAULT_SHORTCUTS.map((shortcut) => (
             <div
               key={shortcut.key}
@@ -84,27 +105,50 @@ export default function ShortcutsDialog() {
                 borderBottom: "1px solid var(--border-light)",
               }}
             >
-              <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+              <span
+                style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}
+              >
                 {shortcut.description}
               </span>
-              <kbd style={{
-                padding: "0.2rem 0.5rem",
-                borderRadius: "var(--radius-sm)",
-                backgroundColor: "var(--bg-secondary)",
-                border: "1px solid var(--border-light)",
-                fontSize: "0.75rem",
-                fontFamily: "monospace",
-                color: "var(--text-primary)",
-                fontWeight: 600,
-              }}>
-                {"shift" in shortcut && shortcut.shift ? "Shift + " : ""}{shortcut.key === "/" ? "/" : shortcut.key.toUpperCase()}
+              <kbd
+                style={{
+                  padding: "0.2rem 0.5rem",
+                  borderRadius: "var(--radius-sm)",
+                  backgroundColor: "var(--bg-secondary)",
+                  border: "1px solid var(--border-light)",
+                  fontSize: "0.75rem",
+                  fontFamily: "monospace",
+                  color: "var(--text-primary)",
+                  fontWeight: 600,
+                }}
+              >
+                {"shift" in shortcut && shortcut.shift ? "Shift + " : ""}
+                {shortcut.key === "/" ? "/" : shortcut.key.toUpperCase()}
               </kbd>
             </div>
           ))}
         </div>
 
-        <p style={{ marginTop: "1rem", fontSize: "0.75rem", color: "var(--text-muted)", textAlign: "center" }}>
-          Press <kbd style={{ padding: "0.1rem 0.3rem", borderRadius: 3, backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-light)" }}>Shift + ?</kbd> to toggle this dialog
+        <p
+          style={{
+            marginTop: "1rem",
+            fontSize: "0.75rem",
+            color: "var(--text-muted)",
+            textAlign: "center",
+          }}
+        >
+          Press{" "}
+          <kbd
+            style={{
+              padding: "0.1rem 0.3rem",
+              borderRadius: 3,
+              backgroundColor: "var(--bg-secondary)",
+              border: "1px solid var(--border-light)",
+            }}
+          >
+            Shift + ?
+          </kbd>{" "}
+          to toggle this dialog
         </p>
       </div>
     </div>
