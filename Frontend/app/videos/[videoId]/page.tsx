@@ -826,6 +826,7 @@ export default function VideoPlayerPage() {
     }
 
     if (video.hlsUrl && Hls.isSupported()) {
+      setVideoSrc("");
       const hls = new Hls();
       hlsRef.current = hls;
       hls.loadSource(video.hlsUrl);
@@ -973,10 +974,9 @@ export default function VideoPlayerPage() {
             >
               <video
                 ref={videoRef}
-                src={videoSrc || video.videoFile}
+                {...(videoSrc ? { src: videoSrc } : {})}
                 poster={video.thumbnail}
                 controls
-                crossOrigin="anonymous"
                 style={{
                   position: "absolute",
                   top: 0,

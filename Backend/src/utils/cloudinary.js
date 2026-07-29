@@ -62,7 +62,6 @@ const generateHlsManifest = async (publicId) => {
       format: "m3u8",
       streaming_profile: "auto",
       secure: true,
-      transformation: [{ flags: "streaming_attachment" }],
     });
 
     return hlsUrl;

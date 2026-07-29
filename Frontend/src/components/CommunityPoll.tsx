@@ -20,7 +20,7 @@ interface PollData {
   createdBy?: { _id: string; fullName: string };
 }
 
-export default function CommunityPoll({ poll, channelUsername }: { poll: PollData; channelUsername: string }) {
+export default function CommunityPoll({ poll }: { poll: PollData }) {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
 
@@ -32,7 +32,8 @@ export default function CommunityPoll({ poll, channelUsername }: { poll: PollDat
       await api.post(`/polls/${poll._id}/vote`, { optionIndex });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["channel-posts", channelUsername] });
+      queryClient.invalidateQueries({ queryKey: ["channel-posts"] });
+      queryClient.invalidateQueries({ queryKey: ["community-posts"] });
     },
   });
 

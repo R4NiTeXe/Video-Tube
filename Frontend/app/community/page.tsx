@@ -462,7 +462,7 @@ export default function CommunityPage() {
                   )}
 
                   {post.poll && (
-                    <CommunityPoll poll={post.poll} channelUsername="" />
+                    <CommunityPoll poll={post.poll} />
                   )}
 
                   <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", paddingTop: "0.5rem", borderTop: "1px solid var(--border)" }}>

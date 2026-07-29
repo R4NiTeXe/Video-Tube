@@ -591,7 +591,7 @@ export default function ChannelPage() {
                             )}
 
                             {post.poll && (
-                              <CommunityPoll poll={post.poll} channelUsername={username} />
+                              <CommunityPoll poll={post.poll} />
                             )}
 
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border)", fontSize: "0.82rem", color: "var(--text-muted)" }}>
