@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -381,6 +382,24 @@ export default function ChannelPage() {
         }
         {...(channel?.avatar ? { ogImage: channel.avatar } : {})}
         ogType="profile"
+        {...(typeof window !== "undefined"
+          ? { ogUrl: window.location.href }
+          : {})}
+        {...(channel
+          ? {
+              jsonLd: {
+                "@context": "https://schema.org",
+                "@type": "ProfilePage",
+                mainEntity: {
+                  "@type": "Person",
+                  name: channel.fullName,
+                  description: channel.bio?.slice(0, 160),
+                  image: channel.avatar || undefined,
+                  url: typeof window !== "undefined" ? window.location.href : undefined,
+                },
+              },
+            }
+          : {})}
       />
       {isLoading ? (
         <div
@@ -434,10 +453,12 @@ export default function ChannelPage() {
             }}
           >
             {channel.coverImage ? (
-              <img
+              <Image
                 src={channel.coverImage}
                 alt="Cover"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                fill
+                sizes="100vw"
+                style={{ objectFit: "cover" }}
               />
             ) : (
               <div
@@ -463,19 +484,16 @@ export default function ChannelPage() {
                 marginBottom: "2rem",
               }}
             >
-              <img
+              <Image
                 src={channel.avatar}
                 alt={channel.fullName}
+                width={120}
+                height={120}
                 style={{
-                  width: 120,
-                  height: 120,
                   borderRadius: "50%",
                   border: "4px solid var(--bg-primary)",
                   backgroundColor: "var(--bg-secondary)",
                   objectFit: "cover",
-                  flexShrink: 0,
-                  position: "relative",
-                  zIndex: 2,
                 }}
               />
               <div style={{ flex: 1, minWidth: 280, paddingTop: "3rem" }}>
@@ -732,14 +750,12 @@ export default function ChannelPage() {
                                 backgroundColor: "var(--bg-secondary)",
                               }}
                             >
-                              <img
+                              <Image
                                 src={video.thumbnail || ""}
                                 alt={video.title}
-                                style={{
-                                  width: "100%",
-                                  height: "100%",
-                                  objectFit: "cover",
-                                }}
+                                fill
+                                sizes="(min-width: 768px) 50vw, 100vw"
+                                style={{ objectFit: "cover" }}
                               />
                               <div
                                 className="duration-badge"
@@ -1248,12 +1264,12 @@ export default function ChannelPage() {
                               }}
                             >
                               <ChannelLink username={post.owner.username}>
-                                <img
+                                <Image
                                   src={post.owner.avatar}
                                   alt={post.owner.fullName}
+                                  width={36}
+                                  height={36}
                                   style={{
-                                    width: 36,
-                                    height: 36,
                                     borderRadius: "50%",
                                     objectFit: "cover",
                                   }}
@@ -1294,16 +1310,17 @@ export default function ChannelPage() {
                             </p>
 
                             {post.image && (
-                              <img
+                              <Image
                                 src={post.image}
                                 alt="Post image"
+                                width={720}
+                                height={400}
                                 style={{
                                   width: "100%",
                                   maxHeight: 400,
                                   objectFit: "contain",
                                   borderRadius: "var(--radius-md)",
                                   marginTop: "0.75rem",
-                                  backgroundColor: "#000",
                                 }}
                               />
                             )}
@@ -1609,12 +1626,13 @@ function PostComments({
                     }}
                   >
                     {comment.owner?.avatar ? (
-                      <img
+                      <Image
                         src={comment.owner.avatar}
-                        alt=""
+                        alt={`${comment.owner.fullName}'s avatar`}
+                        width={28}
+                        height={28}
                         style={{
-                          width: "100%",
-                          height: "100%",
+                          borderRadius: "50%",
                           objectFit: "cover",
                         }}
                       />

@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -973,10 +974,12 @@ function CommentItem({
           }}
         >
           {comment.owner?.avatar ? (
-            <img
+            <Image
               src={comment.owner.avatar}
               alt={comment.owner.fullName}
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              width={40}
+              height={40}
+              style={{ borderRadius: "50%", objectFit: "cover" }}
             />
           ) : (
             <div
@@ -2055,7 +2058,7 @@ export default function VideoPlayerPage() {
                             )}
                           </AnimatePresence>
                         </div>
-                        <button onClick={toggleFullscreen} style={{ background: "none", border: "none", color: "white", cursor: "pointer" }}>
+                        <button onClick={toggleFullscreen} aria-label="Toggle fullscreen" style={{ background: "none", border: "none", color: "white", cursor: "pointer" }}>
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
                         </button>
                       </div>
@@ -2108,12 +2111,13 @@ export default function VideoPlayerPage() {
                       }}
                     >
                       {video.owner?.avatar ? (
-                        <img
+                        <Image
                           src={video.owner.avatar}
                           alt={video.owner.fullName}
+                          width={44}
+                          height={44}
                           style={{
-                            width: "100%",
-                            height: "100%",
+                            borderRadius: "50%",
                             objectFit: "cover",
                           }}
                         />
@@ -2355,12 +2359,13 @@ export default function VideoPlayerPage() {
                     }}
                   >
                     {user?.avatar ? (
-                      <img
+                      <Image
                         src={user.avatar}
                         alt={user.fullName}
+                        width={40}
+                        height={40}
                         style={{
-                          width: "100%",
-                          height: "100%",
+                          borderRadius: "50%",
                           objectFit: "cover",
                         }}
                       />
@@ -2549,14 +2554,12 @@ export default function VideoPlayerPage() {
                       }}
                     >
                       {rv.thumbnail ? (
-                        <img
+                        <Image
                           src={rv.thumbnail}
                           alt={rv.title}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
+                          fill
+                          sizes="(min-width: 768px) 25vw, 50vw"
+                          style={{ objectFit: "cover" }}
                         />
                       ) : null}
                       {rv.duration ? (
