@@ -31,7 +31,7 @@ export default function GlobalError({
           width: 56,
           height: 56,
           borderRadius: "50%",
-          backgroundColor: "#fef2f2",
+          backgroundColor: "var(--error-subtle)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -43,7 +43,7 @@ export default function GlobalError({
           height="24"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#dc2626"
+          stroke="var(--error)"
           strokeWidth="2"
         >
           <circle cx="12" cy="12" r="10" />
@@ -59,7 +59,7 @@ export default function GlobalError({
       <p
         style={{
           fontSize: "0.85rem",
-          color: "#666",
+          color: "var(--text-muted)",
           marginBottom: "1.5rem",
           maxWidth: 400,
         }}
@@ -73,7 +73,7 @@ export default function GlobalError({
           borderRadius: 99,
           fontWeight: 600,
           fontSize: "0.85rem",
-          backgroundColor: "#6366f1",
+          backgroundColor: "var(--accent)",
           color: "white",
           border: "none",
           cursor: "pointer",

@@ -30,7 +30,7 @@ export default function Error({
           width: 56,
           height: 56,
           borderRadius: "50%",
-          backgroundColor: "#fef2f2",
+          backgroundColor: "var(--error-subtle)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -42,7 +42,7 @@ export default function Error({
           height="24"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#dc2626"
+          stroke="var(--error)"
           strokeWidth="2"
         >
           <circle cx="12" cy="12" r="10" />
