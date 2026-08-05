@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import { motion, AnimatePresence } from "framer-motion";
+import { useModalFocus } from "@/src/hooks/useModalFocus";
 import {
   X,
   UploadCloud,
@@ -100,11 +101,11 @@ function DropZone({
       onClick={() => inputRef.current?.click()}
       style={{
         borderRadius: 16,
-        border: `1.5px dashed ${dragging ? "#FF3B30" : "#252529"}`,
+        border: `1.5px dashed ${dragging ? "var(--accent)" : "var(--border-hover)"}`,
         padding: "1.25rem 1rem",
         textAlign: "center",
         cursor: disabled ? "not-allowed" : "pointer",
-        backgroundColor: dragging ? "rgba(255,59,48,0.06)" : "#121216",
+        backgroundColor: dragging ? "rgba(255,59,48,0.06)" : "var(--surface)",
         transition: "all 0.2s",
         opacity: disabled ? 0.5 : 1,
         position: "relative",
@@ -137,7 +138,7 @@ function DropZone({
       ) : (
         <div
           style={{
-            color: dragging ? "#FF3B30" : "#5c5c62",
+            color: dragging ? "var(--accent)" : "var(--text-muted)",
             marginBottom: "0.5rem",
             transition: "color 0.2s",
           }}
@@ -149,7 +150,7 @@ function DropZone({
         <p
           style={{
             fontSize: "0.8rem",
-            color: "#f0f0f0",
+            color: "var(--text-primary)",
             fontWeight: 500,
             margin: 0,
             wordBreak: "break-all",
@@ -162,14 +163,14 @@ function DropZone({
           <p
             style={{
               fontSize: "0.85rem",
-              color: "#f0f0f0",
+              color: "var(--text-primary)",
               fontWeight: 500,
               margin: "0 0 0.2rem",
             }}
           >
             {label === "Video" ? "Choose Video" : "Choose Thumbnail"}
           </p>
-          <p style={{ fontSize: "0.72rem", color: "#5c5c62", margin: 0 }}>
+          <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", margin: 0 }}>
             {hint}
           </p>
         </>
@@ -196,7 +197,7 @@ function Toggle({
         height: 22,
         borderRadius: 11,
         padding: 0,
-        backgroundColor: enabled ? "#FF3B30" : "#333",
+        backgroundColor: enabled ? "var(--accent)" : "var(--bg-tertiary)",
         border: "none",
         cursor: "pointer",
         position: "relative",
@@ -253,6 +254,13 @@ export default function UploadModal({
   const [thumbnailPreview, setThumbnailPreview] = useState("");
   const [cancelled, setCancelled] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  const handleEscapeClose = useCallback(() => {
+    if (!uploading) onClose();
+  }, [uploading, onClose]);
+
+  useModalFocus(modalRef, handleEscapeClose);
 
   useEffect(() => {
     return () => {
@@ -381,6 +389,8 @@ export default function UploadModal({
         }
       `}</style>
       <motion.div
+        ref={modalRef}
+        tabIndex={-1}
         className="modal-overlay"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -403,9 +413,9 @@ export default function UploadModal({
             maxHeight: "90vh",
             display: "flex",
             flexDirection: "column",
-            backgroundColor: "#0a0a0e",
+            backgroundColor: "var(--bg-primary)",
             borderRadius: 24,
-            border: "1px solid #252529",
+            border: "1px solid var(--border-hover)",
             boxShadow: "0 24px 80px rgba(0,0,0,0.5)",
             overflow: "hidden",
           }}
@@ -417,7 +427,7 @@ export default function UploadModal({
               justifyContent: "space-between",
               alignItems: "center",
               padding: "1.25rem 1.5rem",
-              borderBottom: "1px solid #252529",
+              borderBottom: "1px solid var(--border-hover)",
               flexShrink: 0,
             }}
           >
@@ -437,13 +447,13 @@ export default function UploadModal({
                   border: "1px solid rgba(255,59,48,0.15)",
                 }}
               >
-                <UploadCloud size={17} color="#FF3B30" />
+                <UploadCloud size={17} color="var(--accent)" />
               </div>
               <h2
                 style={{
                   fontSize: "1.05rem",
                   fontWeight: 700,
-                  color: "#f0f0f0",
+                  color: "var(--text-primary)",
                   margin: 0,
                 }}
               >
@@ -453,29 +463,30 @@ export default function UploadModal({
             <button
               onClick={onClose}
               disabled={uploading}
+              aria-label="Close upload modal"
               style={{
                 width: 34,
                 height: 34,
                 borderRadius: 10,
-                border: "1px solid #252529",
+                border: "1px solid var(--border-hover)",
                 background: "transparent",
                 cursor: uploading ? "not-allowed" : "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#5c5c62",
+                color: "var(--text-muted)",
                 opacity: uploading ? 0.4 : 1,
                 transition: "all 0.15s",
               }}
               onMouseEnter={(e) => {
                 if (!uploading) {
-                  e.currentTarget.style.background = "#1a1a1f";
-                  e.currentTarget.style.color = "#f0f0f0";
+                  e.currentTarget.style.background = "var(--elevated)";
+                  e.currentTarget.style.color = "var(--text-primary)";
                 }
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.color = "#5c5c62";
+                e.currentTarget.style.color = "var(--text-muted)";
               }}
             >
               <X size={18} />
@@ -497,6 +508,8 @@ export default function UploadModal({
               <AnimatePresence>
                 {error && (
                   <motion.div
+                    role="alert"
+                    aria-live="polite"
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
@@ -508,7 +521,7 @@ export default function UploadModal({
                       borderRadius: 12,
                       backgroundColor: "rgba(239,68,68,0.08)",
                       border: "1px solid rgba(239,68,68,0.15)",
-                      color: "#ef4444",
+                      color: "var(--error)",
                       fontSize: "0.85rem",
                       marginBottom: "1.25rem",
                     }}
@@ -551,12 +564,12 @@ export default function UploadModal({
                         style={{
                           fontSize: "0.85rem",
                           fontWeight: 600,
-                          color: "#f0f0f0",
+                          color: "var(--text-primary)",
                         }}
                       >
-                        Title <span style={{ color: "#FF3B30" }}>*</span>
+                        Title <span style={{ color: "var(--accent)" }}>*</span>
                       </label>
-                      <span style={{ fontSize: "0.72rem", color: "#5c5c62" }}>
+                      <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
                         {title.length}/{MAX_TITLE_LENGTH}
                       </span>
                     </div>
@@ -578,10 +591,10 @@ export default function UploadModal({
                         fontSize: "0.88rem",
                         border:
                           fieldErrors.title && touchedFields.title
-                            ? "1.5px solid #ef4444"
-                            : "1.5px solid #252529",
-                        backgroundColor: "#121216",
-                        color: "#f0f0f0",
+                            ? "1.5px solid var(--error)"
+                            : "1.5px solid var(--border-hover)",
+                        backgroundColor: "var(--surface)",
+                        color: "var(--text-primary)",
                         outline: "none",
                         transition: "border-color 0.15s",
                       }}
@@ -602,12 +615,12 @@ export default function UploadModal({
                         style={{
                           fontSize: "0.85rem",
                           fontWeight: 600,
-                          color: "#f0f0f0",
+                          color: "var(--text-primary)",
                         }}
                       >
-                        Description <span style={{ color: "#FF3B30" }}>*</span>
+                        Description <span style={{ color: "var(--accent)" }}>*</span>
                       </label>
-                      <span style={{ fontSize: "0.72rem", color: "#5c5c62" }}>
+                      <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
                         {description.length}/{MAX_DESC_LENGTH}
                       </span>
                     </div>
@@ -633,10 +646,10 @@ export default function UploadModal({
                         resize: "vertical",
                         border:
                           fieldErrors.description && touchedFields.description
-                            ? "1.5px solid #ef4444"
-                            : "1.5px solid #252529",
-                        backgroundColor: "#121216",
-                        color: "#f0f0f0",
+                            ? "1.5px solid var(--error)"
+                            : "1.5px solid var(--border-hover)",
+                        backgroundColor: "var(--surface)",
+                        color: "var(--text-primary)",
                         outline: "none",
                         fontFamily: "inherit",
                         transition: "border-color 0.15s",
@@ -658,7 +671,7 @@ export default function UploadModal({
                           display: "block",
                           fontSize: "0.85rem",
                           fontWeight: 600,
-                          color: "#f0f0f0",
+                          color: "var(--text-primary)",
                           marginBottom: "0.4rem",
                         }}
                       >
@@ -669,7 +682,7 @@ export default function UploadModal({
                             gap: "0.35rem",
                           }}
                         >
-                          <FileVideo size={14} color="#9a9aa0" /> Category
+                          <FileVideo size={14} color="var(--text-muted)" /> Category
                         </div>
                       </label>
                       <select
@@ -681,9 +694,9 @@ export default function UploadModal({
                           height: 44,
                           borderRadius: 12,
                           fontSize: "0.88rem",
-                          border: "1.5px solid #252529",
-                          backgroundColor: "#121216",
-                          color: "#f0f0f0",
+                          border: "1.5px solid var(--border-hover)",
+                          backgroundColor: "var(--surface)",
+                          color: "var(--text-primary)",
                           padding: "0 1rem",
                           outline: "none",
                           cursor: uploading ? "not-allowed" : "pointer",
@@ -702,7 +715,7 @@ export default function UploadModal({
                           display: "block",
                           fontSize: "0.85rem",
                           fontWeight: 600,
-                          color: "#f0f0f0",
+                          color: "var(--text-primary)",
                           marginBottom: "0.4rem",
                         }}
                       >
@@ -713,7 +726,7 @@ export default function UploadModal({
                             gap: "0.35rem",
                           }}
                         >
-                          <Tag size={14} color="#9a9aa0" /> Tags
+                          <Tag size={14} color="var(--text-muted)" /> Tags
                         </div>
                       </label>
                       <input
@@ -728,9 +741,9 @@ export default function UploadModal({
                           padding: "0 1rem",
                           borderRadius: 12,
                           fontSize: "0.88rem",
-                          border: "1.5px solid #252529",
-                          backgroundColor: "#121216",
-                          color: "#f0f0f0",
+                          border: "1.5px solid var(--border-hover)",
+                          backgroundColor: "var(--surface)",
+                          color: "var(--text-primary)",
                           outline: "none",
                         }}
                       />
@@ -741,26 +754,26 @@ export default function UploadModal({
                   <div
                     style={{
                       borderRadius: 16,
-                      border: "1px solid #252529",
-                      backgroundColor: "#121216",
+                      border: "1px solid var(--border-hover)",
+                      backgroundColor: "var(--surface)",
                       overflow: "hidden",
                     }}
                   >
                     <div
                       style={{
                         padding: "0.9rem 1.25rem",
-                        borderBottom: "1px solid #252529",
+                        borderBottom: "1px solid var(--border-hover)",
                         display: "flex",
                         alignItems: "center",
                         gap: "0.5rem",
                       }}
                     >
-                      <Globe size={15} color="#9a9aa0" />
+                      <Globe size={15} color="var(--text-muted)" />
                       <span
                         style={{
                           fontSize: "0.85rem",
                           fontWeight: 600,
-                          color: "#f0f0f0",
+                          color: "var(--text-primary)",
                         }}
                       >
                         Publish Settings
@@ -782,7 +795,7 @@ export default function UploadModal({
                             display: "block",
                             fontSize: "0.8rem",
                             fontWeight: 500,
-                            color: "#9a9aa0",
+                            color: "var(--text-muted)",
                             marginBottom: "0.5rem",
                           }}
                         >
@@ -791,11 +804,11 @@ export default function UploadModal({
                         <div
                           style={{
                             display: "flex",
-                            backgroundColor: "#0a0a0e",
+                            backgroundColor: "var(--bg-primary)",
                             borderRadius: 12,
                             padding: 3,
                             gap: 2,
-                            border: "1px solid #252529",
+                            border: "1px solid var(--border-hover)",
                           }}
                         >
                           {[
@@ -837,12 +850,12 @@ export default function UploadModal({
                                 transition: "all 0.15s",
                                 backgroundColor:
                                   isPublished === opt.value
-                                    ? "#FF3B30"
+                                    ? "var(--accent)"
                                     : "transparent",
                                 color:
                                   isPublished === opt.value
                                     ? "#fff"
-                                    : "#5c5c62",
+                                    : "var(--text-muted)",
                                 opacity:
                                   uploading ||
                                   (scheduleEnabled && opt.value === "public")
@@ -871,7 +884,7 @@ export default function UploadModal({
                             style={{
                               fontSize: "0.8rem",
                               fontWeight: 500,
-                              color: "#9a9aa0",
+                              color: "var(--text-muted)",
                             }}
                           >
                             <div
@@ -926,9 +939,9 @@ export default function UploadModal({
                                       padding: "0 0.75rem",
                                       borderRadius: 10,
                                       fontSize: "0.82rem",
-                                      border: "1px solid #252529",
-                                      backgroundColor: "#0a0a0e",
-                                      color: "#f0f0f0",
+                                      border: "1px solid var(--border-hover)",
+                                      backgroundColor: "var(--bg-primary)",
+                                      color: "var(--text-primary)",
                                       outline: "none",
                                       colorScheme: "dark",
                                     }}
@@ -948,9 +961,9 @@ export default function UploadModal({
                                       padding: "0 0.75rem",
                                       borderRadius: 10,
                                       fontSize: "0.82rem",
-                                      border: "1px solid #252529",
-                                      backgroundColor: "#0a0a0e",
-                                      color: "#f0f0f0",
+                                      border: "1px solid var(--border-hover)",
+                                      backgroundColor: "var(--bg-primary)",
+                                      color: "var(--text-primary)",
                                       outline: "none",
                                       colorScheme: "dark",
                                     }}
@@ -970,9 +983,9 @@ export default function UploadModal({
                                     padding: "0 0.75rem",
                                     borderRadius: 10,
                                     fontSize: "0.82rem",
-                                    border: "1px solid #252529",
-                                    backgroundColor: "#0a0a0e",
-                                    color: "#f0f0f0",
+                                    border: "1px solid var(--border-hover)",
+                                    backgroundColor: "var(--bg-primary)",
+                                    color: "var(--text-primary)",
                                     outline: "none",
                                     cursor: uploading
                                       ? "not-allowed"
@@ -1027,10 +1040,12 @@ export default function UploadModal({
                   {/* Upload Progress */}
                   {uploading && (
                     <div
+                      aria-live="polite"
+                      role="status"
                       style={{
                         borderRadius: 16,
-                        border: "1px solid #252529",
-                        backgroundColor: "#121216",
+                        border: "1px solid var(--border-hover)",
+                        backgroundColor: "var(--surface)",
                         padding: "1rem",
                       }}
                     >
@@ -1053,14 +1068,14 @@ export default function UploadModal({
                             justifyContent: "center",
                           }}
                         >
-                          <FileVideo size={17} color="#FF3B30" />
+                          <FileVideo size={17} color="var(--accent)" />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div
                             style={{
                               fontSize: "0.85rem",
                               fontWeight: 600,
-                              color: "#f0f0f0",
+                              color: "var(--text-primary)",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
@@ -1069,7 +1084,7 @@ export default function UploadModal({
                             {videoFile?.name}
                           </div>
                           <div
-                            style={{ fontSize: "0.75rem", color: "#5c5c62" }}
+                            style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}
                           >
                             {videoFile
                               ? `${(videoFile.size / (1024 * 1024)).toFixed(1)} MB`
@@ -1079,7 +1094,7 @@ export default function UploadModal({
                         {progress === 100 ? (
                           <CircleCheck
                             size={20}
-                            color="#22c55e"
+                            color="var(--success)"
                             style={{ flexShrink: 0 }}
                           />
                         ) : (
@@ -1087,7 +1102,7 @@ export default function UploadModal({
                             style={{
                               fontSize: "0.85rem",
                               fontWeight: 600,
-                              color: "#FF3B30",
+                              color: "var(--accent)",
                               flexShrink: 0,
                             }}
                           >
@@ -1098,7 +1113,7 @@ export default function UploadModal({
                       <div
                         style={{
                           height: 6,
-                          backgroundColor: "#0a0a0e",
+                          backgroundColor: "var(--bg-primary)",
                           borderRadius: 3,
                           overflow: "hidden",
                         }}
@@ -1111,8 +1126,8 @@ export default function UploadModal({
                             height: "100%",
                             background:
                               progress === 100
-                                ? "#22c55e"
-                                : "linear-gradient(90deg, #FF3B30, #e0352b)",
+                                ? "var(--success)"
+                                : "linear-gradient(90deg, var(--accent), var(--accent-hover))",
                             borderRadius: 3,
                           }}
                         />
@@ -1125,7 +1140,7 @@ export default function UploadModal({
                           marginTop: "0.5rem",
                         }}
                       >
-                        <span style={{ fontSize: "0.72rem", color: "#5c5c62" }}>
+                        <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
                           {progress < 100 ? "Uploading..." : "Processing..."}
                         </span>
                         {progress < 100 && (
@@ -1134,7 +1149,7 @@ export default function UploadModal({
                             onClick={handleCancel}
                             style={{
                               fontSize: "0.72rem",
-                              color: "#ef4444",
+                              color: "var(--error)",
                               background: "none",
                               border: "none",
                               cursor: "pointer",
@@ -1156,11 +1171,11 @@ export default function UploadModal({
                         justifyContent: "space-between",
                         alignItems: "center",
                         padding: "0.7rem 1rem",
-                        backgroundColor: "#121216",
-                        border: "1px solid #252529",
+                        backgroundColor: "var(--surface)",
+                        border: "1px solid var(--border-hover)",
                         borderRadius: 12,
                         fontSize: "0.85rem",
-                        color: "#9a9aa0",
+                        color: "var(--text-muted)",
                       }}
                     >
                       <span>Upload cancelled</span>
@@ -1172,7 +1187,7 @@ export default function UploadModal({
                         }}
                         style={{
                           fontSize: "0.82rem",
-                          color: "#FF3B30",
+                          color: "var(--accent)",
                           background: "none",
                           border: "none",
                           cursor: "pointer",
@@ -1197,8 +1212,8 @@ export default function UploadModal({
                 alignItems: "center",
                 gap: "0.75rem",
                 padding: "1rem 1.5rem",
-                borderTop: "1px solid #252529",
-                backgroundColor: "#0a0a0e",
+                borderTop: "1px solid var(--border-hover)",
+                backgroundColor: "var(--bg-primary)",
               }}
             >
               <button
@@ -1214,22 +1229,22 @@ export default function UploadModal({
                   borderRadius: 12,
                   fontSize: "0.88rem",
                   fontWeight: 500,
-                  border: "1px solid #252529",
+                  border: "1px solid var(--border-hover)",
                   backgroundColor: "transparent",
-                  color: "#9a9aa0",
+                  color: "var(--text-muted)",
                   cursor: uploading ? "not-allowed" : "pointer",
                   opacity: uploading ? 0.4 : 1,
                   transition: "all 0.15s",
                 }}
                 onMouseEnter={(e) => {
                   if (!uploading) {
-                    e.currentTarget.style.borderColor = "#3a3a40";
-                    e.currentTarget.style.color = "#f0f0f0";
+                    e.currentTarget.style.borderColor = "var(--text-placeholder)";
+                    e.currentTarget.style.color = "var(--text-primary)";
                   }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "#252529";
-                  e.currentTarget.style.color = "#9a9aa0";
+                  e.currentTarget.style.borderColor = "var(--border-hover)";
+                  e.currentTarget.style.color = "var(--text-muted)";
                 }}
               >
                 Cancel
@@ -1253,8 +1268,8 @@ export default function UploadModal({
                       : "pointer",
                   opacity: uploading || !videoFile || !thumbnailFile ? 0.5 : 1,
                   background: uploading
-                    ? "#FF3B30"
-                    : "linear-gradient(135deg, #FF3B30, #e0352b)",
+                    ? "var(--accent)"
+                    : "linear-gradient(135deg, var(--accent), var(--accent-hover))",
                   color: "#fff",
                   transition: "all 0.2s",
                 }}

@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import { motion } from "framer-motion";
+import { useModalFocus } from "@/src/hooks/useModalFocus";
 import { CloseIcon, ImageIcon, TrashIcon } from "@/src/components/icons";
 
 const CATEGORIES = [
@@ -43,6 +44,9 @@ export default function EditModal({
   const [thumbnailName, setThumbnailName] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useModalFocus(modalRef, onClose);
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -150,6 +154,8 @@ export default function EditModal({
 
   return (
     <motion.div
+      ref={modalRef}
+      tabIndex={-1}
       className="modal-overlay"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -178,6 +184,7 @@ export default function EditModal({
             className="btn-icon btn-sm"
             onClick={onClose}
             disabled={saving}
+            aria-label="Close edit modal"
           >
             <CloseIcon size={18} />
           </button>
@@ -185,6 +192,8 @@ export default function EditModal({
 
         {error && (
           <div
+            role="alert"
+            aria-live="polite"
             style={{
               padding: "var(--sp-3) var(--sp-4)",
               backgroundColor: "var(--error-subtle)",

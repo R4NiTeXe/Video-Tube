@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -180,7 +181,7 @@ function MetricCard({
               backgroundColor: trend.positive
                 ? "rgba(34,197,94,0.1)"
                 : "rgba(239,68,68,0.1)",
-              color: trend.positive ? "#22c55e" : "#ef4444",
+              color: trend.positive ? "var(--success)" : "var(--error)",
             }}
           >
             {trend.positive ? (
@@ -379,7 +380,7 @@ function DeleteConfirmDialog({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#ef4444",
+              color: "var(--error)",
               flexShrink: 0,
             }}
           >
@@ -442,7 +443,7 @@ function DeleteConfirmDialog({
               borderRadius: 99,
               border: "none",
               cursor: isPending ? "not-allowed" : "pointer",
-              backgroundColor: "#ef4444",
+              backgroundColor: "var(--error)",
               color: "#fff",
               opacity: isPending ? 0.5 : 1,
             }}
@@ -709,32 +710,32 @@ function CreatorStudioContent() {
                   label="Subscribers"
                   value={stats.totalSubscribers || 0}
                   icon={<Users size={18} />}
-                  color="#22c55e"
+                  color="var(--success)"
                 />
                 <MetricCard
                   label="Videos"
                   value={stats.totalVideos || 0}
                   icon={<Clapperboard size={18} />}
-                  color="#f59e0b"
+                  color="var(--warning)"
                 />
                 <MetricCard
                   label="Likes"
                   value={stats.totalLikes || 0}
                   icon={<Heart size={18} />}
-                  color="#ec4899"
+                  color="var(--chart-2)"
                 />
                 <MetricCard
                   label="Watch Time"
                   value={stats.totalWatchTime || 0}
                   icon={<Clock3 size={18} />}
-                  color="#8b5cf6"
+                  color="var(--chart-1)"
                   subtitle="minutes"
                 />
                 <MetricCard
                   label="Comments"
                   value={stats.totalComments || 0}
                   icon={<MessageCircle size={18} />}
-                  color="#06b6d4"
+                  color="var(--chart-3)"
                 />
               </motion.div>
             )}
@@ -1200,14 +1201,12 @@ function CreatorStudioContent() {
                                 position: "relative",
                               }}
                             >
-                              <img
+                              <Image
                                 src={video.thumbnail}
                                 alt=""
-                                style={{
-                                  width: "100%",
-                                  height: "100%",
-                                  objectFit: "cover",
-                                }}
+                                fill
+                                sizes="100px"
+                                style={{ objectFit: "cover" }}
                               />
                               <span
                                 style={{
@@ -1282,8 +1281,8 @@ function CreatorStudioContent() {
                                   ? "rgba(34,197,94,0.1)"
                                   : "rgba(245,158,11,0.1)",
                                 color: video.isPublished
-                                  ? "#22c55e"
-                                  : "#f59e0b",
+                                  ? "var(--success)"
+                                  : "var(--warning)",
                               }}
                             >
                               {video.isPublished ? (
