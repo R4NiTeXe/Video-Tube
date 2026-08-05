@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { timeAgo } from "@/src/lib/utils";
 import { PageMeta } from "@/src/components/PageMeta";
 
@@ -124,6 +126,14 @@ export default function NotificationsPage() {
     ? rawNotifications
     : [];
 
+  const parentRef = useRef<HTMLDivElement>(null);
+  const virtualizer = useVirtualizer({
+    count: notifications.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 80,
+    overscan: 5,
+  });
+
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>
       <PageMeta
@@ -220,58 +230,85 @@ export default function NotificationsPage() {
           </div>
         ) : (
           <div
-            style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
+            ref={parentRef}
+            style={{ display: "flex", flexDirection: "column", gap: "0.5rem", height: "calc(100vh - 200px)", overflow: "auto" }}
           >
-            <AnimatePresence mode="popLayout">
-              {notifications.map((n) => (
-                <motion.div
-                  key={n._id}
-                  layout
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: -40 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                  onClick={() => {
-                    if (!n.isRead) markRead.mutate(n._id);
-                  }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "1rem",
-                    padding: "1rem 1.25rem",
-                    borderRadius: "var(--radius-lg)",
-                    backgroundColor: n.isRead
-                      ? "transparent"
-                      : "var(--accent-subtle)",
-                    border: `1px solid ${n.isRead ? "var(--border)" : "var(--accent)"}`,
-                    cursor: "pointer",
-                    transition: "background-color 0.2s, border-color 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (n.isRead)
-                      (e.currentTarget as HTMLElement).style.backgroundColor =
-                        "var(--elevated)";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (n.isRead)
-                      (e.currentTarget as HTMLElement).style.backgroundColor =
-                        "transparent";
-                  }}
-                >
+            <div style={{ height: `${virtualizer.getTotalSize()}px`, width: "100%", position: "relative" }}>
+              {virtualizer.getVirtualItems().map((virtualRow) => {
+                const n = notifications[virtualRow.index];
+                if (!n) return null;
+                return (
+                  <motion.div
+                    key={n._id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    onClick={() => {
+                      if (!n.isRead) markRead.mutate(n._id);
+                    }}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      transform: `translateY(${virtualRow.start}px)`,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "1rem",
+                      padding: "1rem 1.25rem",
+                      borderRadius: "var(--radius-lg)",
+                      backgroundColor: n.isRead
+                        ? "transparent"
+                        : "var(--accent-subtle)",
+                      border: `1px solid ${n.isRead ? "var(--border)" : "var(--accent)"}`,
+                      cursor: "pointer",
+                      transition: "background-color 0.2s, border-color 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (n.isRead)
+                        (e.currentTarget as HTMLElement).style.backgroundColor =
+                          "var(--elevated)";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (n.isRead)
+                        (e.currentTarget as HTMLElement).style.backgroundColor =
+                          "transparent";
+                    }}
+                  >
                   {/* Unread dot */}
                   <div style={{ position: "relative", flexShrink: 0 }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={n.sender?.avatar || undefined}
-                      alt={n.sender?.fullName || "User"}
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: "50%",
-                        objectFit: "cover",
-                        border: "2px solid var(--border)",
-                      }}
-                    />
+                    {n.sender?.avatar ? (
+                      <Image
+                        src={n.sender.avatar}
+                        alt={n.sender?.fullName || "User"}
+                        width={44}
+                        height={44}
+                        style={{
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                          border: "2px solid var(--border)",
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                          border: "2px solid var(--border)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: "var(--accent-subtle)",
+                          color: "var(--accent)",
+                          fontSize: 16,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {n.sender?.fullName?.charAt(0)?.toUpperCase() || "?"}
+                      </div>
+                    )}
                     {!n.isRead && (
                       <div
                         style={{
@@ -281,7 +318,7 @@ export default function NotificationsPage() {
                           width: 12,
                           height: 12,
                           borderRadius: "50%",
-                          backgroundColor: "#3B82F6",
+                          backgroundColor: "var(--info)",
                           border: "2px solid var(--bg-primary)",
                         }}
                       />
@@ -320,23 +357,22 @@ export default function NotificationsPage() {
                       onClick={(e) => e.stopPropagation()}
                       style={{ flexShrink: 0 }}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <Image
                         src={n.video.thumbnail}
                         alt={n.video.title}
+                        width={72}
+                        height={44}
                         style={{
-                          width: 72,
-                          height: 44,
                           objectFit: "cover",
                           borderRadius: "var(--radius-sm)",
-                          border: "1px solid var(--border)",
                         }}
                       />
                     </Link>
                   )}
                 </motion.div>
-              ))}
-            </AnimatePresence>
+              );
+            })}
+            </div>
           </div>
         )}
       </div>

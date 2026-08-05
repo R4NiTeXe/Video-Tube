@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { formatViews, formatDuration } from "@/src/lib/utils";
@@ -293,10 +294,11 @@ export default function LikedPage() {
                       className="video-card-premium"
                     >
                       <div className="thumb-wrapper">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <Image
                           src={video.thumbnail}
                           alt={video.title}
+                          fill
+                          sizes="(min-width: 768px) 25vw, 50vw"
                           loading="lazy"
                         />
                         <div className="thumb-overlay">
@@ -309,18 +311,53 @@ export default function LikedPage() {
                         </span>
                         <div
                           className="avatar-badge"
-                          style={{ cursor: "pointer" }}
+                          style={{
+                            position: "absolute",
+                            bottom: 8,
+                            left: 8,
+                            width: 36,
+                            height: 36,
+                            zIndex: 1,
+                            cursor: "pointer",
+                          }}
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
                             router.push(`/channel/${video.owner?.username}`);
                           }}
                         >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={video.owner?.avatar}
-                            alt={video.owner?.fullName}
-                          />
+                          {video.owner?.avatar ? (
+                            <Image
+                              src={video.owner.avatar}
+                              alt={video.owner?.fullName || ""}
+                              width={36}
+                              height={36}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                borderRadius: "var(--radius-full)",
+                                objectFit: "cover",
+                              }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                borderRadius: "var(--radius-full)",
+                                backgroundColor: "var(--accent-subtle)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: "var(--accent)",
+                                fontSize: 12,
+                                fontWeight: 600,
+                              }}
+                            >
+                              {video.owner?.fullName?.charAt(0)?.toUpperCase() ||
+                                "?"}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="card-info">
