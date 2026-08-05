@@ -78,6 +78,7 @@ export default function ShortcutsDialog() {
           </h2>
           <button
             onClick={() => setIsOpen(false)}
+            aria-label="Close shortcuts dialog"
             style={{
               background: "none",
               border: "none",
