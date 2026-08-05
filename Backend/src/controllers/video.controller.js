@@ -534,12 +534,11 @@ const getVideoById = asyncHandler(async (req, res) => {
     const videoModel = mongoose.model("Video");
 
     try {
-      const oldUser = await userModel.findByIdAndUpdate(
-        req.user._id,
-        { $addToSet: { watchHistory: videoId } },
-        { new: false, projection: { watchHistory: 1 } }
+      const result = await userModel.updateOne(
+        { _id: req.user._id, watchHistory: { $ne: videoId } },
+        { $push: { watchHistory: videoId } }
       );
-      if (!oldUser?.watchHistory?.some((id) => id.equals(videoId))) {
+      if (result.modifiedCount > 0) {
         await videoModel.findByIdAndUpdate(videoId, { $inc: { views: 1 } });
       }
     } catch (err) {

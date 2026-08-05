@@ -107,7 +107,7 @@ describe("Video CRUD & View Count", () => {
       });
 
       const res = await request(app)
-        .get(`/api/v1/videos/${video._id}`)
+        .get(`/api/v1/videos/${video._id}?recordView=true`)
         .set("Cookie", login.cookies.join("; "));
 
       expectSuccess(res, 200);
@@ -138,11 +138,11 @@ describe("Video CRUD & View Count", () => {
       });
 
       await request(app)
-        .get(`/api/v1/videos/${video._id}`)
+        .get(`/api/v1/videos/${video._id}?recordView=true`)
         .set("Cookie", login.cookies.join("; "));
 
       const res = await request(app)
-        .get(`/api/v1/videos/${video._id}`)
+        .get(`/api/v1/videos/${video._id}?recordView=true`)
         .set("Cookie", login.cookies.join("; "));
 
       expectSuccess(res, 200);

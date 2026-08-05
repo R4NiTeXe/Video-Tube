@@ -10,7 +10,7 @@ import MobileDrawer from "@/src/components/MobileDrawer";
 import { ErrorBoundary } from "@/src/components/ErrorBoundary";
 import AppShell from "@/src/components/AppShell";
 import ToastViewport from "@/src/components/ToastViewport";
-import { SITE_URL } from "@/src/services/siteConfig";
+import { APP_VERSION, SITE_URL } from "@/src/services/siteConfig";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { MotionConfig } from "framer-motion";
 
@@ -69,6 +69,9 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: SITE_URL,
+  },
+  other: {
+    "app-version": APP_VERSION,
   },
 };
 

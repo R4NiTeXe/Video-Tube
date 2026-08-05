@@ -71,7 +71,8 @@ const sendOtp = asyncHandler(async (req, res) => {
   const usage = userId
     ? await otpService.getUserOtpUsage(userId, timezone)
     : null;
-  const globalCount = otpService.checkGlobalLimit().remaining || 0;
+  const globalCheck = await otpService.checkGlobalLimit();
+  const globalCount = globalCheck.remaining || 0;
 
   return res.status(200).json(
     new ApiResponse(
@@ -156,7 +157,8 @@ const resendOtp = asyncHandler(async (req, res) => {
 const getOtpUsage = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).select("timezone").lean();
   const usage = await otpService.getUserOtpUsage(req.user._id, user?.timezone);
-  const globalCount = otpService.checkGlobalLimit().remaining || 0;
+  const globalCheck = await otpService.checkGlobalLimit();
+  const globalCount = globalCheck.remaining || 0;
 
   const now = new Date();
   const tz = user?.timezone || "UTC";

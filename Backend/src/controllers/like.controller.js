@@ -26,10 +26,12 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 
   if (existingLike) {
     isLiked = false;
+    await Video.findByIdAndUpdate(videoId, { $inc: { likesCount: -1 } });
   } else {
     try {
       await Like.create({ video: videoId, likedBy: req.user._id });
       isLiked = true;
+      await Video.findByIdAndUpdate(videoId, { $inc: { likesCount: 1 } });
     } catch (error) {
       if (error.code === 11000) {
         isLiked = true;
@@ -103,7 +105,6 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
   try {
     await Like.create({
       comment: commentId,
-      video: comment.video,
       likedBy: req.user._id,
     });
   } catch (error) {

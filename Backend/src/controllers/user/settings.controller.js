@@ -64,7 +64,7 @@ const sendChangePasswordOTP = asyncHandler(async (req, res) => {
       await otpService.confirmOtpDelivery(req.user._id, user.timezone);
     } catch (error) {
       logger.error("Failed to send OTP WhatsApp:", error.message);
-      throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);
+      throw new ApiError(500, "Failed to send WhatsApp OTP. Please try again.");
     }
     return res
       .status(200)
@@ -86,7 +86,7 @@ const sendChangePasswordOTP = asyncHandler(async (req, res) => {
       await otpService.confirmOtpDelivery(req.user._id, user.timezone);
     } catch (error) {
       logger.error("Failed to send OTP email:", error.message);
-      throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
+      throw new ApiError(500, "Failed to send email OTP. Please try again.");
     }
     return res
       .status(200)
@@ -182,7 +182,7 @@ const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
         "Failed to send delete account OTP WhatsApp:",
         error.message
       );
-      throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);
+      throw new ApiError(500, "Failed to send WhatsApp OTP. Please try again.");
     }
     return res
       .status(200)
@@ -204,7 +204,7 @@ const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
       await otpService.confirmOtpDelivery(req.user._id, user.timezone);
     } catch (error) {
       logger.error("Failed to send delete account OTP email:", error.message);
-      throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
+      throw new ApiError(500, "Failed to send email OTP. Please try again.");
     }
     return res
       .status(200)
@@ -312,7 +312,7 @@ const sendForgotPasswordChangeOTP = asyncHandler(async (req, res) => {
         "Failed to send forgot password OTP WhatsApp:",
         error.message
       );
-      throw new ApiError(500, `Failed to send WhatsApp OTP: ${error.message}`);
+      throw new ApiError(500, "Failed to send WhatsApp OTP. Please try again.");
     }
     return res
       .status(200)
@@ -339,7 +339,7 @@ const sendForgotPasswordChangeOTP = asyncHandler(async (req, res) => {
       await otpService.confirmOtpDelivery(req.user._id, user.timezone);
     } catch (error) {
       logger.error("Failed to send forgot password OTP email:", error.message);
-      throw new ApiError(500, `Failed to send email OTP: ${error.message}`);
+      throw new ApiError(500, "Failed to send email OTP. Please try again.");
     }
     return res
       .status(200)
@@ -646,7 +646,7 @@ const sendIdentifierUpdateOTP = asyncHandler(async (req, res) => {
     await otpService.confirmOtpDelivery(user._id, user.timezone);
   } catch (error) {
     logger.error(`Failed to send OTP to ${targetIdentifier}:`, error.message);
-    throw new ApiError(500, `Failed to send OTP to ${channel}`);
+    throw new ApiError(500, `Failed to send OTP to ${channel}. Please try again.`);
   }
 
   return res

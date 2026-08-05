@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { OTP } from "../models/otp.model.js";
 import { User } from "../models/user.model.js";
 import { sendEmail } from "../utils/email.js";
+import { isRedisAvailable, getRedis } from "../utils/redis.js";
 import logger from "../utils/logger.js";
 
 export const OTP_CONSTANTS = {
@@ -28,6 +29,13 @@ const OTP_PURPOSES = [
 
 const OTP_CHANNELS = ["email", "whatsapp"];
 
+const GLOBAL_DAILY_KEY_PREFIX = "otp:global:daily:";
+
+const getGlobalDailyKey = () => {
+  const today = OTP.getStartOfDay();
+  return `${GLOBAL_DAILY_KEY_PREFIX}${today.toISOString().slice(0, 10)}`;
+};
+
 let globalDailyCount = 0;
 let globalDailyCountDate = null;
 
@@ -42,14 +50,34 @@ const resetGlobalDailyCountIfNeeded = () => {
   }
 };
 
-const incrementGlobalDailyCount = () => {
-  resetGlobalDailyCountIfNeeded();
-  globalDailyCount++;
-};
-
-const getGlobalDailyCount = () => {
+const getGlobalDailyCount = async () => {
+  if (isRedisAvailable()) {
+    try {
+      const val = await getRedis().get(getGlobalDailyKey());
+      return val ? parseInt(val, 10) : 0;
+    } catch (err) {
+      logger.warn("Redis global OTP count read failed", {
+        error: err.message,
+      });
+    }
+  }
   resetGlobalDailyCountIfNeeded();
   return globalDailyCount;
+};
+
+const incrementGlobalDailyCount = async () => {
+  if (isRedisAvailable()) {
+    try {
+      const key = getGlobalDailyKey();
+      await getRedis().incr(key);
+      await getRedis().expire(key, 172800);
+      return;
+    } catch (err) {
+      logger.warn("Global OTP count increment failed", { error: err.message });
+    }
+  }
+  resetGlobalDailyCountIfNeeded();
+  globalDailyCount++;
 };
 
 const generateOtp = () => {
@@ -60,8 +88,8 @@ const hashOtp = (otp) => {
   return OTP.hashOtp(otp);
 };
 
-const checkGlobalLimit = () => {
-  const current = getGlobalDailyCount();
+const checkGlobalLimit = async () => {
+  const current = await getGlobalDailyCount();
   if (current >= OTP_CONSTANTS.GLOBAL_DAILY_LIMIT) {
     return {
       allowed: false,
@@ -166,7 +194,7 @@ const storeOtp = async ({ identifier, userId, purpose, channel = "email" }) => {
     throw new Error(`Invalid OTP channel: ${channel}`);
   }
 
-  const globalCheck = checkGlobalLimit();
+  const globalCheck = await checkGlobalLimit();
   if (!globalCheck.allowed) {
     throw new Error(globalCheck.message);
   }
@@ -222,11 +250,11 @@ const confirmOtpDelivery = async (userId, timezone) => {
   if (userId) {
     await incrementUserDailyCount(userId, timezone);
   }
-  incrementGlobalDailyCount();
+  await incrementGlobalDailyCount();
 
   logger.info(`OTP delivery confirmed`, {
     userId,
-    globalCount: getGlobalDailyCount(),
+    globalCount: await getGlobalDailyCount(),
   });
 };
 

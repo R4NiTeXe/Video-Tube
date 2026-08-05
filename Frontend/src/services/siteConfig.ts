@@ -1,5 +1,7 @@
 const DEFAULT_SITE_URL = "https://videotube.app";
 
+export const APP_VERSION = "1.1.0";
+
 const isLocalhostUrl = (origin: string) => {
   return (
     origin.startsWith("http://localhost") ||

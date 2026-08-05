@@ -15,6 +15,9 @@ const getProviderCallbackUrl = (provider) => {
   return `${baseCallbackUrl}/${provider}/callback`;
 };
 
+const syntheticEmail = (provider, providerId) =>
+  `${provider}-${providerId}-${crypto.randomBytes(6).toString("hex")}@social.videotube.local`;
+
 const findOrCreateUser = async (provider, providerId, email, name, avatar) => {
   if (!email) throw new Error("Email is required from OAuth provider");
 
@@ -129,7 +132,7 @@ export const configurePassport = () => {
         async (accessToken, refreshToken, profile, done) => {
           try {
             const email =
-              profile.emails?.[0]?.value || `${profile.username}@github.local`;
+              profile.emails?.[0]?.value || syntheticEmail("github", profile.id);
             const { user, isNew } = await findOrCreateUser(
               "github",
               profile.id.toString(),
@@ -159,7 +162,8 @@ export const configurePassport = () => {
         async (accessToken, refreshToken, profile, done) => {
           try {
             const email =
-              profile.emails?.[0]?.value || `${profile.id}@facebook.local`;
+              profile.emails?.[0]?.value ||
+              syntheticEmail("facebook", profile.id);
             const { user, isNew } = await findOrCreateUser(
               "facebook",
               profile.id,
@@ -188,7 +192,7 @@ export const configurePassport = () => {
         },
         async (accessToken, refreshToken, profile, done) => {
           try {
-            const email = profile.email || `${profile.id}@discord.local`;
+            const email = profile.email || syntheticEmail("discord", profile.id);
             const { user, isNew } = await findOrCreateUser(
               "discord",
               profile.id,
