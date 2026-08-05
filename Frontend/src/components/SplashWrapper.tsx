@@ -13,6 +13,10 @@ export default function SplashWrapper({
 
   useEffect(() => {
     try {
+      const prefersReducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+      if (prefersReducedMotion) return;
       if (sessionStorage.getItem("vt-splash") !== "1") {
         setShowSplash(true);
       }

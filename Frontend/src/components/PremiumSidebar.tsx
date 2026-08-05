@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/src/store/useAuthStore";
@@ -75,9 +76,11 @@ export default function PremiumSidebar() {
             aria-label={`Your profile: ${user.fullName}`}
           >
             <div style={{ position: "relative", flexShrink: 0 }}>
-              <img
+              <Image
                 src={user.avatar}
-                alt=""
+                alt={`${user.fullName}'s avatar`}
+                width={32}
+                height={32}
                 className="sidebar-profile-avatar"
               />
               <span className="online-dot" aria-hidden="true" />

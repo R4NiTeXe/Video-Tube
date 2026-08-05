@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
@@ -129,9 +130,11 @@ export default function MobileDrawer() {
                     onClick={handleItemClick}
                   >
                     <div style={{ position: "relative", flexShrink: 0 }}>
-                      <img
+                      <Image
                         src={user.avatar}
-                        alt=""
+                        alt={`${user.fullName}'s avatar`}
+                        width={40}
+                        height={40}
                         className="mobile-drawer-avatar"
                       />
                       <span className="online-dot" aria-hidden="true" />

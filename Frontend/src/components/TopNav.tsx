@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { useRef, useEffect, useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -147,10 +148,11 @@ export default function TopNav() {
       </button>
 
       <Link href="/" className="topnav-logo" aria-label="VideoTube Home">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src="/logo.png"
           alt="VideoTube"
+          width={96}
+          height={32}
           style={{ height: "32px", width: "auto", display: "block" }}
         />
       </Link>
@@ -203,19 +205,25 @@ export default function TopNav() {
             aria-expanded={isDropdownOpen}
             aria-haspopup="true"
           >
-            <img src={user.avatar} alt={user.fullName} />
+            <Image
+              src={user.avatar}
+              alt={user.fullName}
+              width={32}
+              height={32}
+              style={{ borderRadius: "50%", objectFit: "cover" }}
+            />
             <ChevronDownIcon size={14} aria-hidden="true" />
           </button>
 
           <div className={`dropdown${isDropdownOpen ? " open" : ""}`}>
             <div className="dropdown-header">
               <div style={{ position: "relative" }}>
-                <img
+                <Image
                   src={user.avatar}
                   alt={user.fullName}
+                  width={40}
+                  height={40}
                   style={{
-                    width: 40,
-                    height: 40,
                     borderRadius: "50%",
                     objectFit: "cover",
                   }}

@@ -5,16 +5,16 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const T = {
   ambientStart: 0.0,
-  iconEntry: 0.4,
-  iconDraw: 0.9,
-  orbitalStart: 1.0,
-  shimmer: 1.2,
-  videoWord: 1.4,
-  tubeWord: 2.0,
-  tagline: 2.8,
-  holdPause: 3.8,
-  exitStart: 4.2,
-  done: 5.0,
+  iconEntry: 0.15,
+  iconDraw: 0.3,
+  orbitalStart: 0.4,
+  shimmer: 0.5,
+  videoWord: 0.55,
+  tubeWord: 0.85,
+  tagline: 1.1,
+  holdPause: 1.3,
+  exitStart: 1.5,
+  done: 1.9,
 };
 
 function OrbitalDot({
@@ -183,10 +183,39 @@ export default function SplashScreen({ onDone }: Props) {
             overflow: "hidden",
           }}
         >
-          <AmbientOrb color="#FF3B30" size={500} x="15%" y="10%" delay={0} />
-          <AmbientOrb color="#FF6B6B" size={350} x="60%" y="55%" delay={0.5} />
-          <AmbientOrb color="#E63529" size={280} x="70%" y="5%" delay={1.0} />
-          <AmbientOrb color="#FF3B30" size={200} x="5%" y="65%" delay={1.5} />
+          <button
+            onClick={onDone}
+            style={{
+              position: "absolute",
+              top: 16,
+              right: 20,
+              zIndex: 20,
+              padding: "8px 16px",
+              borderRadius: "var(--radius-full)",
+              border: "1px solid var(--border-hover)",
+              background: "rgba(0,0,0,0.35)",
+              color: "var(--text-secondary)",
+              fontSize: "12px",
+              fontWeight: 600,
+              cursor: "pointer",
+              backdropFilter: "blur(8px)",
+              transition: "color 0.2s, border-color 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "var(--text-primary)";
+              e.currentTarget.style.borderColor = "var(--border-active)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "var(--text-secondary)";
+              e.currentTarget.style.borderColor = "var(--border-hover)";
+            }}
+          >
+            Skip
+          </button>
+          <AmbientOrb color="var(--accent)" size={500} x="15%" y="10%" delay={0} />
+          <AmbientOrb color="var(--accent-warm)" size={350} x="60%" y="55%" delay={0.5} />
+          <AmbientOrb color="var(--accent-hover)" size={280} x="70%" y="5%" delay={1.0} />
+          <AmbientOrb color="var(--accent)" size={200} x="5%" y="65%" delay={1.5} />
 
           <div
             style={{
@@ -212,7 +241,7 @@ export default function SplashScreen({ onDone }: Props) {
                 height: 120,
                 borderRadius: 30,
                 background:
-                  "linear-gradient(135deg, var(--accent) 0%, #b91c1c 100%)",
+                  "linear-gradient(135deg, var(--accent) 0%, var(--accent-warm) 100%)",
                 boxShadow:
                   "0 10px 25px rgba(220,38,38,0.4), inset 0 2px 10px rgba(255,255,255,0.2)",
                 display: "flex",
@@ -242,7 +271,7 @@ export default function SplashScreen({ onDone }: Props) {
               total={3}
               radius={110}
               size={8}
-              color="#FF6B6B"
+              color="var(--accent-warm)"
               duration={4}
               delay={T.orbitalStart}
             />
@@ -251,7 +280,7 @@ export default function SplashScreen({ onDone }: Props) {
               total={3}
               radius={110}
               size={5}
-              color="#FFD166"
+              color="var(--warning)"
               duration={4}
               delay={T.orbitalStart}
             />
@@ -260,7 +289,7 @@ export default function SplashScreen({ onDone }: Props) {
               total={3}
               radius={110}
               size={10}
-              color="#FF3B30"
+              color="var(--accent)"
               duration={4}
               delay={T.orbitalStart}
             />
