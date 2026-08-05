@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api, getApiErrorMessage } from "@/src/services/api";
+import Image from "next/image";
 import Link from "next/link";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { PageMeta } from "@/src/components/PageMeta";
@@ -208,10 +209,11 @@ export default function ForgotPasswordPage() {
                 marginBottom: "1.5rem",
               }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src="/logo.png"
                 alt="VideoTube"
+                width={128}
+                height={32}
                 style={{ height: "32px", width: "auto", display: "block" }}
               />
             </Link>
@@ -249,6 +251,8 @@ export default function ForgotPasswordPage() {
 
           {error && (
             <div
+              role="alert"
+              aria-live="polite"
               style={{
                 padding: "0.75rem 1rem",
                 borderRadius: "var(--radius-md)",

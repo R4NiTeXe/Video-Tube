@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { api, getApiErrorMessage } from "@/src/services/api";
+import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageMeta } from "@/src/components/PageMeta";
@@ -525,10 +526,11 @@ export default function RegisterPage() {
                 textDecoration: "none",
               }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src="/logo.png"
                 alt="VideoTube"
+                width={128}
+                height={32}
                 style={{ height: "32px", width: "auto", display: "block" }}
               />
             </Link>
@@ -926,6 +928,8 @@ export default function RegisterPage() {
 
                       {error && (
                         <p
+                          role="alert"
+                          aria-live="polite"
                           style={{ color: "var(--error)", fontSize: "0.82rem" }}
                         >
                           {error}

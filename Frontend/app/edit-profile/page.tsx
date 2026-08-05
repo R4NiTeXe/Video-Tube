@@ -201,7 +201,7 @@ export default function EditProfilePage() {
     bioPercent > 90
       ? "var(--accent-warm)"
       : bioPercent > 70
-        ? "#eab308"
+        ? "var(--warning)"
         : "var(--text-muted)";
 
   const socialFields = [
@@ -330,6 +330,8 @@ export default function EditProfilePage() {
 
           {error && (
             <div
+              role="alert"
+              aria-live="polite"
               style={{
                 padding: "0.7rem 1rem",
                 backgroundColor: "var(--accent-warm-light)",
@@ -346,6 +348,8 @@ export default function EditProfilePage() {
 
           {success && (
             <div
+              role="status"
+              aria-live="polite"
               style={{
                 padding: "0.7rem 1rem",
                 backgroundColor: "var(--accent-subtle)",
@@ -364,12 +368,12 @@ export default function EditProfilePage() {
             <div
               style={{
                 padding: "0.5rem 0.85rem",
-                backgroundColor: "#fef3c7",
-                color: "#92400e",
+                backgroundColor: "var(--warning-subtle)",
+                color: "var(--warning)",
                 borderRadius: "var(--radius-md)",
                 marginBottom: "1rem",
                 fontSize: "0.82rem",
-                border: "1px solid #fde68a",
+                border: "1px solid var(--warning)",
                 display: "flex",
                 alignItems: "center",
                 gap: "0.4rem",

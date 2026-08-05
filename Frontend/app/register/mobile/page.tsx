@@ -156,6 +156,8 @@ export default function MobileRegisterPage() {
           <AnimatePresence>
             {error && (
               <motion.div
+                role="alert"
+                aria-live="polite"
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}

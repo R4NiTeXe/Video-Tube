@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import axios from "axios";
 import { api, getApiErrorMessage } from "@/src/services/api";
+import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageMeta } from "@/src/components/PageMeta";
@@ -130,10 +131,11 @@ export default function LoginPage() {
                 gap: "var(--sp-2)",
               }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src="/logo.png"
                 alt="VideoTube"
+                width={128}
+                height={32}
                 style={{ height: "32px", width: "auto", display: "block" }}
               />
             </Link>
