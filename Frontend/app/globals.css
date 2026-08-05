@@ -18,6 +18,14 @@
   --accent-glow: rgba(255, 69, 58, 0.16);
   --accent-warm: #f43f5e;
   --accent-warm-light: rgba(244, 63, 94, 0.08);
+  --accent-text: #ff453a;
+
+  /* Data viz (studio dashboard) */
+  --chart-1: #6366f1;
+  --chart-2: #ec4899;
+  --chart-3: #06b6d4;
+  --chart-4: #f97316;
+  --chart-5: #eab308;
 
   /* Text */
   --text-primary: #ffffff;
@@ -61,6 +69,18 @@
   --radius-xl: 20px;
   --radius-2xl: 24px;
   --radius-full: 9999px;
+
+  /* Z-Index — consistent layering scale */
+  --z-content: 1;
+  --z-controls: 5;
+  --z-sticky: 10;
+  --z-nav: 100;
+  --z-dropdown: 200;
+  --z-drawer: 500;
+  --z-modal: 1000;
+  --z-toast: 9000;
+  --z-splash: 9500;
+  --z-skip: 9999;
 
   /* Spacing — 8px grid */
   --sp-1: 4px;
@@ -106,11 +126,19 @@
   --accent-glow: rgba(255, 69, 58, 0.12);
   --accent-warm: #e11d48;
   --accent-warm-light: rgba(225, 29, 72, 0.06);
+  --accent-text: #cf2f24;
+
+  /* Data viz (studio dashboard) */
+  --chart-1: #4f46e5;
+  --chart-2: #db2777;
+  --chart-3: #0891b2;
+  --chart-4: #ea580c;
+  --chart-5: #ca8a04;
 
   --text-primary: #111827;
   --text-secondary: #4b5563;
   --text-muted: #6b7280;
-  --text-placeholder: #9ca3af;
+  --text-placeholder: #6b7280;
 
   --border: rgba(0, 0, 0, 0.06);
   --border-hover: rgba(0, 0, 0, 0.1);
@@ -562,21 +590,6 @@ body {
   border-color: var(--border-hover);
 }
 
-.topnav-search-kbd {
-  display: flex;
-  align-items: center;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  font-size: 11px;
-  font-family: inherit;
-  font-weight: 500;
-  flex-shrink: 0;
-  line-height: 1;
-}
-
 .topnav-avatar {
   display: flex;
   align-items: center;
@@ -942,130 +955,19 @@ body {
   transform: translateY(-2px);
 }
 
-.video-thumb {
+.video-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  cursor: pointer;
+  border-radius: var(--radius-lg);
+  transition: transform var(--duration-normal) var(--ease-out);
   position: relative;
-  width: 100%;
-  padding-top: 56.25%;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  background: var(--elevated);
+  text-decoration: none;
+  color: inherit;
 }
-.video-thumb img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.4s var(--ease-out);
-}
-.video-card:hover .video-thumb img {
-  transform: scale(1.05);
-}
-
-.video-thumb-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.5) 0%, transparent 50%);
-  opacity: 0;
-  transition: opacity var(--duration-normal) ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-.video-card:hover .video-thumb-overlay {
-  opacity: 1;
-}
-
-.video-play-circle {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.95);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  transform: scale(0.8);
-  opacity: 0;
-  transition: all var(--duration-normal) var(--ease-out);
-  pointer-events: none;
-}
-.video-card:hover .video-play-circle {
-  transform: scale(1);
-  opacity: 1;
-}
-.video-play-circle svg {
-  color: #111;
-  margin-left: 2px;
-}
-
-.video-duration {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  background: rgba(0, 0, 0, 0.8);
-  color: #fff;
-  padding: 2px 6px;
-  border-radius: var(--radius-xs);
-  font-size: 11px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.02em;
-}
-
-.video-avatar {
-  position: absolute;
-  bottom: -14px;
-  left: 10px;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-full);
-  background: var(--bg-primary);
-  padding: 2px;
-  z-index: 10;
-}
-.video-avatar img {
-  width: 100%;
-  height: 100%;
-  border-radius: var(--radius-full);
-  object-fit: cover;
-}
-
-.video-info {
-  padding: 0 2px;
-}
-.video-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  margin-bottom: var(--sp-1);
-  transition: color var(--duration-fast) ease;
-  letter-spacing: -0.01em;
-}
-.video-card:hover .video-title {
-  color: var(--text-primary);
-}
-.video-meta {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-.video-channel {
-  font-weight: 500;
-  color: var(--text-secondary);
-  transition: color var(--duration-fast) ease;
-}
-.video-card:hover .video-channel {
-  color: var(--text-primary);
+.video-card:hover {
+  transform: translateY(-2px);
 }
 
 .video-grid {
@@ -1131,9 +1033,23 @@ body {
 .video-card-premium:hover .thumb-overlay {
   opacity: 1;
 }
-
 .play-circle {
-  display: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  opacity: 0;
+  transform: scale(0.85);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.video-card-premium:hover .play-circle {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .duration-badge {
@@ -1211,7 +1127,7 @@ body {
   gap: var(--sp-1);
   font-size: 13px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-text);
   text-decoration: none;
   transition: opacity var(--duration-fast) ease;
   white-space: nowrap;
@@ -2173,4 +2089,39 @@ body {
   50% {
     opacity: 0.7;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .skeleton {
+    animation: none;
+    background: var(--elevated);
+  }
+}
+
+/* Focus-visible ring for keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Skip-link visible on keyboard focus only */
+.skip-link:focus {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 99999;
 }
