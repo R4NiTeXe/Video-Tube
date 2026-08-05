@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
+import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageMeta } from "@/src/components/PageMeta";
-import { formatViews, formatDuration } from "@/src/lib/utils";
+import VideoCard, { type VideoCardData } from "@/src/components/VideoCard";
+import { formatViews } from "@/src/lib/utils";
 
 const STORAGE_KEY = "vt-recent-searches";
 const MAX_RECENT = 8;
@@ -60,20 +61,7 @@ const ClockIcon = () => (
   </svg>
 );
 
-const PlaySmall = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M8 5v14l11-7z" />
-  </svg>
-);
-
-interface VideoResult {
-  _id: string;
-  thumbnail: string;
-  title: string;
-  views: number;
-  duration: number;
-  owner?: { fullName: string; avatar: string; username?: string };
-}
+type VideoResult = VideoCardData;
 
 interface ChannelResult {
   _id: string;
@@ -144,7 +132,6 @@ async function clearSearchHistoryBackend(): Promise<void> {
 }
 
 export default function SearchPage() {
-  const router = useRouter();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [activeTab, setActiveTab] = useState<Tab>("videos");
@@ -511,97 +498,7 @@ export default function SearchPage() {
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
                             >
-                              <Link
-                                href={`/videos/${v._id}`}
-                                className="video-card"
-                                style={{ textDecoration: "none" }}
-                              >
-                                <div
-                                  className="thumb-wrapper"
-                                  style={{
-                                    position: "relative",
-                                    width: "100%",
-                                    aspectRatio: "16/9",
-                                    borderRadius: "var(--radius-lg)",
-                                    overflow: "hidden",
-                                    backgroundColor: "var(--bg-secondary)",
-                                  }}
-                                >
-                                  <img
-                                    src={v.thumbnail}
-                                    alt={v.title}
-                                    loading="lazy"
-                                    style={{
-                                      width: "100%",
-                                      height: "100%",
-                                      objectFit: "cover",
-                                    }}
-                                  />
-                                  <div className="thumb-overlay">
-                                    <div className="play-circle">
-                                      <PlaySmall />
-                                    </div>
-                                  </div>
-                                  <span
-                                    className="duration-badge"
-                                    style={{
-                                      position: "absolute",
-                                      bottom: 6,
-                                      right: 6,
-                                      background: "rgba(0,0,0,0.8)",
-                                      color: "#fff",
-                                      padding: "2px 6px",
-                                      borderRadius: 4,
-                                      fontSize: "0.75rem",
-                                      fontWeight: 600,
-                                    }}
-                                  >
-                                    {formatDuration(v.duration)}
-                                  </span>
-                                </div>
-                                <div
-                                  className="card-info"
-                                  style={{ marginTop: "0.75rem" }}
-                                >
-                                  <h2
-                                    className="card-title"
-                                    style={{
-                                      fontSize: "0.95rem",
-                                      fontWeight: 600,
-                                      color: "var(--text-primary)",
-                                      marginBottom: "0.25rem",
-                                    }}
-                                  >
-                                    {v.title}
-                                  </h2>
-                                  <div
-                                    className="card-meta"
-                                    style={{
-                                      display: "flex",
-                                      gap: "0.5rem",
-                                      fontSize: "0.8rem",
-                                      color: "var(--text-muted)",
-                                      alignItems: "center",
-                                    }}
-                                  >
-                                    <span
-                                      className="channel-name"
-                                      style={{ cursor: "pointer" }}
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        router.push(
-                                          `/channel/${v.owner?.username}`,
-                                        );
-                                      }}
-                                    >
-                                      {v.owner?.fullName}
-                                    </span>
-                                    <span>&middot;</span>
-                                    <span>{formatViews(v.views)} views</span>
-                                  </div>
-                                </div>
-                              </Link>
+                              <VideoCard video={v} variant="compact" />
                             </motion.div>
                           ))}
                         </div>
@@ -653,12 +550,12 @@ export default function SearchPage() {
                                   border: "1px solid var(--border)",
                                 }}
                               >
-                                <img
+                                <Image
                                   src={ch.avatar}
                                   alt={ch.fullName}
+                                  width={48}
+                                  height={48}
                                   style={{
-                                    width: 48,
-                                    height: 48,
                                     borderRadius: "50%",
                                     objectFit: "cover",
                                     border: "2px solid var(--border)",
@@ -741,12 +638,12 @@ export default function SearchPage() {
                                   border: "1px solid var(--border)",
                                 }}
                               >
-                                <img
+                                <Image
                                   src={u.avatar}
                                   alt={u.fullName}
+                                  width={40}
+                                  height={40}
                                   style={{
-                                    width: 40,
-                                    height: 40,
                                     borderRadius: "50%",
                                     objectFit: "cover",
                                     border: "2px solid var(--border)",
