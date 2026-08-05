@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
+import Image from "next/image";
 import Link from "next/link";
 import { formatViews, formatDuration, timeAgo } from "@/src/lib/utils";
 import { motion } from "framer-motion";
@@ -100,17 +101,13 @@ function VideoCard({
             borderRadius: "var(--radius-lg)",
           }}
         >
-          <img
+          <Image
             src={video.thumbnail}
             alt={video.title}
+            fill
+            sizes="(min-width: 768px) 33vw, 100vw"
             loading="lazy"
-            style={{
-              width: "100%",
-              aspectRatio: "16/9",
-              objectFit: "cover",
-              display: "block",
-              transition: "transform 0.3s",
-            }}
+            style={{ objectFit: "cover", display: "block" }}
           />
           <span
             style={{
@@ -156,12 +153,12 @@ function VideoCard({
               router.push(`/channel/${channel.username}`);
             }}
           >
-            <img
+            <Image
               src={channel.avatar}
               alt={channel.fullName}
+              width={32}
+              height={32}
               style={{
-                width: 32,
-                height: 32,
                 borderRadius: "50%",
                 objectFit: "cover",
                 flexShrink: 0,

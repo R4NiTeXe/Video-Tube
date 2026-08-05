@@ -9,6 +9,7 @@ import {
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useRef, useState, useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { timeAgo } from "@/src/lib/utils";
@@ -306,12 +307,13 @@ function PostComments({ postId }: { postId: string }) {
                     }}
                   >
                     {comment.owner?.avatar ? (
-                      <img
+                      <Image
                         src={comment.owner.avatar}
-                        alt=""
+                        alt={`${comment.owner.fullName}'s avatar`}
+                        width={28}
+                        height={28}
                         style={{
-                          width: "100%",
-                          height: "100%",
+                          borderRadius: "50%",
                           objectFit: "cover",
                         }}
                       />
@@ -649,10 +651,12 @@ export default function CommunityPage() {
               }}
             >
               {user?.avatar ? (
-                <img
+                <Image
                   src={user.avatar}
                   alt={user.fullName || "User"}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  width={40}
+                  height={40}
+                  style={{ borderRadius: "50%", objectFit: "cover" }}
                 />
               ) : (
                 (user?.fullName?.[0] || "U").toUpperCase()
@@ -880,12 +884,13 @@ export default function CommunityPage() {
                         }}
                       >
                         {post.owner?.avatar ? (
-                          <img
+                          <Image
                             src={post.owner.avatar}
                             alt={post.owner.fullName}
+                            width={40}
+                            height={40}
                             style={{
-                              width: "100%",
-                              height: "100%",
+                              borderRadius: "50%",
                               objectFit: "cover",
                             }}
                           />
@@ -955,14 +960,17 @@ export default function CommunityPage() {
                         overflow: "hidden",
                       }}
                     >
-                      <img
+                      <Image
                         src={post.image}
                         alt="Post image"
+                        width={720}
+                        height={400}
                         style={{
                           width: "100%",
                           maxHeight: 400,
                           objectFit: "contain",
-                          backgroundColor: "#000",
+                          borderRadius: "var(--radius-md)",
+                          display: "block",
                         }}
                       />
                     </div>

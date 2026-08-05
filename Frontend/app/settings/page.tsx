@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { api, getApiErrorMessage, refreshCsrfToken } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
@@ -280,12 +281,12 @@ export default function SettingsPage() {
               flexShrink: 0,
             }}
           >
-            <img
+            <Image
               src={user.avatar}
               alt={user.fullName}
+              width={64}
+              height={64}
               style={{
-                width: "100%",
-                height: "100%",
                 borderRadius: "50%",
                 objectFit: "cover",
               }}

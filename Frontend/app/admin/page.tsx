@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { PageMeta } from "@/src/components/PageMeta";
 
@@ -242,15 +243,12 @@ export default function AdminPage() {
                   gap: "0.75rem",
                 }}
               >
-                <img
+                <Image
                   src={u.avatar}
                   alt={u.fullName}
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: "50%",
-                    objectFit: "cover",
-                  }}
+                  width={36}
+                  height={36}
+                  style={{ borderRadius: "50%", objectFit: "cover" }}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p
@@ -424,15 +422,12 @@ export default function AdminPage() {
                     borderRadius: "var(--radius-sm)",
                   }}
                 >
-                  <img
+                  <Image
                     src={u.avatar}
                     alt={u.fullName}
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: "50%",
-                      objectFit: "cover",
-                    }}
+                    width={28}
+                    height={28}
+                    style={{ borderRadius: "50%", objectFit: "cover" }}
                   />
                   <span
                     style={{
@@ -500,9 +495,11 @@ export default function AdminPage() {
                     }}
                   >
                     {v.thumbnail && (
-                      <img
+                      <Image
                         src={v.thumbnail}
                         alt={v.title}
+                        width={40}
+                        height={24}
                         style={{
                           width: "100%",
                           height: "100%",

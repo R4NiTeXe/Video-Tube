@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDuration, formatViews } from "@/src/lib/utils";
@@ -362,18 +363,11 @@ export default function PlaylistDetailPage() {
                           position: "relative",
                         }}
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <Image
                           src={video.thumbnail}
                           alt={video.title}
-                          style={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
+                          fill
+                          sizes="(min-width: 768px) 200px, 30vw"
                         />
                         <div
                           className="duration-badge"

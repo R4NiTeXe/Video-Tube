@@ -292,7 +292,7 @@ export default function AboutPage() {
         <motion.div
           variants={fadeUp}
           style={{
-            background: "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)",
+            background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%)",
             padding: "5rem 2rem 4rem",
             textAlign: "center",
             color: "#fff",
@@ -565,15 +565,16 @@ export default function AboutPage() {
                 style={{
                   padding: "1rem",
                   borderRadius: "var(--radius-md)",
-                  backgroundColor: "var(--accent-warm-light, #fef2f2)",
-                  border: "1px solid #fecaca",
+                  backgroundColor: "var(--accent-warm-light)",
+                  border: "1px solid var(--accent-warm)",
+                  opacity: 0.9,
                   marginBottom: "1rem",
                 }}
               >
                 <p
                   style={{
                     fontSize: "0.88rem",
-                    color: "#991b1b",
+                    color: "var(--accent-warm)",
                     fontWeight: 600,
                     marginBottom: "0.5rem",
                   }}
@@ -583,7 +584,7 @@ export default function AboutPage() {
                 <p
                   style={{
                     fontSize: "0.85rem",
-                    color: "#7f1d1d",
+                    color: "var(--text-secondary)",
                     lineHeight: 1.6,
                     margin: 0,
                   }}

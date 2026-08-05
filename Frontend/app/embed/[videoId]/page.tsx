@@ -176,7 +176,7 @@ export default function EmbedPage() {
             style={{
               width: `${progress}%`,
               height: "100%",
-              backgroundColor: "#FF3B30",
+              backgroundColor: "var(--accent)",
               borderRadius: 2,
               transition: "width 0.1s",
             }}
