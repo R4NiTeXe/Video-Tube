@@ -1,14 +1,36 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { AxiosResponse } from "axios";
+
+type AxiosConfig = {
+  method?: string;
+  url?: string;
+  headers?: Record<string, string>;
+};
+
+type ReqHandler = (config: AxiosConfig) => AxiosConfig;
+type ResOkHandler = (res: unknown) => unknown;
+type ResErrHandler = (err: unknown) => Promise<never>;
 
 const mockBox = vi.hoisted(() => {
-  const reqHandlers: any[] = [];
-  const resOkHandlers: any[] = [];
-  const resErrHandlers: any[] = [];
+  const reqHandlers: ReqHandler[] = [];
+  const resOkHandlers: ResOkHandler[] = [];
+  const resErrHandlers: ResErrHandler[] = [];
   return { reqHandlers, resOkHandlers, resErrHandlers };
 });
 
 vi.mock("axios", () => {
-  const instance: any = vi.fn((config?: any) => config);
+  const instance = vi.fn((config?: AxiosConfig) => config) as unknown as {
+    (config?: AxiosConfig): AxiosConfig;
+    defaults: {
+      baseURL: string;
+      withCredentials: boolean;
+      headers: Record<string, string>;
+    };
+    interceptors: {
+      request: { use: (fn: ReqHandler) => void };
+      response: { use: (ok: ResOkHandler, err: ResErrHandler) => void };
+    };
+  };
   instance.defaults = {
     baseURL: "http://localhost:8000/api/v1",
     withCredentials: true,
@@ -16,16 +38,16 @@ vi.mock("axios", () => {
   };
   instance.interceptors = {
     request: {
-      use: (fn: any) => mockBox.reqHandlers.push(fn),
+      use: (fn: ReqHandler) => mockBox.reqHandlers.push(fn),
     },
     response: {
-      use: (ok: any, err: any) => {
+      use: (ok: ResOkHandler, err: ResErrHandler) => {
         mockBox.resOkHandlers.push(ok);
         mockBox.resErrHandlers.push(err);
       },
     },
   };
-  const isAxiosError = (e: any) => !!e?.isAxiosError;
+  const isAxiosError = (e: { isAxiosError?: boolean }) => !!e?.isAxiosError;
   return {
     __esModule: true,
     default: {
@@ -51,8 +73,8 @@ import {
 
 beforeEach(() => {
   setCsrfToken("");
-  (axios.get as any).mockClear();
-  (axios.post as any).mockClear();
+  vi.mocked(axios.get).mockClear();
+  vi.mocked(axios.post).mockClear();
 });
 
 describe("getApiErrorMessage", () => {
@@ -80,20 +102,20 @@ describe("api instance", () => {
 describe("request interceptor", () => {
   it("adds csrf header on mutations when token present", () => {
     setCsrfToken("abc");
-    const handler = mockBox.reqHandlers[0];
+    const handler = mockBox.reqHandlers[0]!;
     const out = handler({
       method: "post",
       url: "/like",
       headers: {},
     });
-    expect(out.headers["x-csrf-token"]).toBe("abc");
+    expect(out.headers!["x-csrf-token"]).toBe("abc");
   });
 
   it("does not add csrf header on GET", () => {
     setCsrfToken("abc");
-    const handler = mockBox.reqHandlers[0];
+    const handler = mockBox.reqHandlers[0]!;
     const out = handler({ method: "get", url: "/videos", headers: {} });
-    expect(out.headers["x-csrf-token"]).toBeUndefined();
+    expect(out.headers!["x-csrf-token"]).toBeUndefined();
   });
 });
 
@@ -110,7 +132,7 @@ describe("response interceptor", () => {
 
   it("rejects non-retryable errors", async () => {
     const err = { response: { status: 400 }, config: {} };
-    await expect(mockBox.resErrHandlers[0](err)).rejects.toBe(err);
+    await expect(mockBox.resErrHandlers[0]!(err)).rejects.toBe(err);
   });
 
   it("skips refresh for 401 on no-auth endpoints", async () => {
@@ -118,16 +140,18 @@ describe("response interceptor", () => {
       response: { status: 401 },
       config: { url: "/users/login", headers: {} },
     };
-    await expect(mockBox.resErrHandlers[0](err)).rejects.toBe(err);
+    await expect(mockBox.resErrHandlers[0]!(err)).rejects.toBe(err);
   });
 
   it("retries after successful cookie-based refresh", async () => {
-    (axios.post as any).mockResolvedValue({ data: { data: {} } });
+    vi.mocked(axios.post).mockResolvedValue({
+      data: { data: {} },
+    } as AxiosResponse);
     const err = {
       response: { status: 401 },
       config: { url: "/videos", headers: {} },
     };
-    const p = mockBox.resErrHandlers[0](err);
+    const p = mockBox.resErrHandlers[0]!(err);
     await expect(p).resolves.toMatchObject({ url: "/videos", headers: {} });
     expect(axios.post).toHaveBeenCalledWith(
       expect.stringContaining("/users/refresh-token"),
@@ -139,16 +163,18 @@ describe("response interceptor", () => {
 
 describe("refreshCsrfToken", () => {
   it("returns null when csrf endpoint fails", async () => {
-    (axios.get as any).mockRejectedValue(new Error("down"));
+    vi.mocked(axios.get).mockRejectedValue(new Error("down"));
     expect(await refreshCsrfToken()).toBeNull();
   });
 
   it("returns token when csrf endpoint succeeds", async () => {
-    (axios.get as any).mockResolvedValue({ data: { csrfToken: "tok" } });
+    vi.mocked(axios.get).mockResolvedValue({
+      data: { csrfToken: "tok" },
+    } as AxiosResponse);
     expect(await refreshCsrfToken()).toBe("tok");
   });
 });
 
-function resOkHandlersRun(res: any) {
-  return mockBox.resOkHandlers[0](res);
+function resOkHandlersRun(res: unknown) {
+  return mockBox.resOkHandlers[0]!(res);
 }

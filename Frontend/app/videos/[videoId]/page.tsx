@@ -7,7 +7,7 @@ import { useModalFocus } from "@/src/hooks/useModalFocus";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Hls from "hls.js";
 import { formatViews, timeAgo } from "@/src/lib/utils";
@@ -98,6 +98,10 @@ interface Playlist {
 type FullscreenDocument = Document & {
   webkitFullscreenElement?: Element | null;
   webkitExitFullscreen?: () => Promise<void> | void;
+};
+
+type FullscreenElement = HTMLElement & {
+  webkitRequestFullscreen?: () => Promise<void> | void;
 };
 
 const ThumbsUpIcon = ({ filled }: { filled?: boolean }) => (
@@ -853,34 +857,37 @@ function CommentItem({
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ["comments", videoId] });
       const previousComments = queryClient.getQueryData(["comments", videoId]);
-      queryClient.setQueryData(["comments", videoId], (old: any) => {
-        if (!old?.data) return old;
+      queryClient.setQueryData(
+        ["comments", videoId],
+        (old: { data?: { docs?: Comment[] } } | undefined) => {
+          if (!old?.data) return old;
 
-        const updateCommentLikes = (commentsList: Comment[]) => {
-          return commentsList.map((c) => {
-            if (c._id === comment._id) {
-              const wasLiked = c.isLiked;
-              return {
-                ...c,
-                isLiked: !wasLiked,
-                likesCount: Math.max(
-                  0,
-                  (c.likesCount || 0) + (wasLiked ? -1 : 1),
-                ),
-              };
-            }
-            return c;
-          });
-        };
+          const updateCommentLikes = (commentsList: Comment[]) => {
+            return commentsList.map((c) => {
+              if (c._id === comment._id) {
+                const wasLiked = c.isLiked;
+                return {
+                  ...c,
+                  isLiked: !wasLiked,
+                  likesCount: Math.max(
+                    0,
+                    (c.likesCount || 0) + (wasLiked ? -1 : 1),
+                  ),
+                };
+              }
+              return c;
+            });
+          };
 
-        return {
-          ...old,
-          data: {
-            ...old.data,
-            docs: updateCommentLikes(old.data.docs || []),
-          },
-        };
-      });
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              docs: updateCommentLikes(old.data.docs || []),
+            },
+          };
+        },
+      );
       return { previousComments };
     },
     onError: (_err, _newLike, context) => {
@@ -1234,7 +1241,6 @@ export default function VideoPlayerPage() {
   const videoId = params.videoId as string;
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
 
-  const [theaterMode, _setTheaterMode] = useState(false);
   const [liked, setLiked] = useState(false);
   const [disliked, setDisliked] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -1267,6 +1273,28 @@ export default function VideoPlayerPage() {
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
   }, [isAuthenticated, authLoading, router]);
+
+  const toggleFullscreen = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const fullscreenDocument = document as FullscreenDocument;
+    if (
+      !fullscreenDocument.fullscreenElement &&
+      !fullscreenDocument.webkitFullscreenElement
+    ) {
+      if (container.requestFullscreen) {
+        container.requestFullscreen();
+      } else {
+        (container as FullscreenElement).webkitRequestFullscreen?.();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (fullscreenDocument.webkitExitFullscreen) {
+        fullscreenDocument.webkitExitFullscreen();
+      }
+    }
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -1325,7 +1353,7 @@ export default function VideoPlayerPage() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [toggleFullscreen]);
 
   const togglePlay = () => {
     if (videoRef.current) {
@@ -1356,28 +1384,6 @@ export default function VideoPlayerPage() {
     if (videoRef.current) {
       videoRef.current.muted = !isMuted;
       if (isMuted && volume === 0) setVolume(1);
-    }
-  };
-
-  const toggleFullscreen = () => {
-    const container = containerRef.current;
-    if (!container) return;
-    const fullscreenDocument = document as FullscreenDocument;
-    if (
-      !fullscreenDocument.fullscreenElement &&
-      !fullscreenDocument.webkitFullscreenElement
-    ) {
-      if (container.requestFullscreen) {
-        container.requestFullscreen();
-      } else if ((container as any).webkitRequestFullscreen) {
-        (container as any).webkitRequestFullscreen();
-      }
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      } else if (fullscreenDocument.webkitExitFullscreen) {
-        fullscreenDocument.webkitExitFullscreen();
-      }
     }
   };
 
@@ -1426,20 +1432,25 @@ export default function VideoPlayerPage() {
       setLiked(!wasLiked);
       if (!wasLiked) setDisliked(false);
 
-      queryClient.setQueryData(["video", videoId], (old: any) => {
-        if (!old?.data) return old;
-        return {
-          ...old,
-          data: {
-            ...old.data,
-            isLiked: !wasLiked,
-            likesCount: Math.max(
-              0,
-              (old.data.likesCount ?? 0) + (wasLiked ? -1 : 1),
-            ),
-          },
-        };
-      });
+      queryClient.setQueryData(
+        ["video", videoId],
+        (old: {
+          data?: { isLiked?: boolean; likesCount?: number };
+        }) => {
+          if (!old?.data) return old;
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              isLiked: !wasLiked,
+              likesCount: Math.max(
+                0,
+                (old.data.likesCount ?? 0) + (wasLiked ? -1 : 1),
+              ),
+            },
+          };
+        },
+      );
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["video", videoId] });
@@ -1465,24 +1476,29 @@ export default function VideoPlayerPage() {
       }>(["video", videoId]);
       const wasSubscribed = cached?.data?.isSubscribed ?? isSubscribed;
 
-      queryClient.setQueryData(["video", videoId], (old: any) => {
-        if (!old?.data) return old;
-        return {
-          ...old,
-          data: {
-            ...old.data,
-            isSubscribed: !wasSubscribed,
-            owner: {
-              ...old.data.owner,
-              subscribersCount: Math.max(
-                0,
-                (old.data.owner?.subscribersCount || 0) +
-                  (wasSubscribed ? -1 : 1),
-              ),
+      queryClient.setQueryData(
+        ["video", videoId],
+        (old: {
+          data?: { isSubscribed?: boolean; owner?: { subscribersCount?: number } };
+        }) => {
+          if (!old?.data) return old;
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              isSubscribed: !wasSubscribed,
+              owner: {
+                ...old.data.owner,
+                subscribersCount: Math.max(
+                  0,
+                  (old.data.owner?.subscribersCount || 0) +
+                    (wasSubscribed ? -1 : 1),
+                ),
+              },
             },
-          },
-        };
-      });
+          };
+        },
+      );
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["video", videoId] });
@@ -1671,7 +1687,7 @@ export default function VideoPlayerPage() {
 
   const isSubscribed = video?.isSubscribed ?? false;
   const relatedVideos: RelatedVideo[] =
-    relatedRes?.data?.map((rv: any) => ({
+    relatedRes?.data?.map((rv: RelatedVideo) => ({
       ...rv,
       thumbnail: forceHttps(rv.thumbnail),
       owner: { ...rv.owner, avatar: forceHttps(rv.owner?.avatar) },
@@ -1811,7 +1827,7 @@ export default function VideoPlayerPage() {
           className="video-page-wrap video-page-container"
           style={{
             width: "100%",
-            maxWidth: theaterMode ? "100%" : 1280,
+            maxWidth: 1280,
             margin: "0 auto",
           }}
         >

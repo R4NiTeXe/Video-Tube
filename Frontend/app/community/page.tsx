@@ -468,32 +468,39 @@ export default function CommunityPage() {
     onMutate: async (postId) => {
       await queryClient.cancelQueries({ queryKey: ["community-posts"] });
       const previousPosts = queryClient.getQueryData(["community-posts"]);
-      queryClient.setQueryData(["community-posts"], (old: any) => {
-        if (!old?.pages) return old;
-        return {
-          ...old,
-          pages: old.pages.map((page: any) => ({
-            ...page,
-            data: {
-              ...page.data,
-              docs: page.data.docs.map((p: any) => {
-                if (p._id === postId) {
-                  const wasLiked = p.isLiked;
-                  return {
-                    ...p,
-                    isLiked: !wasLiked,
-                    likesCount: Math.max(
-                      0,
-                      (p.likesCount || 0) + (wasLiked ? -1 : 1),
-                    ),
-                  };
-                }
-                return p;
-              }),
-            },
-          })),
-        };
-      });
+      queryClient.setQueryData(
+        ["community-posts"],
+        (old: {
+          pages?: {
+            data?: { docs?: CommunityPost[] };
+          }[];
+        }) => {
+          if (!old?.pages) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              data: {
+                ...page.data,
+                docs: page.data?.docs?.map((p) => {
+                  if (p._id === postId) {
+                    const wasLiked = p.isLiked;
+                    return {
+                      ...p,
+                      isLiked: !wasLiked,
+                      likesCount: Math.max(
+                        0,
+                        (p.likesCount || 0) + (wasLiked ? -1 : 1),
+                      ),
+                    };
+                  }
+                  return p;
+                }),
+              },
+            })),
+          };
+        },
+      );
       return { previousPosts };
     },
     onError: (_err, _postId, context) => {

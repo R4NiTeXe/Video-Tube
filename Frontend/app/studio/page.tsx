@@ -38,6 +38,20 @@ import { timeAgo, formatDuration } from "@/src/lib/utils";
 import { PageMeta } from "@/src/components/PageMeta";
 
 const UploadModal = dynamic(() => import("./upload-modal"), { ssr: false });
+
+type SortOption = "newest" | "oldest" | "views";
+
+interface StudioVideo {
+  _id: string;
+  title: string;
+  thumbnail?: string;
+  duration?: number;
+  views?: number;
+  likesCount?: number;
+  commentsCount?: number;
+  isPublished?: boolean;
+  createdAt: string;
+}
 const EditModal = dynamic(() => import("./edit-modal"), { ssr: false });
 
 function useMediaQuery(query: string) {
@@ -462,10 +476,10 @@ function CreatorStudioContent() {
   const queryClient = useQueryClient();
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingVideo, setEditingVideo] = useState<any>(null);
+  const [editingVideo, setEditingVideo] = useState<StudioVideo | null>(null);
   const [deletingVideo, setDeletingVideo] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "views">("newest");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
   const isMobile = useMediaQuery("(max-width: 768px)");
   const isTablet = useMediaQuery("(max-width: 1024px)");
 
@@ -501,10 +515,10 @@ function CreatorStudioContent() {
   };
   const sortedVideos = Array.isArray(videosRes?.data?.docs)
     ? [...videosRes.data.docs]
-        .filter((v: any) =>
+        .filter((v: StudioVideo) =>
           v.title?.toLowerCase().includes(searchQuery.toLowerCase()),
         )
-        .sort((a: any, b: any) => {
+        .sort((a: StudioVideo, b: StudioVideo) => {
           if (sortBy === "newest")
             return (
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -925,7 +939,7 @@ function CreatorStudioContent() {
                     gap: "0.4rem",
                   }}
                 >
-                  {sortedVideos.slice(0, 5).map((v: any) => (
+                  {sortedVideos.slice(0, 5).map((v: StudioVideo) => (
                     <div
                       key={v._id}
                       style={{
@@ -1078,7 +1092,9 @@ function CreatorStudioContent() {
                     </div>
                     <select
                       value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value as any)}
+                      onChange={(e) =>
+                        setSortBy(e.target.value as SortOption)
+                      }
                       style={{
                         height: 34,
                         fontSize: "0.82rem",
@@ -1152,7 +1168,7 @@ function CreatorStudioContent() {
                       <span />
                     </div>
                     <AnimatePresence>
-                      {sortedVideos.map((video: any, i: number) => (
+                      {sortedVideos.map((video: StudioVideo, i: number) => (
                         <motion.div
                           key={video._id}
                           initial={{ opacity: 0, x: -8 }}
@@ -1202,7 +1218,7 @@ function CreatorStudioContent() {
                               }}
                             >
                               <Image
-                                src={video.thumbnail}
+                                src={video.thumbnail ?? "/logo.png"}
                                 alt=""
                                 fill
                                 sizes="100px"
@@ -1221,7 +1237,7 @@ function CreatorStudioContent() {
                                   fontWeight: 600,
                                 }}
                               >
-                                {formatDuration(video.duration)}
+                                {formatDuration(video.duration ?? 0)}
                               </span>
                             </div>
                             <div style={{ minWidth: 0 }}>
@@ -1434,7 +1450,8 @@ function CreatorStudioContent() {
           <DeleteConfirmDialog
             videoId={deletingVideo}
             videoTitle={
-              sortedVideos.find((v: any) => v._id === deletingVideo)?.title ||
+              sortedVideos.find((v: StudioVideo) => v._id === deletingVideo)
+                ?.title ||
               "this video"
             }
             onConfirm={(id) => {
