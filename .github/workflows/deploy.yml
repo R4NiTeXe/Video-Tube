@@ -10,8 +10,67 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  quality-gates:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            Frontend/package-lock.json
+            Backend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: Frontend
+        run: npm ci
+
+      - name: Lint frontend
+        working-directory: Frontend
+        run: npm run lint
+
+      - name: Typecheck frontend
+        working-directory: Frontend
+        run: npx tsc --noEmit
+
+      - name: Test frontend
+        working-directory: Frontend
+        run: npm test
+
+      - name: Build frontend
+        working-directory: Frontend
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_BASE_URL: https://video-tube-hf5y.onrender.com/api/v1
+          NEXT_PUBLIC_SITE_URL: https://video-tube-asjv.vercel.app
+
+      - name: E2E smoke tests
+        working-directory: Frontend
+        run: npx playwright install --with-deps chromium && npm run e2e -- --project=chromium
+        env:
+          NEXT_PUBLIC_API_BASE_URL: https://video-tube-hf5y.onrender.com/api/v1
+          NEXT_PUBLIC_SITE_URL: https://video-tube-asjv.vercel.app
+
+      - name: Install backend dependencies
+        working-directory: Backend
+        run: npm ci
+
+      - name: Lint backend
+        working-directory: Backend
+        run: npm run lint
+
+      - name: Test backend
+        working-directory: Backend
+        run: npm test
+
   deploy-frontend:
     name: Deploy Frontend to Vercel
+    needs: quality-gates
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -53,6 +112,7 @@ jobs:
 
   deploy-backend:
     name: Deploy Backend to Render
+    needs: quality-gates
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Render deploy hook
