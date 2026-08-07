@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DEFAULT_SHORTCUTS } from "@/src/hooks/useKeyboardShortcuts";
 
 export default function ShortcutsDialog() {
   const [isOpen, setIsOpen] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -30,10 +31,46 @@ export default function ShortcutsDialog() {
     return () => window.removeEventListener("keydown", handler);
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const dialog = dialogRef.current;
+    const prevFocused = document.activeElement as HTMLElement | null;
+    dialog
+      ?.querySelector<HTMLElement>('button, [href], [tabindex]:not([tabindex="-1"])')
+      ?.focus();
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" || !dialog) return;
+      const items = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'button, [href], [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (items.length === 0) return;
+      const first = items[0]!;
+      const last = items[items.length - 1]!;
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    dialog?.addEventListener("keydown", handleTab);
+    return () => {
+      dialog?.removeEventListener("keydown", handleTab);
+      prevFocused?.focus?.();
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="shortcuts-dialog-title"
       onClick={() => setIsOpen(false)}
       style={{
         position: "fixed",
@@ -47,6 +84,7 @@ export default function ShortcutsDialog() {
       }}
     >
       <div
+        ref={dialogRef}
         onClick={(e) => e.stopPropagation()}
         style={{
           backgroundColor: "var(--elevated)",
@@ -67,6 +105,7 @@ export default function ShortcutsDialog() {
           }}
         >
           <h2
+            id="shortcuts-dialog-title"
             style={{
               fontSize: "1.1rem",
               fontWeight: 700,
