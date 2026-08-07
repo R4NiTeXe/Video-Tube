@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
+import { useModalFocus } from "@/src/hooks/useModalFocus";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -1740,9 +1741,12 @@ function DeletePostModal({
       onClose();
     },
   });
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalFocus(modalRef, onClose);
 
   return (
     <motion.div
+      ref={modalRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="delete-post-title"
@@ -1751,9 +1755,6 @@ function DeletePostModal({
       exit={{ opacity: 0 }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
       }}
       style={{
         position: "fixed",
@@ -1889,16 +1890,7 @@ function ReportModal({
   const [selectedReason, setSelectedReason] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const prevFocused = document.activeElement as HTMLElement | null;
-    const focusable = modalRef.current?.querySelector<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    );
-    focusable?.focus();
-    return () => {
-      prevFocused?.focus();
-    };
-  }, []);
+  useModalFocus(modalRef, onClose);
 
   const reportMutation = useMutation({
     mutationFn: async () => {
@@ -1923,9 +1915,6 @@ function ReportModal({
       exit={{ opacity: 0 }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
       }}
       style={{
         position: "fixed",

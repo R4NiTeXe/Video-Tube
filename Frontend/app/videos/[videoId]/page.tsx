@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
+import { useModalFocus } from "@/src/hooks/useModalFocus";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -303,38 +304,7 @@ function ReportModal({
   const [selectedReason, setSelectedReason] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const prevFocused = document.activeElement as HTMLElement | null;
-    const modal = modalRef.current;
-    const getFocusable = () =>
-      modal?.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      ) || [];
-
-    const focusable = getFocusable();
-    focusable[0]?.focus();
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Tab") return;
-      const items = Array.from(getFocusable());
-      if (items.length === 0) return;
-      const first = items[0]!;
-      const last = items[items.length - 1]!;
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-
-    modal?.addEventListener("keydown", handleKeyDown);
-    return () => {
-      modal?.removeEventListener("keydown", handleKeyDown);
-      prevFocused?.focus();
-    };
-  }, []);
+  useModalFocus(modalRef, onClose);
 
   const reportMutation = useMutation({
     mutationFn: async () => {
@@ -359,9 +329,6 @@ function ReportModal({
       exit={{ opacity: 0 }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
       }}
       style={{
         position: "fixed",
