@@ -7,7 +7,7 @@ import { useModalFocus } from "@/src/hooks/useModalFocus";
 import {
   X,
   UploadCloud,
-  Image,
+  Image as ImageIcon,
   FileVideo,
   Globe,
   Lock,
@@ -1027,7 +1027,7 @@ export default function UploadModal({
                     disabled={uploading}
                   />
                   <DropZone
-                    icon={<Image size={28} />}
+                    icon={<ImageIcon size={28} />}
                     label="Thumbnail"
                     hint={`PNG, JPG, WEBP (max ${MAX_THUMBNAIL_MB} MB)`}
                     accept="image/*"

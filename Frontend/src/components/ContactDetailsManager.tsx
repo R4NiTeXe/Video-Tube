@@ -369,8 +369,8 @@ export default function ContactDetailsManager() {
                       marginBottom: "1rem",
                     }}
                   >
-                    Enter your new {targetType} below. We'll send an OTP to
-                    verify it.
+                    Enter your new {targetType} below. We&apos;ll send an OTP
+                    to verify it.
                   </p>
                   <input
                     type="text"
