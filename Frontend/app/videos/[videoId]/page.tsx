@@ -305,11 +305,33 @@ function ReportModal({
   const modalRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const prevFocused = document.activeElement as HTMLElement | null;
-    const focusable = modalRef.current?.querySelector<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    );
-    focusable?.focus();
+    const modal = modalRef.current;
+    const getFocusable = () =>
+      modal?.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      ) || [];
+
+    const focusable = getFocusable();
+    focusable[0]?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const items = Array.from(getFocusable());
+      if (items.length === 0) return;
+      const first = items[0]!;
+      const last = items[items.length - 1]!;
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    modal?.addEventListener("keydown", handleKeyDown);
     return () => {
+      modal?.removeEventListener("keydown", handleKeyDown);
       prevFocused?.focus();
     };
   }, []);
@@ -485,6 +507,7 @@ function ReportModal({
               {REPORT_REASONS.map((r) => (
                 <label
                   key={r.value}
+                  className="vt-radio-label"
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -506,7 +529,7 @@ function ReportModal({
                     value={r.value}
                     checked={selectedReason === r.value}
                     onChange={() => setSelectedReason(r.value)}
-                    style={{ display: "none" }}
+                    className="vt-sr-only"
                   />
                   <div
                     style={{

@@ -2071,6 +2071,7 @@ function ReportModal({
               {REPORT_REASONS.map((r) => (
                 <label
                   key={r.value}
+                  className="vt-radio-label"
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -2092,7 +2093,7 @@ function ReportModal({
                     value={r.value}
                     checked={selectedReason === r.value}
                     onChange={() => setSelectedReason(r.value)}
-                    style={{ display: "none" }}
+                    className="vt-sr-only"
                   />
                   <div
                     style={{

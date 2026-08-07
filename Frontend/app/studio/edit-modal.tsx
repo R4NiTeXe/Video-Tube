@@ -331,6 +331,7 @@ export default function EditModal({
               {(["public", "private"] as const).map((v) => (
                 <label
                   key={v}
+                  className="vt-radio-label"
                   style={{
                     flex: 1,
                     display: "flex",
@@ -358,7 +359,7 @@ export default function EditModal({
                     value={v}
                     checked={visibility === v}
                     onChange={() => setVisibility(v)}
-                    style={{ display: "none" }}
+                    className="vt-sr-only"
                   />
                   {v === "public" ? "Public" : "Private"}
                 </label>
