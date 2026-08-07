@@ -44,29 +44,25 @@ const sendOtp = asyncHandler(async (req, res) => {
   const userId = user?._id;
   const timezone = user?.timezone;
 
-  try {
-    if (channel === "email") {
-      await otpService.sendOtpEmail({
-        identifier: identifier.toLowerCase(),
-        otp,
-        purpose,
-        userName: user?.fullName,
-      });
-    } else if (channel === "whatsapp") {
-      logger.warn(
-        `WhatsApp OTP delivery not implemented, falling back to email for ${identifier}`
-      );
-      await otpService.sendOtpEmail({
-        identifier: identifier.toLowerCase(),
-        otp,
-        purpose,
-        userName: user?.fullName,
-      });
-    }
-    await otpService.confirmOtpDelivery(userId, timezone);
-  } catch (error) {
-    throw error;
+  if (channel === "email") {
+    await otpService.sendOtpEmail({
+      identifier: identifier.toLowerCase(),
+      otp,
+      purpose,
+      userName: user?.fullName,
+    });
+  } else if (channel === "whatsapp") {
+    logger.warn(
+      `WhatsApp OTP delivery not implemented, falling back to email for ${identifier}`
+    );
+    await otpService.sendOtpEmail({
+      identifier: identifier.toLowerCase(),
+      otp,
+      purpose,
+      userName: user?.fullName,
+    });
   }
+  await otpService.confirmOtpDelivery(userId, timezone);
 
   const usage = userId
     ? await otpService.getUserOtpUsage(userId, timezone)

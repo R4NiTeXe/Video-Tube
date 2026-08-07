@@ -87,7 +87,9 @@ const readMagicBytes = (filePath, bytes = 8) => {
     if (fd !== undefined) {
       try {
         fs.closeSync(fd);
-      } catch {}
+      } catch {
+        // fd best-effort close; ignore errors
+      }
     }
   }
 };

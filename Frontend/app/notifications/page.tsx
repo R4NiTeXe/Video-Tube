@@ -99,6 +99,18 @@ export default function NotificationsPage() {
     }
   }, [isAuthenticated, isLoading]);
 
+  const parentRef = useRef<HTMLDivElement>(null);
+  const rawNotifications = response?.data?.notifications;
+  const notifications: Notification[] = Array.isArray(rawNotifications)
+    ? rawNotifications
+    : [];
+  const virtualizer = useVirtualizer({
+    count: notifications.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 80,
+    overscan: 5,
+  });
+
   if (authLoading || !isAuthenticated) {
     return (
       <div
@@ -120,19 +132,6 @@ export default function NotificationsPage() {
       </div>
     );
   }
-
-  const rawNotifications = response?.data?.notifications;
-  const notifications: Notification[] = Array.isArray(rawNotifications)
-    ? rawNotifications
-    : [];
-
-  const parentRef = useRef<HTMLDivElement>(null);
-  const virtualizer = useVirtualizer({
-    count: notifications.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 80,
-    overscan: 5,
-  });
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-primary)" }}>

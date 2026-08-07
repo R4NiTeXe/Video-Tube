@@ -580,7 +580,7 @@ const sendIdentifierUpdateOTP = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
 
   let targetIdentifier = identifier;
-  let isMobile = false;
+  let isMobile;
 
   if (action === "delete") {
     // For delete, identifier in body is what they want to delete ("email" or "mobile").

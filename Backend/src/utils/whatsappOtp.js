@@ -103,7 +103,9 @@ export const sendWhatsAppOTP = async (mobile, otp, userName = "") => {
   } catch (error) {
     logger.error("WhatsApp send error", { error: error.message });
     if (process.env.NODE_ENV === "production")
-      throw new Error(`WhatsApp unreachable: ${error.message}`);
+      throw new Error(`WhatsApp unreachable: ${error.message}`, {
+        cause: error,
+      });
     logger.debug("--- WhatsApp API unreachable, fallback OTP (masked) ---");
     logger.debug(`Mobile: ${mobile.slice(0, 4)}****${mobile.slice(-2)}`);
     logger.debug("OTP: [REDACTED]");
