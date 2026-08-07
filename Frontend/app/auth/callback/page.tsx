@@ -26,23 +26,10 @@ function CallbackContent() {
     if (isNew) sessionStorage.setItem("_welcome", "new");
     else sessionStorage.setItem("_welcome", "back");
 
-    const accessToken = searchParams.get("accessToken");
-    const refreshToken = searchParams.get("refreshToken");
-
-    if (accessToken) {
-      localStorage.setItem("accessToken", accessToken);
-    }
-    if (refreshToken) {
-      localStorage.setItem("refreshToken", refreshToken);
-    }
-
     const fetchUser = async () => {
       try {
-        const headers: Record<string, string> = {};
-        if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
         const response = await axios.get(`${API_FULL_URL}/users/current-user`, {
           withCredentials: true,
-          headers,
         });
         login(response.data.data);
         router.replace("/");

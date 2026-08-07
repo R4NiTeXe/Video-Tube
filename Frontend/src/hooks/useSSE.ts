@@ -72,8 +72,7 @@ export function useSSE() {
         return;
       }
 
-      // Check session validity before retrying — the cookie may have an expired token
-      // even though the store says we're authenticated (stale Bearer token in localStorage).
+      // Check session validity before retrying — the session cookie may have expired.
       if (retryCountRef.current < MAX_RETRIES) {
         retryCountRef.current++;
         const delay = Math.min(retryDelayRef.current, MAX_RETRY_DELAY);

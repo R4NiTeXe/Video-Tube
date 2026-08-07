@@ -10,12 +10,12 @@ describe("formatViews", () => {
 
   it("formats thousands", () => {
     expect(formatViews(1500)).toBe("1.5K");
-    expect(formatViews(10000)).toBe("10.0K");
-    expect(formatViews(999999)).toBe("1000.0K");
+    expect(formatViews(10000)).toBe("10K");
+    expect(formatViews(999999)).toBe("1000K");
   });
 
   it("formats millions", () => {
-    expect(formatViews(1000000)).toBe("1.0M");
+    expect(formatViews(1000000)).toBe("1M");
     expect(formatViews(2500000)).toBe("2.5M");
   });
 });
@@ -24,7 +24,11 @@ describe("formatDuration", () => {
   it("formats seconds to MM:SS", () => {
     expect(formatDuration(0)).toBe("0:00");
     expect(formatDuration(65)).toBe("1:05");
-    expect(formatDuration(3661)).toBe("61:01");
+    expect(formatDuration(3599)).toBe("59:59");
+  });
+
+  it("formats hours as H:MM:SS", () => {
+    expect(formatDuration(3661)).toBe("1:01:01");
   });
 });
 

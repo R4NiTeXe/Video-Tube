@@ -53,14 +53,6 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const stored = localStorage.getItem("accessToken");
-    if (stored && !config.headers["Authorization"]) {
-      if (DEBUG) console.log("[API] Attaching Bearer token from localStorage");
-      config.headers["Authorization"] = `Bearer ${stored}`;
-    }
-  }
-
   const mutatingMethods = ["post", "put", "patch", "delete"];
   if (mutatingMethods.includes(config.method?.toLowerCase() || "")) {
     if (_csrfToken) {
@@ -156,43 +148,22 @@ api.interceptors.response.use(
       if (!_isRefreshingToken) {
         _isRefreshingToken = true;
         try {
-          const storedRefreshToken =
-            typeof window !== "undefined"
-              ? localStorage.getItem("refreshToken")
-              : null;
-
-          const refreshRes = await axios.post(
+          await axios.post(
             `${API_BASE_URL}/users/refresh-token`,
-            storedRefreshToken ? { refreshToken: storedRefreshToken } : {},
+            {},
             {
               withCredentials: true,
               headers: _csrfToken ? { "x-csrf-token": _csrfToken } : {},
             },
           );
 
-          const newAccessToken = refreshRes.data?.data?.accessToken;
-          if (newAccessToken && typeof window !== "undefined") {
-            localStorage.setItem("accessToken", newAccessToken);
-          }
-
-          const newRefreshToken = refreshRes.data?.data?.refreshToken;
-          if (newRefreshToken && typeof window !== "undefined") {
-            localStorage.setItem("refreshToken", newRefreshToken);
-          }
-
-          if (DEBUG) console.log("[API] Token refreshed");
           _tokenRefreshQueue.forEach((q) => q.resolve(true));
           _tokenRefreshQueue = [];
         } catch (refreshError) {
           _tokenRefreshQueue.forEach((q) => q.resolve(false));
           _tokenRefreshQueue = [];
           if (DEBUG)
-            console.log("[API] Token refresh failed — clearing tokens");
-
-          if (typeof window !== "undefined") {
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
-          }
+            console.log("[API] Token refresh failed — clearing session");
 
           if (typeof window !== "undefined") {
             const publicPaths = [

@@ -48,9 +48,7 @@ export default function LoginPage() {
           ? { mobile: trimmed, password, timezone: tz }
           : { email: trimmed, password, timezone: tz };
       const response = await api.post("/users/login", payload);
-      const { user, accessToken, refreshToken } = response.data.data;
-      if (accessToken) localStorage.setItem("accessToken", accessToken);
-      if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+      const { user } = response.data.data;
       login(user);
       router.push("/");
     } catch (err: unknown) {

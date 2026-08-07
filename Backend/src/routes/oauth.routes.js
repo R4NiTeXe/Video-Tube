@@ -55,9 +55,7 @@ const handleOAuthCallback = async (req, res) => {
     });
 
     const isNew = req.user._isNew ? "true" : "false";
-    res.redirect(
-      `${FE().replace(/\/+$/, "")}/auth/callback?isNew=${isNew}&accessToken=${accessToken}&refreshToken=${refreshToken}`
-    );
+    res.redirect(`${FE().replace(/\/+$/, "")}/auth/callback?isNew=${isNew}`);
   } catch (error) {
     logger.error("OAuth callback error:", { error: error.message });
     res.redirect(`${FE()}/login?error=auth_failed`);

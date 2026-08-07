@@ -423,9 +423,7 @@ export default function RegisterPage() {
             setStatusText("Creating your account...");
         },
       });
-      const { user, accessToken, refreshToken } = response.data.data;
-      if (accessToken) localStorage.setItem("accessToken", accessToken);
-      if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+      const { user } = response.data.data;
       const { login } = useAuthStore.getState();
       login(user);
       setStep("done");
