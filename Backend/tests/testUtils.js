@@ -11,6 +11,7 @@ import { Playlist } from "../src/models/playlist.model.js";
 import { CommunityPost } from "../src/models/communityPost.model.js";
 import { Notification } from "../src/models/notification.model.js";
 import { Session } from "../src/models/session.model.js";
+import { OTP } from "../src/models/otp.model.js";
 
 let mongod;
 let server;
@@ -74,6 +75,7 @@ export const clearDatabase = async () => {
     CommunityPost,
     Notification,
     Session,
+    OTP,
   ];
   await Promise.all(collections.map((c) => c.deleteMany({})));
 };

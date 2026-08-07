@@ -904,14 +904,28 @@ export const sessionSchemas = {
 };
 
 export const otpSchemas = {
-  sendOtp: { body: z.object({ identifier: z.string().min(1) }) },
+  sendOtp: {
+    body: z.object({
+      identifier: z.string().min(1),
+      purpose: z.string().min(1),
+      channel: z.enum(["email", "whatsapp"]).optional(),
+      userId: z.string().optional(),
+    }),
+  },
   verifyOtp: {
     body: z.object({
       identifier: z.string().min(1),
       otp: z.string().length(6),
+      purpose: z.string().min(1),
     }),
   },
-  resendOtp: { body: z.object({ identifier: z.string().min(1) }) },
+  resendOtp: {
+    body: z.object({
+      identifier: z.string().min(1),
+      purpose: z.string().min(1),
+      channel: z.enum(["email", "whatsapp"]).optional(),
+    }),
+  },
   getOtpUsage: { query: z.object({ identifier: z.string().optional() }) },
 };
 
