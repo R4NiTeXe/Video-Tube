@@ -71,7 +71,8 @@ function useMediaQuery(query: string) {
     () => window.matchMedia(query).matches,
     [query],
   );
-  return useSyncExternalStore(subscribe, getSnapshot);
+  const getServerSnapshot = useCallback(() => false, []);
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
 const containerVariants = {
