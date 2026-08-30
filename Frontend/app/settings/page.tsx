@@ -153,6 +153,119 @@ const LANGUAGES = [
   "Arabic",
 ];
 
+function SettingsProfileCard({
+  user,
+}: {
+  user: NonNullable<ReturnType<typeof useAuthStore.getState>["user"]> | null;
+}) {
+  if (!user) return null;
+  return (
+    <div
+      className="form-card"
+      style={{ padding: "1.5rem", marginBottom: "1.5rem" }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+        <div
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: "50%",
+            border: "2px solid var(--accent)",
+            padding: 2,
+            flexShrink: 0,
+          }}
+        >
+          <Image
+            src={user.avatar}
+            alt={user.fullName}
+            width={64}
+            height={64}
+            style={{
+              borderRadius: "50%",
+              objectFit: "cover",
+            }}
+          />
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <h2
+            style={{
+              fontSize: "1.1rem",
+              fontWeight: 700,
+              color: "var(--text-primary)",
+            }}
+          >
+            {user.fullName}
+          </h2>
+          <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+            @{user.username}
+          </p>
+          <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+            {user.email}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SettingsSectionHeader({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "0.75rem",
+        marginBottom: "1.25rem",
+      }}
+    >
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: "var(--radius-md)",
+          backgroundColor: "var(--bg-secondary)",
+          border: "1px solid var(--border)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "var(--accent)",
+          flexShrink: 0,
+        }}
+      >
+        {icon}
+      </div>
+      <div>
+        <h2
+          style={{
+            fontSize: "1rem",
+            fontWeight: 700,
+            color: "var(--text-primary)",
+          }}
+        >
+          {title}
+        </h2>
+        <p
+          style={{
+            fontSize: "0.78rem",
+            color: "var(--text-muted)",
+            marginTop: "0.1rem",
+          }}
+        >
+          {description}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const router = useRouter();
   const {
@@ -263,55 +376,6 @@ export default function SettingsPage() {
       .then((res) => setOtpUsage(res.data.data))
       .catch(() => {});
   };
-
-  const ProfileCard = () =>
-    user ? (
-      <div
-        className="form-card"
-        style={{ padding: "1.5rem", marginBottom: "1.5rem" }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <div
-            style={{
-              width: 64,
-              height: 64,
-              borderRadius: "50%",
-              border: "2px solid var(--accent)",
-              padding: 2,
-              flexShrink: 0,
-            }}
-          >
-            <Image
-              src={user.avatar}
-              alt={user.fullName}
-              width={64}
-              height={64}
-              style={{
-                borderRadius: "50%",
-                objectFit: "cover",
-              }}
-            />
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <h2
-              style={{
-                fontSize: "1.1rem",
-                fontWeight: 700,
-                color: "var(--text-primary)",
-              }}
-            >
-              {user.fullName}
-            </h2>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
-              @{user.username}
-            </p>
-            <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-              {user.email}
-            </p>
-          </div>
-        </div>
-      </div>
-    ) : null;
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
@@ -551,62 +615,6 @@ export default function SettingsPage() {
     }
   };
 
-  const SectionHeader = ({
-    icon,
-    title,
-    description,
-  }: {
-    icon: React.ReactNode;
-    title: string;
-    description: string;
-  }) => (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "0.75rem",
-        marginBottom: "1.25rem",
-      }}
-    >
-      <div
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: "var(--radius-md)",
-          backgroundColor: "var(--bg-secondary)",
-          border: "1px solid var(--border)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "var(--accent)",
-          flexShrink: 0,
-        }}
-      >
-        {icon}
-      </div>
-      <div>
-        <h2
-          style={{
-            fontSize: "1rem",
-            fontWeight: 700,
-            color: "var(--text-primary)",
-          }}
-        >
-          {title}
-        </h2>
-        <p
-          style={{
-            fontSize: "0.78rem",
-            color: "var(--text-muted)",
-            marginTop: "0.1rem",
-          }}
-        >
-          {description}
-        </p>
-      </div>
-    </div>
-  );
-
   return (
     <div className="content-max">
       <PageMeta
@@ -630,13 +638,13 @@ export default function SettingsPage() {
           Settings
         </h1>
 
-        <ProfileCard />
+        <SettingsProfileCard user={user} />
 
         <div
           className="form-card"
           style={{ padding: "1.5rem", marginBottom: "1.5rem" }}
         >
-          <SectionHeader
+        <SettingsSectionHeader
             icon={
               <svg
                 width="20"
@@ -1276,7 +1284,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="form-card" style={{ padding: "1.5rem" }}>
-          <SectionHeader
+        <SettingsSectionHeader
             icon={
               <svg
                 width="18"
@@ -1418,7 +1426,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="form-card" style={{ padding: "1.5rem" }}>
-          <SectionHeader
+        <SettingsSectionHeader
             icon={
               <svg
                 width="18"
@@ -1493,7 +1501,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="form-card" style={{ padding: "1.5rem" }}>
-          <SectionHeader
+        <SettingsSectionHeader
             icon={
               <svg
                 width="18"
@@ -1702,7 +1710,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="form-card card-full" style={{ padding: "1.5rem" }}>
-          <SectionHeader
+        <SettingsSectionHeader
             icon={
               <svg
                 width="18"
