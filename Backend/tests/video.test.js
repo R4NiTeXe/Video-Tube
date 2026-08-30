@@ -17,12 +17,10 @@ import {
   createTestUser,
   loginTestUser,
   createTestVideo,
-  getAuthHeaders,
   expectSuccess,
   expectError,
 } from "./testUtils.js";
 import { Video } from "../src/models/video.model.js";
-import { User } from "../src/models/user.model.js";
 
 const TEST_DB_NAME = `videotube_video_test_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 
@@ -97,7 +95,7 @@ describe("Video CRUD & View Count", () => {
     });
 
     it("should increment view count on first watch (not owner)", async () => {
-      const otherUser = await createTestUser({
+      await createTestUser({
         username: "viewer",
         email: "viewer@example.com",
       });
@@ -128,7 +126,7 @@ describe("Video CRUD & View Count", () => {
     });
 
     it("should NOT increment view count on repeat watch", async () => {
-      const otherUser = await createTestUser({
+      await createTestUser({
         username: "viewer2",
         email: "viewer2@example.com",
       });
@@ -228,7 +226,7 @@ describe("Video CRUD & View Count", () => {
     });
 
     it("should reject update by non-owner", async () => {
-      const otherUser = await createTestUser({
+      await createTestUser({
         username: "other",
         email: "other@example.com",
       });

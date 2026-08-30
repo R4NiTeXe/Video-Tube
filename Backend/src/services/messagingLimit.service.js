@@ -100,7 +100,7 @@ export const incrementMessagingLimit = async (identifier) => {
     const redisModule = await import("../utils/redis.js");
     redis =
       redisModule.default || (redisModule.getRedis && redisModule.getRedis());
-  } catch (error) {
+  } catch {
     return;
   }
 

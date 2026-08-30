@@ -22,4 +22,13 @@ export default [
       "no-constant-condition": ["error", { checkLoops: false }],
     },
   },
+  {
+    files: ["**/*.cjs"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
 ];

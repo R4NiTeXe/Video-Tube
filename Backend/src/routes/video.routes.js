@@ -25,8 +25,6 @@ import {
 
 import {
   publishScheduledVideos,
-  runPublishScheduledVideos,
-  runUpdateTrendingScores,
 } from "../controllers/video/cron.controller.js";
 
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -42,7 +40,6 @@ import {
   validateBody,
   validateParams,
   validateQuery,
-  validateAll,
 } from "../middlewares/validation.middleware.js";
 import { videoSchemas } from "../validators/index.js";
 

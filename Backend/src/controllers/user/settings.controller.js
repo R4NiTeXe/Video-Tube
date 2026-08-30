@@ -13,11 +13,8 @@ import { Poll } from "../../models/poll.model.js";
 import { Session } from "../../models/session.model.js";
 import { getLocationInfo } from "../../utils/location.js";
 import {
-  uploadOnCloudinary,
   deleteFromCloudinary,
 } from "../../utils/cloudinary.js";
-import { escapeRegex } from "../../utils/sanitizer.js";
-import mongoose from "mongoose";
 import validator from "validator";
 import { getCookieOptions } from "../user.controller.js";
 import logger from "../../utils/logger.js";
@@ -31,14 +28,9 @@ import {
   identifierDeletedTemplate,
 } from "../../utils/emailTemplates.js";
 import { sendWhatsAppOTP } from "../../utils/whatsappOtp.js";
-import jwt from "jsonwebtoken";
-import crypto from "crypto";
 import { assertPasswordStrength } from "../../utils/passwordValidation.js";
 
 const isValidEmail = (email) => validator.isEmail(email);
-const isValidMobile = (mobile) => /^\+?[1-9]\d{9,14}$/.test(mobile);
-const detectChannel = (identifier) =>
-  /^\+?[1-9]\d{9,14}$/.test(identifier.trim()) ? "whatsapp" : "email";
 
 const sendChangePasswordOTP = asyncHandler(async (req, res) => {
   const { channel = "email" } = req.body;

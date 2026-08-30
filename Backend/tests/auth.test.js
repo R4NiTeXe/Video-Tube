@@ -15,7 +15,6 @@ import {
   dropDatabase,
   createTestUser,
   loginTestUser,
-  getAuthHeaders,
   expectSuccess,
   expectError,
 } from "./testUtils.js";

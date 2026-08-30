@@ -1,7 +1,6 @@
 import { Router } from "express";
 import passport from "passport";
 import jwt from "jsonwebtoken";
-import { User } from "../models/user.model.js";
 import { createSession } from "../controllers/session.controller.js";
 import logger from "../utils/logger.js";
 

@@ -56,7 +56,7 @@ export const stopTestServer = async () => {
   }
   try {
     await mongoose.disconnect();
-  } catch (e) {
+  } catch {
     // Ignore disconnect errors
   }
   if (mongod) {

@@ -1,6 +1,6 @@
 import rateLimit from "express-rate-limit";
 import { RedisStore } from "rate-limit-redis";
-import { getRedis, isRedisAvailable } from "../utils/redis.js";
+import { getRedis } from "../utils/redis.js";
 import logger from "../utils/logger.js";
 
 const isTest = process.env.NODE_ENV === "test";

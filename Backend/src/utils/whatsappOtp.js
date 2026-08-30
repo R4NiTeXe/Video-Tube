@@ -1,4 +1,3 @@
-import { otpService } from "../services/otp.service.js";
 import logger from "./logger.js";
 import { checkAndIncrementMessagingLimit } from "../services/messagingLimit.service.js";
 

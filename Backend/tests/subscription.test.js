@@ -15,12 +15,8 @@ import {
   dropDatabase,
   createTestUser,
   loginTestUser,
-  createTestVideo,
-  getAuthHeaders,
   expectSuccess,
-  expectError,
 } from "./testUtils.js";
-import { Subscription } from "../src/models/subscription.model.js";
 import { Notification } from "../src/models/notification.model.js";
 
 const TEST_DB_NAME = `videotube_sub_test_${Date.now()}_${Math.random().toString(36).slice(2)}`;

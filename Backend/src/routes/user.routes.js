@@ -80,7 +80,6 @@ import {
   validateBody,
   validateParams,
   validateQuery,
-  validateAll,
 } from "../middlewares/validation.middleware.js";
 import {
   userSchemas,

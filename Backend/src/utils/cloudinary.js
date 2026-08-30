@@ -55,7 +55,7 @@ const generateHlsManifest = async (publicId) => {
   try {
     if (!publicId) return null;
 
-    const result = await cloudinary.api.update(publicId, {
+    await cloudinary.api.update(publicId, {
       resource_type: "video",
       type: "upload",
       raw_transformation: "sp_auto",

@@ -26,9 +26,6 @@ import {
   isValidMobile,
   detectChannel,
 } from "../../utils/validators.js";
-import jwt from "jsonwebtoken";
-import crypto from "crypto";
-import { assertPasswordStrength } from "../../utils/passwordValidation.js";
 import logger from "../../utils/logger.js";
 
 const sendRegistrationOTP = asyncHandler(async (req, res) => {

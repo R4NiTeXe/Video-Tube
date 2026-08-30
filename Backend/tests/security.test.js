@@ -10,8 +10,6 @@ import {
   createTestUser,
   loginTestUser,
   getAuthHeaders,
-  expectSuccess,
-  expectError,
 } from "./testUtils.js";
 import { User } from "../src/models/user.model.js";
 

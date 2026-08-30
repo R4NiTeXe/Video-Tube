@@ -16,13 +16,10 @@ import {
   createTestUser,
   loginTestUser,
   createTestVideo,
-  getAuthHeaders,
   expectSuccess,
 } from "./testUtils.js";
-import { Video } from "../src/models/video.model.js";
 import { Like } from "../src/models/like.model.js";
 import { Comment } from "../src/models/comment.model.js";
-import { Subscription } from "../src/models/subscription.model.js";
 
 const TEST_DB_NAME = `videotube_dashboard_test_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 

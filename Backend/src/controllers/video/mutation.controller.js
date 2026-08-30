@@ -8,7 +8,6 @@ import { Notification } from "../../models/notification.model.js";
 import { User } from "../../models/user.model.js";
 import { Playlist } from "../../models/playlist.model.js";
 import { Poll } from "../../models/poll.model.js";
-import { Session } from "../../models/session.model.js";
 import {
   uploadOnCloudinary,
   deleteFromCloudinary,
@@ -16,10 +15,8 @@ import {
   generateVideoQualities,
   getPublicIdFromCloudinaryUrl,
 } from "../../utils/cloudinary.js";
-import { escapeRegex } from "../../utils/sanitizer.js";
 import mongoose from "mongoose";
 import logger from "../../utils/logger.js";
-import { sendSSENotification } from "../sse.controller.js";
 
 const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description, tags, category, chapters, scheduledAt } =

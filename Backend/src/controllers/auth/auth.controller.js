@@ -7,11 +7,8 @@ import {
   generateAccessAndRefreshToken,
   getCookieOptions,
   isValidEmail,
-  isValidMobile,
 } from "../user.controller.js";
 import { sendEmail } from "../../utils/email.js";
-import { storeOTP, verifyOTP } from "../../utils/otp.js";
-import { otpEmailTemplate } from "../../utils/emailTemplates.js";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { assertPasswordStrength } from "../../utils/passwordValidation.js";

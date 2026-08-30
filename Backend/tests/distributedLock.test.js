@@ -2,13 +2,10 @@ import {
   describe,
   it,
   beforeAll,
-  afterAll,
-  beforeEach,
   expect,
 } from "@jest/globals";
 import {
   acquireLock,
-  releaseLock,
   initRedis,
   isRedisAvailable,
 } from "../src/utils/redis.js";

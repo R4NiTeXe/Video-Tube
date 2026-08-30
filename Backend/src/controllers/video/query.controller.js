@@ -2,15 +2,8 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { Video } from "../../models/video.model.js";
-import { Like } from "../../models/like.model.js";
-import { Subscription } from "../../models/subscription.model.js";
-import { Comment } from "../../models/comment.model.js";
 import { User } from "../../models/user.model.js";
-import { Notification } from "../../models/notification.model.js";
-import { escapeRegex } from "../../utils/sanitizer.js";
 import mongoose from "mongoose";
-import { cacheGet, cacheSet } from "../../utils/redis.js";
-import logger from "../../utils/logger.js";
 
 const getTrendingVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 20, category } = req.query;
@@ -289,6 +282,7 @@ const getTranscodingStatus = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Video not found");
   }
 
+  // eslint-disable-next-line no-unused-vars
   const { owner, isPublished, ...safeData } = video;
   return res
     .status(200)

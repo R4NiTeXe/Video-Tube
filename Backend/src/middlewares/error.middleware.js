@@ -5,7 +5,7 @@ import logger from "../utils/logger.js";
 
 const isProduction = process.env.NODE_ENV === "production";
 
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, req, res, _next) => {
   let statusCode = err.statusCode || 500;
   let message = err.message || "Internal Server Error";
   let errors = err.errors || [];
@@ -93,7 +93,7 @@ const errorHandler = (err, req, res, next) => {
   });
 };
 
-const notFoundHandler = (req, res, next) => {
+const notFoundHandler = (req, res, _next) => {
   res.status(404).json({
     success: false,
     statusCode: 404,

@@ -17,11 +17,7 @@ import {
 } from "../../utils/cloudinary.js";
 import { escapeRegex } from "../../utils/sanitizer.js";
 import mongoose from "mongoose";
-import validator from "validator";
 import { getCookieOptions } from "../user.controller.js";
-import logger from "../../utils/logger.js";
-
-const isValidEmail = (email) => validator.isEmail(email);
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
   const { fullName } = req.body;

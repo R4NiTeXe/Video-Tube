@@ -24,7 +24,6 @@ import { OTP } from "../models/otp.model.js";
 import {
   otpEmailTemplate,
   passwordChangedEmailTemplate,
-  accountRecoveryTemplate,
 } from "../utils/emailTemplates.js";
 import { sendWhatsAppOTP } from "../utils/whatsappOtp.js";
 import { getLocationInfo } from "../utils/location.js";
@@ -34,7 +33,6 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import validator from "validator";
 import {
-  validatePasswordStrength,
   assertPasswordStrength,
 } from "../utils/passwordValidation.js";
 import logger from "../utils/logger.js";
@@ -116,7 +114,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       incomingRefreshToken,
       process.env.REFRESH_TOKEN_SECRET
     );
-  } catch (error) {
+  } catch {
     throw new ApiError(401, "Invalid refresh token");
   }
 
@@ -251,36 +249,6 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(200, updatedUser, "Account details updated successfully")
     );
-});
-
-const requestEmailChange = asyncHandler(async (req, res) => {
-  const { newEmail } = req.body;
-
-  if (!newEmail || typeof newEmail !== "string") {
-    throw new ApiError(400, "New email is required");
-  }
-
-  const normalizedEmail = newEmail.trim().toLowerCase();
-
-  if (!isValidEmail(normalizedEmail)) {
-    throw new ApiError(400, "Please provide a valid email");
-  }
-
-  if (normalizedEmail === req.user?.email) {
-    throw new ApiError(400, "New email must be different from current email");
-  }
-
-  const existingUser = await User.findOne({
-    email: normalizedEmail,
-    _id: { $ne: req.user?._id },
-  });
-
-  if (existingUser) {
-    throw new ApiError(409, "Email is already in use by another account");
-  }
-
-  const { default: { sendOtp: sendEmailOtp } } = await import("../controllers/auth/otp.controller.js");
-  await sendEmailOtp(req, res, { identifier: normalizedEmail, purpose: "email_change" });
 });
 
 const updateUserImage = async ({
@@ -1266,7 +1234,7 @@ const resetPasswordWithOTP = asyncHandler(async (req, res) => {
       resetToken,
       process.env.ACCESS_TOKEN_SECRET + "_reset"
     );
-  } catch (error) {
+  } catch {
     throw new ApiError(400, "Invalid or expired reset token");
   }
 
@@ -1314,7 +1282,7 @@ const skipAndLogin = asyncHandler(async (req, res) => {
       resetToken,
       process.env.ACCESS_TOKEN_SECRET + "_reset"
     );
-  } catch (error) {
+  } catch {
     throw new ApiError(400, "Invalid or expired reset token");
   }
 
@@ -1337,14 +1305,7 @@ const skipAndLogin = asyncHandler(async (req, res) => {
     .lean();
   const options = getCookieOptions();
 
-  const deviceInfo = {
-    ip: req.ip,
-    userAgent: req.headers["user-agent"],
-  };
   await createSession(user._id, refreshToken, req);
-
-  const lastLoginTime = user.lastLogin ? new Date(user.lastLogin).getTime() : 0;
-  const FIFTEEN_DAYS = 15 * 24 * 60 * 60 * 1000;
 
   const locationInfo = await getLocationInfo(req);
 
