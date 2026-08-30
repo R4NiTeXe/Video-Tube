@@ -1,3 +1,5 @@
+import { ApiError } from "./ApiError.js";
+
 export const MIN_PASSWORD_LENGTH = 8;
 export const MAX_PASSWORD_LENGTH = 64;
 
@@ -21,6 +23,9 @@ export const validatePasswordStrength = (password) => {
 export const assertPasswordStrength = (password) => {
   const errors = validatePasswordStrength(password);
   if (errors.length > 0) {
-    throw new Error(`Password must contain ${errors.join(", ")}`);
+    throw new ApiError(
+      400,
+      `Password must contain ${errors.join(", ")}`
+    );
   }
 };

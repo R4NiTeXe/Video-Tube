@@ -23,7 +23,6 @@ let _tokenRefreshQueue: Array<{ resolve: (success: boolean) => void }> = [];
 export const setCsrfToken = (token: string) => {
   _csrfToken = token;
 };
-export const getCsrfToken = () => _csrfToken;
 export const getServerTimeOffset = () => _serverTimeOffset;
 
 export const refreshCsrfToken = async (): Promise<string | null> => {

@@ -222,8 +222,11 @@ const originPatterns = corsOrigins.map((origin) => {
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no Origin header (server-to-server, webhooks, health checks, oEmbed, Prometheus)
-      if (!origin) return callback(null, true);
+      // Allow requests with no Origin header only in development (server-to-server, health checks, webhooks)
+      if (!origin) {
+        if (isDev) return callback(null, true);
+        return callback(new Error("Missing Origin header"));
+      }
 
       const allowed = originPatterns.some((pattern) =>
         typeof pattern === "string" ? pattern === origin : pattern.test(origin)
@@ -288,7 +291,11 @@ app.use((req, res, next) => {
 // Global + per-route on same request causes express-rate-limit v8 ERR_ERL_DOUBLE_COUNT.
 
 app.get("/health/live", (req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
+  res.json({
+    status: "ok",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
 });
 
 app.get("/health/ready", async (req, res) => {
@@ -374,18 +381,22 @@ if (process.env.NODE_ENV !== "production") {
 app.post("/api/v1/webhooks/cloudinary", async (req, res) => {
   try {
     const webhookSecret = process.env.WEBHOOK_SECRET;
-    if (webhookSecret) {
-      const token = req.query?.token || req.headers["x-webhook-token"];
-      const tokenValue = Array.isArray(token) ? token[0] : token;
-      const tokenBuffer = Buffer.from(String(tokenValue || ""));
-      const secretBuffer = Buffer.from(webhookSecret);
-      if (
-        !tokenValue ||
-        tokenBuffer.length !== secretBuffer.length ||
-        !crypto.timingSafeEqual(tokenBuffer, secretBuffer)
-      ) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
+    if (!webhookSecret) {
+      logger.error("WEBHOOK_SECRET not configured — rejecting webhook", {
+        ip: req.ip,
+      });
+      return res.status(401).json({ error: "Webhook not configured" });
+    }
+    const token = req.query?.token || req.headers["x-webhook-token"];
+    const tokenValue = Array.isArray(token) ? token[0] : token;
+    const tokenBuffer = Buffer.from(String(tokenValue || ""));
+    const secretBuffer = Buffer.from(webhookSecret);
+    if (
+      !tokenValue ||
+      tokenBuffer.length !== secretBuffer.length ||
+      !crypto.timingSafeEqual(tokenBuffer, secretBuffer)
+    ) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
     const { notification_type, public_id } = req.body || {};
     if (notification_type === "upload" || notification_type === "eager") {

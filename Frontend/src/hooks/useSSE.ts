@@ -70,18 +70,17 @@ export function useSSE() {
       setIsConnected(false);
       es.close();
 
-      // If authentication was lost, stop retrying immediately
       if (!authRef.current) {
         logger.warn("SSE stopped — not authenticated");
         return;
       }
 
-      // Check session validity before retrying — the session cookie may have expired.
       if (retryCountRef.current < MAX_RETRIES) {
         retryCountRef.current++;
-        const delay = Math.min(retryDelayRef.current, MAX_RETRY_DELAY);
-        const jitter = Math.random() * 0.5 * delay;
-        retryDelayRef.current = Math.min(delay * 2 + jitter, MAX_RETRY_DELAY);
+        const baseDelay = Math.min(retryDelayRef.current, MAX_RETRY_DELAY);
+        const jitter = Math.random() * 0.5 * baseDelay;
+        const totalDelay = baseDelay + jitter;
+        retryDelayRef.current = Math.min(baseDelay * 2, MAX_RETRY_DELAY);
 
         reconnectRef.current = setTimeout(async () => {
           if (!isMountedRef.current || !authRef.current) return;
@@ -103,7 +102,7 @@ export function useSSE() {
             if (!authRef.current) return;
             connectRef.current();
           }
-        }, delay);
+        }, totalDelay);
       } else {
         logger.warn("SSE max retries reached, stopping reconnection attempts");
       }

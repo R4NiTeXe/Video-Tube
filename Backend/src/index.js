@@ -230,6 +230,9 @@ process.on("uncaughtException", (err) => {
 
 process.on("unhandledRejection", (reason) => {
   const message = reason?.message || String(reason);
-  logger.error("Unhandled rejection", { error: message });
-  gracefulShutdown("unhandledRejection", 1).then((code) => process.exit(code));
+  const stack = reason?.stack || "";
+  logger.error("Unhandled rejection (non-fatal, continuing)", {
+    error: message,
+    stack: process.env.NODE_ENV !== "production" ? stack : undefined,
+  });
 });

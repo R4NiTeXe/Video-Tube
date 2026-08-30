@@ -216,7 +216,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { fullName, email } = req.body;
+  const { fullName } = req.body;
   const updateFields = {};
 
   if (fullName !== undefined) {
@@ -225,29 +225,6 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     }
 
     updateFields.fullName = fullName.trim();
-  }
-
-  if (email !== undefined) {
-    if (typeof email !== "string" || !email.trim()) {
-      throw new ApiError(400, "Email cannot be empty");
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
-
-    if (!isValidEmail(normalizedEmail)) {
-      throw new ApiError(400, "Please provide a valid email");
-    }
-
-    const existingUser = await User.findOne({
-      email: normalizedEmail,
-      _id: { $ne: req.user?._id },
-    });
-
-    if (existingUser) {
-      throw new ApiError(409, "Email is already in use");
-    }
-
-    updateFields.email = normalizedEmail;
   }
 
   if (!Object.keys(updateFields).length) {
@@ -274,6 +251,36 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(200, updatedUser, "Account details updated successfully")
     );
+});
+
+const requestEmailChange = asyncHandler(async (req, res) => {
+  const { newEmail } = req.body;
+
+  if (!newEmail || typeof newEmail !== "string") {
+    throw new ApiError(400, "New email is required");
+  }
+
+  const normalizedEmail = newEmail.trim().toLowerCase();
+
+  if (!isValidEmail(normalizedEmail)) {
+    throw new ApiError(400, "Please provide a valid email");
+  }
+
+  if (normalizedEmail === req.user?.email) {
+    throw new ApiError(400, "New email must be different from current email");
+  }
+
+  const existingUser = await User.findOne({
+    email: normalizedEmail,
+    _id: { $ne: req.user?._id },
+  });
+
+  if (existingUser) {
+    throw new ApiError(409, "Email is already in use by another account");
+  }
+
+  const { default: { sendOtp: sendEmailOtp } } = await import("../controllers/auth/otp.controller.js");
+  await sendEmailOtp(req, res, { identifier: normalizedEmail, purpose: "email_change" });
 });
 
 const updateUserImage = async ({

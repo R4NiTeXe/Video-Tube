@@ -24,7 +24,7 @@ import logger from "../../utils/logger.js";
 const isValidEmail = (email) => validator.isEmail(email);
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { fullName, email } = req.body;
+  const { fullName } = req.body;
   const updateFields = {};
 
   if (fullName !== undefined) {
@@ -32,24 +32,6 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
       throw new ApiError(400, "Full name cannot be empty");
     }
     updateFields.fullName = fullName.trim();
-  }
-
-  if (email !== undefined) {
-    if (typeof email !== "string" || !email.trim()) {
-      throw new ApiError(400, "Email cannot be empty");
-    }
-    const normalizedEmail = email.trim().toLowerCase();
-    if (!isValidEmail(normalizedEmail)) {
-      throw new ApiError(400, "Please provide a valid email");
-    }
-    const existingUser = await User.findOne({
-      email: normalizedEmail,
-      _id: { $ne: req.user?._id },
-    });
-    if (existingUser) {
-      throw new ApiError(409, "Email is already in use");
-    }
-    updateFields.email = normalizedEmail;
   }
 
   if (!Object.keys(updateFields).length) {

@@ -63,18 +63,20 @@ export default function EditProfilePage() {
   }, [isAuthenticated, authLoading, router]);
 
   const [prevUser, setPrevUser] = useState<typeof user>(null);
-  if (user && user !== prevUser) {
-    setPrevUser(user);
-    setFullName(user.fullName || "");
-    setAvatarPreview(user.avatar || "");
-    setCoverPreview(user.coverImage || "");
-    setBio(user.bio || "");
-    setYoutube(user.socialLinks?.youtube || "");
-    setTwitter(user.socialLinks?.twitter || "");
-    setInstagram(user.socialLinks?.instagram || "");
-    setGithub(user.socialLinks?.github || "");
-    setWebsite(user.socialLinks?.website || "");
-  }
+  useEffect(() => {
+    if (user && user !== prevUser) {
+      setPrevUser(user);
+      setFullName(user.fullName || "");
+      setAvatarPreview(user.avatar || "");
+      setCoverPreview(user.coverImage || "");
+      setBio(user.bio || "");
+      setYoutube(user.socialLinks?.youtube || "");
+      setTwitter(user.socialLinks?.twitter || "");
+      setInstagram(user.socialLinks?.instagram || "");
+      setGithub(user.socialLinks?.github || "");
+      setWebsite(user.socialLinks?.website || "");
+    }
+  }, [user, prevUser]);
 
   // Unsaved changes guard
   const isDirty =
@@ -123,18 +125,22 @@ export default function EditProfilePage() {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (avatarPreview && avatarPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(avatarPreview);
+      }
       setAvatarFile(file);
       setAvatarPreview(URL.createObjectURL(file));
-
     }
   };
 
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (coverPreview && coverPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(coverPreview);
+      }
       setCoverFile(file);
       setCoverPreview(URL.createObjectURL(file));
-
     }
   };
 

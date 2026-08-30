@@ -2,21 +2,33 @@
 
 export const dynamic = "force-dynamic";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import axios from "axios";
+import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
-import { API_FULL_URL } from "@/src/services/config";
 import { PageMeta } from "@/src/components/PageMeta";
 
 function CallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuthStore();
+  const processedRef = useRef(false);
 
   useEffect(() => {
+    if (processedRef.current) return;
+    processedRef.current = true;
+
     const error = searchParams.get("error");
     const isNew = searchParams.get("isNew") === "true";
+    const state = searchParams.get("state");
+
+    const storedState = sessionStorage.getItem("oauth_state");
+    sessionStorage.removeItem("oauth_state");
+
+    if (state && storedState && state !== storedState) {
+      router.replace("/login?error=invalid_state");
+      return;
+    }
 
     if (error) {
       router.replace(`/login?error=${encodeURIComponent(error)}`);
@@ -28,9 +40,7 @@ function CallbackContent() {
 
     const fetchUser = async () => {
       try {
-        const response = await axios.get(`${API_FULL_URL}/users/current-user`, {
-          withCredentials: true,
-        });
+        const response = await api.get("/users/current-user");
         login(response.data.data);
         router.replace("/");
       } catch {

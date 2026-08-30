@@ -17,6 +17,11 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid video id");
   }
 
+  const video = await Video.findById(videoId).select("owner title").lean();
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
+
   const existingLike = await Like.findOneAndDelete({
     video: videoId,
     likedBy: req.user._id,
@@ -43,23 +48,20 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 
   const likesCount = await Like.countDocuments({ video: videoId });
 
-  if (isLiked) {
+  if (isLiked && video.owner.toString() !== req.user._id.toString()) {
     try {
-      const video = await Video.findById(videoId).select("owner title").lean();
-      if (video && video.owner.toString() !== req.user._id.toString()) {
-        const recipient = await User.findById(video.owner)
-          .select("notificationPrefs")
-          .lean();
-        if (recipient?.notificationPrefs?.likes !== false) {
-          const notif = await Notification.create({
-            recipient: video.owner,
-            sender: req.user._id,
-            type: "like",
-            video: videoId,
-            message: `${req.user.fullName || req.user.username} liked your video "${video.title}"`,
-          });
-          sendSSENotification(video.owner, notif);
-        }
+      const recipient = await User.findById(video.owner)
+        .select("notificationPrefs")
+        .lean();
+      if (recipient?.notificationPrefs?.likes !== false) {
+        const notif = await Notification.create({
+          recipient: video.owner,
+          sender: req.user._id,
+          type: "like",
+          video: videoId,
+          message: `${req.user.fullName || req.user.username} liked your video "${video.title}"`,
+        });
+        sendSSENotification(video.owner, notif);
       }
     } catch (err) {
       logger.warn("Video like notification failed", { error: err.message });

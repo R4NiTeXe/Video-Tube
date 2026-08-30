@@ -192,7 +192,6 @@ export default function RegisterPage() {
   const [avatarName, setAvatarName] = useState("");
   const [avatarPreview, setAvatarPreview] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [coverFile] = useState<File | null>(null);
 
   const [emailOtp, setEmailOtp] = useState<string[]>(
     Array(OTP_LENGTH).fill(""),
@@ -266,7 +265,6 @@ export default function RegisterPage() {
   const handleOtpKeyDown = (
     index: number,
     e: React.KeyboardEvent<HTMLInputElement>,
-    _setter: React.Dispatch<React.SetStateAction<string[]>>,
     refs: React.MutableRefObject<(HTMLInputElement | null)[]>,
     isEmail: boolean,
   ) => {
@@ -413,7 +411,6 @@ export default function RegisterPage() {
     data.append("password", formData.password);
     data.append("timezone", tz);
     data.append("avatar", avatarFile);
-    if (coverFile) data.append("coverImage", coverFile);
 
     try {
       const response = await api.post("/users/register-unified", data, {
@@ -1211,7 +1208,6 @@ export default function RegisterPage() {
                                   handleOtpKeyDown(
                                     i,
                                     e,
-                                    setEmailOtp,
                                     emailOtpRefs,
                                     true,
                                   )
@@ -1391,7 +1387,6 @@ export default function RegisterPage() {
                                   handleOtpKeyDown(
                                     i,
                                     e,
-                                    setMobileOtp,
                                     mobileOtpRefs,
                                     false,
                                   )
