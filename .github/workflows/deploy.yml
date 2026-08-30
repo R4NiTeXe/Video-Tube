@@ -13,6 +13,7 @@ jobs:
   quality-gates:
     name: Lint & Test
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,6 +26,10 @@ jobs:
           cache-dependency-path: |
             Frontend/package-lock.json
             Backend/package-lock.json
+
+      # =========================
+      # FRONTEND QUALITY CHECKS
+      # =========================
 
       - name: Install frontend dependencies
         working-directory: Frontend
@@ -56,6 +61,10 @@ jobs:
           NEXT_PUBLIC_API_BASE_URL: https://video-tube-hf5y.onrender.com/api/v1
           NEXT_PUBLIC_SITE_URL: https://video-tube-asjv.vercel.app
 
+      # =========================
+      # BACKEND QUALITY CHECKS
+      # =========================
+
       - name: Install backend dependencies
         working-directory: Backend
         run: npm ci
@@ -68,10 +77,15 @@ jobs:
         working-directory: Backend
         run: npm run test:coverage
 
+  # =========================
+  # DEPLOY FRONTEND TO VERCEL
+  # =========================
+
   deploy-frontend:
     name: Deploy Frontend to Vercel
     needs: quality-gates
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -84,38 +98,38 @@ jobs:
           cache-dependency-path: Frontend/package-lock.json
 
       - name: Install Vercel CLI
-        run: npm i -g vercel@latest
+        run: npm install --global vercel@latest
 
       - name: Pull Vercel environment
         working-directory: Frontend
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+        run: vercel pull --yes --environment=production --token="${{ secrets.VERCEL_TOKEN }}"
 
       - name: Build project
         working-directory: Frontend
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: vercel build --prod --token=$VERCEL_TOKEN
+        run: vercel build --prod --token="${{ secrets.VERCEL_TOKEN }}"
 
       - name: Deploy to production
         working-directory: Frontend
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: vercel deploy --prebuilt --prod --yes --token=$VERCEL_TOKEN
+        run: vercel deploy --prebuilt --prod --yes --token="${{ secrets.VERCEL_TOKEN }}"
+
+  # =========================
+  # DEPLOY BACKEND TO RENDER
+  # =========================
 
   deploy-backend:
     name: Deploy Backend to Render
     needs: quality-gates
     runs-on: ubuntu-latest
+
     steps:
       - name: Trigger Render deploy hook
-        env:
-          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
-        run: curl -f -X POST "$RENDER_DEPLOY_HOOK_URL"
+        run: curl -f -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
