@@ -2,7 +2,6 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { otpService } from "../../services/otp.service.js";
-import { sendEmail } from "../../utils/email.js";
 import { User } from "../../models/user.model.js";
 import { OTP } from "../../models/otp.model.js";
 import { isValidEmail } from "../../utils/validators.js";
@@ -117,7 +116,7 @@ const verifyOtp = asyncHandler(async (req, res) => {
 });
 
 const resendOtp = asyncHandler(async (req, res) => {
-  const { identifier, purpose, channel = "email" } = req.body;
+  const { identifier, purpose } = req.body;
 
   if (!identifier || !purpose) {
     throw new ApiError(400, "Identifier and purpose are required.");
@@ -156,7 +155,6 @@ const getOtpUsage = asyncHandler(async (req, res) => {
   const globalCheck = await otpService.checkGlobalLimit();
   const globalCount = globalCheck.remaining || 0;
 
-  const now = new Date();
   const tz = user?.timezone || "UTC";
   const resetInTz = new Date(
     new Date().toLocaleString("en-US", { timeZone: tz })

@@ -4,7 +4,7 @@ import {
   verifyOtp,
   getOtpUsage,
   resendOtp,
-} from "../controllers/otp.controller.js";
+} from "../controllers/auth/otp.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { otpLimiter } from "../middlewares/rateLimiter.middleware.js";
 import {

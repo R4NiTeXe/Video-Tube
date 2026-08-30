@@ -18,7 +18,6 @@ export function useSSE() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isLoading = useAuthStore((s) => s.isLoading);
   const authRef = useRef(isAuthenticated);
-  authRef.current = isAuthenticated;
   const queryClient = useQueryClient();
   const esRef = useRef<EventSource | null>(null);
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -26,6 +25,11 @@ export function useSSE() {
   const retryDelayRef = useRef(INITIAL_RETRY_DELAY);
   const isMountedRef = useRef(true);
   const [isConnected, setIsConnected] = useState(false);
+  const connectRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    authRef.current = isAuthenticated;
+  }, [isAuthenticated]);
 
   const connect = useCallback(() => {
     if (!isMountedRef.current || !authRef.current) return;
@@ -89,7 +93,7 @@ export function useSSE() {
             if (!isMountedRef.current) return;
             if (!authRef.current) return;
             if (res.ok) {
-              connect();
+              connectRef.current();
             } else {
               logger.warn("SSE stopped — session check failed");
               retryCountRef.current = MAX_RETRIES;
@@ -97,7 +101,7 @@ export function useSSE() {
           } catch {
             if (!isMountedRef.current) return;
             if (!authRef.current) return;
-            connect();
+            connectRef.current();
           }
         }, delay);
       } else {
@@ -105,6 +109,10 @@ export function useSSE() {
       }
     };
   }, [queryClient]);
+
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   // Handle page visibility - reconnect when tab becomes visible
   useEffect(() => {

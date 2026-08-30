@@ -140,10 +140,17 @@ export const csrfMiddleware = (req, res, next) => {
   });
 };
 
+const hasSessionCookies = (req) =>
+  Boolean(req.cookies?.accessToken || req.cookies?.refreshToken);
+
 export const csrfTokenHandler = (req, res) => {
   // Use the token set by middleware (req._csrfToken) or fallback
   const token =
     req._csrfToken || req.cookies[CSRF_COOKIE_NAME] || generateCsrfToken();
   res.cookie(CSRF_COOKIE_NAME, token, getCookieOptions());
-  res.json({ success: true, csrfToken: token });
+  res.json({
+    success: true,
+    csrfToken: token,
+    authenticated: hasSessionCookies(req),
+  });
 };

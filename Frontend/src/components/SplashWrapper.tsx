@@ -11,6 +11,8 @@ export default function SplashWrapper({
 }) {
   const [showSplash, setShowSplash] = useState(false);
 
+  // Hydration-safe one-time read of sessionStorage must run post-mount.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     try {
       const prefersReducedMotion = window.matchMedia(

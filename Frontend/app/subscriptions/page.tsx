@@ -77,10 +77,9 @@ function VideoCard({
   channel: SubscribedChannel;
 }) {
   const router = useRouter();
-  const [isNew, setIsNew] = useState(false);
-  useEffect(() => {
-    setIsNew(Date.now() - new Date(video.createdAt).getTime() < 86400000 * 2);
-  }, [video.createdAt]);
+  const [isNew] = useState(
+    () => Date.now() - new Date(video.createdAt).getTime() < 86400000 * 2,
+  );
 
   return (
     <Link href={`/videos/${video._id}`} style={{ textDecoration: "none" }}>

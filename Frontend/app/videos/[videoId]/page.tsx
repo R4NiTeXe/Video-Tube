@@ -1251,6 +1251,7 @@ export default function VideoPlayerPage() {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [currentTimeLabel, setCurrentTimeLabel] = useState("0:00 / 0:00");
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [showControls, setShowControls] = useState(true);
@@ -1367,6 +1368,10 @@ export default function VideoPlayerPage() {
     if (videoRef.current && !isSwitchingQuality) {
       const duration = videoRef.current.duration || 1;
       setProgress((videoRef.current.currentTime / duration) * 100);
+      const current = videoRef.current.currentTime;
+      setCurrentTimeLabel(
+        `${Math.floor(current / 60)}:${Math.floor(current % 60).toString().padStart(2, "0")} / ${Math.floor(duration / 60) || 0}:${Math.floor((duration || 0) % 60).toString().padStart(2, "0")}`,
+      );
     }
   };
 
@@ -1542,6 +1547,7 @@ export default function VideoPlayerPage() {
     }
 
     if (video.hlsUrl && Hls.isSupported()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setVideoSrc("");
       const hls = new Hls({
         maxBufferLength: 30,
@@ -1634,6 +1640,7 @@ export default function VideoPlayerPage() {
       if (videoSrc !== newUrl) {
         savedTimeRef.current = videoRef.current.currentTime;
         wasPlayingRef.current = !videoRef.current.paused;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsSwitchingQuality(true);
         setVideoSrc(newUrl);
       }
@@ -1658,11 +1665,11 @@ export default function VideoPlayerPage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (videoRes?.data) {
-      setLiked(!!videoRes.data.isLiked);
-    }
-  }, [videoRes?.data?.isLiked]);
+  const [prevLikeState, setPrevLikeState] = useState(false);
+  if (videoRes?.data && videoRes.data.isLiked !== prevLikeState) {
+    setPrevLikeState(!!videoRes.data.isLiked);
+    setLiked(!!videoRes.data.isLiked);
+  }
 
   const video: Video | undefined = videoRes?.data
     ? {
@@ -2002,9 +2009,7 @@ export default function VideoPlayerPage() {
                             fontWeight: 500,
                           }}
                         >
-                          {videoRef.current
-                            ? `${Math.floor(videoRef.current.currentTime / 60)}:${Math.floor(videoRef.current.currentTime % 60).toString().padStart(2, "0")} / ${Math.floor(videoRef.current.duration / 60) || 0}:${Math.floor((videoRef.current.duration || 0) % 60).toString().padStart(2, "0")}`
-                            : "0:00 / 0:00"}
+                          {currentTimeLabel}
                         </span>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>

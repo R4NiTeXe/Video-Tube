@@ -97,13 +97,14 @@ export default function NotificationsPage() {
     if (isAuthenticated && !isLoading && !markAllRead.isPending) {
       markAllRead.mutate();
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, markAllRead]);
 
   const parentRef = useRef<HTMLDivElement>(null);
   const rawNotifications = response?.data?.notifications;
   const notifications: Notification[] = Array.isArray(rawNotifications)
     ? rawNotifications
     : [];
+  // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
     count: notifications.length,
     getScrollElement: () => parentRef.current,

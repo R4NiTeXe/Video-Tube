@@ -15,17 +15,23 @@ export default function AuthProvider({
 
   useEffect(() => {
     const init = async () => {
+      let hasSession = false;
       try {
         const res = await api.get("/csrf-token");
         if (res.data?.csrfToken) {
           setCsrfToken(res.data.csrfToken);
         }
+        hasSession = Boolean(res.data?.authenticated);
       } catch {
         /* non-fatal */
       }
 
       const checkAuth = async () => {
         setLoading(true);
+        if (!hasSession) {
+          logout();
+          return;
+        }
         try {
           const response = await api.get("/users/current-user");
           login(response.data.data);

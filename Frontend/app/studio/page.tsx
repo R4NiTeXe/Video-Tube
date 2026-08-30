@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect, Suspense, useRef } from "react";
+import {
+  useState,
+  useEffect,
+  Suspense,
+  useRef,
+  useCallback,
+  useSyncExternalStore,
+} from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -55,15 +62,16 @@ interface StudioVideo {
 const EditModal = dynamic(() => import("./edit-modal"), { ssr: false });
 
 function useMediaQuery(query: string) {
-  const [matches, setMatches] = useState(false);
-  useEffect(() => {
+  const subscribe = useCallback((callback: () => void) => {
     const mq = window.matchMedia(query);
-    setMatches(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
+    mq.addEventListener("change", callback);
+    return () => mq.removeEventListener("change", callback);
   }, [query]);
-  return matches;
+  const getSnapshot = useCallback(
+    () => window.matchMedia(query).matches,
+    [query],
+  );
+  return useSyncExternalStore(subscribe, getSnapshot);
 }
 
 const containerVariants = {

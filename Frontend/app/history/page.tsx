@@ -1,11 +1,11 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { formatViews, formatDuration } from "@/src/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -87,45 +87,48 @@ const SkeletonCard = () => (
 export default function HistoryPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
-  const [page, setPage] = useState(1);
-  const [allVideos, setAllVideos] = useState<Video[]>([]);
-  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
   }, [authLoading, isAuthenticated, router]);
 
-  const { data: response, isLoading } = useQuery({
-    queryKey: ["user-history", page],
-    queryFn: async () => {
-      const res = await api.get(`/users/history?page=${page}&limit=12`);
+  const {
+    data: response,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["user-history"],
+    queryFn: async ({ pageParam }) => {
+      const res = await api.get(`/users/history?page=${pageParam}&limit=12`);
       return res.data;
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const total = lastPage.data?.total ?? 0;
+      const loaded = lastPage.data?.docs?.length ?? 0;
+      return loaded < total ? (lastPage.pageParam ?? 1) + 1 : undefined;
     },
     enabled: isAuthenticated,
   });
 
-  useEffect(() => {
-    if (response?.data) {
-      const rawVideos = response.data.docs || response.data || [];
-      const dedupById = (arr: Video[]) => {
-        const seen = new Set<string>();
-        return arr.filter((v: Video) => {
-          const key = v._id?.toString();
-          if (!key || seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
-      };
-      if (page === 1) {
-        setAllVideos(dedupById(rawVideos));
-      } else {
-        setAllVideos((prev) => dedupById([...prev, ...rawVideos]));
-      }
-      setTotal(response.data.total || 0);
-    }
-  }, [response, page]);
+  const dedupById = (arr: Video[]) => {
+    const seen = new Set<string>();
+    return arr.filter((v: Video) => {
+      const key = v._id?.toString();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
 
-  const hasMore = allVideos.length < total;
+  const allVideos = dedupById(
+    (response?.pages ?? []).flatMap((pg) => pg.data?.docs || pg.data || []),
+  );
+  const total = response?.pages?.[0]?.data?.total ?? 0;
+
+  const isLoadingMore = isLoading || isFetchingNextPage;
 
   if (authLoading || !isAuthenticated) {
     return (
@@ -217,7 +220,7 @@ export default function HistoryPage() {
           </div>
         </motion.div>
 
-        {isLoading && page === 1 ? (
+        {isLoading && allVideos.length === 0 ? (
           <div
             style={{
               display: "grid",
@@ -380,14 +383,14 @@ export default function HistoryPage() {
                 ))}
               </AnimatePresence>
             </div>
-            {hasMore && (
+            {hasNextPage && (
               <div style={{ textAlign: "center", marginTop: "2rem" }}>
                 <button
                   className="btn btn-secondary"
-                  onClick={() => setPage((p) => p + 1)}
-                  disabled={isLoading}
+                  onClick={() => fetchNextPage()}
+                  disabled={isLoadingMore}
                 >
-                  {isLoading ? "Loading..." : "Load More"}
+                  {isLoadingMore ? "Loading..." : "Load More"}
                 </button>
               </div>
             )}

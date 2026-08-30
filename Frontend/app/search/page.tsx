@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/src/services/api";
+import { useAuthStore } from "@/src/store/useAuthStore";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -137,11 +138,14 @@ export default function SearchPage() {
   const [activeTab, setActiveTab] = useState<Tab>("videos");
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   useEffect(() => {
     inputRef.current?.focus();
-    fetchSearchHistory().then(setRecentSearches);
-  }, []);
+    if (isAuthenticated) {
+      fetchSearchHistory().then(setRecentSearches);
+    }
+  }, [isAuthenticated]);
 
   const handleQueryChange = useCallback((value: string) => {
     setQuery(value);
@@ -150,8 +154,10 @@ export default function SearchPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      addSearchHistoryBackend(query.trim());
-      fetchSearchHistory().then(setRecentSearches);
+      if (isAuthenticated) {
+        addSearchHistoryBackend(query.trim());
+        fetchSearchHistory().then(setRecentSearches);
+      }
       setDebouncedQuery(query);
     }
   };
@@ -163,7 +169,9 @@ export default function SearchPage() {
   };
 
   const clearRecent = () => {
-    clearSearchHistoryBackend();
+    if (isAuthenticated) {
+      clearSearchHistoryBackend();
+    }
     setRecentSearches([]);
   };
 

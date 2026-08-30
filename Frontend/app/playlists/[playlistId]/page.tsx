@@ -86,8 +86,8 @@ export default function PlaylistDetailPage() {
   const queryClient = useQueryClient();
 
   const [editing, setEditing] = useState(false);
-  const [_editName, setEditName] = useState("");
-  const [_editDesc, setEditDesc] = useState("");
+  const [editName, setEditName] = useState("");
+  const [editDesc, setEditDesc] = useState("");
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
   }, [isAuthenticated, authLoading, router]);
@@ -106,6 +106,19 @@ export default function PlaylistDetailPage() {
       await api.patch(`/playlists/remove/${videoId}/${playlistId}`);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["playlist", playlistId] });
+    },
+  });
+
+  const savePlaylist = useMutation({
+    mutationFn: async () => {
+      await api.patch(`/playlists/${playlistId}`, {
+        name: editName.trim(),
+        description: editDesc.trim(),
+      });
+    },
+    onSuccess: () => {
+      setEditing(false);
       queryClient.invalidateQueries({ queryKey: ["playlist", playlistId] });
     },
   });
@@ -274,6 +287,49 @@ export default function PlaylistDetailPage() {
           >
             <EditIcon /> Edit
           </button>
+        )}
+        {isOwner && editing && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              flex: 1,
+              minWidth: 0,
+            }}
+          >
+            <input
+              className="form-input"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              placeholder="Playlist name"
+              aria-label="Playlist name"
+              style={{ width: 200 }}
+            />
+            <button
+              className="btn btn-primary"
+              onClick={() => savePlaylist.mutate()}
+              disabled={savePlaylist.isPending}
+              style={{
+                padding: "0.45rem 1rem",
+                fontSize: "0.82rem",
+                borderRadius: 99,
+              }}
+            >
+              Save
+            </button>
+            <button
+              className="btn btn-ghost"
+              onClick={() => setEditing(false)}
+              style={{
+                padding: "0.45rem 1rem",
+                fontSize: "0.82rem",
+                borderRadius: 99,
+              }}
+            >
+              Cancel
+            </button>
+          </div>
         )}
       </header>
 

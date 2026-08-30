@@ -172,6 +172,13 @@ api.interceptors.response.use(
               "/register",
               "/forgot-password",
               "/auth/callback",
+              "/embed",
+              "/about",
+              "/search",
+              "/community",
+              "/videos",
+              "/channel",
+              "/live",
             ];
             const isPublicPath = publicPaths.some(
               (p) =>

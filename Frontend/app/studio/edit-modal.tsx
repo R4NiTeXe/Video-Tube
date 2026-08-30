@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import { motion } from "framer-motion";
@@ -71,15 +71,15 @@ export default function EditModal({
 
   const video = videoRes?.data;
 
-  useEffect(() => {
-    if (video) {
-      setTitle(video.title || "");
-      setDescription(video.description || "");
-      setTagsInput((video.tags || []).join(", "));
-      setCategory(video.category || CATEGORIES[0]);
-      setVisibility(video.visibility || "public");
-    }
-  }, [video]);
+  const [prevVideo, setPrevVideo] = useState<typeof video>(null);
+  if (video && video !== prevVideo) {
+    setPrevVideo(video);
+    setTitle(video.title || "");
+    setDescription(video.description || "");
+    setTagsInput((video.tags || []).join(", "));
+    setCategory(video.category || CATEGORIES[0]);
+    setVisibility(video.visibility || "public");
+  }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

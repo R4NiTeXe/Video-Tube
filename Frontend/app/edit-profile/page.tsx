@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import { useAuthStore } from "@/src/store/useAuthStore";
@@ -57,31 +57,29 @@ export default function EditProfilePage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
-  const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
   }, [isAuthenticated, authLoading, router]);
 
-  useEffect(() => {
-    if (user) {
-      setFullName(user.fullName || "");
-      setAvatarPreview(user.avatar || "");
-      setCoverPreview(user.coverImage || "");
-      setBio(user.bio || "");
-      setYoutube(user.socialLinks?.youtube || "");
-      setTwitter(user.socialLinks?.twitter || "");
-      setInstagram(user.socialLinks?.instagram || "");
-      setGithub(user.socialLinks?.github || "");
-      setWebsite(user.socialLinks?.website || "");
-    }
-  }, [user]);
+  const [prevUser, setPrevUser] = useState<typeof user>(null);
+  if (user && user !== prevUser) {
+    setPrevUser(user);
+    setFullName(user.fullName || "");
+    setAvatarPreview(user.avatar || "");
+    setCoverPreview(user.coverImage || "");
+    setBio(user.bio || "");
+    setYoutube(user.socialLinks?.youtube || "");
+    setTwitter(user.socialLinks?.twitter || "");
+    setInstagram(user.socialLinks?.instagram || "");
+    setGithub(user.socialLinks?.github || "");
+    setWebsite(user.socialLinks?.website || "");
+  }
 
-  // Track dirty state
-  useEffect(() => {
-    if (!user) return;
-    const dirty =
-      fullName !== (user.fullName || "") ||
+  // Unsaved changes guard
+  const isDirty =
+    !!user &&
+    (fullName !== (user.fullName || "") ||
       bio !== (user.bio || "") ||
       youtube !== (user.socialLinks?.youtube || "") ||
       twitter !== (user.socialLinks?.twitter || "") ||
@@ -89,22 +87,8 @@ export default function EditProfilePage() {
       github !== (user.socialLinks?.github || "") ||
       website !== (user.socialLinks?.website || "") ||
       avatarFile !== null ||
-      coverFile !== null;
-    setIsDirty(dirty);
-  }, [
-    fullName,
-    bio,
-    youtube,
-    twitter,
-    instagram,
-    github,
-    website,
-    avatarFile,
-    coverFile,
-    user,
-  ]);
+      coverFile !== null);
 
-  // Unsaved changes guard
   useEffect(() => {
     if (!isDirty) return;
     const handler = (e: BeforeUnloadEvent) => {
@@ -114,8 +98,6 @@ export default function EditProfilePage() {
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [isDirty]);
-
-  const markDirty = useCallback(() => setIsDirty(true), []);
 
   if (authLoading || !isAuthenticated || !user) {
     return (
@@ -143,7 +125,7 @@ export default function EditProfilePage() {
     if (file) {
       setAvatarFile(file);
       setAvatarPreview(URL.createObjectURL(file));
-      markDirty();
+
     }
   };
 
@@ -152,7 +134,7 @@ export default function EditProfilePage() {
     if (file) {
       setCoverFile(file);
       setCoverPreview(URL.createObjectURL(file));
-      markDirty();
+
     }
   };
 
@@ -186,7 +168,6 @@ export default function EditProfilePage() {
       setSuccess("Profile updated successfully!");
       setAvatarFile(null);
       setCoverFile(null);
-      setIsDirty(false);
     } catch (err: unknown) {
       setError(
         getApiErrorMessage(err, "Failed to update profile. Please try again."),
@@ -649,7 +630,7 @@ export default function EditProfilePage() {
                       value={fullName}
                       onChange={(e) => {
                         setFullName(e.target.value);
-                        markDirty();
+
                       }}
                       required
                     />
@@ -737,7 +718,6 @@ export default function EditProfilePage() {
                       onChange={(e) => {
                         if (e.target.value.length <= 500) {
                           setBio(e.target.value);
-                          markDirty();
                         }
                       }}
                       maxLength={500}
@@ -836,7 +816,6 @@ export default function EditProfilePage() {
                             value={field.value}
                             onChange={(e) => {
                               field.setter(e.target.value);
-                              markDirty();
                             }}
                             placeholder={field.placeholder}
                           />

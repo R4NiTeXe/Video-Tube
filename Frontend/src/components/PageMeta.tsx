@@ -32,6 +32,7 @@ export function PageMeta({
   const currentOgImage = ogImage || DEFAULT_OG_IMAGE;
 
   const [currentUrl, setCurrentUrl] = useState("");
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     setCurrentUrl(
       `${window.location.origin}${window.location.pathname}${window.location.search}`,
