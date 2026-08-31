@@ -134,6 +134,26 @@ if (!isProduction) {
   }
 }
 
+configurePassport();
+
+const enabledProviders = [];
+if (process.env.GOOGLE_CLIENT_ID) enabledProviders.push("google");
+if (process.env.GITHUB_CLIENT_ID) enabledProviders.push("github");
+if (process.env.FACEBOOK_APP_ID) enabledProviders.push("facebook");
+if (process.env.DISCORD_CLIENT_ID) enabledProviders.push("discord");
+
+if (enabledProviders.length === 0) {
+  logger.warn("[OAuth] No providers configured — social login disabled");
+} else {
+  logger.info(`[OAuth] Enabled providers: ${enabledProviders.join(", ")}`);
+  if (!process.env.FRONTEND_URL) {
+    logger.warn("[OAuth] FRONTEND_URL not set — OAuth redirects will use http://localhost:3000");
+  }
+  if (!process.env.BACKEND_URL) {
+    logger.warn("[OAuth] BACKEND_URL not set — callback URLs will use http://localhost:8000");
+  }
+}
+
 let server;
 let cronJobs = [];
 
