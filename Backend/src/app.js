@@ -241,10 +241,16 @@ const originPatterns = corsOrigins.map((origin) => {
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no Origin header only in development (server-to-server, health checks, webhooks)
-      if (!origin) {
+      // No Origin header = NOT a CORS request (top-level navigation, OAuth
+      // redirects, webhooks, health checks, server-to-server). Allow these —
+      // browsers never send Origin on navigations, so blocking them 500s OAuth.
+      if (!origin) return callback(null, true);
+
+      // Origin: null = CORS request from a sandboxed/opaque origin (iframe,
+      // data: URL). This IS the credential-bypass vector — reject in production.
+      if (origin === "null") {
         if (isDev) return callback(null, true);
-        return callback(new Error("Missing Origin header"));
+        return callback(new Error("Origin null not allowed"));
       }
 
       const allowed = originPatterns.some((pattern) =>
