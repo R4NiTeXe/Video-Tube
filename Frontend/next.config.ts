@@ -6,12 +6,24 @@ const bundleAnalyzer = withBundleAnalyzer({
 });
 
 const isProduction = process.env.NODE_ENV === "production";
+const normalizeUrl = (value: string) => value.replace(/\/+$/, "");
 const isLocalhostUrl = (origin: string) => {
   return (
     origin.startsWith("http://localhost") ||
     origin.startsWith("http://127.0.0.1") ||
     origin.startsWith("http://0.0.0.0")
   );
+};
+
+// Server-side proxy target. When set, the browser talks to the same origin
+// (/api/v1/* on this domain) and Next.js proxies to this backend. This keeps
+// cookies first-party — fixing cross-site OAuth and auto-logout issues.
+const getBackendApiUrl = () => {
+  const backendUrl = process.env.BACKEND_API_URL;
+  if (backendUrl) return normalizeUrl(backendUrl);
+  const publicUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (publicUrl && !publicUrl.startsWith("/")) return normalizeUrl(publicUrl);
+  return null;
 };
 
 const getApiOrigin = () => {
@@ -23,6 +35,9 @@ const getApiOrigin = () => {
     }
     return null;
   }
+
+  // Relative (same-origin proxy) — no cross-origin CSP entry needed.
+  if (apiBaseUrl.startsWith("/")) return null;
 
   const origin = new URL(apiBaseUrl).origin;
   if (
@@ -106,12 +121,12 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    const backendUrl = getBackendApiUrl();
     if (backendUrl) {
       return [
         {
           source: "/api/v1/:path*",
-          destination: `${backendUrl.replace(/\/+$/, "")}/:path*`,
+          destination: `${backendUrl}/:path*`,
         },
       ];
     }

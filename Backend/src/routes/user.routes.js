@@ -70,7 +70,7 @@ import {
   muteUser,
   addToWatchLater,
 } from "../controllers/user/profile.controller.js";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyJWT, optionalVerifyJWT } from "../middlewares/auth.middleware.js";
 import { upload, validateFileSize } from "../middlewares/multer.middleware.js";
 import {
   authLimiter,
@@ -365,7 +365,7 @@ router
 router
   .route("/c/:username")
   .get(
-    verifyJWT,
+    optionalVerifyJWT,
     validateParams(userSchemas.getUserChannelProfile.params),
     getUserChannelProfile
   );

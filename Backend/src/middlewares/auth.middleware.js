@@ -68,3 +68,36 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
     throw new ApiError(500, "Internal server error");
   }
 });
+
+// Optional JWT verification — sets req.user if valid token is present,
+// but does NOT throw on failure. Use for public routes that benefit from
+// knowing the current user (e.g., channel pages, video pages).
+export const optionalVerifyJWT = asyncHandler(async (req, res, next) => {
+  try {
+    const token = req.cookies?.accessToken ||
+      req.header("Authorization")?.replace(/^Bearer\s+/i, "");
+
+    if (!token) return next();
+
+    if (!process.env.ACCESS_TOKEN_SECRET) return next();
+
+    if (await isTokenBlacklisted(token)) return next();
+
+    let decodedToken;
+    try {
+      decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    } catch {
+      return next();
+    }
+
+    const user = await User.findById(decodedToken?._id)
+      .select("-password -refreshToken");
+
+    if (user && !user.banned) {
+      req.user = user;
+    }
+  } catch {
+    // Silently continue without user
+  }
+  next();
+});
