@@ -103,8 +103,39 @@ export const createSession = async (userId, refreshToken, req, timezone) => {
       isActive: true,
     });
   } catch (error) {
-    logger.error("Failed to create session:", { error: error.message });
+    // Graceful degradation for login: if session tracking fails, the user
+    // is still logged in (access token works) but won't be able to refresh.
+    // Logged as a warning for observability.
+    logger.warn("Failed to create session:", { error: error.message });
   }
+};
+
+// Strict version used by the refresh-token endpoint — if this fails the
+// new refresh token would be un-trackable, so we must abort the request
+// to avoid leaving the user with a cookie that can't be validated later.
+export const createSessionStrict = async (userId, refreshToken, req, timezone) => {
+  const ua = req?.headers?.["user-agent"] || "";
+  const ip = req?.ip || req?.socket?.remoteAddress || "Unknown";
+  const { deviceName } = parseUserAgent(ua);
+
+  let location = "Unknown Location";
+  if (ip && ip !== "::1" && ip !== "127.0.0.1" && ip !== "Unknown") {
+    location = await getLocationFromIp(ip);
+  }
+
+  const tz = timezone || req?.body?.timezone || "";
+
+  await Session.create({
+    user: userId,
+    refreshToken,
+    userAgent: ua,
+    ipAddress: ip,
+    deviceName,
+    location,
+    timezone: tz,
+    lastActiveAt: new Date(),
+    isActive: true,
+  });
 };
 
 export const updateSessionActivity = async (refreshToken) => {

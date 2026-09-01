@@ -7,10 +7,25 @@ import { Strategy as DiscordStrategy } from "passport-discord";
 import { User } from "../models/user.model.js";
 import logger from "../utils/logger.js";
 
+// OAuth callback URL priority:
+//  1. Explicit <PROVIDER>_CALLBACK_URL env override (use direct backend URL
+//     if you don't want the frontend proxy)
+//  2. FRONTEND_URL base + /api/v1/auth/<provider>/callback (routes callback
+//     through the frontend's reverse proxy so cookies are first-party — this
+//     is the recommended setup when frontend and backend are on different
+//     domains like Vercel + Render)
+//  3. BACKEND_URL fallback (direct callback — cookies are cross-site and may
+//     be blocked by modern browsers)
 const getProviderCallbackUrl = (provider) => {
   const envVar = `${provider.toUpperCase()}_CALLBACK_URL`;
   const configured = process.env[envVar];
   if (configured) return configured.replace(/\/+$/, "");
+
+  const frontendUrl = process.env.FRONTEND_URL;
+  if (frontendUrl) {
+    return `${frontendUrl.replace(/\/+$/, "")}/api/v1/auth/${provider}/callback`;
+  }
+
   const baseCallbackUrl = `${process.env.BACKEND_URL || "http://localhost:8000"}/api/v1/auth`;
   return `${baseCallbackUrl}/${provider}/callback`;
 };

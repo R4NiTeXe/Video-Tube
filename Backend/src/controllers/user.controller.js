@@ -36,7 +36,7 @@ import {
   assertPasswordStrength,
 } from "../utils/passwordValidation.js";
 import logger from "../utils/logger.js";
-import { createSession, deactivateSession } from "./session.controller.js";
+import { createSession, createSessionStrict, deactivateSession } from "./session.controller.js";
 
 const getCookieOptions = () => ({
   httpOnly: true,
@@ -138,8 +138,12 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     user._id
   );
 
+  // Create the new session BEFORE deactivating the old one. If session
+  // creation fails, the old session stays active and the user can retry.
+  // This prevents the "stuck with no valid session" deadlock that caused
+  // automatic logout when createSession silently failed.
+  await createSessionStrict(user._id, refreshToken, req);
   await deactivateSession(incomingRefreshToken);
-  await createSession(user._id, refreshToken, req);
 
   const freshUser = await User.findById(user._id)
     .select("-password -refreshToken")
