@@ -8,6 +8,7 @@ import compression from "compression";
 import crypto from "crypto";
 import * as Sentry from "@sentry/node";
 import logger, { runWithCorrelationId } from "./utils/logger.js";
+import { escapeRegex } from "./utils/sanitizer.js";
 // Removed: import { apiLimiter } — global apiLimiter was removed to avoid
 // ERR_ERL_DOUBLE_COUNT with per-route limiters (authLimiter, otpLimiter, etc.)
 import {
@@ -333,12 +334,12 @@ app.get("/health/ready", async (req, res) => {
     const redisOk = isRedisAvailable();
     const memUsage = process.memoryUsage();
     const memMB = Math.round(memUsage.heapUsed / 1024 / 1024);
-    const memOK = memMB < 512;
-    const healthy = cloudinary.connected && memOK; // Redis is optional so we don't fail if down
+    const memOK = memMB < 2048;
+    const healthy = memOK; // Cloudinary is soft dependency — DB + memory determine readiness
     res.status(healthy ? 200 : 503).json({
       status: healthy ? "ready" : "degraded",
       database: "connected",
-      cloudinary: cloudinary.connected ? "ok" : "error",
+      cloudinary: cloudinary.connected ? "ok" : "degraded",
       redis: redisOk ? "connected" : "disconnected",
       memory: { heapUsedMB: `${memMB}MB`, status: memOK ? "ok" : "high" },
       uptime: process.uptime(),
@@ -427,11 +428,12 @@ app.post("/api/v1/webhooks/cloudinary", async (req, res) => {
     if (notification_type === "upload" || notification_type === "eager") {
       const { Video: VideoMod } = await import("./models/video.model.js");
       if (public_id) {
+        const escaped = escapeRegex(public_id);
         await VideoMod.findOneAndUpdate(
           {
             $or: [
               { cloudinaryPublicId: public_id },
-              { videoFile: { $regex: public_id, $options: "i" } },
+              ...(escaped ? [{ videoFile: { $regex: escaped, $options: "i" } }] : []),
             ],
             transcodingStatus: { $ne: "completed" },
           },
@@ -451,11 +453,12 @@ app.post("/api/v1/webhooks/cloudinary", async (req, res) => {
     ) {
       const { Video: VideoMod } = await import("./models/video.model.js");
       if (public_id) {
+        const escaped = escapeRegex(public_id);
         await VideoMod.findOneAndUpdate(
           {
             $or: [
               { cloudinaryPublicId: public_id },
-              { videoFile: { $regex: public_id, $options: "i" } },
+              ...(escaped ? [{ videoFile: { $regex: escaped, $options: "i" } }] : []),
             ],
             transcodingStatus: { $ne: "completed" },
           },

@@ -4,6 +4,7 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { api, getApiErrorMessage } from "@/src/services/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { useModalFocus } from "@/src/hooks/useModalFocus";
+import { generateIdempotencyKey } from "@/src/lib/idempotency";
 import {
   X,
   UploadCloud,
@@ -353,12 +354,7 @@ export default function UploadModal({
 
     const currentPayload = `${title}|${description}|${tagsInput}|${category}|${scheduleEnabled ? `${scheduleDate}T${scheduleTime}` : ""}|${videoFile?.name}:${videoFile?.size}:${videoFile?.type}|${thumbnailFile?.name}:${thumbnailFile?.size}:${thumbnailFile?.type}`;
     if (!idempotencyKeyRef.current || lastPayloadRef.current !== currentPayload) {
-      try {
-        idempotencyKeyRef.current = crypto.randomUUID();
-      } catch {
-        // fallback for older browsers
-        idempotencyKeyRef.current = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}-${Math.random().toString(36).slice(2, 10)}`;
-      }
+      idempotencyKeyRef.current = generateIdempotencyKey();
       lastPayloadRef.current = currentPayload;
     }
 

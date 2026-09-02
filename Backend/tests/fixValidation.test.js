@@ -26,6 +26,8 @@ describe("Post-Fix Validation — Idempotency + Lock + Index", () => {
   });
 
   afterAll(async () => {
+    __testSetMockClient(null);
+    __testSetRedisAvailable(false);
     await dropDatabase();
     await stopTestServer();
     jest.restoreAllMocks();

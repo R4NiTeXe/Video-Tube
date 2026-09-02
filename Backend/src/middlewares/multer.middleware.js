@@ -69,8 +69,6 @@ const MAGIC_BYTES = {
   "image/png": [0x89, 0x50, 0x4e, 0x47],
   "image/webp": [0x52, 0x49, 0x46, 0x46],
   "image/gif": [0x47, 0x49, 0x46, 0x38],
-  "video/mp4": [0x00, 0x00, 0x00],
-  "video/quicktime": [0x00, 0x00, 0x00],
   "video/webm": [0x1a, 0x45, 0xdf, 0xa3],
 };
 
@@ -94,7 +92,18 @@ const readMagicBytes = (filePath, bytes = 8) => {
   }
 };
 
-const validateMagicBytes = (filePath, mimetype) => {
+export const validateMagicBytes = (filePath, mimetype) => {
+  if (mimetype === "video/mp4" || mimetype === "video/quicktime") {
+    const actual = readMagicBytes(filePath, 12);
+    if (actual.length < 8) return false;
+    // MP4/QuickTime: ftyp at offset 4 (e.g., 00 00 00 18 66 74 79 70)
+    return (
+      actual[4] === 0x66 &&
+      actual[5] === 0x74 &&
+      actual[6] === 0x79 &&
+      actual[7] === 0x70
+    );
+  }
   const expected = MAGIC_BYTES[mimetype];
   if (!expected) return true;
   const actual = readMagicBytes(filePath, expected.length);

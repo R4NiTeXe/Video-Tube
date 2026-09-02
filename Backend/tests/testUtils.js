@@ -1,3 +1,4 @@
+/* eslint-disable no-empty */
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
 import request from "supertest";
@@ -21,6 +22,24 @@ export const startTestServer = async (
   customDbName = `videotube_test_${Date.now()}_${Math.random().toString(36).slice(2)}`
 ) => {
   dbName = customDbName;
+  // Ensure previous connection is cleaned before starting new one
+  try {
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
+    }
+  } catch {}
+  if (mongod) {
+    try {
+      await mongod.stop();
+    } catch {}
+    mongod = null;
+  }
+  if (server) {
+    try {
+      await new Promise((resolve) => server.close(() => resolve()));
+    } catch {}
+    server = null;
+  }
   mongod = await MongoMemoryServer.create({
     instance: {
       dbName,
@@ -45,22 +64,36 @@ export const startTestServer = async (
 };
 
 export const stopTestServer = async () => {
-  if (server) {
-    await new Promise((resolve, reject) => {
-      server.close((err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-      setTimeout(() => reject(new Error("Server close timeout")), 5000);
-    });
-  }
   try {
-    await mongoose.disconnect();
+    if (server) {
+      try {
+        await new Promise((resolve, reject) => {
+          server.close((err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+          setTimeout(() => reject(new Error("Server close timeout")), 5000);
+        });
+      } catch {
+        // Ignore server close errors
+      }
+      server = null;
+    }
+    try {
+      await mongoose.disconnect();
+    } catch {
+      // Ignore disconnect errors
+    }
+    if (mongod) {
+      try {
+        await mongod.stop();
+      } catch {
+        // Ignore mongod stop errors
+      }
+      mongod = null;
+    }
   } catch {
-    // Ignore disconnect errors
-  }
-  if (mongod) {
-    await mongod.stop();
+    // Ignore any stop errors
   }
 };
 
@@ -81,8 +114,12 @@ export const clearDatabase = async () => {
 };
 
 export const dropDatabase = async () => {
-  if (mongoose.connection.db) {
-    await mongoose.connection.db.dropDatabase();
+  try {
+    if (mongoose.connection.db) {
+      await mongoose.connection.db.dropDatabase();
+    }
+  } catch {
+    // Ignore drop errors (e.g., client closed)
   }
 };
 
