@@ -30,6 +30,7 @@ import {
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { verifyAdmin } from "../middlewares/admin.middleware.js";
 import { upload, validateFileSize } from "../middlewares/multer.middleware.js";
+import { idempotencyMiddleware } from "../middlewares/idempotency.middleware.js";
 import {
   uploadLimiter,
   searchLimiter,
@@ -102,6 +103,7 @@ router
     ]),
     validateFileSize,
     contentModerator,
+    idempotencyMiddleware,
     validateBody(videoSchemas.publishVideo.body),
     publishAVideo
   );

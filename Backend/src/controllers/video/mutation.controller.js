@@ -96,6 +96,10 @@ const publishAVideo = asyncHandler(async (req, res) => {
     }
   }
 
+  const publicIdForPersist = getPublicIdFromCloudinaryUrl(
+    videoUpload.secure_url || videoUpload.url
+  );
+
   let video;
   try {
     video = await Video.create({
@@ -111,8 +115,67 @@ const publishAVideo = asyncHandler(async (req, res) => {
       scheduledAt: scheduledDate,
       isPublished: !scheduledDate,
       transcodingStatus: "pending",
+      transcodingAttempts: 0,
+      ...(publicIdForPersist ? { cloudinaryPublicId: publicIdForPersist } : {}),
+      ...(req.idempotencyKey
+        ? {
+            idempotencyKey: req.idempotencyKey,
+            idempotencyFingerprint: req.idempotencyFingerprint,
+          }
+        : {}),
     });
   } catch (dbError) {
+    // Idempotency race: another request with same key already created the video
+    if (dbError?.code === 11000 && req.idempotencyKey) {
+      const existing = await Video.findOne({
+        owner: req.user._id,
+        idempotencyKey: req.idempotencyKey,
+      }).lean();
+      if (existing) {
+        if (
+          existing.idempotencyFingerprint &&
+          existing.idempotencyFingerprint !== req.idempotencyFingerprint
+        ) {
+          await deleteFromCloudinary(
+            videoUpload.secure_url || videoUpload.url,
+            "video"
+          );
+          await deleteFromCloudinary(
+            thumbnailUpload.secure_url || thumbnailUpload.url,
+            "image"
+          );
+          throw new ApiError(422, "Idempotency-Key already used with different payload");
+        }
+        // Return existing as replay — do not create duplicate, clean up just-uploaded Cloudinary assets if they differ
+        const isSameAsset =
+          existing.videoFile === (videoUpload.secure_url || videoUpload.url);
+        if (!isSameAsset) {
+          await deleteFromCloudinary(
+            videoUpload.secure_url || videoUpload.url,
+            "video"
+          );
+          await deleteFromCloudinary(
+            thumbnailUpload.secure_url || thumbnailUpload.url,
+            "image"
+          );
+        } else {
+          // Same asset (should not happen via re-upload) — still delete the second thumbnail if needed?
+          // Thumbnail differs, clean up the new one
+          await deleteFromCloudinary(
+            thumbnailUpload.secure_url || thumbnailUpload.url,
+            "image"
+          );
+          await deleteFromCloudinary(
+            videoUpload.secure_url || videoUpload.url,
+            "video"
+          );
+        }
+        // Ensure Redis completed cache is set via middleware's response wrapper, but return here for immediate replay
+        return res
+          .status(201)
+          .json(new ApiResponse(201, existing, "Video published successfully"));
+      }
+    }
     await deleteFromCloudinary(
       videoUpload.secure_url || videoUpload.url,
       "video"
@@ -138,33 +201,54 @@ const publishAVideo = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while publishing the video");
   }
 
-  const publicId = getPublicIdFromCloudinaryUrl(
-    videoUpload.secure_url || videoUpload.url
-  );
+  const publicId = publicIdForPersist;
   if (publicId) {
-    Video.findByIdAndUpdate(video._id, { transcodingStatus: "processing" })
+    Video.findOneAndUpdate(
+      { _id: video._id, transcodingStatus: { $ne: "completed" } },
+      {
+        $set: {
+          transcodingStatus: "processing",
+          transcodingLastAttemptAt: new Date(),
+          cloudinaryPublicId: publicId,
+          transcodingError: null,
+        },
+        $inc: { transcodingAttempts: 1 },
+      }
+    )
       .then(() => {
         Promise.all([
           generateHlsManifest(publicId),
           generateVideoQualities(publicId),
         ])
           .then(([hlsUrl, qualities]) => {
-            const updateData = { transcodingStatus: "completed" };
+            const updateData = {
+              transcodingStatus: "completed",
+              transcodingLastAttemptAt: new Date(),
+              transcodingError: null,
+            };
             if (hlsUrl) updateData.hlsUrl = hlsUrl;
             if (qualities?.length) updateData.qualities = qualities;
-            Video.findByIdAndUpdate(video._id, { $set: updateData }).catch(
-              (err) => {
-                logger.error("Failed to update video with HLS data:", {
-                  error: err.message,
-                });
-              }
-            );
+            Video.findOneAndUpdate(
+              { _id: video._id, transcodingStatus: { $ne: "completed" } },
+              { $set: updateData }
+            ).catch((err) => {
+              logger.error("Failed to update video with HLS data:", {
+                error: err.message,
+              });
+            });
           })
           .catch((err) => {
             logger.error("HLS generation failed:", { error: err.message });
-            Video.findByIdAndUpdate(video._id, {
-              transcodingStatus: "failed",
-            }).catch(() => {});
+            Video.findOneAndUpdate(
+              { _id: video._id, transcodingStatus: { $ne: "completed" } },
+              {
+                $set: {
+                  transcodingStatus: "failed",
+                  transcodingLastAttemptAt: new Date(),
+                  transcodingError: err.message?.slice(0, 500) || "HLS generation failed",
+                },
+              }
+            ).catch(() => {});
           });
       })
       .catch(() => {});

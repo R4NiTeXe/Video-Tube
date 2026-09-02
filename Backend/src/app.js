@@ -425,11 +425,49 @@ app.post("/api/v1/webhooks/cloudinary", async (req, res) => {
     }
     const { notification_type, public_id } = req.body || {};
     if (notification_type === "upload" || notification_type === "eager") {
-      const { default: VideoMod } = await import("./models/video.model.js");
-      await VideoMod.findOneAndUpdate(
-        { videoFile: { $regex: public_id, $options: "i" } },
-        { transcodingStatus: "completed" }
-      );
+      const { Video: VideoMod } = await import("./models/video.model.js");
+      if (public_id) {
+        await VideoMod.findOneAndUpdate(
+          {
+            $or: [
+              { cloudinaryPublicId: public_id },
+              { videoFile: { $regex: public_id, $options: "i" } },
+            ],
+            transcodingStatus: { $ne: "completed" },
+          },
+          {
+            $set: {
+              transcodingStatus: "completed",
+              transcodingLastAttemptAt: new Date(),
+              transcodingError: null,
+            },
+          }
+        );
+      }
+    } else if (
+      notification_type === "eager_failed" ||
+      notification_type === "upload_failed" ||
+      req.body?.notification_type?.includes("failed")
+    ) {
+      const { Video: VideoMod } = await import("./models/video.model.js");
+      if (public_id) {
+        await VideoMod.findOneAndUpdate(
+          {
+            $or: [
+              { cloudinaryPublicId: public_id },
+              { videoFile: { $regex: public_id, $options: "i" } },
+            ],
+            transcodingStatus: { $ne: "completed" },
+          },
+          {
+            $set: {
+              transcodingStatus: "failed",
+              transcodingLastAttemptAt: new Date(),
+              transcodingError: req.body?.error?.message || "Cloudinary processing failed",
+            },
+          }
+        );
+      }
     }
     res.status(200).json({ received: true });
   } catch (err) {

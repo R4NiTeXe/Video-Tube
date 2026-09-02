@@ -142,6 +142,7 @@ const getPublicIdFromCloudinaryUrl = (cloudinaryUrl) => {
 };
 
 const deleteFromCloudinary = async (publicIdOrUrl, resourceType = "image") => {
+  if (isTest) return { result: "ok" };
   try {
     if (!publicIdOrUrl || typeof publicIdOrUrl !== "string") return null;
 

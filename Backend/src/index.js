@@ -141,8 +141,11 @@ connectDB()
   .then(async () => {
     await initRedis();
 
-    const { runPublishScheduledVideos, runUpdateTrendingScores } =
-      await import("./controllers/video/cron.controller.js");
+    const {
+      runPublishScheduledVideos,
+      runUpdateTrendingScores,
+      runReconcileTranscoding,
+    } = await import("./controllers/video/cron.controller.js");
     const publishJob = cron.schedule("* * * * *", async () => {
       try {
         await runPublishScheduledVideos();
@@ -165,7 +168,18 @@ connectDB()
     });
     logger.info("Trending score update cron initialized (every hour)");
 
-    cronJobs = [publishJob, trendingJob];
+    const transcodingJob = cron.schedule("*/5 * * * *", async () => {
+      try {
+        await runReconcileTranscoding();
+      } catch (err) {
+        logger.error("Transcoding reconciliation cron failed", {
+          error: err.message,
+        });
+      }
+    });
+    logger.info("Transcoding reconciliation cron initialized (every 5 minutes)");
+
+    cronJobs = [publishJob, trendingJob, transcodingJob];
 
     server = http.createServer(app);
     server.headersTimeout = 65000;

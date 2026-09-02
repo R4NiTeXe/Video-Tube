@@ -120,6 +120,27 @@ const videoSchema = new Schema(
       default: 0,
       min: 0,
     },
+    idempotencyKey: {
+      type: String,
+    },
+    idempotencyFingerprint: {
+      type: String,
+    },
+    cloudinaryPublicId: {
+      type: String,
+      index: true,
+    },
+    transcodingAttempts: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    transcodingLastAttemptAt: {
+      type: Date,
+    },
+    transcodingError: {
+      type: String,
+    },
   },
   {
     timestamps: true,
@@ -136,6 +157,15 @@ videoSchema.index({ owner: 1, isPublished: 1, createdAt: -1 });
 videoSchema.index({ trendingScore: -1, isPublished: 1 });
 videoSchema.index({ scheduledAt: 1 });
 videoSchema.index({ transcodingStatus: 1 });
+videoSchema.index({ transcodingStatus: 1, updatedAt: 1 });
+videoSchema.index({ transcodingStatus: 1, createdAt: 1 });
+videoSchema.index(
+  { owner: 1, idempotencyKey: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { idempotencyKey: { $exists: true, $type: "string" } },
+  }
+);
 videoSchema.index({ title: "text", description: "text" });
 videoSchema.index({ duration: 1 });
 

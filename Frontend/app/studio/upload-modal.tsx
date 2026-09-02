@@ -255,6 +255,8 @@ export default function UploadModal({
   const [cancelled, setCancelled] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const idempotencyKeyRef = useRef<string | null>(null);
+  const lastPayloadRef = useRef<string | null>(null);
 
   const handleEscapeClose = useCallback(() => {
     if (!uploading) onClose();
@@ -274,6 +276,7 @@ export default function UploadModal({
       return;
     }
     setVideoFile(file);
+    idempotencyKeyRef.current = null;
     setError("");
   };
 
@@ -285,6 +288,7 @@ export default function UploadModal({
     setThumbnailFile(file);
     if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
     setThumbnailPreview(URL.createObjectURL(file));
+    idempotencyKeyRef.current = null;
     setError("");
   };
 
@@ -347,9 +351,23 @@ export default function UploadModal({
     const controller = new AbortController();
     abortRef.current = controller;
 
+    const currentPayload = `${title}|${description}|${tagsInput}|${category}|${scheduleEnabled ? `${scheduleDate}T${scheduleTime}` : ""}|${videoFile?.name}:${videoFile?.size}:${videoFile?.type}|${thumbnailFile?.name}:${thumbnailFile?.size}:${thumbnailFile?.type}`;
+    if (!idempotencyKeyRef.current || lastPayloadRef.current !== currentPayload) {
+      try {
+        idempotencyKeyRef.current = crypto.randomUUID();
+      } catch {
+        // fallback for older browsers
+        idempotencyKeyRef.current = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}-${Math.random().toString(36).slice(2, 10)}`;
+      }
+      lastPayloadRef.current = currentPayload;
+    }
+
     try {
       await api.post("/videos", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          "Idempotency-Key": idempotencyKeyRef.current,
+        },
         timeout: 300000,
         signal: controller.signal,
         onUploadProgress: (evt) => {
@@ -360,6 +378,8 @@ export default function UploadModal({
         },
       });
       setProgress(100);
+      idempotencyKeyRef.current = null;
+      lastPayloadRef.current = null;
       setTimeout(onSuccess, 400);
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === "AbortError") {

@@ -1,4 +1,5 @@
 import Redis from "ioredis";
+import crypto from "crypto";
 import logger from "./logger.js";
 import { trackCacheHit } from "./metrics.js";
 
@@ -15,6 +16,7 @@ const redis = new Redis(REDIS_URL, {
 });
 
 let isAvailable = false;
+let __mockClient = null;
 
 const initRedis = async () => {
   if (isAvailable) return redis;
@@ -38,14 +40,18 @@ const initRedis = async () => {
   return redis;
 };
 
-const getRedis = () => redis;
+const getRedis = () => __mockClient || redis;
+export const __testSetMockClient = (client) => {
+  __mockClient = client;
+};
 
 const isRedisAvailable = () => isAvailable && redis?.status === "ready";
 
 const cacheGet = async (key) => {
   if (!isRedisAvailable()) return null;
   try {
-    const data = await redis.get(key);
+    const client = getRedis();
+    const data = await client.get(key);
     const hit = data !== null;
     trackCacheHit(hit);
     return hit ? JSON.parse(data) : null;
@@ -58,7 +64,8 @@ const cacheGet = async (key) => {
 const cacheSet = async (key, value, ttlSeconds = 300) => {
   if (!isRedisAvailable()) return;
   try {
-    await redis.setex(key, ttlSeconds, JSON.stringify(value));
+    const client = getRedis();
+    await client.setex(key, ttlSeconds, JSON.stringify(value));
   } catch (err) {
     logger.warn("Redis cacheSet failed", { key, error: err.message });
   }
@@ -67,12 +74,13 @@ const cacheSet = async (key, value, ttlSeconds = 300) => {
 const cacheDel = async (pattern) => {
   if (!isRedisAvailable()) return;
   try {
-    const stream = redis.scanStream({ match: pattern, count: 100 });
+    const client = getRedis();
+    const stream = client.scanStream({ match: pattern, count: 100 });
     const keys = [];
     for await (const key of stream) {
       keys.push(key);
     }
-    if (keys.length > 0) await redis.del(...keys);
+    if (keys.length > 0) await client.del(...keys);
   } catch (err) {
     logger.warn("Redis cacheDel failed", { pattern, error: err.message });
   }
@@ -81,7 +89,8 @@ const cacheDel = async (pattern) => {
 const blacklistToken = async (token, ttlSeconds = 86400) => {
   if (!isRedisAvailable()) return;
   try {
-    await redis.setex(`blacklist:${token}`, ttlSeconds, "1");
+    const client = getRedis();
+    await client.setex(`blacklist:${token}`, ttlSeconds, "1");
   } catch (err) {
     logger.warn("Redis blacklistToken failed", { error: err.message });
   }
@@ -90,7 +99,8 @@ const blacklistToken = async (token, ttlSeconds = 86400) => {
 const isTokenBlacklisted = async (token) => {
   if (!isRedisAvailable()) return false;
   try {
-    const val = await redis.get(`blacklist:${token}`);
+    const client = getRedis();
+    const val = await client.get(`blacklist:${token}`);
     return val === "1";
   } catch (err) {
     logger.warn("Redis isTokenBlacklisted failed", { error: err.message });
@@ -100,27 +110,60 @@ const isTokenBlacklisted = async (token) => {
 
 const acquireLock = async (lockKey, ttlSeconds = 10) => {
   if (!isRedisAvailable()) return null;
+  const token = crypto.randomUUID();
   try {
-    const result = await redis.set(
+    const client = getRedis();
+    const result = await client.set(
       `lock:${lockKey}`,
-      "1",
+      token,
       "NX",
       "EX",
       ttlSeconds
     );
-    return result === "OK" ? () => releaseLock(lockKey) : null;
+    if (result !== "OK") return null;
+    const release = async () => {
+      if (!isRedisAvailable()) return 0;
+      try {
+        const c = getRedis();
+        const res = await c.eval(
+          `if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end`,
+          1,
+          `lock:${lockKey}`,
+          token
+        );
+        return res;
+      } catch (err) {
+        logger.warn("Redis releaseLock failed", { lockKey, error: err.message });
+        return 0;
+      }
+    };
+    release.token = token;
+    release.lockKey = lockKey;
+    return release;
   } catch (err) {
     logger.warn("Redis acquireLock failed", { lockKey, error: err.message });
     return null;
   }
 };
 
-const releaseLock = async (lockKey) => {
-  if (!isRedisAvailable()) return;
+const releaseLock = async (lockKey, expectedToken) => {
+  if (!isRedisAvailable()) return 0;
+  if (!expectedToken) {
+    logger.warn("releaseLock called without token — refusing to delete", { lockKey });
+    return 0;
+  }
   try {
-    await redis.del(`lock:${lockKey}`);
+    const client = getRedis();
+    const res = await client.eval(
+      `if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end`,
+      1,
+      `lock:${lockKey}`,
+      expectedToken
+    );
+    return res;
   } catch (err) {
     logger.warn("Redis releaseLock failed", { lockKey, error: err.message });
+    return 0;
   }
 };
 
@@ -147,4 +190,16 @@ export {
   isTokenBlacklisted,
   acquireLock,
   releaseLock,
+};
+
+export const __testSetRedisAvailable = (val) => {
+  isAvailable = val;
+  if (val) {
+    try {
+      // @ts-ignore
+      redis.status = "ready";
+    } catch (_e) {
+      void _e;
+    }
+  }
 };
