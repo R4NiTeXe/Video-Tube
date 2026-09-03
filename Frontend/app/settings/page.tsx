@@ -2234,7 +2234,7 @@ export default function SettingsPage() {
                 {!deleteOtpSent ? (
                   <button
                     onClick={handleSendDeleteOtp}
-                    disabled={deleteOtpSending || deleteConfirmText !== "DELETE" || !deletePassword}
+                    disabled={deleteOtpSending || deleteConfirmText !== "DELETE" || (!isOAuthUser && !deletePassword)}
                     style={{
                       padding: "0.65rem 1rem",
                       borderRadius: "var(--radius-md)",
@@ -2244,10 +2244,10 @@ export default function SettingsPage() {
                       color: "var(--error)",
                       border: "1px solid var(--error)",
                       cursor:
-                        deleteConfirmText === "DELETE" && deletePassword && !deleteOtpSending
+                        deleteConfirmText === "DELETE" && (isOAuthUser || deletePassword) && !deleteOtpSending
                           ? "pointer"
                           : "not-allowed",
-                      opacity: deleteConfirmText === "DELETE" && deletePassword ? 1 : 0.5,
+                      opacity: deleteConfirmText === "DELETE" && (isOAuthUser || deletePassword) ? 1 : 0.5,
                     }}
                   >
                     {deleteOtpSending ? "Sending OTP..." : "Send OTP to Email"}
