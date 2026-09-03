@@ -9,9 +9,13 @@ describe("idempotency fallback", () => {
   it("generates valid UUIDv4 via crypto.randomUUID when available", () => {
     const key = generateIdempotencyKey();
     expect(UUID_V4_REGEX.test(key)).toBe(true);
-    // Verify version 4 and variant bits
-    expect(key[14]).toBe("4");
-    expect(["8", "9", "a", "b"].includes(key[19].toLowerCase())).toBe(true);
+    const c14 = key[14];
+    const c19 = key[19];
+    expect(c14).toBe("4");
+    expect(c19).toBeDefined();
+    if (c19 !== undefined) {
+      expect(["8", "9", "a", "b"].includes(c19.toLowerCase())).toBe(true);
+    }
   });
 
   it("fallback generates valid UUIDv4 when randomUUID unavailable", () => {
@@ -21,18 +25,20 @@ describe("idempotency fallback", () => {
     });
     vi.stubGlobal("crypto", {
       getRandomValues: mockGetRandomValues,
-    } as any);
+    } as Pick<Crypto, "getRandomValues">);
     const key = generateIdempotencyKey();
     expect(UUID_V4_REGEX.test(key)).toBe(true);
-    expect(key[14]).toBe("4");
+    const c14b = key[14];
+    expect(c14b).toBe("4");
     vi.unstubAllGlobals();
   });
 
   it("fallback via Math.random still generates valid UUIDv4", () => {
-    vi.stubGlobal("crypto", undefined as any);
+    vi.stubGlobal("crypto", undefined);
     const key = generateIdempotencyKey();
     expect(UUID_V4_REGEX.test(key)).toBe(true);
-    expect(key[14]).toBe("4");
+    const c14c = key[14];
+    expect(c14c).toBe("4");
     vi.unstubAllGlobals();
   });
 
