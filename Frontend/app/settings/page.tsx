@@ -660,12 +660,24 @@ export default function SettingsPage() {
     }
   };
 
+  const [deletePassword, setDeletePassword] = useState("");
   const handleSendDeleteOtp = async () => {
     setDeleteError("");
+    if (deleteConfirmText !== "DELETE") {
+      setDeleteError("Please type DELETE to confirm.");
+      return;
+    }
+    if (!deletePassword) {
+      setDeleteError("Please enter your password.");
+      return;
+    }
     setDeleteOtpSending(true);
     try {
       await refreshCsrfToken();
-      await api.post("/users/send-delete-account-otp", {});
+      await api.post("/users/send-delete-account-otp", {
+        password: deletePassword,
+        channel: "email",
+      });
       setDeleteOtpSent(true);
     } catch (err: unknown) {
       setDeleteError(getApiErrorMessage(err, "Failed to send OTP."));
@@ -680,6 +692,10 @@ export default function SettingsPage() {
       setDeleteError("Please type DELETE to confirm.");
       return;
     }
+    if (!deletePassword) {
+      setDeleteError("Please enter your password.");
+      return;
+    }
     if (deleteOtp.join("").length !== 6) {
       setDeleteError("Please enter the 6-digit OTP.");
       return;
@@ -688,7 +704,9 @@ export default function SettingsPage() {
     try {
       await refreshCsrfToken();
       await api.post("/users/verify-and-delete-account", {
+        password: deletePassword,
         otp: deleteOtp.join(""),
+        channel: "email",
       });
       logout();
       router.push("/register");
@@ -698,6 +716,29 @@ export default function SettingsPage() {
       setDeleteLoading(false);
     }
   };
+
+  const handleDirectDelete = async () => {
+    setDeleteError("");
+    if (deleteConfirmText !== "DELETE") {
+      setDeleteError("Please type DELETE to confirm.");
+      return;
+    }
+    setDeleteLoading(true);
+    try {
+      await refreshCsrfToken();
+      await api.delete("/users");
+      logout();
+      router.push("/register");
+    } catch (err: unknown) {
+      setDeleteError(getApiErrorMessage(err, "Failed to delete account."));
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const isOAuthUser = Boolean(
+    user && (user as any).socialAccounts && Object.keys((user as any).socialAccounts).length > 0
+  );
 
   return (
     <div className="content-max">
@@ -2180,10 +2221,79 @@ export default function SettingsPage() {
                   className="input"
                   style={{ width: "100%", boxSizing: "border-box" }}
                 />
-                {!deleteOtpSent ? (
+                {isOAuthUser ? (
+                  <div
+                    style={{
+                      padding: "0.7rem 1rem",
+                      backgroundColor: "rgba(239,68,68,0.08)",
+                      border: "1px solid rgba(239,68,68,0.2)",
+                      borderRadius: "var(--radius-md)",
+                      fontSize: "0.82rem",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    Social login account — no password required. OTP will still be sent to your email for verification.
+                  </div>
+                ) : (
+                  <input
+                    type="password"
+                    placeholder="Enter your password"
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                    className="input"
+                    style={{ width: "100%", boxSizing: "border-box" }}
+                    autoComplete="current-password"
+                  />
+                )}
+                {isOAuthUser ? (
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <button
+                      onClick={() => {
+                        setShowDeleteConfirm(false);
+                        setDeleteConfirmText("");
+                        setDeleteError("");
+                      }}
+                      disabled={deleteLoading}
+                      style={{
+                        flex: 1,
+                        padding: "0.65rem 1rem",
+                        borderRadius: "var(--radius-md)",
+                        fontSize: "0.85rem",
+                        fontWeight: 600,
+                        backgroundColor: "var(--bg-primary)",
+                        color: "var(--text-muted)",
+                        border: "1px solid var(--border)",
+                        cursor: deleteLoading ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleDirectDelete}
+                      disabled={deleteLoading || deleteConfirmText !== "DELETE"}
+                      style={{
+                        flex: 1,
+                        padding: "0.65rem 1rem",
+                        borderRadius: "var(--radius-md)",
+                        fontSize: "0.85rem",
+                        fontWeight: 600,
+                        backgroundColor: "var(--error)",
+                        color: "#fff",
+                        border: "1px solid var(--error)",
+                        cursor:
+                          deleteLoading || deleteConfirmText !== "DELETE"
+                            ? "not-allowed"
+                            : "pointer",
+                        opacity: deleteConfirmText !== "DELETE" ? 0.6 : 1,
+                      }}
+                    >
+                      {deleteLoading ? "Deleting..." : "Permanently Delete"}
+                    </button>
+                  </div>
+                ) : !deleteOtpSent ? (
                   <button
                     onClick={handleSendDeleteOtp}
-                    disabled={deleteOtpSending || deleteConfirmText !== "DELETE"}
+                    disabled={deleteOtpSending || deleteConfirmText !== "DELETE" || !deletePassword}
                     style={{
                       padding: "0.65rem 1rem",
                       borderRadius: "var(--radius-md)",
@@ -2193,10 +2303,10 @@ export default function SettingsPage() {
                       color: "var(--error)",
                       border: "1px solid var(--error)",
                       cursor:
-                        deleteConfirmText === "DELETE" && !deleteOtpSending
+                        deleteConfirmText === "DELETE" && deletePassword && !deleteOtpSending
                           ? "pointer"
                           : "not-allowed",
-                      opacity: deleteConfirmText === "DELETE" ? 1 : 0.5,
+                      opacity: deleteConfirmText === "DELETE" && deletePassword ? 1 : 0.5,
                     }}
                   >
                     {deleteOtpSending ? "Sending OTP..." : "Send OTP to Email"}
