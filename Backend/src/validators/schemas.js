@@ -908,7 +908,7 @@ export const otpSchemas = {
     body: z.object({
       identifier: z.string().min(1),
       purpose: z.string().min(1),
-      channel: z.enum(["email", "whatsapp"]).optional(),
+      channel: z.enum(["email"]).optional(),
       userId: z.string().optional(),
     }),
   },
@@ -923,7 +923,7 @@ export const otpSchemas = {
     body: z.object({
       identifier: z.string().min(1),
       purpose: z.string().min(1),
-      channel: z.enum(["email", "whatsapp"]).optional(),
+      channel: z.enum(["email"]).optional(),
     }),
   },
   getOtpUsage: { query: z.object({ identifier: z.string().optional() }) },

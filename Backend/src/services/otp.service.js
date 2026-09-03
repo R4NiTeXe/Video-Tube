@@ -27,7 +27,7 @@ const OTP_PURPOSES = [
   "reset",
 ];
 
-const OTP_CHANNELS = ["email", "whatsapp"];
+const OTP_CHANNELS = ["email"];
 
 const GLOBAL_DAILY_KEY_PREFIX = "otp:global:daily:";
 

@@ -5,10 +5,10 @@ import { otpService } from "../../services/otp.service.js";
 import { User } from "../../models/user.model.js";
 import { OTP } from "../../models/otp.model.js";
 import { isValidEmail } from "../../utils/validators.js";
-import logger from "../../utils/logger.js";
 
 const sendOtp = asyncHandler(async (req, res) => {
-  const { identifier, purpose, channel = "email", userId } = req.body;
+  const { identifier, purpose, userId } = req.body;
+  const channel = "email";
 
   if (!identifier || !purpose) {
     throw new ApiError(400, "Identifier and purpose are required.");
@@ -16,7 +16,7 @@ const sendOtp = asyncHandler(async (req, res) => {
 
   const isEmail = isValidEmail(identifier);
 
-  if (channel === "email" && !isEmail) {
+  if (!isEmail) {
     throw new ApiError(400, "Invalid email format.");
   }
 
@@ -43,24 +43,12 @@ const sendOtp = asyncHandler(async (req, res) => {
   const userIdParam = user?._id;
   const timezone = user?.timezone;
 
-  if (channel === "email") {
-    await otpService.sendOtpEmail({
-      identifier: identifier.toLowerCase(),
-      otp,
-      purpose,
-      userName: user?.fullName,
-    });
-  } else if (channel === "whatsapp") {
-    logger.warn(
-      `WhatsApp OTP delivery not implemented, falling back to email for ${identifier}`
-    );
-    await otpService.sendOtpEmail({
-      identifier: identifier.toLowerCase(),
-      otp,
-      purpose,
-      userName: user?.fullName,
-    });
-  }
+  await otpService.sendOtpEmail({
+    identifier: identifier.toLowerCase(),
+    otp,
+    purpose,
+    userName: user?.fullName,
+  });
   await otpService.confirmOtpDelivery(userIdParam, timezone);
 
   const usage = userIdParam
@@ -73,7 +61,7 @@ const sendOtp = asyncHandler(async (req, res) => {
     new ApiResponse(
       200,
       {
-        message: `OTP sent via ${channel === "whatsapp" ? "email (WhatsApp unavailable)" : channel}.`,
+        message: `OTP sent via ${channel}.`,
         expiresIn: otpService.OTP_CONSTANTS.OTP_EXPIRY_MINUTES * 60,
         remainingGlobal: globalCount,
         remainingUser: usage?.remaining,

@@ -60,11 +60,6 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const detectInputType = (value: string): "email" | "mobile" => {
-    const trimmed = value.trim();
-    if (/^\+?\d{10,15}$/.test(trimmed.replace(/\s/g, ""))) return "mobile";
-    return "email";
-  };
 
   const handleSendOtp = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -75,8 +70,7 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
     try {
       await api.post("/users/send-forgot-otp", { identifier: trimmed });
-      const type = detectInputType(trimmed);
-      setSuccess(`OTP sent via ${type === "email" ? "email" : "WhatsApp"}.`);
+      setSuccess("OTP sent via email.");
       setStep("otp");
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, "Failed to send OTP."));
@@ -244,8 +238,8 @@ export default function ForgotPasswordPage() {
                 : step === "choice"
                   ? "You verified your account. Reset password or login directly."
                   : step === "otp"
-                    ? "Enter the verification code sent to your email/phone"
-                    : "Enter your email or phone number to receive a verification code"}
+                    ? "Enter the verification code sent to your email"
+                    : "Enter your email to receive a verification code"}
             </p>
           </div>
 

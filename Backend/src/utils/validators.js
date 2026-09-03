@@ -7,8 +7,7 @@ export const isValidMobile = (mobile) => {
   return /^\+?[1-9]\d{9,14}$/.test(mobile);
 };
 
-export const detectChannel = (identifier) => {
-  if (/^\+?[1-9]\d{9,14}$/.test(identifier.trim())) return "whatsapp";
+export const detectChannel = () => {
   return "email";
 };
 

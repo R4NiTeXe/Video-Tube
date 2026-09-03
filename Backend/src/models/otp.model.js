@@ -26,7 +26,7 @@ const otpSchema = new mongoose.Schema(
     channel: {
       type: String,
       required: true,
-      enum: ["email", "whatsapp"],
+      enum: ["email"],
       default: "email",
     },
     expiresAt: { type: Date, required: true },

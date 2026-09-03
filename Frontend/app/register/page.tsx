@@ -74,20 +74,6 @@ const MailIcon = () => (
     <path d="M22 4L12 13 2 4" />
   </svg>
 );
-const PhoneIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
-  </svg>
-);
 
 const ShieldCheckIcon = () => (
   <svg
@@ -196,24 +182,14 @@ export default function RegisterPage() {
   const [emailOtp, setEmailOtp] = useState<string[]>(
     Array(OTP_LENGTH).fill(""),
   );
-  const [mobileOtp, setMobileOtp] = useState<string[]>(
-    Array(OTP_LENGTH).fill(""),
-  );
   const [emailVerified, setEmailVerified] = useState(false);
-  const [mobileVerified, setMobileVerified] = useState(false);
-  const [verifyChannel, setVerifyChannel] = useState<
-    "email" | "whatsapp" | null
-  >(null);
+  const [verifyChannel, setVerifyChannel] = useState<"email" | null>(null);
   const [emailCooldown, setEmailCooldown] = useState(0);
-  const [mobileCooldown, setMobileCooldown] = useState(0);
   const [emailOtpError, setEmailOtpError] = useState("");
-  const [mobileOtpError, setMobileOtpError] = useState("");
   const [emailVerifying, setEmailVerifying] = useState(false);
-  const [mobileVerifying, setMobileVerifying] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
 
   const emailOtpRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const mobileOtpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -231,12 +207,6 @@ export default function RegisterPage() {
     return () => clearTimeout(t);
   }, [emailCooldown]);
 
-  useEffect(() => {
-    if (mobileCooldown <= 0) return;
-    const t = setTimeout(() => setMobileCooldown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [mobileCooldown]);
-
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -251,10 +221,9 @@ export default function RegisterPage() {
     value: string,
     setter: React.Dispatch<React.SetStateAction<string[]>>,
     refs: React.MutableRefObject<(HTMLInputElement | null)[]>,
-    isEmail: boolean,
   ) => {
     if (value.length > 1) return;
-    const next = [...(isEmail ? emailOtp : mobileOtp)];
+    const next = [...emailOtp];
     next[index] = value;
     setter(next);
     if (value && index < OTP_LENGTH - 1) {
@@ -266,13 +235,8 @@ export default function RegisterPage() {
     index: number,
     e: React.KeyboardEvent<HTMLInputElement>,
     refs: React.MutableRefObject<(HTMLInputElement | null)[]>,
-    isEmail: boolean,
   ) => {
-    if (
-      e.key === "Backspace" &&
-      !(isEmail ? emailOtp : mobileOtp)[index] &&
-      index > 0
-    ) {
+    if (e.key === "Backspace" && !emailOtp[index] && index > 0) {
       refs.current[index - 1]?.focus();
     }
   };
@@ -296,23 +260,18 @@ export default function RegisterPage() {
   };
 
   const sendOtps = useCallback(
-    async (channel?: "email" | "whatsapp") => {
+    async () => {
       setSendingOtp(true);
       setError("");
       try {
         await api.post("/users/send-registration-otp", {
           email: formData.email,
           mobile: fullMobile,
-          channel: channel || "email",
+          channel: "email",
         });
-        if (channel === "whatsapp") {
-          setMobileCooldown(COOLDOWN_SECONDS);
-        } else {
-          setEmailCooldown(COOLDOWN_SECONDS);
-        }
+        setEmailCooldown(COOLDOWN_SECONDS);
         setTimeout(() => {
-          if (channel === "whatsapp") mobileOtpRefs.current[0]?.focus();
-          else emailOtpRefs.current[0]?.focus();
+          emailOtpRefs.current[0]?.focus();
         }, 100);
       } catch (err: unknown) {
         setError(getApiErrorMessage(err, "Failed to send OTP."));
@@ -323,28 +282,17 @@ export default function RegisterPage() {
     [formData.email, fullMobile],
   );
 
-  const verifyOtp = async (
-    identifier: string,
-    otp: string,
-    isEmail: boolean,
-  ) => {
-    if (isEmail) setEmailVerifying(true);
-    else setMobileVerifying(true);
-
-    if (isEmail) setEmailOtpError("");
-    else setMobileOtpError("");
-
+  const verifyOtp = async (identifier: string, otp: string) => {
+    setEmailVerifying(true);
+    setEmailOtpError("");
     try {
       await api.post("/users/verify-registration-otp", { identifier, otp });
-      if (isEmail) setEmailVerified(true);
-      else setMobileVerified(true);
+      setEmailVerified(true);
     } catch (err: unknown) {
       const msg = getApiErrorMessage(err, "Invalid OTP.");
-      if (isEmail) setEmailOtpError(msg);
-      else setMobileOtpError(msg);
+      setEmailOtpError(msg);
     } finally {
-      if (isEmail) setEmailVerifying(false);
-      else setMobileVerifying(false);
+      setEmailVerifying(false);
     }
   };
 
@@ -388,7 +336,7 @@ export default function RegisterPage() {
     setStep("otp");
   };
 
-  const bothVerified = emailVerified || mobileVerified;
+  const bothVerified = emailVerified;
 
   const handleFinalRegister = async () => {
     if (!bothVerified) return;
@@ -469,13 +417,13 @@ export default function RegisterPage() {
     step === "details"
       ? "Create an account"
       : step === "otp"
-        ? "Verify your email or phone"
+        ? "Verify your email"
         : "Welcome aboard!";
   const stepSub =
     step === "details"
       ? "Join VideoTube — it's free"
       : step === "otp"
-        ? "We sent a code to your email or phone"
+        ? "We sent a code to your email"
         : "Your account is ready. Redirecting...";
 
   return (
@@ -974,7 +922,7 @@ export default function RegisterPage() {
                         gap: "var(--sp-3)",
                       }}
                     >
-                      {!verifyChannel && !emailVerified && !mobileVerified && (
+                      {!verifyChannel && !emailVerified && (
                         <motion.div
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
@@ -992,13 +940,13 @@ export default function RegisterPage() {
                               marginBottom: "0.5rem",
                             }}
                           >
-                            Choose how to verify:
+                            Verify your email:
                           </p>
                           <button
                             type="button"
                             onClick={() => {
                               setVerifyChannel("email");
-                              sendOtps("email");
+                              sendOtps();
                             }}
                             disabled={sendingOtp}
                             style={{
@@ -1057,72 +1005,6 @@ export default function RegisterPage() {
                                 }}
                               >
                                 OTP sent to {formData.email}
-                              </p>
-                            </div>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setVerifyChannel("whatsapp");
-                              sendOtps("whatsapp");
-                            }}
-                            disabled={sendingOtp}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "0.75rem",
-                              padding: "1rem 1.2rem",
-                              borderRadius: "var(--radius-md)",
-                              border: "1.5px solid var(--border)",
-                              backgroundColor: "var(--bg-secondary)",
-                              cursor: "pointer",
-                              transition: "all 0.2s",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.borderColor =
-                                "var(--accent)";
-                              e.currentTarget.style.backgroundColor =
-                                "var(--accent-subtle)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.borderColor =
-                                "var(--border)";
-                              e.currentTarget.style.backgroundColor =
-                                "var(--bg-secondary)";
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: 40,
-                                height: 40,
-                                borderRadius: "50%",
-                                backgroundColor: "#25D366",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                color: "#fff",
-                                flexShrink: 0,
-                              }}
-                            >
-                              <PhoneIcon />
-                            </div>
-                            <div style={{ textAlign: "left" }}>
-                              <p
-                                style={{
-                                  fontSize: "0.9rem",
-                                  fontWeight: 700,
-                                  color: "var(--text-primary)",
-                                }}
-                              >
-                                WhatsApp
-                              </p>
-                              <p
-                                style={{
-                                  fontSize: "0.78rem",
-                                  color: "var(--text-muted)",
-                                }}
-                              >
-                                OTP sent to {fullMobile}
                               </p>
                             </div>
                           </button>
@@ -1201,16 +1083,10 @@ export default function RegisterPage() {
                                     e.target.value,
                                     setEmailOtp,
                                     emailOtpRefs,
-                                    true,
                                   )
                                 }
                                 onKeyDown={(e) =>
-                                  handleOtpKeyDown(
-                                    i,
-                                    e,
-                                    emailOtpRefs,
-                                    true,
-                                  )
+                                  handleOtpKeyDown(i, e, emailOtpRefs)
                                 }
                                 onPaste={(e) =>
                                   handleOtpPaste(e, setEmailOtp, emailOtpRefs)
@@ -1250,11 +1126,7 @@ export default function RegisterPage() {
                                 emailOtp.join("").length < OTP_LENGTH
                               }
                               onClick={() =>
-                                verifyOtp(
-                                  formData.email,
-                                  emailOtp.join(""),
-                                  true,
-                                )
+                                verifyOtp(formData.email, emailOtp.join(""))
                               }
                               className="btn btn-primary"
                               style={{
@@ -1269,7 +1141,7 @@ export default function RegisterPage() {
                               type="button"
                               disabled={emailCooldown > 0 || sendingOtp}
                               onClick={() => {
-                                sendOtps("email");
+                                sendOtps();
                                 setEmailOtp(Array(OTP_LENGTH).fill(""));
                                 setEmailOtpError("");
                               }}
@@ -1293,206 +1165,11 @@ export default function RegisterPage() {
                                 : "Resend"}
                             </button>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => setVerifyChannel(null)}
-                            style={{
-                              marginTop: "0.75rem",
-                              background: "none",
-                              border: "none",
-                              color: "var(--text-muted)",
-                              fontSize: "0.78rem",
-                              cursor: "pointer",
-                              textDecoration: "underline",
-                              width: "100%",
-                              textAlign: "center",
-                            }}
-                          >
-                            Use a different method
-                          </button>
-                        </motion.div>
-                      )}
-
-                      {verifyChannel === "whatsapp" && !mobileVerified && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          style={{
-                            padding: "1.2rem",
-                            borderRadius: "var(--radius-md)",
-                            border: "1px solid var(--border)",
-                            backgroundColor: "var(--bg-secondary)",
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "0.5rem",
-                              marginBottom: "1rem",
-                            }}
-                          >
-                            <div style={{ color: "#25D366", display: "flex" }}>
-                              <PhoneIcon />
-                            </div>
-                            <div>
-                              <p
-                                style={{
-                                  fontSize: "0.85rem",
-                                  fontWeight: 600,
-                                  color: "var(--text-primary)",
-                                }}
-                              >
-                                WhatsApp OTP
-                              </p>
-                              <p
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "var(--text-muted)",
-                                }}
-                              >
-                                {fullMobile}
-                              </p>
-                            </div>
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: "0.5rem",
-                              justifyContent: "center",
-                              marginBottom: "1rem",
-                            }}
-                          >
-                            {mobileOtp.map((digit, i) => (
-                              <input
-                                key={i}
-                                ref={(el) => {
-                                  mobileOtpRefs.current[i] = el;
-                                }}
-                                type="text"
-                                inputMode="numeric"
-                                maxLength={1}
-                                value={digit}
-                                aria-label={`OTP digit ${i + 1}`}
-                                onChange={(e) =>
-                                  handleOtpChange(
-                                    i,
-                                    e.target.value,
-                                    setMobileOtp,
-                                    mobileOtpRefs,
-                                    false,
-                                  )
-                                }
-                                onKeyDown={(e) =>
-                                  handleOtpKeyDown(
-                                    i,
-                                    e,
-                                    mobileOtpRefs,
-                                    false,
-                                  )
-                                }
-                                onPaste={(e) =>
-                                  handleOtpPaste(e, setMobileOtp, mobileOtpRefs)
-                                }
-                                style={{
-                                  width: 44,
-                                  height: 48,
-                                  textAlign: "center",
-                                  fontSize: "1.15rem",
-                                  fontWeight: 700,
-                                  borderRadius: "var(--radius-md)",
-                                  border: "1.5px solid var(--border)",
-                                  backgroundColor: "var(--bg-primary)",
-                                  color: "var(--text-primary)",
-                                  outline: "none",
-                                }}
-                              />
-                            ))}
-                          </div>
-                          {mobileOtpError && (
-                            <p
-                              style={{
-                                fontSize: "0.78rem",
-                                color: "var(--error)",
-                                textAlign: "center",
-                                marginBottom: "0.75rem",
-                              }}
-                            >
-                              {mobileOtpError}
-                            </p>
-                          )}
-                          <div style={{ display: "flex", gap: "0.6rem" }}>
-                            <button
-                              type="button"
-                              disabled={
-                                mobileVerifying ||
-                                mobileOtp.join("").length < OTP_LENGTH
-                              }
-                              onClick={() =>
-                                verifyOtp(fullMobile, mobileOtp.join(""), false)
-                              }
-                              className="btn btn-primary"
-                              style={{
-                                flex: 1,
-                                padding: "0.7rem",
-                                fontSize: "0.82rem",
-                                backgroundColor: "#25D366",
-                              }}
-                            >
-                              {mobileVerifying ? "Verifying..." : "Verify"}
-                            </button>
-                            <button
-                              type="button"
-                              disabled={mobileCooldown > 0 || sendingOtp}
-                              onClick={() => {
-                                sendOtps("whatsapp");
-                                setMobileOtp(Array(OTP_LENGTH).fill(""));
-                                setMobileOtpError("");
-                              }}
-                              style={{
-                                padding: "0.7rem 1rem",
-                                borderRadius: "var(--radius-md)",
-                                border: "1px solid var(--border)",
-                                backgroundColor: "var(--bg-secondary)",
-                                color:
-                                  mobileCooldown > 0
-                                    ? "var(--text-muted)"
-                                    : "var(--text-primary)",
-                                fontSize: "0.78rem",
-                                fontWeight: 600,
-                                cursor:
-                                  mobileCooldown > 0
-                                    ? "not-allowed"
-                                    : "pointer",
-                              }}
-                            >
-                              {mobileCooldown > 0
-                                ? `${mobileCooldown}s`
-                                : "Resend"}
-                            </button>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setVerifyChannel(null)}
-                            style={{
-                              marginTop: "0.75rem",
-                              background: "none",
-                              border: "none",
-                              color: "var(--text-muted)",
-                              fontSize: "0.78rem",
-                              cursor: "pointer",
-                              textDecoration: "underline",
-                              width: "100%",
-                              textAlign: "center",
-                            }}
-                          >
-                            Use a different method
-                          </button>
                         </motion.div>
                       )}
 
                       <AnimatePresence>
-                        {(emailVerified || mobileVerified) && (
+                        {emailVerified && (
                           <motion.div
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -1515,11 +1192,7 @@ export default function RegisterPage() {
                                 color: "var(--success)",
                               }}
                             >
-                              {emailVerified && mobileVerified
-                                ? "Both verified!"
-                                : emailVerified
-                                  ? "Email verified!"
-                                  : "Mobile verified!"}
+                              Email verified!
                             </span>
                           </motion.div>
                         )}
@@ -1527,30 +1200,21 @@ export default function RegisterPage() {
 
                       <motion.button
                         type="button"
-                        disabled={
-                          !(emailVerified || mobileVerified) || isLoading
-                        }
+                        disabled={!emailVerified || isLoading}
                         onClick={handleFinalRegister}
                         className="btn btn-primary"
                         whileHover={
-                          (emailVerified || mobileVerified) && !isLoading
-                            ? { scale: 1.01 }
-                            : {}
+                          emailVerified && !isLoading ? { scale: 1.01 } : {}
                         }
                         whileTap={
-                          (emailVerified || mobileVerified) && !isLoading
-                            ? { scale: 0.98 }
-                            : {}
+                          emailVerified && !isLoading ? { scale: 0.98 } : {}
                         }
                         style={{
                           width: "100%",
                           padding: "0.85rem",
-                          opacity:
-                            (emailVerified || mobileVerified) && !isLoading
-                              ? 1
-                              : 0.5,
+                          opacity: emailVerified && !isLoading ? 1 : 0.5,
                           cursor:
-                            (emailVerified || mobileVerified) && !isLoading
+                            emailVerified && !isLoading
                               ? "pointer"
                               : "not-allowed",
                         }}

@@ -5,7 +5,6 @@ import { User } from "../../models/user.model.js";
 import { OTP } from "../../models/otp.model.js";
 import { storeOTP, verifyOTP, otpService } from "../../utils/otp.js";
 import { sendEmail } from "../../utils/email.js";
-import { sendWhatsAppOTP } from "../../utils/whatsappOtp.js";
 import { getLocationInfo } from "../../utils/location.js";
 import {
   accountRegisteredTemplate,
@@ -22,11 +21,7 @@ import {
   uploadOnCloudinary,
   deleteFromCloudinary,
 } from "../../utils/cloudinary.js";
-import {
-  isValidEmail,
-  isValidMobile,
-  detectChannel,
-} from "../../utils/validators.js";
+import { isValidEmail, isValidMobile } from "../../utils/validators.js";
 import logger from "../../utils/logger.js";
 
 const sendRegistrationOTP = asyncHandler(async (req, res) => {
@@ -57,33 +52,21 @@ const sendRegistrationOTP = asyncHandler(async (req, res) => {
       existingUser.email === normalizedEmail ? "Email" : "Mobile number";
     throw new ApiError(409, `${field} already registered. Please login.`);
   }
-  const [emailOtp, mobileOtp] = await Promise.all([
-    storeOTP(normalizedEmail, "registration", "email"),
-    storeOTP(normalizedMobile, "registration", "whatsapp"),
-  ]);
+  const emailOtp = await storeOTP(normalizedEmail, "registration", "email");
 
-  const [emailResult, mobileResult] = await Promise.allSettled([
-    sendEmail({
+  try {
+    await sendEmail({
       to: normalizedEmail,
       subject: "Welcome to VideoTube — Verify Your Email",
       html: otpEmailTemplate(emailOtp, "registration"),
-    }),
-    sendWhatsAppOTP(normalizedMobile, mobileOtp),
-  ]);
-
-  if (mobileResult.status === "rejected") {
-    logger.warn("WhatsApp OTP send failed, falling back to email-only", {
-      error: mobileResult.reason?.message,
     });
-  }
-
-  if (emailResult.status === "rejected") {
+  } catch (err) {
     logger.error("Email OTP send failed", {
       email: normalizedEmail,
-      error: emailResult.reason?.message,
+      error: err.message,
     });
     await OTP.deleteMany({
-      identifier: { $in: [normalizedEmail, normalizedMobile] },
+      identifier: normalizedEmail,
       purpose: "registration",
     });
     throw new ApiError(500, "Failed to send email OTP. Please try again.");
@@ -97,7 +80,7 @@ const sendRegistrationOTP = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         { email: normalizedEmail, mobile: normalizedMobile },
-        "OTPs sent to both email and mobile number"
+        "OTP sent to your email"
       )
     );
 });
@@ -113,7 +96,7 @@ const verifyRegistrationOTP = asyncHandler(async (req, res) => {
   }
 
   const normalizedIdentifier = identifier.trim().toLowerCase();
-  const channel = detectChannel(normalizedIdentifier);
+  const channel = "email";
 
   const purpose = "registration";
   const result = await verifyOTP(normalizedIdentifier, otpValue, purpose);
@@ -299,14 +282,8 @@ const sendLoginOTP = asyncHandler(async (req, res) => {
   }
 
   const normalizedIdentifier = identifier.trim().toLowerCase();
-  const channel = detectChannel(normalizedIdentifier);
 
-  let user;
-  if (channel === "email") {
-    user = await User.findOne({ email: normalizedIdentifier });
-  } else {
-    user = await User.findOne({ mobile: normalizedIdentifier });
-  }
+  const user = await User.findOne({ email: normalizedIdentifier });
 
   if (!user) {
     return res
@@ -316,38 +293,22 @@ const sendLoginOTP = asyncHandler(async (req, res) => {
       );
   }
 
-  if (channel === "email") {
-    const otp = await storeOTP(
-      normalizedIdentifier,
-      "login",
-      "email",
-      user._id
-    );
-    try {
-      await sendEmail({
-        to: normalizedIdentifier,
-        subject: "Your VideoTube Sign-In Code",
-        html: otpEmailTemplate(otp, "login"),
-      });
-      await otpService.confirmOtpDelivery(user._id, user.timezone);
-    } catch (error) {
-      logger.error("Failed to send login OTP email:", error.message);
-      throw new ApiError(500, "Failed to send email OTP. Please try again.");
-    }
-  } else {
-    const otp = await storeOTP(
-      normalizedIdentifier,
-      "login",
-      "whatsapp",
-      user._id
-    );
-    try {
-      await sendWhatsAppOTP(normalizedIdentifier, otp);
-      await otpService.confirmOtpDelivery(user._id, user.timezone);
-    } catch (error) {
-      logger.error("Failed to send login OTP WhatsApp:", error.message);
-      throw new ApiError(500, "Failed to send WhatsApp OTP. Please try again.");
-    }
+  const otp = await storeOTP(
+    normalizedIdentifier,
+    "login",
+    "email",
+    user._id
+  );
+  try {
+    await sendEmail({
+      to: normalizedIdentifier,
+      subject: "Your VideoTube Sign-In Code",
+      html: otpEmailTemplate(otp, "login"),
+    });
+    await otpService.confirmOtpDelivery(user._id, user.timezone);
+  } catch (error) {
+    logger.error("Failed to send login OTP email:", error.message);
+    throw new ApiError(500, "Failed to send email OTP. Please try again.");
   }
 
   return res
@@ -365,7 +326,6 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
   }
 
   const normalizedIdentifier = identifier.trim().toLowerCase();
-  const channel = detectChannel(normalizedIdentifier);
 
   const result = await verifyOTP(normalizedIdentifier, otpValue, "login");
 
@@ -373,11 +333,7 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
     throw new ApiError(400, result.message);
   }
 
-  const user = await User.findOne(
-    channel === "email"
-      ? { email: normalizedIdentifier }
-      : { mobile: normalizedIdentifier }
-  );
+  const user = await User.findOne({ email: normalizedIdentifier });
 
   if (!user) {
     throw new ApiError(404, "User not found");
@@ -394,12 +350,7 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
       await sendEmail({
         to: user.email,
         subject: "New Sign-In Detected",
-        html: suspiciousLoginTemplate(
-          user,
-          locationInfo,
-          channel,
-          user.lastLogin
-        ),
+        html: suspiciousLoginTemplate(user, locationInfo, "email", user.lastLogin),
       });
     } catch (err) {
       logger.error("Failed to send suspicious login alert: " + err.message);

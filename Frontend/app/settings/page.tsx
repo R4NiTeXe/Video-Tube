@@ -362,12 +362,6 @@ export default function SettingsPage() {
   const [forgotOtpSent, setForgotOtpSent] = useState(false);
   const [forgotOtpSending, setForgotOtpSending] = useState(false);
   const [forgotOtpError, setForgotOtpError] = useState("");
-  const [changePasswordChannel, setChangePasswordChannel] = useState<
-    "email" | "whatsapp"
-  >("email");
-  const [forgotChannel, setForgotChannel] = useState<"email" | "whatsapp">(
-    "email",
-  );
 
   // Notifications
   const [notifLikes, setNotifLikes] = useState(true);
@@ -495,13 +489,8 @@ export default function SettingsPage() {
       await refreshCsrfToken();
       await api.post("/users/send-change-password-otp", {
         oldPassword,
-        channel: changePasswordChannel,
-        ...(changePasswordChannel === "email" && user?.email
-          ? { email: user.email }
-          : {}),
-        ...(changePasswordChannel === "whatsapp" && user?.mobile
-          ? { mobile: user.mobile }
-          : {}),
+        channel: "email",
+        ...(user?.email ? { email: user.email } : {}),
       });
       setOtpSent(true);
       refreshOtpUsage();
@@ -533,7 +522,7 @@ export default function SettingsPage() {
         oldPassword,
         newPassword,
         otp: changePasswordOtp.join(""),
-        channel: changePasswordChannel,
+        channel: "email",
       });
       setOldPassword("");
       setNewPassword("");
@@ -559,13 +548,8 @@ export default function SettingsPage() {
     try {
       await refreshCsrfToken();
       await api.post("/users/send-forgot-password-change-otp", {
-        channel: forgotChannel,
-        ...(forgotChannel === "email" && user?.email
-          ? { email: user.email }
-          : {}),
-        ...(forgotChannel === "whatsapp" && user?.mobile
-          ? { mobile: user.mobile }
-          : {}),
+        channel: "email",
+        ...(user?.email ? { email: user.email } : {}),
       });
       setForgotOtpSent(true);
       refreshOtpUsage();
@@ -596,7 +580,7 @@ export default function SettingsPage() {
       await api.post("/users/verify-and-reset-password-via-otp", {
         newPassword,
         otp: changePasswordOtp.join(""),
-        channel: forgotChannel,
+        channel: "email",
       });
       setNewPassword("");
       setConfirmPassword("");
@@ -902,57 +886,6 @@ export default function SettingsPage() {
                     </div>
                   )}
                   {!otpSent ? (
-                    <>
-                      <div style={{ display: "flex", gap: "0.5rem" }}>
-                        <button
-                          type="button"
-                          onClick={() => setChangePasswordChannel("email")}
-                          style={{
-                            flex: 1,
-                            padding: "0.5rem",
-                            borderRadius: "var(--radius-md)",
-                            fontSize: "0.82rem",
-                            fontWeight: 600,
-                            backgroundColor:
-                              changePasswordChannel === "email"
-                                ? "var(--accent)"
-                                : "var(--bg-secondary)",
-                            color:
-                              changePasswordChannel === "email"
-                                ? "#fff"
-                                : "var(--text-muted)",
-                            border: `1px solid ${changePasswordChannel === "email" ? "var(--accent)" : "var(--border)"}`,
-                            cursor: "pointer",
-                            transition: "all 0.2s",
-                          }}
-                        >
-                          📧 Email
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setChangePasswordChannel("whatsapp")}
-                          style={{
-                            flex: 1,
-                            padding: "0.5rem",
-                            borderRadius: "var(--radius-md)",
-                            fontSize: "0.82rem",
-                            fontWeight: 600,
-                            backgroundColor:
-                              changePasswordChannel === "whatsapp"
-                                ? "#25D366"
-                                : "var(--bg-secondary)",
-                            color:
-                              changePasswordChannel === "whatsapp"
-                                ? "#fff"
-                                : "var(--text-muted)",
-                            border: `1px solid ${changePasswordChannel === "whatsapp" ? "#25D366" : "var(--border)"}`,
-                            cursor: "pointer",
-                            transition: "all 0.2s",
-                          }}
-                        >
-                          💬 WhatsApp
-                        </button>
-                      </div>
                       <button
                         type="button"
                         onClick={handleSendChangePasswordOtp}
@@ -972,11 +905,8 @@ export default function SettingsPage() {
                           transition: "all 0.2s",
                         }}
                       >
-                        {otpSending
-                          ? "Sending OTP..."
-                          : `Send OTP via ${changePasswordChannel === "whatsapp" ? "WhatsApp" : "Email"}`}
+                        {otpSending ? "Sending OTP..." : "Send OTP via Email"}
                       </button>
-                    </>
                   ) : (
                     <div
                       style={{
@@ -1188,57 +1118,6 @@ export default function SettingsPage() {
                     </div>
                   )}
                   {!forgotOtpSent ? (
-                    <>
-                      <div style={{ display: "flex", gap: "0.5rem" }}>
-                        <button
-                          type="button"
-                          onClick={() => setForgotChannel("email")}
-                          style={{
-                            flex: 1,
-                            padding: "0.5rem",
-                            borderRadius: "var(--radius-md)",
-                            fontSize: "0.82rem",
-                            fontWeight: 600,
-                            backgroundColor:
-                              forgotChannel === "email"
-                                ? "var(--accent)"
-                                : "var(--bg-secondary)",
-                            color:
-                              forgotChannel === "email"
-                                ? "#fff"
-                                : "var(--text-muted)",
-                            border: `1px solid ${forgotChannel === "email" ? "var(--accent)" : "var(--border)"}`,
-                            cursor: "pointer",
-                            transition: "all 0.2s",
-                          }}
-                        >
-                          📧 Email
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setForgotChannel("whatsapp")}
-                          style={{
-                            flex: 1,
-                            padding: "0.5rem",
-                            borderRadius: "var(--radius-md)",
-                            fontSize: "0.82rem",
-                            fontWeight: 600,
-                            backgroundColor:
-                              forgotChannel === "whatsapp"
-                                ? "#25D366"
-                                : "var(--bg-secondary)",
-                            color:
-                              forgotChannel === "whatsapp"
-                                ? "#fff"
-                                : "var(--text-muted)",
-                            border: `1px solid ${forgotChannel === "whatsapp" ? "#25D366" : "var(--border)"}`,
-                            cursor: "pointer",
-                            transition: "all 0.2s",
-                          }}
-                        >
-                          💬 WhatsApp
-                        </button>
-                      </div>
                       <button
                         type="button"
                         onClick={handleSendForgotOtp}
@@ -1255,11 +1134,8 @@ export default function SettingsPage() {
                           transition: "all 0.2s",
                         }}
                       >
-                        {forgotOtpSending
-                          ? "Sending OTP..."
-                          : `Send OTP via ${forgotChannel === "whatsapp" ? "WhatsApp" : "Email"}`}
+                        {forgotOtpSending ? "Sending OTP..." : "Send OTP via Email"}
                       </button>
-                    </>
                   ) : (
                     <div
                       style={{

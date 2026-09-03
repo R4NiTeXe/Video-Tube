@@ -27,69 +27,33 @@ import {
   identifierUpdatedTemplate,
   identifierDeletedTemplate,
 } from "../../utils/emailTemplates.js";
-import { sendWhatsAppOTP } from "../../utils/whatsappOtp.js";
 import { assertPasswordStrength } from "../../utils/passwordValidation.js";
 
 const isValidEmail = (email) => validator.isEmail(email);
 
 const sendChangePasswordOTP = asyncHandler(async (req, res) => {
-  const { channel = "email" } = req.body;
   const user = await User.findById(req.user._id);
   const email = user.email;
-  const mobile = user.mobile;
 
-  if (channel === "whatsapp") {
-    if (!mobile) {
-      throw new ApiError(
-        400,
-        "No mobile number linked. Please add one in your profile first."
-      );
-    }
-    const otp = await storeOTP(
-      mobile,
-      "change-password",
-      "whatsapp",
-      req.user._id
-    );
-    try {
-      await sendWhatsAppOTP(mobile, otp);
-      await otpService.confirmOtpDelivery(req.user._id, user.timezone);
-    } catch (error) {
-      logger.error("Failed to send OTP WhatsApp:", error.message);
-      throw new ApiError(500, "Failed to send WhatsApp OTP. Please try again.");
-    }
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          { channel: "whatsapp" },
-          "OTP sent to your WhatsApp"
-        )
-      );
-  } else {
-    const otp = await storeOTP(email, "change-password", "email", req.user._id);
-    try {
-      await sendEmail({
-        to: email,
-        subject: "Your VideoTube Password Change Code",
-        html: otpEmailTemplate(otp, "change-password"),
-      });
-      await otpService.confirmOtpDelivery(req.user._id, user.timezone);
-    } catch (error) {
-      logger.error("Failed to send OTP email:", error.message);
-      throw new ApiError(500, "Failed to send email OTP. Please try again.");
-    }
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(200, { channel: "email" }, "OTP sent to your email")
-      );
+  const otp = await storeOTP(email, "change-password", "email", req.user._id);
+  try {
+    await sendEmail({
+      to: email,
+      subject: "Your VideoTube Password Change Code",
+      html: otpEmailTemplate(otp, "change-password"),
+    });
+    await otpService.confirmOtpDelivery(req.user._id, user.timezone);
+  } catch (error) {
+    logger.error("Failed to send OTP email:", error.message);
+    throw new ApiError(500, "Failed to send email OTP. Please try again.");
   }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { channel: "email" }, "OTP sent to your email"));
 });
 
 const verifyAndChangePassword = asyncHandler(async (req, res) => {
-  const { oldPassword, newPassword, otp, channel = "email" } = req.body;
+  const { oldPassword, newPassword, otp } = req.body;
 
   if (!oldPassword || !newPassword || !otp) {
     throw new ApiError(400, "Old password, new password, and OTP are required");
@@ -107,10 +71,7 @@ const verifyAndChangePassword = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid old password");
   }
 
-  const identifier = channel === "whatsapp" ? user.mobile : user.email;
-  if (channel === "whatsapp" && !identifier) {
-    throw new ApiError(400, "No mobile number linked to this account");
-  }
+  const identifier = user.email;
 
   const result = await verifyOTP(identifier, otp, "change-password");
   if (!result.valid) {
@@ -148,77 +109,35 @@ const verifyAndChangePassword = asyncHandler(async (req, res) => {
 });
 
 const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
-  const { channel = "email" } = req.body;
   const user = await User.findById(req.user._id);
   const email = user.email;
-  const mobile = user.mobile;
 
-  if (channel === "whatsapp") {
-    if (!mobile) {
-      throw new ApiError(
-        400,
-        "No mobile number linked. Please add one in your profile first."
-      );
-    }
-    const otp = await storeOTP(
-      mobile,
-      "delete-account",
-      "whatsapp",
-      req.user._id
-    );
-    try {
-      await sendWhatsAppOTP(mobile, otp);
-      await otpService.confirmOtpDelivery(req.user._id, user.timezone);
-    } catch (error) {
-      logger.error(
-        "Failed to send delete account OTP WhatsApp:",
-        error.message
-      );
-      throw new ApiError(500, "Failed to send WhatsApp OTP. Please try again.");
-    }
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          { channel: "whatsapp" },
-          "OTP sent to your WhatsApp"
-        )
-      );
-  } else {
-    const otp = await storeOTP(email, "delete-account", "email", req.user._id);
-    try {
-      await sendEmail({
-        to: email,
-        subject: "Confirm Account Deletion",
-        html: otpEmailTemplate(otp, "delete-account"),
-      });
-      await otpService.confirmOtpDelivery(req.user._id, user.timezone);
-    } catch (error) {
-      logger.error("Failed to send delete account OTP email:", error.message);
-      throw new ApiError(500, "Failed to send email OTP. Please try again.");
-    }
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(200, { channel: "email" }, "OTP sent to your email")
-      );
+  const otp = await storeOTP(email, "delete-account", "email", req.user._id);
+  try {
+    await sendEmail({
+      to: email,
+      subject: "Confirm Account Deletion",
+      html: otpEmailTemplate(otp, "delete-account"),
+    });
+    await otpService.confirmOtpDelivery(req.user._id, user.timezone);
+  } catch (error) {
+    logger.error("Failed to send delete account OTP email:", error.message);
+    throw new ApiError(500, "Failed to send email OTP. Please try again.");
   }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { channel: "email" }, "OTP sent to your email"));
 });
 
 const verifyAndDeleteAccount = asyncHandler(async (req, res) => {
-  const { otp, channel = "email" } = req.body;
+  const { otp } = req.body;
 
   if (!otp) {
     throw new ApiError(400, "OTP is required");
   }
 
   const user = await User.findById(req.user._id);
-  const identifier = channel === "whatsapp" ? user.mobile : user.email;
-
-  if (channel === "whatsapp" && !identifier) {
-    throw new ApiError(400, "No mobile number linked to this account");
-  }
+  const identifier = user.email;
 
   const result = await verifyOTP(identifier, otp, "delete-account");
   if (!result.valid) {
@@ -278,71 +197,33 @@ const verifyAndDeleteAccount = asyncHandler(async (req, res) => {
 });
 
 const sendForgotPasswordChangeOTP = asyncHandler(async (req, res) => {
-  const { channel = "email" } = req.body;
   const user = await User.findById(req.user._id);
   const email = user.email;
-  const mobile = user.mobile;
 
-  if (channel === "whatsapp") {
-    if (!mobile) {
-      throw new ApiError(
-        400,
-        "No mobile number linked. Please add one in your profile first."
-      );
-    }
-    const otp = await storeOTP(
-      mobile,
-      "forgot-password-change",
-      "whatsapp",
-      req.user._id
-    );
-    try {
-      await sendWhatsAppOTP(mobile, otp);
-      await otpService.confirmOtpDelivery(req.user._id, user.timezone);
-    } catch (error) {
-      logger.error(
-        "Failed to send forgot password OTP WhatsApp:",
-        error.message
-      );
-      throw new ApiError(500, "Failed to send WhatsApp OTP. Please try again.");
-    }
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          { channel: "whatsapp" },
-          "OTP sent to your WhatsApp"
-        )
-      );
-  } else {
-    const otp = await storeOTP(
-      email,
-      "forgot-password-change",
-      "email",
-      req.user._id
-    );
-    try {
-      await sendEmail({
-        to: email,
-        subject: "Your VideoTube Password Reset Code",
-        html: otpEmailTemplate(otp, "forgot-password-change"),
-      });
-      await otpService.confirmOtpDelivery(req.user._id, user.timezone);
-    } catch (error) {
-      logger.error("Failed to send forgot password OTP email:", error.message);
-      throw new ApiError(500, "Failed to send email OTP. Please try again.");
-    }
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(200, { channel: "email" }, "OTP sent to your email")
-      );
+  const otp = await storeOTP(
+    email,
+    "forgot-password-change",
+    "email",
+    req.user._id
+  );
+  try {
+    await sendEmail({
+      to: email,
+      subject: "Your VideoTube Password Reset Code",
+      html: otpEmailTemplate(otp, "forgot-password-change"),
+    });
+    await otpService.confirmOtpDelivery(req.user._id, user.timezone);
+  } catch (error) {
+    logger.error("Failed to send forgot password OTP email:", error.message);
+    throw new ApiError(500, "Failed to send email OTP. Please try again.");
   }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { channel: "email" }, "OTP sent to your email"));
 });
 
 const verifyAndResetPasswordViaOTP = asyncHandler(async (req, res) => {
-  const { newPassword, otp, channel = "email" } = req.body;
+  const { newPassword, otp } = req.body;
 
   if (!newPassword || !otp) {
     throw new ApiError(400, "New password and OTP are required");
@@ -351,13 +232,10 @@ const verifyAndResetPasswordViaOTP = asyncHandler(async (req, res) => {
   assertPasswordStrength(newPassword);
 
   const user = await User.findById(req.user._id);
-  const identifier = channel === "whatsapp" ? user.mobile : user.email;
+  const identifier = user.email;
 
   if (!identifier) {
-    throw new ApiError(
-      400,
-      `No ${channel === "whatsapp" ? "mobile number" : "email"} linked to this account`
-    );
+    throw new ApiError(400, "No email linked to this account");
   }
 
   const result = await verifyOTP(identifier, otp, "forgot-password-change");
@@ -572,7 +450,6 @@ const sendIdentifierUpdateOTP = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
 
   let targetIdentifier = identifier;
-  let isMobile;
 
   if (action === "delete") {
     // For delete, identifier in body is what they want to delete ("email" or "mobile").
@@ -592,9 +469,8 @@ const sendIdentifierUpdateOTP = asyncHandler(async (req, res) => {
     }
 
     targetIdentifier = targetType === "email" ? user.mobile : user.email;
-    isMobile = targetType === "email"; // Since we send OTP to the other
   } else {
-    isMobile = /^\+?[1-9]\d{9,14}$/.test(targetIdentifier.trim());
+    const isMobile = /^\+?[1-9]\d{9,14}$/.test(targetIdentifier.trim());
     if (!isMobile && !isValidEmail(targetIdentifier)) {
       throw new ApiError(400, "Invalid email or mobile format");
     }
@@ -613,7 +489,7 @@ const sendIdentifierUpdateOTP = asyncHandler(async (req, res) => {
     }
   }
 
-  const channel = isMobile ? "whatsapp" : "email";
+  const channel = "email";
   const otp = await storeOTP(
     targetIdentifier,
     "identifier-update",
@@ -622,19 +498,15 @@ const sendIdentifierUpdateOTP = asyncHandler(async (req, res) => {
   );
 
   try {
-    if (channel === "whatsapp") {
-      await sendWhatsAppOTP(targetIdentifier, otp);
-    } else {
-      await sendEmail({
-        to: targetIdentifier,
-        subject: "Verification Code for Profile Update",
-        html: otpEmailTemplate(
-          otp,
-          "verify-email",
-          user.fullName || user.username
-        ),
-      });
-    }
+    await sendEmail({
+      to: targetIdentifier,
+      subject: "Verification Code for Profile Update",
+      html: otpEmailTemplate(
+        otp,
+        "verify-email",
+        user.fullName || user.username
+      ),
+    });
     await otpService.confirmOtpDelivery(user._id, user.timezone);
   } catch (error) {
     logger.error(`Failed to send OTP to ${targetIdentifier}:`, error.message);
@@ -677,7 +549,7 @@ const verifyAndAddIdentifier = asyncHandler(async (req, res) => {
   }));
   try {
     const notifyIdentifier = isMobile ? user.mobile : user.email;
-    const notifyChannel = isMobile ? "whatsapp" : "email";
+    const notifyChannel = "email";
     if (notifyChannel === "email") {
       await sendEmail({
         to: notifyIdentifier,
@@ -730,7 +602,7 @@ const verifyAndDeleteIdentifier = asyncHandler(async (req, res) => {
   }));
   try {
     const notifyIdentifier = targetType === "email" ? user.mobile : user.email;
-    const notifyChannel = targetType === "email" ? "whatsapp" : "email";
+    const notifyChannel = "email";
     if (notifyChannel === "email" && notifyIdentifier) {
       await sendEmail({
         to: notifyIdentifier,
