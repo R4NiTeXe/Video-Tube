@@ -14,7 +14,8 @@ import {
 } from "../../utils/emailTemplates.js";
 import {
   generateAccessAndRefreshToken,
-  getCookieOptions,
+  getAccessTokenCookieOptions,
+  getRefreshTokenCookieOptions,
 } from "../user.controller.js";
 import { createSession } from "../session.controller.js";
 import {
@@ -277,12 +278,10 @@ const registerUnified = asyncHandler(async (req, res) => {
     .select("-password -refreshToken")
     .lean();
 
-  const options = getCookieOptions();
-
   return res
     .status(201)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, getAccessTokenCookieOptions())
+    .cookie("refreshToken", refreshToken, getRefreshTokenCookieOptions())
     .json(
       new ApiResponse(
         201,
@@ -420,12 +419,10 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
     .select("-password -refreshToken")
     .lean();
 
-  const options = getCookieOptions();
-
   return res
     .status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, getAccessTokenCookieOptions())
+    .cookie("refreshToken", refreshToken, getRefreshTokenCookieOptions())
     .json(
       new ApiResponse(
         200,

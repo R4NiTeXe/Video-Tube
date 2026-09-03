@@ -17,7 +17,8 @@ import {
   resetPasswordWithOTP,
   skipAndLogin,
   generateAccessAndRefreshToken,
-  getCookieOptions,
+  getAccessTokenCookieOptions,
+  getRefreshTokenCookieOptions,
 } from "../controllers/user.controller.js";
 
 import {
@@ -283,12 +284,11 @@ router.route("/mobile/register").post(
     const loggedInUser = await User.findById(user._id)
       .select("-password -refreshToken")
       .lean();
-    const options = getCookieOptions();
     await createSession(user._id, refreshToken, req);
     return res
       .status(201)
-      .cookie("accessToken", accessToken, options)
-      .cookie("refreshToken", refreshToken, options)
+      .cookie("accessToken", accessToken, getAccessTokenCookieOptions())
+      .cookie("refreshToken", refreshToken, getRefreshTokenCookieOptions())
       .json(
         new ApiResponse(
           201,

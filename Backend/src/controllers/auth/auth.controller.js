@@ -6,6 +6,8 @@ import { createSession, deactivateSession } from "../session.controller.js";
 import {
   generateAccessAndRefreshToken,
   getCookieOptions,
+  getAccessTokenCookieOptions,
+  getRefreshTokenCookieOptions,
   isValidEmail,
 } from "../user.controller.js";
 import { sendEmail } from "../../utils/email.js";
@@ -183,14 +185,12 @@ const loginUser = asyncHandler(async (req, res) => {
     .select("-password -refreshToken")
     .lean();
 
-  const options = getCookieOptions();
-
   await createSession(user._id, refreshToken, req);
 
   return res
     .status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, getAccessTokenCookieOptions())
+    .cookie("refreshToken", refreshToken, getRefreshTokenCookieOptions())
     .json(
       new ApiResponse(
         200,
@@ -270,12 +270,10 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     .select("-password -refreshToken")
     .lean();
 
-  const options = getCookieOptions();
-
   return res
     .status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, getAccessTokenCookieOptions())
+    .cookie("refreshToken", refreshToken, getRefreshTokenCookieOptions())
     .json(
       new ApiResponse(
         200,
@@ -544,14 +542,12 @@ const socialLogin = asyncHandler(async (req, res) => {
     .select("-password -refreshToken")
     .lean();
 
-  const options = getCookieOptions();
-
   await createSession(user._id, refreshToken, req);
 
   return res
     .status(isNewUser ? 201 : 200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, getAccessTokenCookieOptions())
+    .cookie("refreshToken", refreshToken, getRefreshTokenCookieOptions())
     .json(
       new ApiResponse(
         isNewUser ? 201 : 200,

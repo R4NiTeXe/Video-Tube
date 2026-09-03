@@ -2210,6 +2210,10 @@ const verifyAndResetPasswordViaOTP = asyncHandler(async (req, res) => {
 export {
   generateAccessAndRefreshToken,
   getCookieOptions,
+  getAccessTokenCookieOptions,
+  getRefreshTokenCookieOptions,
+  ACCESS_TOKEN_MAX_AGE,
+  REFRESH_TOKEN_MAX_AGE,
   isValidEmail,
   isValidMobile,
   logoutUser,
