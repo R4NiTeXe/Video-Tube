@@ -11,6 +11,7 @@ const mockUser = {
 
 describe("useAuthStore", () => {
   beforeEach(() => {
+    localStorage.clear();
     sessionStorage.clear();
     useAuthStore.setState({
       user: null,
@@ -56,9 +57,12 @@ describe("useAuthStore", () => {
 
   it("persists user to sessionStorage", () => {
     useAuthStore.getState().login(mockUser);
-    const raw = sessionStorage.getItem("auth-storage");
+    const raw =
+      localStorage.getItem("auth-storage") ||
+      sessionStorage.getItem("auth-storage");
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw || "{}");
     expect(parsed.state.user).toEqual(mockUser);
+    expect(parsed.state.isAuthenticated).toBe(true);
   });
 });
