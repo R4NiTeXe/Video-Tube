@@ -320,6 +320,41 @@ export default function SettingsPage() {
       otpRefs.current[Math.min(pasted.length, 5)]?.focus();
     }
   };
+
+  const handleDeleteOtpChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+    const next = [...deleteOtp];
+    next[index] = value.slice(-1);
+    setDeleteOtp(next);
+    if (value && index < 5) {
+      deleteOtpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleDeleteOtpKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (e.key === "Backspace" && !deleteOtp[index] && index > 0) {
+      deleteOtpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleDeleteOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
+    if (pasted) {
+      const next = Array(6).fill("");
+      pasted.split("").forEach((char, i) => {
+        next[i] = char;
+      });
+      setDeleteOtp(next);
+      deleteOtpRefs.current[Math.min(pasted.length, 5)]?.focus();
+    }
+  };
   const [otpSent, setOtpSent] = useState(false);
   const [otpSending, setOtpSending] = useState(false);
   const [changePasswordOtpError, setChangePasswordOtpError] = useState("");
@@ -369,6 +404,16 @@ export default function SettingsPage() {
     resetAt: string;
   } | null>(null);
   const [otpUsageLoading, setOtpUsageLoading] = useState(true);
+
+  // Delete Account
+  const [deleteOtp, setDeleteOtp] = useState<string[]>(Array(6).fill(""));
+  const deleteOtpRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [deleteOtpSent, setDeleteOtpSent] = useState(false);
+  const [deleteOtpSending, setDeleteOtpSending] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const refreshOtpUsage = () => {
     api
@@ -612,6 +657,45 @@ export default function SettingsPage() {
     } catch (err) {
       console.error("Failed to revoke all sessions", err);
       setSessionError("Failed to revoke sessions.");
+    }
+  };
+
+  const handleSendDeleteOtp = async () => {
+    setDeleteError("");
+    setDeleteOtpSending(true);
+    try {
+      await refreshCsrfToken();
+      await api.post("/users/send-delete-account-otp", {});
+      setDeleteOtpSent(true);
+    } catch (err: unknown) {
+      setDeleteError(getApiErrorMessage(err, "Failed to send OTP."));
+    } finally {
+      setDeleteOtpSending(false);
+    }
+  };
+
+  const handleVerifyAndDelete = async () => {
+    setDeleteError("");
+    if (deleteConfirmText !== "DELETE") {
+      setDeleteError("Please type DELETE to confirm.");
+      return;
+    }
+    if (deleteOtp.join("").length !== 6) {
+      setDeleteError("Please enter the 6-digit OTP.");
+      return;
+    }
+    setDeleteLoading(true);
+    try {
+      await refreshCsrfToken();
+      await api.post("/users/verify-and-delete-account", {
+        otp: deleteOtp.join(""),
+      });
+      logout();
+      router.push("/register");
+    } catch (err: unknown) {
+      setDeleteError(getApiErrorMessage(err, "Failed to delete account."));
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -1968,19 +2052,276 @@ export default function SettingsPage() {
                 </div>
               </div>
             </>
-          ) : (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "2rem",
-                color: "var(--text-muted)",
-              }}
-            >
-              Unable to load OTP usage data
-            </div>
-          )}
-        </div>
-      </motion.div>
-    </div>
-  );
-}
+            ) : (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "2rem",
+                  color: "var(--text-muted)",
+                }}
+              >
+                Unable to load OTP usage data
+              </div>
+            )}
+          </div>
+
+          <div
+            className="form-card"
+            style={{
+              padding: "1.5rem",
+              border: "1px solid rgba(239,68,68,0.3)",
+              backgroundColor: "rgba(239,68,68,0.03)",
+            }}
+          >
+            <SettingsSectionHeader
+              icon={
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  <line x1="10" y1="11" x2="10" y2="17" />
+                  <line x1="14" y1="11" x2="14" y2="17" />
+                </svg>
+              }
+              title="Danger Zone"
+              description="Permanently delete your account and all associated data"
+            />
+            {!showDeleteConfirm ? (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "1rem",
+                  backgroundColor: "var(--bg-secondary)",
+                  borderRadius: "var(--radius-md)",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                <div>
+                  <p
+                    style={{
+                      fontSize: "0.9rem",
+                      fontWeight: 600,
+                      color: "var(--text-primary)",
+                    }}
+                  >
+                    Delete Account
+                  </p>
+                  <p
+                    style={{
+                      fontSize: "0.78rem",
+                      color: "var(--text-muted)",
+                      marginTop: "0.2rem",
+                    }}
+                  >
+                    Once deleted, all videos, likes and history are gone forever.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  style={{
+                    padding: "0.6rem 1.2rem",
+                    borderRadius: "var(--radius-md)",
+                    fontSize: "0.85rem",
+                    fontWeight: 600,
+                    backgroundColor: "var(--error)",
+                    color: "#fff",
+                    border: "1px solid var(--error)",
+                    cursor: "pointer",
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "1rem",
+                  padding: "1rem",
+                  backgroundColor: "var(--bg-secondary)",
+                  borderRadius: "var(--radius-md)",
+                  border: "1px solid rgba(239,68,68,0.2)",
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: "0.85rem",
+                    color: "var(--text-secondary)",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  This action <strong style={{ color: "var(--error)" }}>cannot be undone</strong>. Type{" "}
+                  <code
+                    style={{
+                      padding: "0.15rem 0.35rem",
+                      backgroundColor: "var(--elevated)",
+                      borderRadius: 4,
+                      fontWeight: 700,
+                    }}
+                  >
+                    DELETE
+                  </code>{" "}
+                  and enter the OTP sent to your email.
+                </p>
+                <input
+                  type="text"
+                  placeholder="Type DELETE to confirm"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  className="input"
+                  style={{ width: "100%", boxSizing: "border-box" }}
+                />
+                {!deleteOtpSent ? (
+                  <button
+                    onClick={handleSendDeleteOtp}
+                    disabled={deleteOtpSending || deleteConfirmText !== "DELETE"}
+                    style={{
+                      padding: "0.65rem 1rem",
+                      borderRadius: "var(--radius-md)",
+                      fontSize: "0.85rem",
+                      fontWeight: 600,
+                      backgroundColor: "var(--bg-primary)",
+                      color: "var(--error)",
+                      border: "1px solid var(--error)",
+                      cursor:
+                        deleteConfirmText === "DELETE" && !deleteOtpSending
+                          ? "pointer"
+                          : "not-allowed",
+                      opacity: deleteConfirmText === "DELETE" ? 1 : 0.5,
+                    }}
+                  >
+                    {deleteOtpSending ? "Sending OTP..." : "Send OTP to Email"}
+                  </button>
+                ) : (
+                  <>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "0.5rem",
+                        justifyContent: "flex-start",
+                      }}
+                    >
+                      {deleteOtp.map((digit, i) => (
+                        <input
+                          key={i}
+                          ref={(el) => {
+                            deleteOtpRefs.current[i] = el;
+                          }}
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={1}
+                          value={digit}
+                          aria-label={`OTP digit ${i + 1}`}
+                          onChange={(e) => handleDeleteOtpChange(i, e.target.value)}
+                          onKeyDown={(e) => handleDeleteOtpKeyDown(i, e)}
+                          onPaste={handleDeleteOtpPaste}
+                          style={{
+                            width: 44,
+                            height: 48,
+                            textAlign: "center",
+                            fontSize: "1.15rem",
+                            fontWeight: 700,
+                            borderRadius: "var(--radius-md)",
+                            border: "1.5px solid var(--border)",
+                            backgroundColor: "var(--bg-primary)",
+                            color: "var(--text-primary)",
+                            outline: "none",
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                      <button
+                        onClick={() => {
+                          setShowDeleteConfirm(false);
+                          setDeleteOtpSent(false);
+                          setDeleteOtp(Array(6).fill(""));
+                          setDeleteConfirmText("");
+                          setDeleteError("");
+                        }}
+                        disabled={deleteLoading}
+                        style={{
+                          flex: 1,
+                          padding: "0.65rem 1rem",
+                          borderRadius: "var(--radius-md)",
+                          fontSize: "0.85rem",
+                          fontWeight: 600,
+                          backgroundColor: "var(--bg-primary)",
+                          color: "var(--text-muted)",
+                          border: "1px solid var(--border)",
+                          cursor: deleteLoading ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleVerifyAndDelete}
+                        disabled={deleteLoading || deleteOtp.join("").length !== 6}
+                        style={{
+                          flex: 1,
+                          padding: "0.65rem 1rem",
+                          borderRadius: "var(--radius-md)",
+                          fontSize: "0.85rem",
+                          fontWeight: 600,
+                          backgroundColor: "var(--error)",
+                          color: "#fff",
+                          border: "1px solid var(--error)",
+                          cursor:
+                            deleteLoading || deleteOtp.join("").length !== 6
+                              ? "not-allowed"
+                              : "pointer",
+                          opacity:
+                            deleteLoading || deleteOtp.join("").length !== 6 ? 0.6 : 1,
+                        }}
+                      >
+                        {deleteLoading ? "Deleting..." : "Permanently Delete"}
+                      </button>
+                    </div>
+                    <button
+                      onClick={handleSendDeleteOtp}
+                      disabled={deleteOtpSending}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "var(--text-muted)",
+                        fontSize: "0.78rem",
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                        textAlign: "left",
+                        padding: 0,
+                      }}
+                    >
+                      {deleteOtpSending ? "Sending..." : "Resend OTP"}
+                    </button>
+                  </>
+                )}
+                {deleteError && (
+                  <div
+                    style={{
+                      padding: "0.5rem 0.75rem",
+                      borderRadius: "var(--radius-md)",
+                      backgroundColor: "rgba(220,38,38,0.1)",
+                      border: "1px solid var(--error)",
+                      color: "var(--error)",
+                      fontSize: "0.82rem",
+                    }}
+                  >
+                    {deleteError}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
