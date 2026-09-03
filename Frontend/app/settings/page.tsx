@@ -414,6 +414,16 @@ export default function SettingsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const isOAuthUser = Boolean(
+    user &&
+      (user as unknown as { socialAccounts?: Record<string, unknown> })
+        ?.socialAccounts &&
+      Object.keys(
+        (user as unknown as { socialAccounts?: Record<string, unknown> })
+          .socialAccounts!
+      ).length > 0
+  );
 
   const refreshOtpUsage = () => {
     api
@@ -660,7 +670,6 @@ export default function SettingsPage() {
     }
   };
 
-  const [deletePassword, setDeletePassword] = useState("");
   const handleSendDeleteOtp = async () => {
     setDeleteError("");
     if (deleteConfirmText !== "DELETE") {
@@ -735,10 +744,6 @@ export default function SettingsPage() {
       setDeleteLoading(false);
     }
   };
-
-  const isOAuthUser = Boolean(
-    user && (user as any).socialAccounts && Object.keys((user as any).socialAccounts).length > 0
-  );
 
   return (
     <div className="content-max">
