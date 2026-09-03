@@ -1,7 +1,7 @@
 import { describe, it, beforeAll, afterAll, expect, jest } from "@jest/globals";
 import request from "supertest";
 import { app } from "../src/app.js";
-import { startTestServer, stopTestServer, dropDatabase } from "./testUtils.js";
+import { startTestServer } from "./testUtils.js";
 import mongoose from "mongoose";
 
 const TEST_DB_NAME = `videotube_health_test_${Date.now()}_${Math.random().toString(36).slice(2)}`;

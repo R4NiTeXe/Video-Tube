@@ -6,7 +6,15 @@ import logger from "../utils/logger.js";
 const sseClients = new Map();
 const NOTIFICATION_CHANNEL = "sse:notifications";
 
-const instanceId = crypto.randomUUID();
+export const instanceId = crypto.randomUUID();
+
+export const MAX_SSE_CONNECTIONS_PER_USER = parseInt(
+  process.env.MAX_SSE_CONNECTIONS_PER_USER || "5",
+  10
+);
+
+export const __testGetSseClients = () => sseClients;
+export const __testClearSseClients = () => sseClients.clear();
 
 let sseSubscriber = null;
 let subscriptionStarted = false;
@@ -50,6 +58,19 @@ const ensureCrossInstanceSubscription = async () => {
 
 export const streamNotifications = asyncHandler(async (req, res) => {
   const userId = req.user._id.toString();
+
+  const existingClients = sseClients.get(userId);
+  if (
+    existingClients &&
+    existingClients.size >= MAX_SSE_CONNECTIONS_PER_USER
+  ) {
+    return res.status(429).json({
+      success: false,
+      statusCode: 429,
+      message: "Too many concurrent SSE connections",
+    });
+  }
+
   ensureCrossInstanceSubscription();
 
   res.setHeader("Content-Type", "text/event-stream");
