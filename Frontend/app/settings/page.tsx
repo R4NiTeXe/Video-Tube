@@ -676,7 +676,7 @@ export default function SettingsPage() {
       setDeleteError("Please type DELETE to confirm.");
       return;
     }
-    if (!deletePassword) {
+    if (!isOAuthUser && !deletePassword) {
       setDeleteError("Please enter your password.");
       return;
     }
@@ -684,7 +684,7 @@ export default function SettingsPage() {
     try {
       await refreshCsrfToken();
       await api.post("/users/send-delete-account-otp", {
-        password: deletePassword,
+        ...(isOAuthUser ? {} : { password: deletePassword }),
         channel: "email",
       });
       setDeleteOtpSent(true);
@@ -701,7 +701,7 @@ export default function SettingsPage() {
       setDeleteError("Please type DELETE to confirm.");
       return;
     }
-    if (!deletePassword) {
+    if (!isOAuthUser && !deletePassword) {
       setDeleteError("Please enter your password.");
       return;
     }
@@ -713,29 +713,10 @@ export default function SettingsPage() {
     try {
       await refreshCsrfToken();
       await api.post("/users/verify-and-delete-account", {
-        password: deletePassword,
+        ...(isOAuthUser ? {} : { password: deletePassword }),
         otp: deleteOtp.join(""),
         channel: "email",
       });
-      logout();
-      router.push("/register");
-    } catch (err: unknown) {
-      setDeleteError(getApiErrorMessage(err, "Failed to delete account."));
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
-
-  const handleDirectDelete = async () => {
-    setDeleteError("");
-    if (deleteConfirmText !== "DELETE") {
-      setDeleteError("Please type DELETE to confirm.");
-      return;
-    }
-    setDeleteLoading(true);
-    try {
-      await refreshCsrfToken();
-      await api.delete("/users");
       logout();
       router.push("/register");
     } catch (err: unknown) {
@@ -2250,52 +2231,7 @@ export default function SettingsPage() {
                     autoComplete="current-password"
                   />
                 )}
-                {isOAuthUser ? (
-                  <div style={{ display: "flex", gap: "0.5rem" }}>
-                    <button
-                      onClick={() => {
-                        setShowDeleteConfirm(false);
-                        setDeleteConfirmText("");
-                        setDeleteError("");
-                      }}
-                      disabled={deleteLoading}
-                      style={{
-                        flex: 1,
-                        padding: "0.65rem 1rem",
-                        borderRadius: "var(--radius-md)",
-                        fontSize: "0.85rem",
-                        fontWeight: 600,
-                        backgroundColor: "var(--bg-primary)",
-                        color: "var(--text-muted)",
-                        border: "1px solid var(--border)",
-                        cursor: deleteLoading ? "not-allowed" : "pointer",
-                      }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleDirectDelete}
-                      disabled={deleteLoading || deleteConfirmText !== "DELETE"}
-                      style={{
-                        flex: 1,
-                        padding: "0.65rem 1rem",
-                        borderRadius: "var(--radius-md)",
-                        fontSize: "0.85rem",
-                        fontWeight: 600,
-                        backgroundColor: "var(--error)",
-                        color: "#fff",
-                        border: "1px solid var(--error)",
-                        cursor:
-                          deleteLoading || deleteConfirmText !== "DELETE"
-                            ? "not-allowed"
-                            : "pointer",
-                        opacity: deleteConfirmText !== "DELETE" ? 0.6 : 1,
-                      }}
-                    >
-                      {deleteLoading ? "Deleting..." : "Permanently Delete"}
-                    </button>
-                  </div>
-                ) : !deleteOtpSent ? (
+                {!deleteOtpSent ? (
                   <button
                     onClick={handleSendDeleteOtp}
                     disabled={deleteOtpSending || deleteConfirmText !== "DELETE" || !deletePassword}

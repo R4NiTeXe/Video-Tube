@@ -197,14 +197,14 @@ export const userSchemas = {
 
   sendDeleteAccountOTP: {
     body: z.object({
-      password: z.string().min(1),
+      password: z.string().min(1).optional(),
       channel: channelEnum,
     }),
   },
 
   verifyAndDeleteAccount: {
     body: z.object({
-      password: z.string().min(1),
+      password: z.string().min(1).optional(),
       otp: z.string().length(6),
       channel: channelEnum,
     }),

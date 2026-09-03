@@ -38,12 +38,20 @@ import {
 import logger from "../utils/logger.js";
 import { createSession, createSessionStrict, deactivateSession } from "./session.controller.js";
 
-const getCookieOptions = () => ({
+const ACCESS_TOKEN_MAX_AGE = 24 * 60 * 60 * 1000;
+const REFRESH_TOKEN_MAX_AGE = 10 * 24 * 60 * 60 * 1000;
+
+const getCookieOptions = (maxAge) => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   path: "/",
+  ...(maxAge ? { maxAge } : {}),
 });
+const getAccessTokenCookieOptions = () =>
+  getCookieOptions(ACCESS_TOKEN_MAX_AGE);
+const getRefreshTokenCookieOptions = () =>
+  getCookieOptions(REFRESH_TOKEN_MAX_AGE);
 
 const isValidEmail = (email) => validator.isEmail(email);
 
@@ -149,12 +157,10 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     .select("-password -refreshToken")
     .lean();
 
-  const options = getCookieOptions();
-
   return res
     .status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, getAccessTokenCookieOptions())
+    .cookie("refreshToken", refreshToken, getRefreshTokenCookieOptions())
     .json(
       new ApiResponse(200, { user: freshUser }, "Token refreshed successfully")
     );
@@ -1307,7 +1313,6 @@ const skipAndLogin = asyncHandler(async (req, res) => {
   const loggedInUser = await User.findById(user._id)
     .select("-password -refreshToken")
     .lean();
-  const options = getCookieOptions();
 
   await createSession(user._id, refreshToken, req);
 
@@ -1330,8 +1335,8 @@ const skipAndLogin = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, getAccessTokenCookieOptions())
+    .cookie("refreshToken", refreshToken, getRefreshTokenCookieOptions())
     .json(
       new ApiResponse(
         200,
@@ -1531,14 +1536,12 @@ const socialLogin = asyncHandler(async (req, res) => {
     "-password -refreshToken"
   );
 
-  const options = getCookieOptions();
-
   await createSession(user._id, refreshToken, req);
 
   return res
     .status(isNewUser ? 201 : 200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, getAccessTokenCookieOptions())
+    .cookie("refreshToken", refreshToken, getRefreshTokenCookieOptions())
     .json(
       new ApiResponse(
         isNewUser ? 201 : 200,
@@ -1764,12 +1767,10 @@ const registerUnified = asyncHandler(async (req, res) => {
     "-password -refreshToken"
   );
 
-  const options = getCookieOptions();
-
   return res
     .status(201)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, getAccessTokenCookieOptions())
+    .cookie("refreshToken", refreshToken, getRefreshTokenCookieOptions())
     .json(
       new ApiResponse(
         201,
@@ -1879,14 +1880,12 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
     "-password -refreshToken"
   );
 
-  const options = getCookieOptions();
-
   await createSession(user._id, refreshToken, req);
 
   return res
     .status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, getAccessTokenCookieOptions())
+    .cookie("refreshToken", refreshToken, getRefreshTokenCookieOptions())
     .json(
       new ApiResponse(
         200,
@@ -1899,18 +1898,21 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
 const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
   const { password, channel = "email" } = req.body;
 
-  if (!password) {
-    throw new ApiError(400, "Password is required to send delete OTP");
-  }
-
   const user = await User.findById(req.user._id).select("+password");
   if (!user) {
     throw new ApiError(404, "User not found");
   }
 
-  const isPasswordCorrect = await user.isPasswordCorrect(password);
-  if (!isPasswordCorrect) {
-    throw new ApiError(401, "Invalid password");
+  const isOAuthUser =
+    user.socialAccounts && user.socialAccounts.size > 0;
+  if (!isOAuthUser) {
+    if (!password) {
+      throw new ApiError(400, "Password is required to send delete OTP");
+    }
+    const isPasswordCorrect = await user.isPasswordCorrect(password);
+    if (!isPasswordCorrect) {
+      throw new ApiError(401, "Invalid password");
+    }
   }
 
   if (channel === "whatsapp") {
@@ -1975,8 +1977,8 @@ const sendDeleteAccountOTP = asyncHandler(async (req, res) => {
 const verifyAndDeleteAccount = asyncHandler(async (req, res) => {
   const { password, otp, channel = "email" } = req.body;
 
-  if (!password || !otp) {
-    throw new ApiError(400, "Password and OTP are required");
+  if (!otp) {
+    throw new ApiError(400, "OTP is required");
   }
 
   const user = await User.findById(req.user._id).select("+password");
@@ -1984,9 +1986,16 @@ const verifyAndDeleteAccount = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found");
   }
 
-  const isPasswordCorrect = await user.isPasswordCorrect(password);
-  if (!isPasswordCorrect) {
-    throw new ApiError(401, "Invalid password");
+  const isOAuthUser =
+    user.socialAccounts && user.socialAccounts.size > 0;
+  if (!isOAuthUser) {
+    if (!password) {
+      throw new ApiError(400, "Password is required");
+    }
+    const isPasswordCorrect = await user.isPasswordCorrect(password);
+    if (!isPasswordCorrect) {
+      throw new ApiError(401, "Invalid password");
+    }
   }
 
   const identifier = channel === "whatsapp" ? user.mobile : user.email;
